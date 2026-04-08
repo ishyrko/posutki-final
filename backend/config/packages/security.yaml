@@ -82,6 +82,7 @@ security:
         - { path: ^/api/articles, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/static-pages, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/contact$, roles: PUBLIC_ACCESS, methods: [POST] }
+        - { path: ^/api, roles: PUBLIC_ACCESS, methods: [OPTIONS] }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

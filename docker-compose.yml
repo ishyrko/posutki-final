@@ -25,7 +25,7 @@ services:
       - DATABASE_URL=mysql://root:12345@host.docker.internal:3306/posutki_db?serverVersion=8.0&charset=utf8mb4
       - APP_ENV=dev
       - APP_SECRET=change_this_secret_in_production
-      - CORS_ALLOW_ORIGIN=^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$$
+      - CORS_ALLOW_ORIGIN=^https?://[^/]+(:[0-9]+)?$$
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-986114625381-ng3peent2ffo7ci9hmltjvcqu1sqngkb.apps.googleusercontent.com}
       - FRONTEND_URL=http://localhost:3000
       - MAILER_DSN=smtp://mailpit:1025
@@ -50,7 +50,7 @@ services:
       - DATABASE_URL=mysql://root:12345@host.docker.internal:3306/posutki_db?serverVersion=8.0&charset=utf8mb4
       - APP_ENV=dev
       - APP_SECRET=change_this_secret_in_production
-      - CORS_ALLOW_ORIGIN=^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$$
+      - CORS_ALLOW_ORIGIN=^https?://[^/]+(:[0-9]+)?$$
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-986114625381-ng3peent2ffo7ci9hmltjvcqu1sqngkb.apps.googleusercontent.com}
       - FRONTEND_URL=http://localhost:3000
       - MAILER_DSN=smtp://mailpit:1025
@@ -77,7 +77,7 @@ services:
       - DATABASE_URL=mysql://root:12345@host.docker.internal:3306/posutki_db?serverVersion=8.0&charset=utf8mb4
       - APP_ENV=dev
       - APP_SECRET=change_this_secret_in_production
-      - CORS_ALLOW_ORIGIN=^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$$
+      - CORS_ALLOW_ORIGIN=^https?://[^/]+(:[0-9]+)?$$
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-986114625381-ng3peent2ffo7ci9hmltjvcqu1sqngkb.apps.googleusercontent.com}
       - FRONTEND_URL=http://localhost:3000
       - MAILER_DSN=smtp://mailpit:1025
