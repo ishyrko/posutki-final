@@ -2,25 +2,23 @@
 
 import HeroSection from "@/components/HeroSection";
 import FeaturedProperties from "@/components/FeaturedProperties";
-import CategoriesSection from "@/components/CategoriesSection";
-import ArticlesSection from "@/components/ArticlesSection";
-import type { Article } from "@/features/articles/types";
+import CitySection from "@/components/CitySection";
+import FeaturesSection from "@/components/FeaturesSection";
 import type { PropertyListResponse } from "@/features/properties/types";
 
 interface HomePageProps {
     regionSlug?: string;
-    articles?: Article[];
     featuredInitial?: PropertyListResponse;
 }
 
-export default function HomePage({ regionSlug, articles, featuredInitial }: HomePageProps) {
+export default function HomePage({ regionSlug, featuredInitial }: HomePageProps) {
     return (
         <div className="min-h-screen">
             <main>
                 <HeroSection regionSlug={regionSlug} />
+                <CitySection />
                 <FeaturedProperties regionSlug={regionSlug} featuredInitial={featuredInitial} />
-                <CategoriesSection />
-                <ArticlesSection articles={articles} />
+                <FeaturesSection />
             </main>
         </div>
     );

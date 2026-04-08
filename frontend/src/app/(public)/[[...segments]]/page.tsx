@@ -7,7 +7,6 @@ import {
   buildPageTitle,
   isPropertyId,
   REGION_SLUGS,
-  DEAL_TYPE_SLUG_TO_VALUE,
   PROPERTY_TYPE_SLUG_TO_VALUE,
 } from "@/features/catalog/slugs";
 import { formatAddress, Property } from "@/features/properties/types";
@@ -16,7 +15,6 @@ import HomePage from "@/features/home/HomePage";
 import { fetchApi, fetchPublicApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { fetchFeaturedPropertiesForHome } from "@/lib/featured-properties-server";
 import { HEADER_REGION_MINSK_SLUG } from "@/lib/region-header";
-import type { Article } from "@/features/articles/types";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";
 import PropertyDetailClient from "../../../features/properties/components/PropertyDetailClient";
 
@@ -64,20 +62,18 @@ function validateCatalogSegments(segments: string[] = []): boolean {
 
   let i = 0;
 
-  if (REGION_SLUGS.has(segments[i])) i++;
-  if (segments.length === i) return true;
+  if (REGION_SLUGS.has(segments[i] ?? "")) i++;
 
-  if (segments[i] in DEAL_TYPE_SLUG_TO_VALUE) i++;
-  else return false;
-
-  if (i < segments.length && segments[i] in PROPERTY_TYPE_SLUG_TO_VALUE) i++;
+  if (segments[i] != null && segments[i]! in PROPERTY_TYPE_SLUG_TO_VALUE) {
+    i++;
+  }
 
   if (i < segments.length) {
-    if (segments[i] === 'vozle-metro') {
+    if (segments[i] === "vozle-metro") {
       i++;
-    } else if (segments[i] === 'metro') {
+    } else if (segments[i] === "metro") {
       i++;
-      if (i < segments.length) i++;
+      if (segments[i]) i++;
       else return false;
     } else {
       i++;
@@ -96,7 +92,7 @@ function validateSegments(segments: string[] = []): boolean {
     if (!validateCatalogSegments(catalogSegments)) return false;
 
     const parsed = parseSegments(catalogSegments);
-    return parsed.dealType !== undefined && parsed.propertyType !== undefined;
+    return parsed.propertyType !== undefined;
   }
 
   return validateCatalogSegments(segments);
@@ -120,7 +116,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const firstImage = property.images?.[0]?.url;
 
     return {
-      title: `${property.title} | RNB.by`,
+      title: `${property.title} | posutki.by`,
       description: `${address} — ${bynPrice}`,
       openGraph: {
         title: property.title,
@@ -135,16 +131,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!isCatalogRoute(parsed)) {
     const regionLabel = parsed.regionSlug
-      ? { brest: 'Брест и область', vitebsk: 'Витебск и область', gomel: 'Гомель и область', grodno: 'Гродно и область', mogilev: 'Могилев и область' }[parsed.regionSlug]
+      ? {
+          brest: "Брест и область",
+          vitebsk: "Витебск и область",
+          gomel: "Гомель и область",
+          grodno: "Гродно и область",
+          mogilev: "Могилев и область",
+        }[parsed.regionSlug]
       : undefined;
 
     return {
       title: regionLabel
-        ? `Недвижимость — ${regionLabel}`
-        : 'Недвижимость в Беларуси — RNB.by',
+        ? `Посуточная аренда — ${regionLabel} | posutki.by`
+        : "posutki.by — Квартиры и дома посуточно в Беларуси",
       description: regionLabel
-        ? `Покупка, продажа и аренда недвижимости в ${regionLabel}. Квартиры, дома, коммерческая недвижимость.`
-        : 'Тысячи объектов недвижимости по всей Беларуси. Покупка, продажа и аренда — быстро, удобно и безопасно.',
+        ? `Квартиры и дома посуточно в ${regionLabel}. Актуальные объявления с фото и ценами за сутки.`
+        : "Тысячи проверенных квартир и домов для посуточной аренды по всей Беларуси. Удобный поиск, актуальные цены, фото.",
     };
   }
 
@@ -152,8 +154,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = buildPageTitle(parsed, undefined, metroStationName);
 
   return {
-    title: `${title} — RNB.by`,
-    description: `Каталог недвижимости: ${title.toLowerCase()}. Актуальные объявления с ценами и фото.`,
+    title: `${title} | posutki.by`,
+    description: `Каталог посуточной аренды: ${title.toLowerCase()}. Актуальные объявления с ценами и фото.`,
   };
 }
 
@@ -180,22 +182,12 @@ export default async function SegmentsPage({ params }: PageProps) {
   const parsed = parseSegments(segments);
 
   if (!isCatalogRoute(parsed)) {
-    let homeArticles: Article[] = [];
-    try {
-      homeArticles = await fetchPublicApi<Article[]>("/articles?limit=3", {
-        next: { revalidate: 3600 },
-      });
-    } catch {
-      homeArticles = [];
-    }
-
     const featuredRegionSlug = parsed.regionSlug ?? HEADER_REGION_MINSK_SLUG;
     const featuredInitial = await fetchFeaturedPropertiesForHome(featuredRegionSlug);
 
     return (
       <HomePage
         regionSlug={parsed.regionSlug}
-        articles={homeArticles}
         featuredInitial={featuredInitial ?? undefined}
       />
     );

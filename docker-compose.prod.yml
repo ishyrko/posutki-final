@@ -14,12 +14,12 @@ services:
     depends_on:
       - nginx
     networks:
-      - rnb_network
+      - posutki_network
     restart: unless-stopped
 
   nginx:
     image: nginx:alpine
-    container_name: rnb_nginx
+    container_name: posutki_nginx
     volumes:
       - ./docker/nginx/prod.conf:/etc/nginx/conf.d/default.conf
       - ./backend/public:/var/www/backend/public
@@ -27,7 +27,7 @@ services:
       - php
       - frontend
     networks:
-      - rnb_network
+      - posutki_network
     restart: unless-stopped
 
   php:
@@ -55,7 +55,7 @@ services:
       - NEXTJS_REVALIDATE_URL=${NEXTJS_REVALIDATE_URL:-http://frontend:3000/revalidate}
       - NEXTJS_REVALIDATION_SECRET=${NEXTJS_REVALIDATION_SECRET}
     networks:
-      - rnb_network
+      - posutki_network
     restart: unless-stopped
 
   worker:
@@ -83,7 +83,7 @@ services:
     depends_on:
       - php
     networks:
-      - rnb_network
+      - posutki_network
     restart: unless-stopped
 
   cron:
@@ -112,7 +112,7 @@ services:
     depends_on:
       - php
     networks:
-      - rnb_network
+      - posutki_network
     restart: unless-stopped
 
   frontend:
@@ -131,9 +131,9 @@ services:
     depends_on:
       - php
     networks:
-      - rnb_network
+      - posutki_network
     restart: unless-stopped
 
 networks:
-  rnb_network:
+  posutki_network:
     driver: bridge

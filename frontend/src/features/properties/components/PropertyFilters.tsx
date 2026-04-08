@@ -30,54 +30,24 @@ const propertyTypes = [
   { value: "all", label: "Все типы" },
   { value: "apartment", label: "Квартира" },
   { value: "house", label: "Дом" },
-  { value: "room", label: "Комната" },
-  { value: "land", label: "Участок" },
-  { value: "garage", label: "Гараж" },
-  { value: "parking", label: "Машиноместо" },
   { value: "dacha", label: "Дача" },
-  { value: "office", label: "Офис" },
-  { value: "retail", label: "Торговое помещение" },
-  { value: "warehouse", label: "Склад" },
 ];
 
 export function PropertyFilters() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    const [dealType, setDealType] = useState(searchParams.get('dealType') || 'sale');
     const [type, setType] = useState(searchParams.get('type') || 'all');
     const [city, setCity] = useState(searchParams.get('city') || 'all');
     const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
     const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
 
-    const visiblePropertyTypes = useMemo(
-        () =>
-            propertyTypes.filter((t) => {
-                if (dealType === 'rent' && t.value === 'land') return false;
-                if (dealType === 'daily' && t.value === 'room') return false;
-                return true;
-            }),
-        [dealType],
-    );
-
-    useEffect(() => {
-        if (dealType === 'rent' && type === 'land') {
-            setType('all');
-        }
-    }, [dealType, type]);
-
-    useEffect(() => {
-        if (dealType === 'daily' && type === 'room') {
-            setType('all');
-        }
-    }, [dealType, type]);
+    const visiblePropertyTypes = useMemo(() => propertyTypes, []);
 
     const applyFilters = () => {
         const params = new URLSearchParams(searchParams.toString());
         params.set('page', '1');
-
-        if (dealType && dealType !== 'all') params.set('dealType', dealType);
-        else params.delete('dealType');
+        params.set('dealType', 'daily');
 
         if (type && type !== 'all') params.set('type', type);
         else params.delete('type');
@@ -91,17 +61,18 @@ export function PropertyFilters() {
         if (maxPrice) params.set('maxPrice', maxPrice);
         else params.delete('maxPrice');
 
-        const baseUrl = buildCatalogUrl({ dealType: dealType !== 'all' ? dealType : undefined });
+        const baseUrl = buildCatalogUrl({
+            propertyType: type !== 'all' ? type : undefined,
+        });
         router.push(`${baseUrl}?${params.toString()}`);
     };
 
     const clearFilters = () => {
-        setDealType('sale');
         setType('all');
         setCity('all');
         setMinPrice('');
         setMaxPrice('');
-        router.push(buildCatalogUrl({ dealType: 'sale' }));
+        router.push(buildCatalogUrl());
     };
 
     return (
@@ -124,32 +95,9 @@ export function PropertyFilters() {
             </div>
 
             <div className="space-y-6 relative z-10">
-                {/* Deal Type Toggle */}
-                <div className="flex p-1.5 bg-muted rounded-2xl relative">
-                    <div 
-                        className="absolute h-[calc(100%-12px)] top-1.5 bottom-1.5 transition-all duration-300 ease-out bg-background shadow-md rounded-xl z-0"
-                        style={{ 
-                            left: dealType === 'sale' ? '6px' : 'calc(50% + 1px)',
-                            width: 'calc(50% - 7px)'
-                        }}
-                    />
-                    <button
-                        onClick={() => setDealType('sale')}
-                        className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider relative z-10 transition-colors ${
-                            dealType === 'sale' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                        Купить
-                    </button>
-                    <button
-                        onClick={() => setDealType('rent')}
-                        className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider relative z-10 transition-colors ${
-                            dealType === 'rent' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                        Снять
-                    </button>
-                </div>
+                <p className="text-xs text-muted-foreground px-1">
+                    Посуточная аренда по всей Беларуси
+                </p>
 
                 {/* City */}
                 <div className="space-y-2">
@@ -191,7 +139,7 @@ export function PropertyFilters() {
                 <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 flex items-center gap-2 px-1">
                         <CircleDollarSign className="w-3.5 h-3.5 text-primary" />
-                        Цена
+                        Цена за сутки
                     </Label>
                     <div className="grid grid-cols-2 gap-2">
                         <div className="relative group">
@@ -220,7 +168,7 @@ export function PropertyFilters() {
                 <div className="pt-4 border-t border-border/50">
                     <Button 
                         onClick={applyFilters} 
-                        className="w-full h-12 rounded-2xl bg-gradient-primary text-white shadow-primary hover:opacity-95 transform active:scale-[0.98] transition-all font-bold group border-0 text-sm"
+                        className="w-full h-12 rounded-2xl bg-primary text-primary-foreground shadow-lg hover:opacity-95 transform active:scale-[0.98] transition-all font-bold group border-0 text-sm"
                     >
                         <Search className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
                         Применить

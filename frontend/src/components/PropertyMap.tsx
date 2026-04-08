@@ -40,7 +40,7 @@ const BELARUS_MAP_VIEW = {
 };
 
 function makeBalloonContent(p: MapProperty): string {
-  const href = buildPropertyUrl(p.dealType, p.propertyType, p.id);
+  const href = buildPropertyUrl(p.propertyType, p.id);
   return `<a href="${href}" style="display:block;width:200px;text-decoration:none;color:inherit;">
     <img src="${p.image}" style="width:100%;height:110px;object-fit:cover;border-radius:6px;margin-bottom:6px;" />
     <div style="font-weight:600;font-size:14px;">${p.price}</div>

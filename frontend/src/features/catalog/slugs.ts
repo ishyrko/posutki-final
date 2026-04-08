@@ -1,3 +1,4 @@
+/** Regional path prefix (областные центры кроме Минска — в URL как первый сегмент). */
 export const REGION_SLUGS: ReadonlySet<string> = new Set([
   'brest',
   'vitebsk',
@@ -6,28 +7,15 @@ export const REGION_SLUGS: ReadonlySet<string> = new Set([
   'mogilev',
 ] as const);
 
-export const DEAL_TYPE_SLUG_TO_VALUE: Record<string, string> = {
-  arenda: 'rent',
-  prodazha: 'sale',
-  posutochno: 'daily',
-};
+/** Только посуточная аренда — в URL сделка не кодируется, всегда daily. */
+export const IMPLICIT_DEAL_TYPE = 'daily' as const;
 
+/** Типы жилья в URL (посуточный каталог). */
 export const PROPERTY_TYPE_SLUG_TO_VALUE: Record<string, string> = {
   kvartiry: 'apartment',
   doma: 'house',
-  komnaty: 'room',
-  uchastki: 'land',
-  garazhi: 'garage',
-  mashinomesta: 'parking',
   dachi: 'dacha',
-  ofisy: 'office',
-  torgovye: 'retail',
-  sklady: 'warehouse',
 };
-
-export const DEAL_TYPE_VALUE_TO_SLUG = Object.fromEntries(
-  Object.entries(DEAL_TYPE_SLUG_TO_VALUE).map(([slug, val]) => [val, slug]),
-);
 
 export const PROPERTY_TYPE_VALUE_TO_SLUG = Object.fromEntries(
   Object.entries(PROPERTY_TYPE_SLUG_TO_VALUE).map(([slug, val]) => [val, slug]),
@@ -41,13 +29,7 @@ export const REGION_LABELS: Record<string, string> = {
   mogilev: 'Могилев и область',
 };
 
-export const DEAL_TYPE_LABELS: Record<string, string> = {
-  rent: 'Аренда',
-  sale: 'Продажа',
-  daily: 'Посуточно',
-};
-
-/** H1 / meta for daily deal + property type (replaces generic «Посуточно» + genitive plural). */
+/** H1 / meta для страниц каталога по типу жилья. */
 export const DAILY_DEAL_PAGE_TITLES: Record<string, string> = {
   apartment: 'Квартиры на сутки',
   house: 'Дома на сутки',
@@ -57,19 +39,13 @@ export const DAILY_DEAL_PAGE_TITLES: Record<string, string> = {
 export const PROPERTY_TYPE_LABELS: Record<string, string> = {
   apartment: 'квартир',
   house: 'домов',
-  room: 'комнат',
-  land: 'участков',
-  garage: 'гаражей',
-  parking: 'машиномест',
   dacha: 'дач',
-  office: 'офисов',
-  retail: 'торговых помещений',
-  warehouse: 'складов',
 };
 
 export interface ParsedSegments {
   regionSlug?: string;
-  dealType?: string;
+  /** Всегда daily — в URL не передаётся. */
+  dealType: typeof IMPLICIT_DEAL_TYPE;
   propertyType?: string;
   citySlug?: string;
   nearMetro?: boolean;
@@ -78,58 +54,62 @@ export interface ParsedSegments {
 
 export function parseSegments(segments: string[] = []): ParsedSegments {
   let i = 0;
-  const regionSlug = REGION_SLUGS.has(segments[i]) ? segments[i++] : undefined;
-  const dealType =
-    segments[i] in DEAL_TYPE_SLUG_TO_VALUE
-      ? DEAL_TYPE_SLUG_TO_VALUE[segments[i++]]
-      : undefined;
-  const propertyType =
-    segments[i] in PROPERTY_TYPE_SLUG_TO_VALUE
-      ? PROPERTY_TYPE_SLUG_TO_VALUE[segments[i++]]
-      : undefined;
+  const regionSlug = REGION_SLUGS.has(segments[i] ?? '') ? segments[i++] : undefined;
+
+  let propertyType: string | undefined;
+  if (segments[i] != null && segments[i]! in PROPERTY_TYPE_SLUG_TO_VALUE) {
+    propertyType = PROPERTY_TYPE_SLUG_TO_VALUE[segments[i]!];
+    i++;
+  }
 
   let citySlug: string | undefined;
   let nearMetro: boolean | undefined;
   let metroStationSlug: string | undefined;
 
-  if (segments[i] === 'vozle-metro') {
-    nearMetro = true;
-    i++;
-  } else if (segments[i] === 'metro') {
-    nearMetro = true;
-    i++;
-    if (segments[i]) {
-      metroStationSlug = segments[i++];
+  if (i < segments.length) {
+    if (segments[i] === 'vozle-metro') {
+      nearMetro = true;
+      i++;
+    } else if (segments[i] === 'metro') {
+      nearMetro = true;
+      i++;
+      if (segments[i]) {
+        metroStationSlug = segments[i]!;
+        i++;
+      }
+    } else {
+      citySlug = segments[i];
+      i++;
     }
-  } else {
-    citySlug = segments[i] ?? undefined;
   }
 
-  return { regionSlug, dealType, propertyType, citySlug, nearMetro, metroStationSlug };
+  return {
+    regionSlug,
+    dealType: IMPLICIT_DEAL_TYPE,
+    propertyType,
+    citySlug,
+    nearMetro,
+    metroStationSlug,
+  };
 }
 
 export function isCatalogRoute(parsed: ParsedSegments): boolean {
-  return parsed.dealType !== undefined;
+  return parsed.propertyType !== undefined || parsed.nearMetro === true;
 }
 
-interface BuildUrlParams {
+export interface BuildCatalogUrlParams {
   region?: string;
-  dealType?: string;
   propertyType?: string;
   city?: string;
   nearMetro?: boolean;
   metroStation?: string;
 }
 
-export function buildCatalogUrl(params: BuildUrlParams = {}): string {
+export function buildCatalogUrl(params: BuildCatalogUrlParams = {}): string {
   const parts: string[] = [];
 
   if (params.region && REGION_SLUGS.has(params.region)) {
     parts.push(params.region);
-  }
-
-  if (params.dealType && params.dealType in DEAL_TYPE_VALUE_TO_SLUG) {
-    parts.push(DEAL_TYPE_VALUE_TO_SLUG[params.dealType]);
   }
 
   if (params.propertyType && params.propertyType in PROPERTY_TYPE_VALUE_TO_SLUG) {
@@ -155,30 +135,23 @@ export function isPropertyId(segment?: string): boolean {
   return /^\d+$/.test(segment);
 }
 
-/** True when pathname is a property listing URL (…/deal/type/id). */
+/** Страница объявления: …/kvartiry/123 или …/grodno/kvartiry/123 */
 export function isPropertyDetailPath(pathname: string): boolean {
   const segments = pathname.split('/').filter(Boolean);
-  if (segments.length < 3) return false;
+  if (segments.length < 2) return false;
   const last = segments[segments.length - 1];
   if (!isPropertyId(last)) return false;
   const catalogSegments = segments.slice(0, -1);
   const parsed = parseSegments(catalogSegments);
-  return parsed.dealType !== undefined && parsed.propertyType !== undefined;
+  return parsed.propertyType !== undefined;
 }
 
-export function buildPropertyUrl(
-  dealType: string | undefined,
-  propertyType: string | undefined,
-  id: number,
-): string {
-  const dealSlug = dealType ? DEAL_TYPE_VALUE_TO_SLUG[dealType] : undefined;
+export function buildPropertyUrl(propertyType: string | undefined, id: number): string {
   const propertySlug = propertyType ? PROPERTY_TYPE_VALUE_TO_SLUG[propertyType] : undefined;
-
-  if (!dealSlug || !propertySlug) {
+  if (!propertySlug) {
     return `/${id}/`;
   }
-
-  return `/${dealSlug}/${propertySlug}/${id}/`;
+  return `/${propertySlug}/${id}/`;
 }
 
 export function buildPageTitle(
@@ -188,20 +161,12 @@ export function buildPageTitle(
 ): string {
   const parts: string[] = [];
 
-  if (
-    parsed.dealType === 'daily' &&
-    parsed.propertyType &&
-    parsed.propertyType in DAILY_DEAL_PAGE_TITLES
-  ) {
+  if (parsed.propertyType && parsed.propertyType in DAILY_DEAL_PAGE_TITLES) {
     parts.push(DAILY_DEAL_PAGE_TITLES[parsed.propertyType]);
+  } else if (parsed.nearMetro) {
+    parts.push('Посуточная аренда');
   } else {
-    if (parsed.dealType) {
-      parts.push(DEAL_TYPE_LABELS[parsed.dealType] ?? parsed.dealType);
-    }
-
-    if (parsed.propertyType) {
-      parts.push(PROPERTY_TYPE_LABELS[parsed.propertyType] ?? parsed.propertyType);
-    }
+    parts.push('Посуточная аренда');
   }
 
   const location = cityName
@@ -221,5 +186,5 @@ export function buildPageTitle(
     }
   }
 
-  return parts.length > 0 ? parts.join(' ') : 'Недвижимость в Беларуси';
+  return parts.length > 0 ? parts.join(' ') : 'Посуточная аренда в Беларуси';
 }

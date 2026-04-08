@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const quickLinks = [
   { href: "/", icon: Home, label: "Главная страница" },
-  { href: "/prodazha/kvartiry/", icon: Search, label: "Каталог недвижимости" },
+  { href: "/kvartiry/", icon: Search, label: "Каталог объявлений" },
   { href: "/stati/", icon: BookOpen, label: "Статьи и гиды" },
   { href: "/kontakty", icon: Phone, label: "Контакты" },
 ] as const;

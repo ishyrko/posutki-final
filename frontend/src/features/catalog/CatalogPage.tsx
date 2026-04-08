@@ -129,7 +129,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("list-map");
   const [activeMarker, setActiveMarker] = useState<number | null>(null);
-  const isSaleDeal = parsed.dealType === "sale";
+  const isSaleDeal = false;
   const pageFromQuery = Number(searchParams.get("page") ?? "1");
   const validPageFromQuery = Number.isFinite(pageFromQuery) && pageFromQuery > 0 ? Math.floor(pageFromQuery) : 1;
   const [currentPage, setCurrentPage] = useState(validPageFromQuery);
@@ -140,6 +140,14 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   useEffect(() => {
     setCurrentPage(validPageFromQuery);
   }, [validPageFromQuery]);
+
+  const roomsFromQuery = searchParams.get("rooms");
+  useEffect(() => {
+    if (!roomsFilterVisible) return;
+    const r = roomsFromQuery;
+    if (r === "1" || r === "2" || r === "3") setRooms(r);
+    else if (r === "4" || r === "4+") setRooms("4");
+  }, [roomsFromQuery, roomsFilterVisible]);
 
   useEffect(() => {
     if (!roomsFilterVisible) {
@@ -310,17 +318,17 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero header */}
-      <section className="bg-gradient-dark pt-20 pb-8">
+      <section className="bg-muted/40 border-b border-border pt-20 pb-8">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-dark-fg mb-3">
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-3">
             {pageTitle}
           </h1>
           <div className="flex items-center justify-between">
-            <p className="text-dark-muted">
+            <p className="text-muted-foreground">
               {isLoading ? "Загрузка..." : `Найдено ${totalItems} объектов`}
             </p>
 
-            <div className="flex rounded-lg bg-dark-card/50 p-0.5 w-fit">
+            <div className="flex rounded-lg bg-muted p-0.5 w-fit">
               {viewModes.map((m) => (
                 <button
                   key={m.value}
@@ -331,7 +339,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                     m.value === "list-map" && "hidden md:flex",
                     viewMode === m.value
                       ? "bg-primary text-primary-foreground"
-                      : "text-dark-muted hover:text-dark-fg",
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   <m.icon className="w-4 h-4" />

@@ -19,7 +19,7 @@ export const REGION_SYNC_EVENT = "rnb-region-changed";
 export const HEADER_REGION_MINSK_SLUG = "minsk";
 
 /**
- * Prefixes catalog URLs with a regional path segment (e.g. `/brest/prodazha/...`).
+ * Prefixes catalog URLs with a regional path segment (e.g. `/brest/kvartiry/...`).
  * Non-catalog links and Минск are returned unchanged.
  */
 export function withRegionalCatalogHref(href: string, regionSlug: string): string {
@@ -27,9 +27,10 @@ export function withRegionalCatalogHref(href: string, regionSlug: string): strin
   if (!href.startsWith("/")) return href;
 
   const isRegionalCatalogHref =
-    href.startsWith("/prodazha/") ||
-    href.startsWith("/arenda/") ||
-    href.startsWith("/posutochno/");
+    href.startsWith("/kvartiry/") ||
+    href.startsWith("/doma/") ||
+    href.startsWith("/dachi/") ||
+    href.startsWith("/vozle-metro/");
 
   if (!isRegionalCatalogHref) return href;
 

@@ -194,7 +194,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
             Объект, который вы ищете, не существует или был удалён.
           </p>
           <Button asChild>
-            <Link href="/prodazha/">Вернуться в каталог</Link>
+            <Link href="/kvartiry/">Вернуться в каталог</Link>
           </Button>
         </div>
       </div>
@@ -225,9 +225,8 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   const addressStr = formatAddress(property.address);
   const backToCatalogHref = buildCatalogUrl({
     region: regionNameToHeaderSlug(property.address.regionName),
-    dealType: property.dealType,
     propertyType: property.type,
-  }) || "/prodazha/";
+  }) || "/kvartiry/";
   const coords = property.coordinates;
   const nearbyMetroStations = property.nearbyMetroStations ?? [];
 
@@ -537,7 +536,6 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                     <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
                       {nearbyMetroStations.slice(0, 2).map((station) => {
                         const stationHref = buildCatalogUrl({
-                          dealType: property.dealType,
                           propertyType: property.type,
                           nearMetro: true,
                           metroStation: station.slug,

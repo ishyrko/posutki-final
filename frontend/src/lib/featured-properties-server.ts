@@ -13,6 +13,7 @@ export async function fetchFeaturedPropertiesForHome(regionSlug: string): Promis
     params.set("sortBy", "createdAt");
     params.set("sortOrder", "DESC");
     params.set("regionSlug", regionSlug);
+    params.set("dealType", "daily");
 
     const data = await fetchPublicApi<Property[]>(`/properties?${params.toString()}`, {
       next: { revalidate: 120 },

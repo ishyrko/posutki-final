@@ -1,12 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 import { Toaster } from "@/components/ui/sonner";
 import CookieBanner from "@/components/CookieBanner";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -15,8 +12,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "RNB.by — Недвижимость Беларуси",
-  description: "Тысячи объектов недвижимости по всей Беларуси. Покупка, продажа и аренда — быстро, удобно и безопасно.",
+  title: "posutki.by — Квартиры и дома посуточно в Беларуси",
+  description:
+    "Тысячи проверенных квартир и домов для посуточной аренды по всей Беларуси. Удобный поиск, актуальные цены за сутки, фото.",
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -59,7 +57,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: performanceMeasureGuard }}
         />
       </head>
-      <body className={inter.className}>
+      <body className="font-body antialiased">
         <QueryProvider>
           {children}
           <Toaster />

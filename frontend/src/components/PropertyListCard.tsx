@@ -71,7 +71,7 @@ const PropertyListCard = ({
   nearbyMetroStations = [],
   metroOnSeparateLine = false,
 }: PropertyListCardProps) => {
-  const href = id ? buildPropertyUrl(dealType, propertyType, id) : `/property/${index}`;
+  const href = id ? buildPropertyUrl(propertyType, id) : `/property/${index}`;
   const { data: user } = useUser();
   const { data: favoriteIds = [] } = useFavoriteIds();
   const { mutate: toggleFavorite } = useToggleFavorite();

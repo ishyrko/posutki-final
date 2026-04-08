@@ -48,7 +48,7 @@ export function MyPropertyCard({ property, onDelete }: MyPropertyCardProps) {
     const views = property.views ?? 0;
     const phoneViews = property.phoneViews ?? 0;
     const favoritesCount = property.favoritesCount ?? 0;
-    const propertyHref = buildPropertyUrl(property.dealType, property.type, property.id);
+    const propertyHref = buildPropertyUrl(property.type, property.id);
 
     return (
         <Card className="overflow-hidden flex flex-col h-full group">

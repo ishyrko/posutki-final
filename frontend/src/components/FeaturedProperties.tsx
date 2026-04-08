@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import PropertyCard from "./PropertyCard";
 import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { formatAddress } from "@/features/properties/types";
-import { buildCatalogUrl, DEAL_TYPE_LABELS } from "@/features/catalog/slugs";
+import { buildCatalogUrl, REGION_SLUGS } from "@/features/catalog/slugs";
 import { RESIDENTIAL_PROPERTY_TYPES } from "@/features/catalog/residential-types";
 import type { ExchangeRates } from "@/features/properties/api";
 import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
@@ -35,6 +35,7 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
   const featuredFilters = useMemo(
     () => ({
       regionSlug: effectiveRegionSlug,
+      dealType: "daily" as const,
       types: [...RESIDENTIAL_PROPERTY_TYPES],
       limit: 4,
       sortBy: "createdAt" as const,
@@ -43,7 +44,9 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
     [effectiveRegionSlug],
   );
 
-  const catalogUrl = buildCatalogUrl({ region: effectiveRegionSlug, dealType: "sale" });
+  const catalogUrl = REGION_SLUGS.has(effectiveRegionSlug)
+    ? buildCatalogUrl({ region: effectiveRegionSlug, propertyType: "apartment" })
+    : buildCatalogUrl({ propertyType: "apartment" });
   const { data, isLoading } = useProperties(
     featuredFilters,
     featuredInitial && featuredInitialHydratedAt.current !== null
@@ -103,7 +106,8 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
                 beds={property.specifications.rooms || 0}
                 baths={property.specifications.bathrooms ?? 1}
                 area={property.specifications.area || 0}
-                tag={DEAL_TYPE_LABELS[property.dealType] ?? property.dealType}
+                maxGuests={property.specifications.maxDailyGuests}
+                tag="Посуточно"
                 dealType={property.dealType}
                 propertyType={property.type}
                 index={i}

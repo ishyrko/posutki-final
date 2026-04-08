@@ -1,7 +1,7 @@
 services:
   nginx:
     image: nginx:alpine
-    container_name: rnb_nginx
+    container_name: posutki_nginx
     ports:
       - "80:80"
     volumes:
@@ -10,19 +10,19 @@ services:
     depends_on:
       - php
     networks:
-      - rnb_network
+      - posutki_network
 
   php:
     build:
       context: ./docker/php
       dockerfile: Dockerfile
-    container_name: rnb_php
+    container_name: posutki_php
     volumes:
       - ./backend:/var/www/backend
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      - DATABASE_URL=mysql://root:12345@host.docker.internal:3306/rnb_react_db?serverVersion=8.0&charset=utf8mb4
+      - DATABASE_URL=mysql://root:12345@host.docker.internal:3306/posutki_db?serverVersion=8.0&charset=utf8mb4
       - APP_ENV=dev
       - APP_SECRET=change_this_secret_in_production
       - CORS_ALLOW_ORIGIN=^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$$
@@ -34,20 +34,20 @@ services:
       - NEXTJS_REVALIDATE_URL=http://frontend:3000/revalidate
       - NEXTJS_REVALIDATION_SECRET=${NEXTJS_REVALIDATION_SECRET:-dev-revalidate-secret}
     networks:
-      - rnb_network
+      - posutki_network
 
   worker:
     build:
       context: ./docker/php
       dockerfile: Dockerfile
-    container_name: rnb_worker
+    container_name: posutki_worker
     command: sh -c "php bin/console messenger:consume async_notifications --time-limit=3600 --memory-limit=256M -vv"
     volumes:
       - ./backend:/var/www/backend
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      - DATABASE_URL=mysql://root:12345@host.docker.internal:3306/rnb_react_db?serverVersion=8.0&charset=utf8mb4
+      - DATABASE_URL=mysql://root:12345@host.docker.internal:3306/posutki_db?serverVersion=8.0&charset=utf8mb4
       - APP_ENV=dev
       - APP_SECRET=change_this_secret_in_production
       - CORS_ALLOW_ORIGIN=^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$$
@@ -60,13 +60,13 @@ services:
       - php
     restart: unless-stopped
     networks:
-      - rnb_network
+      - posutki_network
 
   cron:
     build:
       context: ./docker/php
       dockerfile: Dockerfile
-    container_name: rnb_cron
+    container_name: posutki_cron
     command: >
       sh -c "echo '0 2 * * * cd /var/www/backend && php bin/console app:deactivate-expired-properties --no-interaction' | crontab - && crond -f -l 8"
     volumes:
@@ -74,7 +74,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      - DATABASE_URL=mysql://root:12345@host.docker.internal:3306/rnb_react_db?serverVersion=8.0&charset=utf8mb4
+      - DATABASE_URL=mysql://root:12345@host.docker.internal:3306/posutki_db?serverVersion=8.0&charset=utf8mb4
       - APP_ENV=dev
       - APP_SECRET=change_this_secret_in_production
       - CORS_ALLOW_ORIGIN=^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$$
@@ -87,11 +87,11 @@ services:
       - php
     restart: unless-stopped
     networks:
-      - rnb_network
+      - posutki_network
 
   mysql:
     image: mysql:8.0
-    container_name: rnb_mysql
+    container_name: posutki_mysql
     ports:
       - "3307:3306"
     environment:
@@ -104,22 +104,25 @@ services:
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     networks:
-      - rnb_network
+      - posutki_network
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: rnb_frontend
-    # Use node_modules from the bind mount (./frontend), not an anonymous volume — otherwise new deps
-    # from package-lock (e.g. sanitize-html) never appear and /stati/* routes fail with "Module not found".
-    command: sh -c "npm install --no-audit --no-fund && npm run dev -- --hostname 0.0.0.0 --port 3000 --webpack"
+    container_name: posutki_frontend
+    # node_modules в отдельном volume — иначе npm install на bind-mount (macOS) часто падает с ENOTEMPTY.
+    # После смены package.json: docker compose run --rm frontend npm install  или  make frontend-install
+    command: sh -c "npm install --no-audit --no-fund && exec npm run dev -- --hostname 0.0.0.0 --port 3000"
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
       - frontend_next_cache:/app/.next
     environment:
+      # Иначе npm install не ставит devDependencies (typescript нужен для next.config.ts).
+      - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost/api
       - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-986114625381-ng3peent2ffo7ci9hmltjvcqu1sqngkb.apps.googleusercontent.com}
       - BACKEND_INTERNAL_URL=http://nginx
@@ -127,22 +130,23 @@ services:
     depends_on:
       - php
     networks:
-      - rnb_network
+      - posutki_network
 
   mailpit:
     image: axllent/mailpit
-    container_name: rnb_mailpit
+    container_name: posutki_mailpit
     ports:
       - "8025:8025"
       - "1025:1025"
     networks:
-      - rnb_network
+      - posutki_network
 
 volumes:
   mysql_data:
+  frontend_node_modules:
   frontend_next_cache:
 
 
 networks:
-  rnb_network:
+  posutki_network:
     driver: bridge

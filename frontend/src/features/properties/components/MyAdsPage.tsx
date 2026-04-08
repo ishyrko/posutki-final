@@ -87,7 +87,7 @@ function ListingCard({ property }: { property: Property }) {
     const isActive = property.status === 'published';
     const address = formatAddress(property.address);
     const statusConfig = STATUS_CONFIG[property.status];
-    const propertyHref = buildPropertyUrl(property.dealType, property.type, property.id);
+    const propertyHref = buildPropertyUrl(property.type, property.id);
     const boostedToday = isBoostedToday(property.boostedAt);
     const boostCooldownOk = isAtLeast24HoursAfterCreation(property.createdAt);
 

@@ -51,7 +51,7 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
   const { mutate: toggleFavorite } = useToggleFavorite();
   const router = useRouter();
   const isFavorited = favoriteIds.includes(id);
-  const href = buildPropertyUrl(dealType, type, id);
+  const href = buildPropertyUrl(type, id);
 
   const { data: rates } = useExchangeRates();
   const exchangeRates: ExchangeRates = useMemo(

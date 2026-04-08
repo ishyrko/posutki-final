@@ -1,167 +1,124 @@
 "use client";
 
-import { useState, useRef, useCallback, useMemo, useSyncExternalStore } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Heart, User, ChevronDown, Plus, LayoutDashboard, MapPin, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  Heart,
+  Menu,
+  User,
+  X,
+  Home,
+  Building2,
+  MapPin,
+  Sparkles,
+  Star,
+  Clock,
+  ChevronDown,
+  Plus,
+  Search,
+  BedDouble,
+  Users,
+  Wifi,
+  Car,
+  TreePine,
+  Flame,
+  Bath,
+  LayoutDashboard,
+} from "lucide-react";
 import Link from "next/link";
-import NextImage from "next/image";
-import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { isAuthenticated } from "@/lib/auth";
 import { withRegionalCatalogHref } from "@/lib/region-header";
 import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
+import { useSyncExternalStore } from "react";
 
-type City = {
-  name: string;
-  slug: string;
-  href: string;
-};
-
-const CITIES: readonly City[] = [
-  { name: "Минск", slug: "minsk", href: "/" },
-  { name: "Брест", slug: "brest", href: "/brest/" },
-  { name: "Витебск", slug: "vitebsk", href: "/vitebsk/" },
-  { name: "Гомель", slug: "gomel", href: "/gomel/" },
-  { name: "Гродно", slug: "grodno", href: "/grodno/" },
-  { name: "Могилёв", slug: "mogilev", href: "/mogilev/" },
-] as const;
-
-interface MegaMenuItem {
-  label: string;
-  href: string;
-}
-
-interface MegaMenuColumn {
+interface MegaMenuSection {
   title: string;
-  items: MegaMenuItem[];
+  items: { label: string; desc: string; icon: React.ReactNode; href: string }[];
 }
 
-interface NavItem {
-  label: string;
-  href: string;
-  megaMenu?: MegaMenuColumn[];
-  disableTopLevelLink?: boolean;
+function buildMegaMenu(regionSlug: string): Record<string, MegaMenuSection[]> {
+  const r = (path: string) => withRegionalCatalogHref(path, regionSlug);
+
+  return {
+    Квартиры: [
+      {
+        title: "По количеству комнат",
+        items: [
+          { label: "Однокомнатные", desc: "Уютные студии и 1-комнатные", icon: <BedDouble className="h-4 w-4" />, href: r("/kvartiry/?rooms=1") },
+          { label: "Двухкомнатные", desc: "Просторные квартиры для семей", icon: <Home className="h-4 w-4" />, href: r("/kvartiry/?rooms=2") },
+          { label: "Трёхкомнатные+", desc: "Большие апартаменты", icon: <Building2 className="h-4 w-4" />, href: r("/kvartiry/?rooms=3") },
+        ],
+      },
+      {
+        title: "По типу",
+        items: [
+          { label: "Все квартиры", desc: "Комфортное жильё на сутки", icon: <Home className="h-4 w-4" />, href: r("/kvartiry/") },
+          { label: "Премиум", desc: "Элитные апартаменты", icon: <Sparkles className="h-4 w-4" />, href: r("/kvartiry/") },
+          { label: "С джакузи", desc: "Романтический отдых", icon: <Star className="h-4 w-4" />, href: r("/kvartiry/") },
+        ],
+      },
+      {
+        title: "Удобства",
+        items: [
+          { label: "С Wi‑Fi", desc: "Для работы и отдыха", icon: <Wifi className="h-4 w-4" />, href: r("/kvartiry/") },
+          { label: "С парковкой", desc: "Парковка у дома", icon: <Car className="h-4 w-4" />, href: r("/kvartiry/") },
+          { label: "Для компаний", desc: "От 4+ гостей", icon: <Users className="h-4 w-4" />, href: r("/kvartiry/") },
+        ],
+      },
+    ],
+    Дома: [
+      {
+        title: "По типу жилья",
+        items: [
+          { label: "Коттеджи", desc: "Отдельные дома с участком", icon: <Home className="h-4 w-4" />, href: r("/doma/") },
+          { label: "Дачи", desc: "Загородный отдых", icon: <TreePine className="h-4 w-4" />, href: r("/dachi/") },
+          { label: "Все дома", desc: "Просторные дома", icon: <Building2 className="h-4 w-4" />, href: r("/doma/") },
+        ],
+      },
+      {
+        title: "Особенности",
+        items: [
+          { label: "С баней/сауной", desc: "Отдых с парилкой", icon: <Flame className="h-4 w-4" />, href: r("/doma/") },
+          { label: "С бассейном", desc: "Дома с бассейном", icon: <Bath className="h-4 w-4" />, href: r("/doma/") },
+          { label: "У воды", desc: "На берегу водоёма", icon: <MapPin className="h-4 w-4" />, href: r("/doma/") },
+        ],
+      },
+      {
+        title: "Для кого",
+        items: [
+          { label: "Для большой компании", desc: "От 8+ гостей", icon: <Users className="h-4 w-4" />, href: r("/doma/") },
+          { label: "Для семьи", desc: "Семейный отдых", icon: <Heart className="h-4 w-4" />, href: r("/doma/") },
+          { label: "Романтика", desc: "Уединённые домики", icon: <Star className="h-4 w-4" />, href: r("/doma/") },
+        ],
+      },
+    ],
+    Города: [
+      {
+        title: "Областные центры",
+        items: [
+          { label: "Минск", desc: "Столица", icon: <MapPin className="h-4 w-4" />, href: "/" },
+          { label: "Гродно", desc: "Город-музей", icon: <MapPin className="h-4 w-4" />, href: "/grodno/" },
+          { label: "Брест", desc: "Запад страны", icon: <MapPin className="h-4 w-4" />, href: "/brest/" },
+        ],
+      },
+      {
+        title: "Ещё города",
+        items: [
+          { label: "Витебск", desc: "Север", icon: <MapPin className="h-4 w-4" />, href: "/vitebsk/" },
+          { label: "Гомель", desc: "Юг Беларуси", icon: <MapPin className="h-4 w-4" />, href: "/gomel/" },
+          { label: "Могилёв", desc: "Восток", icon: <MapPin className="h-4 w-4" />, href: "/mogilev/" },
+        ],
+      },
+    ],
+  };
 }
-
-const navItems: NavItem[] = [
-  {
-    label: "Продажа",
-    href: "/prodazha/",
-    disableTopLevelLink: true,
-    megaMenu: [
-      {
-        title: "Жилая",
-        items: [
-          { label: "Квартиры", href: "/prodazha/kvartiry/" },
-          { label: "Комнаты", href: "/prodazha/komnaty/" },
-        ],
-      },
-      {
-        title: "Загородная",
-        items: [
-          { label: "Коттеджи, дома", href: "/prodazha/doma/" },
-          { label: "Дачи", href: "/prodazha/dachi/" },
-          { label: "Участки", href: "/prodazha/uchastki/" },
-        ],
-      },
-      {
-        title: "Для авто",
-        items: [
-          { label: "Гаражи", href: "/prodazha/garazhi/" },
-          { label: "Машиноместа", href: "/prodazha/mashinomesta/" },
-        ],
-      },
-    ],
-  },
-  {
-    label: "Аренда",
-    href: "/arenda/",
-    disableTopLevelLink: true,
-    megaMenu: [
-      {
-        title: "Долгосрочная аренда",
-        items: [
-          { label: "Квартиры", href: "/arenda/kvartiry/" },
-          { label: "Комнаты", href: "/arenda/komnaty/" },
-          { label: "Коттеджи, дома", href: "/arenda/doma/" },
-          { label: "Дачи", href: "/arenda/dachi/" },
-          { label: "Гаражи", href: "/arenda/garazhi/" },
-          { label: "Машиноместа", href: "/arenda/mashinomesta/" },
-        ],
-      },
-      {
-        title: "Посуточная аренда",
-        items: [
-          { label: "Квартиры", href: "/posutochno/kvartiry/" },
-          { label: "Коттеджи, дома", href: "/posutochno/doma/" },
-          { label: "Дачи", href: "/posutochno/dachi/" },
-        ],
-      },
-    ],
-  },
-  {
-    label: "Коммерческая",
-    href: "/kommercheskaya/",
-    disableTopLevelLink: true,
-    megaMenu: [
-      {
-        title: "Купить",
-        items: [
-          { label: "Офисы", href: "/prodazha/ofisy/" },
-          { label: "Торговые помещения", href: "/prodazha/torgovye/" },
-          { label: "Склады", href: "/prodazha/sklady/" },
-        ],
-      },
-      {
-        title: "Арендовать",
-        items: [
-          { label: "Офисы", href: "/arenda/ofisy/" },
-          { label: "Торговые помещения", href: "/arenda/torgovye/" },
-          { label: "Склады", href: "/arenda/sklady/" },
-        ],
-      },
-    ],
-  },
-  {
-    label: "Статьи",
-    href: "/stati/",
-    disableTopLevelLink: true,
-    megaMenu: [
-      {
-        title: "Рынок и покупатели",
-        items: [
-          { label: "Все статьи", href: "/stati/" },
-          { label: "Новости рынка", href: "/stati/rynok/" },
-          { label: "Гиды для покупателей", href: "/stati/pokupatelyam/" },
-          { label: "Советы продавцам", href: "/stati/prodavtsam/" },
-        ],
-      },
-      {
-        title: "Инвестиции, право и дом",
-        items: [
-          { label: "Инвестиции", href: "/stati/investitsii/" },
-          { label: "Юридические вопросы", href: "/stati/pravo/" },
-          { label: "Обзоры районов", href: "/stati/rayony/" },
-          { label: "Ремонт и дизайн", href: "/stati/remont/" },
-        ],
-      },
-    ],
-  },
-];
-
-const navLinkBase =
-  "relative px-3 py-2 text-sm transition-colors rounded-md flex items-center gap-1 cursor-pointer";
-const navLinkIdle = `${navLinkBase} text-dark-fg/70 hover:text-dark-fg hover:bg-dark-card`;
-const navLinkActive = `${navLinkBase} text-dark-fg`;
 
 const Header = () => {
-  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [activeMega, setActiveMega] = useState<string | null>(null);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
-  const [regionOpen, setRegionOpen] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const megaRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const isMounted = useSyncExternalStore(
     () => () => {},
@@ -170,383 +127,247 @@ const Header = () => {
   );
   const loggedIn = isMounted ? isAuthenticated() : false;
   const regionSlug = useHeaderRegionSlug();
-  const currentCity = useMemo(
-    () => CITIES.find((c) => c.slug === regionSlug) ?? CITIES[0],
-    [regionSlug],
-  );
+  const megaMenuData = buildMegaMenu(regionSlug);
 
-  const selectCity = useCallback((city: City) => {
-    setRegionOpen(false);
-    router.push(city.href);
-  }, [router]);
-
-  const openMenu = useCallback((label: string) => {
-    if (closeTimer.current) {
-      clearTimeout(closeTimer.current);
-      closeTimer.current = null;
-    }
-    setActiveMenu(label);
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (megaRef.current && !megaRef.current.contains(e.target as Node)) {
+        setActiveMega(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const scheduleClose = useCallback(() => {
-    closeTimer.current = setTimeout(() => setActiveMenu(null), 150);
+  const handleMouseEnter = useCallback((key: string) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setActiveMega(key);
   }, []);
 
-  const cancelClose = useCallback(() => {
-    if (closeTimer.current) {
-      clearTimeout(closeTimer.current);
-      closeTimer.current = null;
-    }
+  const handleMouseLeave = useCallback(() => {
+    timeoutRef.current = setTimeout(() => setActiveMega(null), 150);
   }, []);
 
-  const withSelectedRegion = useCallback(
-    (href: string) => withRegionalCatalogHref(href, regionSlug),
-    [regionSlug],
-  );
+  const searchHref = withRegionalCatalogHref("/kvartiry/", regionSlug);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-dark-bg/80 backdrop-blur-xl border-b border-dark-card">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link href={currentCity.href} className="flex items-center gap-2">
-          <NextImage
-            src="/rnb-logo-transparent.png"
-            alt="RNB.by"
-            width={600}
-            height={207}
-            priority
-            className="h-14 w-auto object-contain"
-          />
+    <header ref={megaRef} className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border relative">
+      <div className="container mx-auto px-4 flex items-center justify-between h-16">
+        <Link href="/" className="font-display text-xl font-bold tracking-tight text-primary">
+          posutki.by
         </Link>
 
-        {/* Desktop Region Selector */}
-        <Popover open={regionOpen} onOpenChange={setRegionOpen}>
-          <PopoverTrigger asChild>
-            <button className="hidden min-[800px]:flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-dark-fg/70 hover:text-dark-fg transition-colors rounded-md hover:bg-dark-card">
-              <MapPin className="w-3.5 h-3.5" />
-              {currentCity.name}
-              <ChevronDown className={`w-3 h-3 transition-transform ${regionOpen ? "rotate-180" : ""}`} />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            align="start"
-            sideOffset={8}
-            className="w-44 p-1.5 bg-dark-bg/95 backdrop-blur-xl border-dark-card"
-          >
-            {CITIES.map((city) => (
-              <button
-                key={city.slug}
-                onClick={() => selectCity(city)}
-                className="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-md transition-colors text-dark-fg/70 hover:text-dark-fg hover:bg-dark-card"
-              >
-                {city.name}
-                {city.slug === currentCity.slug && <Check className="w-3.5 h-3.5 text-primary" />}
-              </button>
-            ))}
-          </PopoverContent>
-        </Popover>
-
-        {/* Desktop Nav */}
-        <nav className="hidden min-[800px]:flex items-center gap-1">
-          {navItems.map((item) => {
-            const hasMega = !!item.megaMenu;
-            const isActive = activeMenu === item.label;
-            const itemHref = withSelectedRegion(item.href);
-            const isTopLevelClickable = !item.disableTopLevelLink;
-
-            const linkClass = isActive ? navLinkActive : navLinkIdle;
-
-            const underline = isActive && (
-              <motion.span
-                layoutId="nav-underline"
-                className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full"
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            );
-
-            const trigger = item.href.startsWith("/") && !hasMega ? (
-              <Link
-                href={itemHref}
-                className={linkClass}
-              >
-                {item.label}
-                {hasMega && (
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isActive ? "rotate-180" : ""}`} />
-                )}
-                {underline}
-              </Link>
-            ) : hasMega && !isTopLevelClickable ? (
+        <nav className="hidden md:flex items-center gap-1">
+          {Object.keys(megaMenuData).map((key) => (
+            <div
+              key={key}
+              className="relative"
+              onMouseEnter={() => handleMouseEnter(key)}
+              onMouseLeave={handleMouseLeave}
+            >
               <button
                 type="button"
-                className={linkClass}
-                aria-expanded={isActive}
-                aria-haspopup="true"
-                onMouseEnter={() => openMenu(item.label)}
-                onClick={() => {
-                  if (typeof window === "undefined" || !window.matchMedia("(hover: none)").matches) {
-                    return;
-                  }
-                  cancelClose();
-                  setActiveMenu((m) => (m === item.label ? null : item.label));
-                }}
+                className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
+                  activeMega === key
+                    ? "text-primary bg-primary/5"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
               >
-                {item.label}
-                {hasMega && (
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isActive ? "rotate-180" : ""}`} />
-                )}
-                {underline}
+                {key}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${activeMega === key ? "rotate-180" : ""}`} />
               </button>
-            ) : (
-              <a
-                href={itemHref}
-                className={linkClass}
-                onMouseEnter={hasMega ? () => openMenu(item.label) : undefined}
-              >
-                {item.label}
-                {hasMega && (
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isActive ? "rotate-180" : ""}`} />
-                )}
-                {underline}
-              </a>
-            );
+            </div>
+          ))}
 
-            if (!hasMega) {
-              return <div key={item.label}>{trigger}</div>;
-            }
+          <Link
+            href={searchHref}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-150"
+          >
+            <Search className="h-3.5 w-3.5" />
+            Поиск
+          </Link>
 
-            return (
-              <div
-                key={item.label}
-                onMouseEnter={() => openMenu(item.label)}
-                onMouseLeave={scheduleClose}
-              >
-                {trigger}
-              </div>
-            );
-          })}
+          <Link
+            href={`${searchHref}?sort=new`}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-150"
+          >
+            <Clock className="h-3.5 w-3.5" />
+            Новинки
+          </Link>
         </nav>
 
-        {/* Desktop Actions (from 800px; full "Подать объявление" text from 1000px, icon + only between 800–999px) */}
-        <div className="hidden min-[800px]:flex items-center gap-2">
-          <Link href="/kabinet/izbrannoe/" className="p-2 text-dark-fg/70 hover:text-dark-fg transition-colors rounded-md hover:bg-dark-card">
-            <Heart className="w-4 h-4" />
+        <div className="hidden md:flex items-center gap-2">
+          <Link href="/kabinet/izbrannoe/">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+              <Heart className="h-5 w-5" />
+            </Button>
           </Link>
-          <Button
-            size="icon"
-            asChild
-            className="h-9 w-9 shrink-0 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity border-0 min-[1000px]:hidden"
-          >
-            <Link href="/razmestit/" aria-label="Подать объявление" title="Подать объявление">
-              <Plus className="w-4 h-4" />
-            </Link>
-          </Button>
-          <Button size="sm" asChild className="hidden min-[1000px]:flex bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity border-0">
-            <Link href="/razmestit/">
-              <Plus className="w-4 h-4 mr-1.5" />
-              Подать объявление
-            </Link>
-          </Button>
           {loggedIn ? (
-            <Button size="sm" variant="ghost" asChild className="text-dark-fg/70 hover:text-dark-fg hover:bg-dark-card border border-dark-card bg-transparent">
+            <Button variant="ghost" size="sm" className="gap-2 font-medium text-muted-foreground hover:text-foreground" asChild>
               <Link href="/kabinet/">
-                <LayoutDashboard className="w-4 h-4 mr-1.5" />
+                <LayoutDashboard className="h-4 w-4" />
                 Кабинет
               </Link>
             </Button>
           ) : (
-            <Button size="sm" variant="ghost" asChild className="text-dark-fg/70 hover:text-dark-fg hover:bg-dark-card border border-dark-card bg-transparent">
+            <Button variant="ghost" size="sm" className="gap-2 font-medium text-muted-foreground hover:text-foreground" asChild>
               <Link href="/login/">
-                <User className="w-4 h-4 mr-1.5" />
+                <User className="h-4 w-4" />
                 Войти
               </Link>
             </Button>
           )}
-        </div>
-
-        {/* Mobile: подать объявление (+) и меню (only below 800px) */}
-        <div className="flex min-[800px]:hidden items-center gap-2">
-          <Button
-            size="icon"
-            asChild
-            className="h-9 w-9 shrink-0 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity border-0"
-          >
-            <Link href="/razmestit/" aria-label="Подать объявление" title="Подать объявление">
-              <Plus className="w-4 h-4" />
+          <Button size="sm" className="gap-2 font-semibold" asChild>
+            <Link href="/razmestit/">
+              <Plus className="h-4 w-4" />
+              Разместить
             </Link>
           </Button>
-          <button
-            type="button"
-            className="p-2 text-dark-fg/70"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label={mobileOpen ? "Закрыть меню" : "Открыть меню"}
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
         </div>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden text-foreground"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label={mobileOpen ? "Закрыть меню" : "Открыть меню"}
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </Button>
       </div>
 
-      {/* Desktop Mega Menu Panel */}
-      <AnimatePresence>
-        {activeMenu && (() => {
-          const item = navItems.find((n) => n.label === activeMenu);
-          if (!item?.megaMenu) return null;
-          return (
-            <motion.div
-              key={activeMenu}
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.15 }}
-              className="hidden min-[800px]:block absolute left-0 right-0 top-16 bg-dark-bg/95 backdrop-blur-xl border-b border-dark-card z-40"
-              onMouseEnter={cancelClose}
-              onMouseLeave={scheduleClose}
-            >
-              <div className="container mx-auto px-4 py-6">
-                <div className="flex gap-12 justify-center">
-                  {item.megaMenu.map((column) => (
-                    <div key={column.title} className="min-w-[200px]">
-                      <h4 className="text-sm font-bold uppercase tracking-wider text-dark-fg mb-3">
-                        {column.title}
-                      </h4>
-                      <ul className="flex flex-col gap-1">
-                        {column.items.map((subItem) => (
-                          <li key={subItem.href}>
-                            <Link
-                              href={withSelectedRegion(subItem.href)}
-                              className="block px-2 py-1.5 text-sm text-dark-fg/70 hover:text-dark-fg hover:bg-dark-card rounded-md transition-colors"
-                              onClick={() => setActiveMenu(null)}
-                            >
-                              {subItem.label}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          );
-        })()}
-      </AnimatePresence>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="min-[800px]:hidden bg-dark-bg border-b border-dark-card overflow-hidden"
-          >
-            <nav className="px-4 py-4 flex flex-col gap-1">
-              {navItems.map((item) => {
-                if (item.megaMenu) {
-                  const isExpanded = mobileExpanded === item.label;
-                  return (
-                    <div key={item.label}>
-                      <button
-                        onClick={() => setMobileExpanded(isExpanded ? null : item.label)}
-                        className="w-full px-3 py-2.5 text-sm text-dark-fg/70 hover:text-dark-fg rounded-md hover:bg-dark-card flex items-center justify-between"
+      {activeMega && megaMenuData[activeMega] && (
+        <div
+          className="hidden md:block absolute left-0 right-0 top-full z-50 border-b border-border bg-card shadow-elevated animate-fade-in"
+          onMouseEnter={() => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+          }}
+          onMouseLeave={handleMouseLeave}
+        >
+          <div className="container mx-auto px-4 py-6">
+            <div className="grid grid-cols-3 gap-8">
+              {megaMenuData[activeMega].map((section) => (
+                <div key={section.title}>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    {section.title}
+                  </h3>
+                  <div className="space-y-1">
+                    {section.items.map((item) => (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        onClick={() => setActiveMega(null)}
+                        className="flex items-start gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors group"
                       >
-                        {item.label}
-                        <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                      </button>
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="pl-3 pb-1">
-                              {item.megaMenu.map((column) => (
-                                <div key={column.title} className="mt-2">
-                                  <span className="px-3 text-xs font-semibold uppercase tracking-wider text-dark-fg/40">
-                                    {column.title}
-                                  </span>
-                                  {column.items.map((subItem) => (
-                                    <Link
-                                      key={subItem.href}
-                                      href={withSelectedRegion(subItem.href)}
-                                      className="block px-3 py-2 text-sm text-dark-fg/70 hover:text-dark-fg rounded-md hover:bg-dark-card"
-                                      onClick={() => setMobileOpen(false)}
-                                    >
-                                      {subItem.label}
-                                    </Link>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  );
-                }
+                        <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0 group-hover:bg-primary/15 transition-colors">
+                          {item.icon}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-foreground">{item.label}</div>
+                          <div className="text-xs text-muted-foreground leading-relaxed">{item.desc}</div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-                return (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    className="px-3 py-2.5 text-sm text-dark-fg/70 hover:text-dark-fg rounded-md hover:bg-dark-card"
-                  >
-                    {item.label}
-                  </a>
-                );
-              })}
-              <div className="mt-3 pt-3 border-t border-dark-card flex gap-2">
-                <Button size="sm" asChild className="flex-1 bg-gradient-primary text-primary-foreground border-0">
-                  <Link href="/razmestit/">
-                    <Plus className="w-4 h-4 mr-1.5" />
-                    Подать объявление
-                  </Link>
+            <div className="mt-6 pt-5 border-t border-border flex items-center justify-between gap-4">
+              <p className="text-sm text-muted-foreground">
+                Аренда квартир и домов посуточно по всей Беларуси — проверенные объявления с фото
+              </p>
+              <Link href={searchHref} onClick={() => setActiveMega(null)}>
+                <Button variant="outline" size="sm" className="gap-2 shrink-0">
+                  <Search className="h-3.5 w-3.5" />
+                  Смотреть все
                 </Button>
-                {loggedIn ? (
-                  <Button size="sm" variant="ghost" asChild className="flex-1 text-dark-fg/70 hover:text-dark-fg hover:bg-dark-card border border-dark-card bg-transparent">
-                    <Link href="/kabinet/">
-                      <LayoutDashboard className="w-4 h-4 mr-1.5" />
-                      Кабинет
-                    </Link>
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="ghost" asChild className="flex-1 text-dark-fg/70 hover:text-dark-fg hover:bg-dark-card border border-dark-card bg-transparent">
-                    <Link href="/login/">
-                      <User className="w-4 h-4 mr-1.5" />
-                      Войти
-                    </Link>
-                  </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mobileOpen && (
+        <div className="md:hidden border-t border-border bg-card animate-fade-in max-h-[80vh] overflow-y-auto">
+          <div className="p-4 space-y-1">
+            {Object.entries(megaMenuData).map(([key, sections]) => (
+              <div key={key}>
+                <button
+                  type="button"
+                  onClick={() => setMobileExpanded(mobileExpanded === key ? null : key)}
+                  className="w-full flex items-center justify-between py-3 px-2 text-sm font-semibold text-foreground rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  {key}
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${mobileExpanded === key ? "rotate-180" : ""}`} />
+                </button>
+
+                {mobileExpanded === key && (
+                  <div className="pb-2 pl-2 space-y-4 animate-fade-in">
+                    {sections.map((section) => (
+                      <div key={section.title}>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 mb-2">
+                          {section.title}
+                        </p>
+                        {section.items.map((item) => (
+                          <Link
+                            key={item.label}
+                            href={item.href}
+                            onClick={() => setMobileOpen(false)}
+                            className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted/50 transition-colors"
+                          >
+                            <span className="text-primary">{item.icon}</span>
+                            <span className="text-sm font-medium text-foreground">{item.label}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-              <div className="mt-3 pt-3 border-t border-dark-card px-3">
-                <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-dark-fg/40 mb-2">
-                  <MapPin className="w-3 h-3" />
-                  Город
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {CITIES.map((city) => (
-                    <button
-                      key={city.slug}
-                      onClick={() => {
-                        selectCity(city);
-                        setMobileOpen(false);
-                      }}
-                      className={`px-2.5 py-1.5 text-xs rounded-md transition-colors ${
-                        city.slug === currentCity.slug
-                          ? "bg-primary/15 text-primary font-medium"
-                          : "text-dark-fg/70 hover:text-dark-fg hover:bg-dark-card"
-                      }`}
-                    >
-                      {city.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            ))}
+
+            <Link
+              href={searchHref}
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 py-3 px-2 text-sm font-semibold text-foreground rounded-lg hover:bg-muted/50"
+            >
+              <Search className="h-4 w-4 text-primary" />
+              Поиск
+            </Link>
+          </div>
+
+          <div className="p-4 border-t border-border space-y-2">
+            <Link href="/kabinet/izbrannoe/" onClick={() => setMobileOpen(false)}>
+              <Button variant="outline" size="sm" className="w-full gap-2 justify-center mb-2">
+                <Heart className="h-4 w-4" />
+                Избранное
+              </Button>
+            </Link>
+            {loggedIn ? (
+              <Link href="/kabinet/" onClick={() => setMobileOpen(false)}>
+                <Button variant="outline" size="sm" className="w-full gap-2 justify-center mb-2">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Кабинет
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/login/" onClick={() => setMobileOpen(false)}>
+                <Button variant="outline" size="sm" className="w-full gap-2 justify-center mb-2">
+                  <User className="h-4 w-4" />
+                  Войти
+                </Button>
+              </Link>
+            )}
+            <Link href="/razmestit/" onClick={() => setMobileOpen(false)}>
+              <Button size="sm" className="w-full gap-2 justify-center">
+                <Plus className="h-4 w-4" />
+                Разместить объявление
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
