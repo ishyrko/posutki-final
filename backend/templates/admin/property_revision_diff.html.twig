@@ -1,0 +1,92 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}Diff ревизии объявления{% endblock %}
+
+{% block main %}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div>
+            <div style="font-size:18px;font-weight:600;">{{ property.title }}</div>
+            <div style="color:#6b7280;">ID: {{ property.id }}</div>
+        </div>
+        <a href="{{ backUrl }}" class="btn btn-secondary">Назад к модерации</a>
+    </div>
+
+    {% if changes is empty %}
+        <div class="alert alert-info">Изменений в ревизии не обнаружено.</div>
+    {% else %}
+        <div style="display:grid;gap:12px;">
+            {% for change in changes %}
+                <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                    <div style="padding:10px 12px;background:#f9fafb;border-bottom:1px solid #e5e7eb;font-weight:600;">
+                        {{ change.label }}
+                    </div>
+                    <div style="padding:0;">
+                        <div style="padding:10px 12px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;">
+                            <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Текущее значение</div>
+                            <pre style="margin:0;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#374151;">{{ change.old }}</pre>
+                        </div>
+                        <div style="padding:10px 12px;background:#ecfdf3;">
+                            <div style="font-size:12px;color:#047857;margin-bottom:4px;">Новое значение</div>
+                            <pre style="margin:0;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#065f46;">{{ change.new }}</pre>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div style="margin-top:20px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+        <div style="padding:10px 12px;background:#f9fafb;border-bottom:1px solid #e5e7eb;font-weight:600;">
+            Фото: текущая версия
+        </div>
+        <div style="padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">
+            {% if currentImages is empty %}
+                <div style="color:#6b7280;">Нет фото</div>
+            {% else %}
+                {% for image in currentImages %}
+                    <a href="{{ image }}" target="_blank" rel="noopener noreferrer" style="display:block;">
+                        <img src="{{ image }}" alt="Текущее фото {{ loop.index }}" style="width:100%;height:140px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">
+                    </a>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="margin-top:20px;border:1px solid #86efac;border-radius:8px;overflow:hidden;">
+        <div style="padding:10px 12px;background:#f0fdf4;border-bottom:1px solid #86efac;font-weight:600;color:#166534;">
+            Фото: версия из ревизии
+        </div>
+        <div style="padding:8px 12px;background:#ecfdf3;border-bottom:1px solid #86efac;font-size:12px;color:#166534;">
+            Эти фото станут финальными после одобрения ревизии.
+        </div>
+        <div style="padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">
+            {% if pendingImages is empty %}
+                <div style="color:#6b7280;">В ревизии фото не менялись или отсутствуют</div>
+            {% else %}
+                {% for image in pendingImages %}
+                    <a href="{{ image }}" target="_blank" rel="noopener noreferrer" style="display:block;">
+                        <img src="{{ image }}" alt="Фото ревизии {{ loop.index }}" style="width:100%;height:140px;object-fit:cover;border-radius:8px;border:1px solid #86efac;">
+                    </a>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="margin-top:20px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+        <div style="padding:10px 12px;background:#f9fafb;border-bottom:1px solid #e5e7eb;font-weight:600;">
+            Полные данные ревизии (JSON)
+        </div>
+        <div style="padding:12px;background:#0f172a;">
+            <pre style="margin:0;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#e2e8f0;">{{ pendingDataPretty ?? 'Нет данных ревизии' }}</pre>
+        </div>
+    </div>
+
+    <div style="margin-top:20px;border:1px solid #86efac;border-radius:8px;overflow:hidden;">
+        <div style="padding:10px 12px;background:#f0fdf4;border-bottom:1px solid #86efac;font-weight:600;color:#166534;">
+            Финальная версия после одобрения (JSON)
+        </div>
+        <div style="padding:12px;background:#052e16;">
+            <pre style="margin:0;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#dcfce7;">{{ finalDataPretty ?? 'Нет данных для предпросмотра' }}</pre>
+        </div>
+    </div>
+{% endblock %}

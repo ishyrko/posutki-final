@@ -1,0 +1,98 @@
+security:
+    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+    password_hashers:
+        App\Domain\User\Entity\User:
+            algorithm: auto
+
+    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+    providers:
+        # JWT username is email for password/Google login and phone (E.164) for SMS login.
+        app_user_email_provider:
+            entity:
+                class: App\Domain\User\Entity\User
+                property: email
+        app_user_phone_provider:
+            entity:
+                class: App\Domain\User\Entity\User
+                property: phone
+        app_user_provider:
+            chain:
+                providers: [app_user_email_provider, app_user_phone_provider]
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+        admin:
+            pattern: ^/admin
+            lazy: true
+            provider: app_user_provider
+            form_login:
+                login_path: admin_login
+                check_path: admin_login
+                default_target_path: /admin
+                enable_csrf: true
+                csrf_token_id: authenticate
+                csrf_parameter: _csrf_token
+            logout:
+                path: admin_logout
+                target: admin_login
+            remember_me:
+                secret: '%kernel.secret%'
+
+        login:
+            pattern: ^/api/auth/login
+            stateless: true
+            provider: app_user_email_provider
+            user_checker: App\Infrastructure\Security\UserChecker
+            json_login:
+                check_path: /api/auth/login
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: app_user_provider
+            jwt: ~
+
+    access_control:
+        - { path: ^/admin/login, roles: PUBLIC_ACCESS }
+        - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/google, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/sms, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/refresh, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/reset-password, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/verify-email, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/resend-verification, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/confirm-email-change, roles: PUBLIC_ACCESS }
+        - { path: ^/api/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/address, roles: PUBLIC_ACCESS }
+        - { path: ^/api/cities, roles: PUBLIC_ACCESS }
+        - { path: ^/api/metro, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/properties/[0-9a-f-]+/phone-view$, roles: PUBLIC_ACCESS, methods: [POST] }
+        - { path: ^/api/properties, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/upload$, roles: PUBLIC_ACCESS, methods: [POST] }
+        - { path: ^/api/exchange-rates, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/article-categories, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/articles, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/static-pages, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/contact$, roles: PUBLIC_ACCESS, methods: [POST] }
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+
+when@test:
+    security:
+        password_hashers:
+            # By default, password hashers are resource intensive and take time. This is
+            # important to generate secure password hashes. In tests however, secure hashes
+            # are not important, waste resources and increase test times. The following
+            # reduces the work factor to the lowest possible values.
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4 # Lowest possible value for bcrypt
+                time_cost: 3 # Lowest possible value for argon
+                memory_cost: 10 # Lowest possible value for argon

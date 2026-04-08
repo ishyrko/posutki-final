@@ -1,0 +1,24 @@
+framework:
+    messenger:
+        buses:
+            command.bus:
+                middleware:
+                    - validation
+                    - doctrine_transaction
+            query.bus:
+                middleware:
+                    - validation
+            notification.bus: ~
+
+        default_bus: command.bus
+        transports:
+            sync: 'sync://'
+            async_notifications:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    queue_name: notifications
+
+        routing:
+            App\Domain\Property\Event\PropertySubmittedForModerationEvent: async_notifications
+            App\Domain\Property\Event\PropertyApprovedEvent: async_notifications
+            App\Domain\Property\Event\PropertyRejectedEvent: async_notifications

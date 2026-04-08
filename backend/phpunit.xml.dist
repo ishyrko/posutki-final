@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+    bootstrap="tests/bootstrap.php"
+    cacheDirectory=".phpunit.cache"
+    colors="true"
+    backupGlobals="false"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Application">
+            <directory>tests/Application</directory>
+        </testsuite>
+        <testsuite name="Functional">
+            <directory>tests/Functional</directory>
+        </testsuite>
+    </testsuites>
+
+    <php>
+        <env name="APP_ENV" value="test" force="true"/>
+        <env name="KERNEL_CLASS" value="App\Kernel" force="true"/>
+        <env name="APP_SECRET" value="test_secret" force="true"/>
+        <env name="DATABASE_URL" value="mysql://root:root_password@mysql:3306/rnb_phpunit?serverVersion=8.0&amp;charset=utf8mb4" force="true"/>
+        <env name="MESSENGER_TRANSPORT_DSN" value="sync://" force="true"/>
+        <env name="MAILER_DSN" value="null://null" force="true"/>
+        <env name="TRUSTED_PROXIES" value="127.0.0.1,REMOTE_ADDR" force="true"/>
+        <env name="DEFAULT_URI" value="http://localhost" force="true"/>
+        <env name="GOOGLE_CLIENT_ID" value="test-google-client-id" force="true"/>
+        <env name="FRONTEND_URL" value="http://localhost:3000" force="true"/>
+        <env name="MAILER_FROM" value="noreply@rnb.by" force="true"/>
+        <env name="ADMIN_EMAILS" value="[&quot;admin@rnb.by&quot;]" force="true"/>
+        <env name="JWT_SECRET_KEY" value="%kernel.project_dir%/config/jwt/private.pem" force="true"/>
+        <env name="JWT_PUBLIC_KEY" value="%kernel.project_dir%/config/jwt/public.pem" force="true"/>
+        <env name="JWT_PASSPHRASE" value="rnb_jwt_secret_2026" force="true"/>
+        <server name="APP_ENV" value="test" force="true"/>
+        <server name="KERNEL_CLASS" value="App\Kernel" force="true"/>
+        <server name="APP_SECRET" value="test_secret" force="true"/>
+        <server name="DATABASE_URL" value="mysql://root:root_password@mysql:3306/rnb_phpunit?serverVersion=8.0&amp;charset=utf8mb4" force="true"/>
+        <server name="MESSENGER_TRANSPORT_DSN" value="sync://" force="true"/>
+        <server name="MAILER_DSN" value="null://null" force="true"/>
+        <server name="TRUSTED_PROXIES" value="127.0.0.1,REMOTE_ADDR" force="true"/>
+        <server name="DEFAULT_URI" value="http://localhost" force="true"/>
+        <server name="GOOGLE_CLIENT_ID" value="test-google-client-id" force="true"/>
+        <server name="FRONTEND_URL" value="http://localhost:3000" force="true"/>
+        <server name="MAILER_FROM" value="noreply@rnb.by" force="true"/>
+        <server name="ADMIN_EMAILS" value="[&quot;admin@rnb.by&quot;]" force="true"/>
+        <server name="JWT_SECRET_KEY" value="%kernel.project_dir%/config/jwt/private.pem" force="true"/>
+        <server name="JWT_PUBLIC_KEY" value="%kernel.project_dir%/config/jwt/public.pem" force="true"/>
+        <server name="JWT_PASSPHRASE" value="rnb_jwt_secret_2026" force="true"/>
+    </php>
+</phpunit>

@@ -1,0 +1,346 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+    app.jwt_secret: '%env(resolve:JWT_SECRET)%'
+    app.google_client_id: '%env(resolve:GOOGLE_CLIENT_ID)%'
+    app.frontend_url: '%env(resolve:FRONTEND_URL)%'
+    app.mailer_from: '%env(resolve:MAILER_FROM)%'
+    app.admin_emails: '%env(json:ADMIN_EMAILS)%'
+    app.rocketsms_username: '%env(resolve:ROCKETSMS_USERNAME)%'
+    app.rocketsms_password: '%env(resolve:ROCKETSMS_PASSWORD)%'
+    app.rocketsms_sender: '%env(resolve:ROCKETSMS_SENDER)%'
+    app.rocketsms_verification_template: '%env(resolve:ROCKETSMS_VERIFICATION_TEMPLATE)%'
+    upload_directory: '%kernel.project_dir%/public/uploads'
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Domain/*/Entity/'
+            - '../src/Domain/*/ValueObject/'
+            - '../src/Kernel.php'
+
+    # Repositories
+    App\Domain\Property\Repository\PropertyRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyRepository
+
+    App\Domain\Property\Repository\PropertyRevisionRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyRevisionRepository
+
+    App\Domain\User\Repository\UserRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\UserRepository
+
+    App\Domain\Article\Repository\ArticleRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\ArticleRepository
+
+    App\Domain\StaticPage\Repository\StaticPageRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\StaticPageRepository
+
+    App\Domain\Property\Repository\CityRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\CityRepository
+
+    App\Domain\Property\Repository\RegionRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\RegionRepository
+
+    App\Domain\Property\Repository\RegionDistrictRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\RegionDistrictRepository
+
+    App\Domain\Property\Repository\StreetRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\StreetRepository
+
+    App\Domain\Property\Repository\MetroStationRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\MetroStationRepository
+
+    App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyMetroStationRepository
+
+    App\Domain\Property\Repository\PropertyDailyStatRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyDailyStatRepository
+
+    App\Domain\User\Repository\UserPhoneRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\UserPhoneRepository
+
+    App\Domain\User\Repository\PhoneAuthCodeRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PhoneAuthCodeRepository
+
+    App\Domain\Message\Repository\ConversationRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\ConversationRepository
+
+    App\Domain\Message\Repository\MessageRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\MessageRepository
+
+    App\Domain\Favorite\Repository\FavoriteRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\FavoriteRepository
+
+    App\Domain\Exchange\Repository\ExchangeRateRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\ExchangeRateRepository
+
+    App\Domain\ContactFeedback\Repository\ContactFeedbackRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\ContactFeedbackRepository
+
+    App\Domain\User\Service\SmsServiceInterface:
+        class: App\Infrastructure\Sms\StubSmsService
+
+    # Command and Query Buses
+    App\Application\Command\CommandBusInterface:
+        class: App\Infrastructure\Bus\CommandBus
+        arguments:
+            $commandBus: '@command.bus'
+
+    App\Application\Query\QueryBusInterface:
+        class: App\Infrastructure\Bus\QueryBus
+        arguments:
+            $queryBus: '@query.bus'
+
+    # Auto-configure command handlers
+    App\Application\Command\Property\UpdateProperty\UpdatePropertyHandler:
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    App\Application\Command\Property\DeleteProperty\DeletePropertyHandler:
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    App\Application\Command\Property\BoostProperty\BoostPropertyHandler:
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    App\Application\Command\User\RegisterUser\RegisterUserHandler:
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    # Article Command Handlers
+    App\Application\Command\Article\CreateArticle\CreateArticleHandler:
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    App\Application\Command\Article\UpdateArticle\UpdateArticleHandler:
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    App\Application\Command\Article\DeleteArticle\DeleteArticleHandler:
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    App\Application\Command\Article\PublishArticle\PublishArticleHandler:
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    # Auto-configure query handlers
+    App\Application\Query\Property\GetProperty\GetPropertyHandler:
+        tags:
+            - { name: messenger.message_handler, bus: query.bus }
+
+    App\Application\Query\Property\SearchProperties\SearchPropertiesHandler:
+        tags:
+            - { name: messenger.message_handler, bus: query.bus }
+
+    App\Application\Query\Property\GetMyProperties\GetMyPropertiesHandler:
+        tags:
+            - { name: messenger.message_handler, bus: query.bus }
+
+    App\Application\Query\User\GetUserProfile\GetUserProfileHandler:
+        tags:
+            - { name: messenger.message_handler, bus: query.bus }
+
+    # Article Query Handlers
+    App\Application\Query\Article\GetArticle\GetArticleHandler:
+        tags:
+            - { name: messenger.message_handler, bus: query.bus }
+
+    App\Application\Query\Article\SearchArticles\SearchArticlesHandler:
+        tags: [ { name: messenger.message_handler, bus: query.bus } ]
+
+    App\Application\Query\StaticPage\GetStaticPage\GetStaticPageHandler:
+        tags: [ { name: messenger.message_handler, bus: query.bus } ]
+
+    # User Profile Handlers
+    App\Application\Command\User\UpdateUserProfile\UpdateUserProfileHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\User\ChangePassword\ChangePasswordHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\User\RequestPhoneVerification\RequestPhoneVerificationHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\User\VerifyPhone\VerifyPhoneHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\User\DeleteUserPhone\DeleteUserPhoneHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\Auth\RequestSmsCode\RequestSmsCodeHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\Auth\VerifySmsCode\VerifySmsCodeHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\User\RequestPasswordReset\RequestPasswordResetHandler:
+        arguments:
+            $frontendUrl: '%app.frontend_url%'
+            $mailerFrom: '%app.mailer_from%'
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\User\ConfirmPasswordReset\ConfirmPasswordResetHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\User\SendEmailVerification\SendEmailVerificationHandler:
+        arguments:
+            $frontendUrl: '%app.frontend_url%'
+            $mailerFrom: '%app.mailer_from%'
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\User\VerifyEmail\VerifyEmailHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\User\RequestEmailChange\RequestEmailChangeHandler:
+        arguments:
+            $frontendUrl: '%app.frontend_url%'
+            $mailerFrom: '%app.mailer_from%'
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\User\ConfirmEmailChange\ConfirmEmailChangeHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Query\User\GetUserPhones\GetUserPhonesHandler:
+        tags: [ { name: messenger.message_handler, bus: query.bus } ]
+
+    # Message Command Handlers
+    App\Application\Command\Message\SendMessage\SendMessageHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\Message\MarkRead\MarkReadHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\ContactFeedback\Submit\SubmitFeedbackHandler:
+        arguments:
+            $notificationBus: '@notification.bus'
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    # Message Query Handlers
+    App\Application\Query\Message\GetConversations\GetConversationsHandler:
+        tags: [ { name: messenger.message_handler, bus: query.bus } ]
+
+    App\Application\Query\Message\GetMessages\GetMessagesHandler:
+        tags: [ { name: messenger.message_handler, bus: query.bus } ]
+
+    # Favorite Command Handlers
+    App\Application\Command\Favorite\AddFavorite\AddFavoriteHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\Favorite\RemoveFavorite\RemoveFavoriteHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    # Favorite Query Handlers
+    App\Application\Query\Favorite\GetFavorites\GetFavoritesHandler:
+        tags: [ { name: messenger.message_handler, bus: query.bus } ]
+
+    App\Application\Query\Favorite\GetFavoriteIds\GetFavoriteIdsHandler:
+        tags: [ { name: messenger.message_handler, bus: query.bus } ]
+
+    # Services
+    App\Infrastructure\Service\SlugGenerator: ~
+
+    App\Infrastructure\Service\FrontendUrlBuilder:
+        arguments:
+            $frontendBaseUrl: '%app.frontend_url%'
+
+    App\Application\Service\ArticleHtmlNormalizer: ~
+
+    App\Infrastructure\Persistence\Doctrine\ArticleContentSubscriber:
+        tags:
+            - { name: doctrine.event_subscriber }
+    
+    App\Infrastructure\Service\FileUploader:
+        arguments:
+            $targetDirectory: '%upload_directory%'
+
+    # Request DTO Resolver
+    App\Infrastructure\Symfony\ArgumentResolver\RequestDTOResolver:
+        tags:
+            - { name: controller.argument_value_resolver, priority: 150 }
+
+    # Event Listeners
+    App\Infrastructure\Symfony\EventListener\ApiExceptionListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.exception, priority: 10 }
+
+    App\Presentation\Admin\EventListener\RevalidateNextjsListener:
+        arguments:
+            $revalidateUrl: '%env(NEXTJS_REVALIDATE_URL)%'
+            $revalidationSecret: '%env(NEXTJS_REVALIDATION_SECRET)%'
+
+    # Notification Handlers (async, via notification.bus)
+    App\Application\Notification\Property\PropertySubmittedForModerationHandler:
+        tags: [ { name: messenger.message_handler, bus: notification.bus } ]
+
+    App\Application\Notification\Property\PropertyApprovedHandler:
+        tags: [ { name: messenger.message_handler, bus: notification.bus } ]
+
+    App\Application\Notification\Property\PropertyRejectedHandler:
+        tags: [ { name: messenger.message_handler, bus: notification.bus } ]
+
+    App\Application\Notification\Contact\FeedbackSubmittedHandler:
+        tags: [ { name: messenger.message_handler, bus: notification.bus } ]
+
+    # Property Mailer
+    App\Infrastructure\Mail\PropertyMailer:
+        arguments:
+            $mailerFrom: '%app.mailer_from%'
+            $adminEmails: '%app.admin_emails%'
+
+    App\Infrastructure\Mail\ContactMailer:
+        arguments:
+            $mailerFrom: '%app.mailer_from%'
+            $adminEmails: '%app.admin_emails%'
+
+    # Command handlers that dispatch property notification events
+    App\Application\Command\Property\CreateProperty\CreatePropertyHandler:
+        arguments:
+            $notificationBus: '@notification.bus'
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    App\Application\Command\Property\PublishProperty\PublishPropertyHandler:
+        arguments:
+            $notificationBus: '@notification.bus'
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    App\Application\Command\Property\ApproveRevision\ApproveRevisionHandler:
+        arguments:
+            $notificationBus: '@notification.bus'
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    App\Application\Command\Property\RejectRevision\RejectRevisionHandler:
+        arguments:
+            $notificationBus: '@notification.bus'
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+when@prod:
+    services:
+        App\Domain\User\Service\SmsServiceInterface:
+            class: App\Infrastructure\Sms\RocketSmsService
+            autowire: true
+            arguments:
+                $username: '%app.rocketsms_username%'
+                $password: '%app.rocketsms_password%'
+                $sender: '%app.rocketsms_sender%'
+                $verificationTemplate: '%app.rocketsms_verification_template%'

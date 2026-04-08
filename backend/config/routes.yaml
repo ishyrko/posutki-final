@@ -1,0 +1,17 @@
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+
+api_controllers:
+    resource:
+        path: ../src/Presentation/Api/Controller/
+        namespace: App\Presentation\Api\Controller
+    type: attribute
+
+admin_controllers:
+    resource:
+        path: ../src/Presentation/Admin/Controller/
+        namespace: App\Presentation\Admin\Controller
+    type: attribute

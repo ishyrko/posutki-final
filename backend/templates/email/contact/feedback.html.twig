@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Новая заявка обратной связи</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f7fb;padding:24px 0;">
+    <tr>
+        <td align="center">
+            <table role="presentation" width="620" cellspacing="0" cellpadding="0" style="width:620px;max-width:620px;background:#ffffff;border-radius:12px;overflow:hidden;">
+                <tr>
+                    <td style="padding:24px 28px;background:#0f172a;color:#ffffff;">
+                        <h1 style="margin:0;font-size:20px;line-height:1.4;">Новая заявка обратной связи</h1>
+                        <p style="margin:8px 0 0;font-size:14px;opacity:.9;">RNB.by</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:24px 28px;color:#111827;">
+                        <p style="margin:0 0 12px;font-size:14px;"><strong>Имя:</strong> {{ feedback.name }}</p>
+                        <p style="margin:0 0 12px;font-size:14px;"><strong>Email:</strong> {{ feedback.email.value }}</p>
+                        <p style="margin:0 0 12px;font-size:14px;"><strong>Тема:</strong> {{ feedback.subject }}</p>
+                        <p style="margin:0 0 8px;font-size:14px;"><strong>Сообщение:</strong></p>
+                        <div style="padding:14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;line-height:1.6;white-space:pre-wrap;">
+                            {{ feedback.message }}
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:16px 28px;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;">
+                        Создано: {{ feedback.createdAt|date('d.m.Y H:i') }}
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
