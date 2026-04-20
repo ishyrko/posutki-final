@@ -2,7 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { submitFeedback, SubmitFeedbackData } from './api';
+import { submitFeedback, SubmitFeedbackPayload } from './api';
 
 function getErrorMessage(error: unknown, fallback: string): string {
     if (typeof error !== 'object' || error === null || !('response' in error)) {
@@ -26,7 +26,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 
 export const useSubmitFeedback = () => {
     return useMutation({
-        mutationFn: (data: SubmitFeedbackData) => submitFeedback(data),
+        mutationFn: (data: SubmitFeedbackPayload) => submitFeedback(data),
         onSuccess: () => {
             toast.success('Сообщение отправлено. Мы скоро свяжемся с вами.');
         },

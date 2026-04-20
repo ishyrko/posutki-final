@@ -12,6 +12,7 @@ use App\Domain\Property\Repository\{
     MetroStationRepositoryInterface,
     PropertyMetroStationRepositoryInterface
 };
+use App\Domain\Shared\Exception\NotFoundException;
 use App\Infrastructure\Service\ExchangeRateService;
 
 final class SearchPropertiesHandler
@@ -42,7 +43,13 @@ final class SearchPropertiesHandler
             $filters['regionSlug'] = $query->regionSlug;
         }
         if ($query->citySlug !== null) {
-            $filters['citySlug'] = $query->citySlug;
+            $citySlug = trim($query->citySlug);
+            if ($citySlug !== '') {
+                if ($this->cityRepository->findBySlug($citySlug) === null) {
+                    throw new NotFoundException('Город не найден');
+                }
+                $filters['citySlug'] = $citySlug;
+            }
         }
         if ($query->cityId !== null) {
             $filters['cityId'] = $query->cityId;

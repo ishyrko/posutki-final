@@ -13,6 +13,12 @@ parameters:
     app.rocketsms_password: '%env(resolve:ROCKETSMS_PASSWORD)%'
     app.rocketsms_sender: '%env(resolve:ROCKETSMS_SENDER)%'
     app.rocketsms_verification_template: '%env(resolve:ROCKETSMS_VERIFICATION_TEMPLATE)%'
+    app.sms.phone_cooldown_seconds: '%env(int:SMS_PHONE_COOLDOWN_SECONDS)%'
+    app.sms.per_ip_daily_limit: '%env(int:SMS_PER_IP_DAILY_LIMIT)%'
+    app.sms.per_ip_unique_phones_daily: '%env(int:SMS_PER_IP_UNIQUE_PHONES_DAILY)%'
+    app.sms.global_daily_limit: '%env(int:SMS_GLOBAL_DAILY_LIMIT)%'
+    app.recaptcha.enabled: '%env(bool:RECAPTCHA_ENABLED)%'
+    app.recaptcha.secret: '%env(string:RECAPTCHA_SECRET)%'
     upload_directory: '%kernel.project_dir%/public/uploads'
 
 services:
@@ -91,6 +97,14 @@ services:
 
     App\Domain\User\Service\SmsServiceInterface:
         class: App\Infrastructure\Sms\StubSmsService
+
+    App\Domain\User\Service\SmsRateLimiterInterface:
+        class: App\Infrastructure\Sms\DoctrineSmsRateLimiter
+        arguments:
+            $phoneCooldownSeconds: '%app.sms.phone_cooldown_seconds%'
+            $perIpDailyLimit: '%app.sms.per_ip_daily_limit%'
+            $perIpUniquePhonesDaily: '%app.sms.per_ip_unique_phones_daily%'
+            $globalDailyLimit: '%app.sms.global_daily_limit%'
 
     # Command and Query Buses
     App\Application\Command\CommandBusInterface:
@@ -258,6 +272,15 @@ services:
             $frontendBaseUrl: '%app.frontend_url%'
 
     App\Application\Service\ArticleHtmlNormalizer: ~
+
+    App\Application\Service\ArticleTextSanitizer: ~
+
+    App\Application\Service\ArticleContentPersistNormalizer: ~
+
+    App\Infrastructure\Recaptcha\RecaptchaVerifier:
+        arguments:
+            $enabled: '%app.recaptcha.enabled%'
+            $secret: '%app.recaptcha.secret%'
 
     App\Infrastructure\Persistence\Doctrine\ArticleContentSubscriber:
         tags:

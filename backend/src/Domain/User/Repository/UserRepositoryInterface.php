@@ -20,5 +20,7 @@ interface UserRepositoryInterface
 
     public function findByPhone(string $phone): ?User;
 
+    public function findVerifiedByPhone(string $phone): ?User;
+
     public function delete(User $user): void;
 }

@@ -56,6 +56,17 @@ class UserRepository extends ServiceEntityRepository implements UserRepositoryIn
             ->getOneOrNullResult();
     }
 
+    public function findVerifiedByPhone(string $phone): ?User
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.phone = :phone')
+            ->andWhere('u.isPhoneVerified = :verified')
+            ->setParameter('phone', $phone)
+            ->setParameter('verified', true)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     public function delete(User $user): void
     {
         $this->getEntityManager()->remove($user);

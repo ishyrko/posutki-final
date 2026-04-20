@@ -10,11 +10,15 @@ export const submitFeedbackSchema = z.object({
 
 export type SubmitFeedbackData = z.infer<typeof submitFeedbackSchema>;
 
+export type SubmitFeedbackPayload = SubmitFeedbackData & {
+    recaptchaToken: string;
+};
+
 type SubmitFeedbackResponse = {
     id: number;
 };
 
-export const submitFeedback = async (data: SubmitFeedbackData): Promise<SubmitFeedbackResponse> => {
+export const submitFeedback = async (data: SubmitFeedbackPayload): Promise<SubmitFeedbackResponse> => {
     const response = await api.post('/contact', data);
     return response.data.data;
 };

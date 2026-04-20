@@ -32,7 +32,7 @@ final readonly class VerifySmsCodeHandler
             throw new DomainException('Неверный или просроченный код подтверждения');
         }
 
-        $user = $this->userRepository->findByPhone($normalizedPhone);
+        $user = $this->userRepository->findVerifiedByPhone($normalizedPhone);
         if ($user === null) {
             $user = User::registerViaPhone(
                 phone: $normalizedPhone,

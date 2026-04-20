@@ -178,15 +178,27 @@ class Article
 
     public function getCoverImage(): ?string
     {
-        if ($this->coverImage === null) {
+        if ($this->coverImage === null || $this->coverImage === '') {
             return null;
         }
 
-        if (preg_match('#^/uploads/[^/]+$#', $this->coverImage) === 1) {
-            return '/uploads/articles/' . basename($this->coverImage);
+        $stored = $this->coverImage;
+
+        // Legacy seed / external URLs stored as-is in the column
+        if (preg_match('#^https?://#i', $stored) === 1) {
+            return $stored;
         }
 
-        return $this->coverImage;
+        // Legacy rows: full web path (EasyAdmin FileUploadType needs filename-only in the column)
+        if (str_starts_with($stored, '/uploads/')) {
+            if (preg_match('#^/uploads/[^/]+$#', $stored) === 1) {
+                return '/uploads/articles/' . basename($stored);
+            }
+
+            return $stored;
+        }
+
+        return '/uploads/articles/' . ltrim($stored, '/');
     }
 
     public function getCategory(): ?ArticleCategory
@@ -273,21 +285,28 @@ class Article
             return null;
         }
 
-        if (preg_match('#^/uploads/[^/]+$#', $coverImage) === 1) {
-            return '/uploads/articles/' . basename($coverImage);
-        }
-
-        if (str_starts_with($coverImage, '/uploads/')) {
+        // Keep external URLs for legacy content; API exposes them via getCoverImage()
+        if (preg_match('#^https?://#i', $coverImage) === 1) {
             return $coverImage;
         }
 
-        if (str_starts_with($coverImage, 'uploads/')) {
-            return '/' . $coverImage;
+        // Persist local covers as paths relative to public/uploads/articles/ (filename or subpath).
+        // EasyAdmin ImageField + StringToFileTransformer join upload_dir with this string — full /uploads/... breaks edit/save.
+        if (str_starts_with($coverImage, '/uploads/')) {
+            $rest = substr($coverImage, strlen('/uploads/'));
+            if (str_starts_with($rest, 'articles/')) {
+                return substr($rest, strlen('articles/'));
+            }
+
+            return basename($rest);
         }
 
-        // EasyAdmin image upload may provide only a file name. Store it as a local upload path.
-        if (!str_contains($coverImage, '://') && !str_starts_with($coverImage, '/')) {
-            return '/uploads/articles/' . ltrim($coverImage, '/');
+        if (str_starts_with($coverImage, 'uploads/')) {
+            return $this->normalizeCoverImage('/' . $coverImage);
+        }
+
+        if (!str_starts_with($coverImage, '/')) {
+            return ltrim($coverImage, '/');
         }
 
         throw new DomainException('Обложка должна ссылаться на загруженный файл');

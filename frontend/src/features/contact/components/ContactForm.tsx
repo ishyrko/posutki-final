@@ -1,9 +1,13 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { motion } from 'framer-motion';
 import { Loader2, Mail, Send, User } from 'lucide-react';
+import { RecaptchaWidget } from '@/components/RecaptchaWidget';
+import { toast } from 'sonner';
 import { submitFeedbackSchema, SubmitFeedbackData } from '../api';
 import { useSubmitFeedback } from '../hooks';
 import { Button } from '@/components/ui/button';
@@ -20,6 +24,10 @@ import {
 
 export function ContactForm() {
     const { mutate: submitFeedback, isPending } = useSubmitFeedback();
+    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim() ?? '';
+    const recaptchaRef = useRef<ReCAPTCHA | null>(null);
+    const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+
     const form = useForm<SubmitFeedbackData>({
         resolver: zodResolver(submitFeedbackSchema),
         defaultValues: {
@@ -31,11 +39,21 @@ export function ContactForm() {
     });
 
     const onSubmit = (data: SubmitFeedbackData) => {
-        submitFeedback(data, {
-            onSuccess: () => {
-                form.reset();
+        if (siteKey && !recaptchaToken) {
+            toast.error('Подтвердите, что вы не робот');
+            return;
+        }
+
+        submitFeedback(
+            { ...data, recaptchaToken: recaptchaToken ?? '' },
+            {
+                onSuccess: () => {
+                    form.reset();
+                    setRecaptchaToken(null);
+                    recaptchaRef.current?.reset();
+                },
             },
-        });
+        );
     };
 
     return (
@@ -138,9 +156,19 @@ export function ContactForm() {
                         )}
                     />
 
+                    {siteKey ? (
+                        <RecaptchaWidget
+                            recaptchaRef={recaptchaRef}
+                            onChange={setRecaptchaToken}
+                            onExpired={() => setRecaptchaToken(null)}
+                        />
+                    ) : null}
+
                     <Button
                         type="submit"
-                        disabled={isPending}
+                        disabled={
+                            isPending || (Boolean(siteKey) && !recaptchaToken)
+                        }
                         className="h-12 w-full rounded-xl border-0 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity"
                     >
                         {isPending ? (

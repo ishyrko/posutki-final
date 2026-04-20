@@ -300,6 +300,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->updatedAt = new \DateTimeImmutable();
     }
 
+    /**
+     * Sets main profile phone when it was empty and marks it verified (e.g. SMS verification flow).
+     */
+    public function setVerifiedProfilePhone(string $phone): void
+    {
+        $this->phone = $phone;
+        $this->isPhoneVerified = true;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
     public function getPhone(): ?string
     {
         return $this->phone;

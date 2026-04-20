@@ -17,9 +17,10 @@
   .property-title { font-size: 16px; font-weight: 600; color: #111827; margin: 0 0 8px; }
   .property-meta { font-size: 14px; color: #6b7280; margin: 0; }
   .btn { display: inline-block; background: #1a56db; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-size: 15px; font-weight: 600; margin-top: 8px; }
-  .steps { margin: 24px 0; padding: 0; list-style: none; }
-  .steps li { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; font-size: 14px; color: #4b5563; }
-  .step-num { width: 24px; height: 24px; background: #dbeafe; color: #1d4ed8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  /* Table layout: flex/gap is unreliable in many email clients */
+  .steps-table { margin: 24px 0; width: 100%; border-collapse: collapse; }
+  .step-badge-cell { width: 36px; vertical-align: top; padding: 0 12px 12px 0; }
+  .step-text-cell { font-size: 14px; color: #4b5563; line-height: 1.6; vertical-align: top; padding: 0 0 12px 0; }
   .footer { background: #f9fafb; padding: 24px 40px; border-top: 1px solid #e5e7eb; }
   .footer-text { font-size: 13px; color: #9ca3af; margin: 0; }
 </style>
@@ -40,11 +41,27 @@
     </div>
 
     <p class="text">Как проходит модерация:</p>
-    <ul class="steps">
-      <li><span class="step-num">1</span>Модератор проверяет объявление на соответствие правилам сайта</li>
-      <li><span class="step-num">2</span>Если всё в порядке — объявление будет опубликовано и станет видно покупателям</li>
-      <li><span class="step-num">3</span>В случае замечаний вы получите письмо с объяснением</li>
-    </ul>
+    <table class="steps-table" role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td class="step-badge-cell" valign="top">
+          {# line-height + text-align: reliable centering without flex #}
+          <div style="width:24px;height:24px;line-height:24px;text-align:center;font-size:12px;font-weight:700;background-color:#dbeafe;color:#1d4ed8;border-radius:12px;mso-line-height-rule:exactly;">1</div>
+        </td>
+        <td class="step-text-cell" valign="top">Модератор проверяет объявление на соответствие правилам сайта</td>
+      </tr>
+      <tr>
+        <td class="step-badge-cell" valign="top">
+          <div style="width:24px;height:24px;line-height:24px;text-align:center;font-size:12px;font-weight:700;background-color:#dbeafe;color:#1d4ed8;border-radius:12px;mso-line-height-rule:exactly;">2</div>
+        </td>
+        <td class="step-text-cell" valign="top">Если всё в порядке — объявление будет опубликовано и станет видно покупателям</td>
+      </tr>
+      <tr>
+        <td class="step-badge-cell" valign="top">
+          <div style="width:24px;height:24px;line-height:24px;text-align:center;font-size:12px;font-weight:700;background-color:#dbeafe;color:#1d4ed8;border-radius:12px;mso-line-height-rule:exactly;">3</div>
+        </td>
+        <td class="step-text-cell" valign="top">В случае замечаний вы получите письмо с объяснением</td>
+      </tr>
+    </table>
 
     <p class="text">Обычно проверка занимает <strong>до 24 часов</strong>.</p>
 

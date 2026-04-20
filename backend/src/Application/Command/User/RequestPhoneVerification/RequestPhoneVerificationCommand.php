@@ -9,6 +9,7 @@ readonly class RequestPhoneVerificationCommand
     public function __construct(
         public string $userId,
         public string $phone,
+        public ?string $ip = null,
     ) {
     }
 }

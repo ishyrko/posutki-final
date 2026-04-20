@@ -124,6 +124,7 @@ services:
       # Иначе npm install не ставит devDependencies (typescript нужен для next.config.ts).
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost/api
+      - NEXT_PUBLIC_RECAPTCHA_SITE_KEY=${NEXT_PUBLIC_RECAPTCHA_SITE_KEY:-}
       - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-986114625381-ng3peent2ffo7ci9hmltjvcqu1sqngkb.apps.googleusercontent.com}
       - BACKEND_INTERNAL_URL=http://nginx
       - REVALIDATION_SECRET=${NEXTJS_REVALIDATION_SECRET:-dev-revalidate-secret}

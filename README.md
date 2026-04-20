@@ -55,6 +55,18 @@ A modern real estate portal backend built with Symfony 7, adopting Domain-Driven
    ```bash
    make jwt-generate-keys
    ```
+   Dev keys may live in `backend/config/jwt/` (see `backend/.env.example`). Do not use committed keys in production — generate new PEM files and set `JWT_PASSPHRASE`.
+
+### Environment: SMS rate limits and reCAPTCHA v2
+
+- **`SMS_*`** — throttle SMS sends per phone, per IP, and globally (`DoctrineSmsRateLimiter`). Defaults are suitable for dev; tune for production.
+- **`RECAPTCHA_ENABLED`** / **`RECAPTCHA_SECRET`** — when `RECAPTCHA_ENABLED=1`, the API requires a valid `recaptchaToken` on `POST /api/auth/sms/request` and `POST /api/contact`. The Next.js app uses `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` (see `docker-compose.yml`).
+
+Copy variables from [`backend/.env.example`](backend/.env.example) into `backend/.env`.
+
+### Migrations vs existing database
+
+If the database already has tables but `doctrine_migration_versions` is empty, a blind `migrate` will fail. Mark already-applied versions with `php bin/console doctrine:migrations:version DoctrineMigrations\\Version... --add` (for each version up to your current schema), then run `doctrine:migrations:migrate` for the remaining ones.
 
 ## Async Notifications Worker
 

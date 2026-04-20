@@ -8,6 +8,7 @@ readonly class RequestSmsCodeCommand
 {
     public function __construct(
         public string $phone,
+        public ?string $ip = null,
     ) {
     }
 }

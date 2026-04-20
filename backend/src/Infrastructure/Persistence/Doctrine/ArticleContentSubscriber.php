@@ -4,52 +4,56 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence\Doctrine;
 
-use App\Application\Service\ArticleHtmlNormalizer;
+use App\Application\Service\ArticleContentPersistNormalizer;
 use App\Domain\Article\Entity\Article;
 use Doctrine\Common\EventSubscriber;
-use Doctrine\ORM\Event\PrePersistEventArgs;
-use Doctrine\ORM\Event\PreUpdateEventArgs;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Events;
 
 /**
- * Normalizes article HTML on any persist (admin, API, view increments with flush).
+ * Normalizes article HTML on persist. Uses onFlush (not preUpdate) so changes are applied after
+ * change-set calculation and before SQL runs; preUpdate runs too late for reliable UPDATE payloads.
  */
 final class ArticleContentSubscriber implements EventSubscriber
 {
     public function __construct(
-        private readonly ArticleHtmlNormalizer $articleHtmlNormalizer,
+        private readonly ArticleContentPersistNormalizer $articleContentPersistNormalizer,
     ) {
     }
 
     public function getSubscribedEvents(): array
     {
         return [
-            Events::prePersist => 'prePersist',
-            Events::preUpdate => 'preUpdate',
+            Events::onFlush => 'onFlush',
         ];
     }
 
-    public function prePersist(PrePersistEventArgs $args): void
+    public function onFlush(OnFlushEventArgs $args): void
     {
-        $this->normalizeContent($args->getObject());
-    }
-
-    public function preUpdate(PreUpdateEventArgs $args): void
-    {
-        $this->normalizeContent($args->getObject());
-    }
-
-    private function normalizeContent(object $entity): void
-    {
-        if (!$entity instanceof Article) {
+        $em = $args->getObjectManager();
+        if (!$em instanceof EntityManagerInterface) {
             return;
         }
 
-        $normalized = $this->articleHtmlNormalizer->normalize($entity->getContent());
-        if ($normalized === $entity->getContent()) {
-            return;
+        $uow = $em->getUnitOfWork();
+        $articleMeta = $em->getClassMetadata(Article::class);
+
+        foreach ($uow->getScheduledEntityInsertions() as $entity) {
+            if (!$entity instanceof Article) {
+                continue;
+            }
+
+            $this->articleContentPersistNormalizer->normalize($entity);
         }
 
-        $entity->setContent($normalized);
+        foreach ($uow->getScheduledEntityUpdates() as $entity) {
+            if (!$entity instanceof Article) {
+                continue;
+            }
+
+            $this->articleContentPersistNormalizer->normalize($entity);
+            $uow->recomputeSingleEntityChangeSet($articleMeta, $entity);
+        }
     }
 }

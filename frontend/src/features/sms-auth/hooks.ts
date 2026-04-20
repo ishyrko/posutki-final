@@ -27,7 +27,8 @@ function getErrorMessage(error: unknown, fallback: string): string {
 
 export const useRequestSmsCode = () => {
     return useMutation({
-        mutationFn: (phone: string) => requestSmsCode(phone),
+        mutationFn: ({ phone, recaptchaToken }: { phone: string; recaptchaToken: string }) =>
+            requestSmsCode(phone, recaptchaToken),
         onSuccess: () => {
             toast.success('Код отправлен');
         },

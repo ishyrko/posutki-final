@@ -6,6 +6,7 @@ namespace App\Presentation\Api\Controller;
 
 use App\Application\Command\CommandBusInterface;
 use App\Application\Command\ContactFeedback\Submit\SubmitFeedbackCommand;
+use App\Infrastructure\Recaptcha\RecaptchaVerifier;
 use App\Presentation\Api\Response\ApiResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -18,6 +19,7 @@ class ContactController extends AbstractController
 {
     public function __construct(
         private readonly CommandBusInterface $commandBus,
+        private readonly RecaptchaVerifier $recaptcha,
     ) {
     }
 
@@ -28,6 +30,11 @@ class ContactController extends AbstractController
         if (!is_array($data)) {
             return $this->json(ApiResponse::error('Некорректные данные запроса', 422), 422);
         }
+
+        $this->recaptcha->verify(
+            (string) ($data['recaptchaToken'] ?? ''),
+            $request->getClientIp(),
+        );
 
         $name = trim((string) ($data['name'] ?? ''));
         $email = trim((string) ($data['email'] ?? ''));

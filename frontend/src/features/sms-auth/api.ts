@@ -6,8 +6,8 @@ type SmsAuthResponse = {
     };
 };
 
-export const requestSmsCode = async (phone: string): Promise<void> => {
-    await api.post('/auth/sms/request', { phone });
+export const requestSmsCode = async (phone: string, recaptchaToken: string): Promise<void> => {
+    await api.post('/auth/sms/request', { phone, recaptchaToken });
 };
 
 export const verifySmsCode = async (phone: string, code: string): Promise<string> => {

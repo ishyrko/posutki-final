@@ -17,6 +17,7 @@ use App\Domain\User\Entity\User;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -45,6 +46,7 @@ class PhoneController extends AbstractController
     #[Route('/request', name: 'request', methods: ['POST'])]
     public function requestVerification(
         RequestPhoneVerificationRequest $request,
+        Request $httpRequest,
         #[CurrentUser] ?User $user,
     ): JsonResponse {
         if (!$user) {
@@ -54,6 +56,7 @@ class PhoneController extends AbstractController
         $command = new RequestPhoneVerificationCommand(
             userId: (string) $user->getId()->getValue(),
             phone: $request->phone,
+            ip: $httpRequest->getClientIp(),
         );
 
         $this->commandBus->dispatch($command);

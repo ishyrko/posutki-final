@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Presentation\Admin\Controller;
 
+use App\Application\Service\ArticleContentPersistNormalizer;
 use App\Domain\Article\Entity\Article;
+use App\Domain\Article\Repository\ArticleRepositoryInterface;
 use App\Domain\Shared\ValueObject\Slug;
 use App\Domain\User\Entity\User;
 use App\Infrastructure\Service\FileUploader;
+use App\Infrastructure\Service\SlugGenerator;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
@@ -23,11 +26,16 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Provider\AdminContextProvider;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\Request;
 
 class ArticleCrudController extends AbstractCrudController
 {
     public function __construct(
         private readonly FileUploader $fileUploader,
+        private readonly ArticleContentPersistNormalizer $articleContentPersistNormalizer,
+        private readonly SlugGenerator $slugGenerator,
+        private readonly ArticleRepositoryInterface $articleRepository,
     ) {
     }
 
@@ -71,15 +79,13 @@ class ArticleCrudController extends AbstractCrudController
         $request = $this->container->get('request_stack')->getCurrentRequest();
         $formData = $request->request->all('Article') ?: $request->request->all();
 
-        if (isset($formData['slugText']) && $formData['slugText'] !== '') {
-            $entityInstance->setSlugFromString($formData['slugText']);
+        if (isset($formData['coverImage']) && is_string($formData['coverImage']) && $formData['coverImage'] !== '') {
+            $entityInstance->setCoverImage($formData['coverImage']);
         }
 
-        if (isset($formData['coverImage']) && is_string($formData['coverImage']) && $formData['coverImage'] !== '') {
-            $coverImage = $formData['coverImage'];
-            if (!str_starts_with($coverImage, '/')) {
-                $entityInstance->setCoverImage('/uploads/articles/' . ltrim($coverImage, '/'));
-            }
+        if ($entityInstance instanceof Article) {
+            $this->articleContentPersistNormalizer->normalize($entityInstance);
+            $this->applyArticleSlugFromFormOrTitle($entityInstance, $formData);
         }
 
         parent::persistEntity($entityManager, $entityInstance);
@@ -94,15 +100,14 @@ class ArticleCrudController extends AbstractCrudController
         $request = $this->container->get('request_stack')->getCurrentRequest();
         $formData = $request->request->all('Article') ?: $request->request->all();
 
-        if (isset($formData['slugText']) && $formData['slugText'] !== '') {
-            $entityInstance->setSlugFromString($formData['slugText']);
+        if (isset($formData['coverImage']) && is_string($formData['coverImage']) && $formData['coverImage'] !== '') {
+            $entityInstance->setCoverImage($formData['coverImage']);
         }
 
-        if (isset($formData['coverImage']) && is_string($formData['coverImage']) && $formData['coverImage'] !== '') {
-            $coverImage = $formData['coverImage'];
-            if (!str_starts_with($coverImage, '/')) {
-                $entityInstance->setCoverImage('/uploads/articles/' . ltrim($coverImage, '/'));
-            }
+        if ($entityInstance instanceof Article) {
+            $this->restoreArticleCoverIfClearedWithoutIntent($entityManager, $entityInstance, $request);
+            $this->articleContentPersistNormalizer->normalize($entityInstance);
+            $this->applyArticleSlugFromFormOrTitle($entityInstance, $formData);
         }
 
         parent::updateEntity($entityManager, $entityInstance);
@@ -110,6 +115,84 @@ class ArticleCrudController extends AbstractCrudController
         if ($entityInstance instanceof Article) {
             $this->syncArticleCoverImageAfterAdminUpload($entityManager, $entityInstance);
         }
+    }
+
+    /**
+     * Uses manual slug when non-empty; otherwise generates from title (after typography normalize), unique like API create.
+     */
+    private function applyArticleSlugFromFormOrTitle(Article $article, array $formData): void
+    {
+        $slugText = isset($formData['slugText']) ? trim((string) $formData['slugText']) : '';
+        if ($slugText !== '') {
+            $article->setSlugFromString($slugText);
+
+            return;
+        }
+
+        $base = $this->slugGenerator->generate($article->getTitle());
+        if ($base === '') {
+            $base = 'article-' . time();
+        }
+
+        $unique = $this->slugGenerator->ensureUnique($base, $this->articleRepository);
+        $article->setSlugFromString($unique);
+    }
+
+    /**
+     * EasyAdmin FileUploadType may leave coverImage empty on edit when the file input is unchanged
+     * (FileUploadState::isModified is false). Restore from Doctrine snapshot if the user did not upload
+     * a replacement and did not check "delete".
+     */
+    private function restoreArticleCoverIfClearedWithoutIntent(
+        EntityManagerInterface $entityManager,
+        Article $article,
+        ?Request $request,
+    ): void {
+        if ($request === null) {
+            return;
+        }
+
+        $articleForm = $request->request->all('Article') ?: [];
+        $fileBag = $request->files->get('Article') ?? [];
+
+        $deleteRequested = !empty($articleForm['coverImage']['delete']);
+        $hasNewUpload = isset($fileBag['coverImage']['file'])
+            && $fileBag['coverImage']['file'] instanceof UploadedFile
+            && $fileBag['coverImage']['file']->isValid();
+
+        if ($deleteRequested || $hasNewUpload) {
+            return;
+        }
+
+        if ($this->readArticleCoverStorage($article) !== null) {
+            return;
+        }
+
+        $uow = $entityManager->getUnitOfWork();
+        if (!$uow->isInIdentityMap($article)) {
+            return;
+        }
+
+        $original = $uow->getOriginalEntityData($article);
+        $previous = $original['coverImage'] ?? $original['cover_image'] ?? null;
+        if (!is_string($previous) || $previous === '') {
+            return;
+        }
+
+        $article->setCoverImage($previous);
+    }
+
+    private function readArticleCoverStorage(Article $article): ?string
+    {
+        $reflection = new \ReflectionProperty(Article::class, 'coverImage');
+        $reflection->setAccessible(true);
+        $value = $reflection->getValue($article);
+
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (string) $value;
     }
 
     private function syncArticleCoverImageAfterAdminUpload(EntityManagerInterface $entityManager, Article $article): void
@@ -157,7 +240,7 @@ class ArticleCrudController extends AbstractCrudController
         $slugTextField = TextField::new('slugText', 'Slug')
             ->setFormTypeOption('mapped', false)
             ->onlyOnForms()
-            ->setHelp('Латиница, цифры и дефисы (например: moya-statya-2026)');
+            ->setHelp('Латиница, цифры и дефисы (например: moya-statya-2026). Оставьте пустым — слаг будет собран из заголовка.');
 
         if ($articleOnEdit instanceof Article) {
             $slugTextField->setFormTypeOption('data', (string) $articleOnEdit->getSlug());
@@ -199,7 +282,7 @@ class ArticleCrudController extends AbstractCrudController
         yield AssociationField::new('category', 'Категория');
 
         $coverImageField = ImageField::new('coverImage', 'Обложка')
-            ->setBasePath('/')
+            ->setBasePath('uploads/articles')
             ->setUploadDir('public/uploads/articles')
             ->setUploadedFileNamePattern('[timestamp]-[randomhash].[extension]')
             ->setHelp('Загружайте файл, внешние URL не поддерживаются')
