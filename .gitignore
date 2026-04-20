@@ -1,3 +1,6 @@
 /_design/
 /.idea/
 /.db-backups/
+
+# Symfony local overrides (full copy or deltas; not committed)
+backend/.env.local
