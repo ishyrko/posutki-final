@@ -6,6 +6,7 @@ namespace App\Presentation\Api\Request;
 
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\DealType;
+use App\Domain\Property\Enum\SellerType;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[Assert\Expression(
@@ -150,4 +151,7 @@ class CreatePropertyRequest
 
     #[Assert\Length(max: 100)]
     public ?string $contactName = null;
+
+    #[Assert\Choice(callback: [SellerType::class, 'values'], message: 'Недопустимый тип продавца')]
+    public ?string $sellerType = null;
 }

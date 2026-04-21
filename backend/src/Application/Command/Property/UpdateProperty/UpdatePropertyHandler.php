@@ -17,6 +17,7 @@ use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\Exception\UnauthorizedException;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Service\DailyListingSellerProfileGuardInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\MetroProximityCalculator;
 
@@ -27,6 +28,7 @@ readonly class UpdatePropertyHandler
         private PropertyRevisionRepositoryInterface $revisionRepository,
         private ExchangeRateService $exchangeRateService,
         private MetroProximityCalculator $metroProximityCalculator,
+        private DailyListingSellerProfileGuardInterface $dailyListingSellerProfileGuard,
     ) {
     }
 
@@ -41,6 +43,14 @@ readonly class UpdatePropertyHandler
         if (!$property->isOwnedBy($command->userId)) {
             throw new UnauthorizedException('Нет прав на изменение этого объявления');
         }
+
+        $effectiveDealTypeForGuard = $command->dealType ?? $property->getDealType();
+        $effectiveSellerTypeForGuard = $command->sellerType ?? $property->getSellerType();
+        $this->dailyListingSellerProfileGuard->assertEligible(
+            $command->userId,
+            $effectiveDealTypeForGuard,
+            $effectiveSellerTypeForGuard,
+        );
 
         $effectiveFloor = $command->floor ?? $property->getFloor();
         $effectiveTotalFloors = $command->totalFloors ?? $property->getTotalFloors();
@@ -137,6 +147,7 @@ readonly class UpdatePropertyHandler
             coordinates: $coordinates,
             images: $command->images,
             amenities: $command->amenities,
+            sellerType: $command->sellerType,
         );
 
         if ($price !== null) {
@@ -193,6 +204,7 @@ readonly class UpdatePropertyHandler
             'amenities' => $command->amenities,
             'contactPhone' => $command->contactPhone,
             'contactName' => $command->contactName,
+            'sellerType' => $command->sellerType,
         ], static fn(mixed $value): bool => $value !== null);
     }
 

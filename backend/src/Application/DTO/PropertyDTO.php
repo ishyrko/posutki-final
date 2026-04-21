@@ -19,6 +19,7 @@ final class PropertyDTO implements \JsonSerializable
         public readonly string $typeLabel,
         public readonly string $dealType,
         public readonly string $dealTypeLabel,
+        public readonly ?string $sellerType,
         public readonly string $title,
         public readonly string $description,
         public readonly int $priceAmount,
@@ -63,6 +64,8 @@ final class PropertyDTO implements \JsonSerializable
         public readonly ?array $pendingRevisionData,
         public readonly ?string $contactPhone,
         public readonly ?string $contactName,
+        /** @var array<string, mixed>|null Owner legal profile for daily listings (public). */
+        public readonly ?array $dailySellerLegalProfile,
         public readonly bool $nearMetro,
         /** @var array<int, array{id:int,name:string,slug:string,line:int,distanceKm:float}> */
         public readonly array $nearbyMetroStations,
@@ -81,6 +84,7 @@ final class PropertyDTO implements \JsonSerializable
         ?Street $street = null,
         array $nearbyMetroStations = [],
         int $favoritesCount = 0,
+        ?array $dailySellerLegalProfile = null,
     ): self
     {
         $district = $city->getRegionDistrict();
@@ -93,6 +97,7 @@ final class PropertyDTO implements \JsonSerializable
             typeLabel: PropertyType::tryFrom($property->getType())?->label() ?? $property->getType(),
             dealType: $property->getDealType(),
             dealTypeLabel: DealType::tryFrom($property->getDealType())?->label() ?? $property->getDealType(),
+            sellerType: $property->getSellerType(),
             title: $property->getTitle(),
             description: $property->getDescription(),
             priceAmount: $property->getPrice()->getAmount(),
@@ -136,6 +141,7 @@ final class PropertyDTO implements \JsonSerializable
             pendingRevisionData: $property->getPendingRevisionData(),
             contactPhone: $property->getContactPhone(),
             contactName: $property->getContactName(),
+            dailySellerLegalProfile: $dailySellerLegalProfile,
             nearMetro: $property->isNearMetro(),
             nearbyMetroStations: $nearbyMetroStations,
             views: $property->getViews(),
@@ -149,13 +155,14 @@ final class PropertyDTO implements \JsonSerializable
 
     public function jsonSerialize(): array
     {
-        return [
+        $data = [
             'id' => $this->id,
             'ownerId' => $this->ownerId,
             'type' => $this->type,
             'typeLabel' => $this->typeLabel,
             'dealType' => $this->dealType,
             'dealTypeLabel' => $this->dealTypeLabel,
+            'sellerType' => $this->sellerType,
             'status' => $this->status,
             'title' => $this->title,
             'description' => $this->description,
@@ -226,6 +233,12 @@ final class PropertyDTO implements \JsonSerializable
             'publishedAt' => $this->publishedAt?->format('c'),
             'boostedAt' => $this->boostedAt?->format('c'),
         ];
+
+        if ($this->dailySellerLegalProfile !== null) {
+            $data['dailySellerLegalProfile'] = $this->dailySellerLegalProfile;
+        }
+
+        return $data;
     }
 
     private function buildThumbnailUrl(string $url): ?string

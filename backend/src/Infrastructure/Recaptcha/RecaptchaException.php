@@ -8,8 +8,12 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 final class RecaptchaException extends UnprocessableEntityHttpException
 {
-    public function __construct(string $message = 'Проверка безопасности не пройдена', ?\Throwable $previous = null)
-    {
-        parent::__construct($message, 422, $previous);
+    public function __construct(
+        string $message = 'Проверка безопасности не пройдена',
+        ?\Throwable $previous = null,
+        int $code = 0,
+        array $headers = [],
+    ) {
+        parent::__construct($message, $previous, $code, $headers);
     }
 }

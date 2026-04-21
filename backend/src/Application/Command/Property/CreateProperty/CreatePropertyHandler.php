@@ -16,6 +16,7 @@ use App\Domain\Property\ValueObject\{Price, Address, Coordinates};
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Repository\UserPhoneRepositoryInterface;
+use App\Domain\User\Service\DailyListingSellerProfileGuardInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -28,6 +29,7 @@ final class CreatePropertyHandler
         private readonly ExchangeRateService $exchangeRateService,
         private readonly MetroProximityCalculator $metroProximityCalculator,
         private readonly MessageBusInterface $notificationBus,
+        private readonly DailyListingSellerProfileGuardInterface $dailyListingSellerProfileGuard,
     ) {
     }
 
@@ -60,6 +62,12 @@ final class CreatePropertyHandler
                 throw new DomainException('Подтвердите контактный телефон');
             }
         }
+
+        $this->dailyListingSellerProfileGuard->assertEligible(
+            $command->ownerId,
+            $command->dealType,
+            $command->sellerType,
+        );
 
         $ownerId = Id::fromString($command->ownerId);
         $price = Price::fromAmount($command->priceAmount, $command->priceCurrency);
@@ -97,6 +105,7 @@ final class CreatePropertyHandler
             amenities: $command->amenities,
             contactPhone: $command->contactPhone,
             contactName: $command->contactName,
+            sellerType: $command->sellerType,
             roomsInDeal: $command->roomsInDeal,
             roomsArea: $command->roomsArea,
         );

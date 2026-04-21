@@ -12,12 +12,10 @@ use PHPUnit\Framework\TestCase;
 
 final class PropertyDealCombinationValidatorTest extends TestCase
 {
-    public function testDailyRoomIsInvalid(): void
+    public function testDailyRoomIsValid(): void
     {
-        $this->expectException(DomainException::class);
-        $this->expectExceptionMessage('Посуточная сдача комнат недоступна');
-
         PropertyDealCombinationValidator::assertValid(DealType::Daily->value, PropertyType::Room->value);
+        $this->addToAssertionCount(1);
     }
 
     public function testDailyApartmentIsValid(): void

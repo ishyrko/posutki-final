@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Application\Query\Property\GetProperty;
 
 use App\Application\DTO\PropertyDTO;
+use App\Domain\Property\Enum\DealType;
+use App\Domain\Property\Enum\SellerType;
 use App\Domain\Property\Repository\{
     PropertyRepositoryInterface,
     CityRepositoryInterface,
@@ -13,6 +15,8 @@ use App\Domain\Property\Repository\{
     PropertyMetroStationRepositoryInterface,
     PropertyDailyStatRepositoryInterface
 };
+use App\Domain\User\Repository\UserBusinessProfileRepositoryInterface;
+use App\Domain\User\Repository\UserIndividualProfileRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\Exception\NotFoundException;
@@ -26,6 +30,8 @@ final class GetPropertyHandler
         private readonly MetroStationRepositoryInterface $metroStationRepository,
         private readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
         private readonly PropertyDailyStatRepositoryInterface $propertyDailyStatRepository,
+        private readonly UserIndividualProfileRepositoryInterface $userIndividualProfileRepository,
+        private readonly UserBusinessProfileRepositoryInterface $userBusinessProfileRepository,
     ) {
     }
 
@@ -91,6 +97,35 @@ final class GetPropertyHandler
             static fn(array $a, array $b): int => $a['distanceKm'] <=> $b['distanceKm']
         );
 
-        return PropertyDTO::fromEntity($property, $city, $street, $nearbyMetroStations);
+        $dailySellerLegalProfile = null;
+        if ($property->getDealType() === DealType::Daily->value) {
+            $sellerType = $property->getSellerType();
+            $ownerId = $property->getOwnerId();
+
+            if ($sellerType === SellerType::Individual->value) {
+                $profile = $this->userIndividualProfileRepository->findByUserId($ownerId);
+                if ($profile !== null) {
+                    $dailySellerLegalProfile = [
+                        'type' => SellerType::Individual->value,
+                        'lastName' => $profile->getLastName(),
+                        'firstName' => $profile->getFirstName(),
+                        'middleName' => $profile->getMiddleName(),
+                        'unp' => $profile->getUnp(),
+                    ];
+                }
+            } elseif ($sellerType === SellerType::Business->value) {
+                $profile = $this->userBusinessProfileRepository->findByUserId($ownerId);
+                if ($profile !== null) {
+                    $dailySellerLegalProfile = [
+                        'type' => SellerType::Business->value,
+                        'organizationName' => $profile->getOrganizationName(),
+                        'contactName' => $profile->getContactName(),
+                        'unp' => $profile->getUnp(),
+                    ];
+                }
+            }
+        }
+
+        return PropertyDTO::fromEntity($property, $city, $street, $nearbyMetroStations, 0, $dailySellerLegalProfile);
     }
 }

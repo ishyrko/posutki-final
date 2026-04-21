@@ -32,6 +32,9 @@ class Property
     #[ORM\Column(type: 'string', length: 50, name: 'deal_type')]
     private string $dealType;
 
+    #[ORM\Column(type: 'string', length: 16, name: 'seller_type', nullable: true)]
+    private ?string $sellerType = null;
+
     #[ORM\Column(type: 'string', length: 255)]
     private string $title;
 
@@ -190,12 +193,14 @@ class Property
         string $status = 'draft',
         ?string $contactPhone = null,
         ?string $contactName = null,
+        ?string $sellerType = null,
         ?int $roomsInDeal = null,
         ?float $roomsArea = null,
     ) {
         $this->ownerId = $ownerId;
         $this->type = $type;
         $this->dealType = $dealType;
+        $this->sellerType = $dealType === 'daily' ? $sellerType : null;
         $this->title = $title;
         $this->description = $description;
         $this->price = $price;
@@ -630,6 +635,11 @@ class Property
         return $this->dealType;
     }
 
+    public function getSellerType(): ?string
+    {
+        return $this->sellerType;
+    }
+
     public function getRooms(): ?int
     {
         return $this->rooms;
@@ -878,6 +888,7 @@ class Property
         ?array $amenities = null,
         ?string $contactPhone = null,
         ?string $contactName = null,
+        ?string $sellerType = null,
     ): void {
         if ($type !== null) $this->type = $type;
         if ($dealType !== null) $this->dealType = $dealType;
@@ -916,6 +927,11 @@ class Property
             $this->dailyBedCount = null;
             $this->checkInTime = null;
             $this->checkOutTime = null;
+            $this->sellerType = null;
+        }
+
+        if ($sellerType !== null && $this->dealType === 'daily') {
+            $this->sellerType = $sellerType;
         }
 
         if ($this->type !== 'room' || $this->dealType === 'daily') {

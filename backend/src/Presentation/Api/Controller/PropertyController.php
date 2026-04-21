@@ -158,6 +158,7 @@ class PropertyController extends AbstractController
             amenities: $request->amenities,
             contactPhone: $request->contactPhone,
             contactName: $request->contactName,
+            sellerType: $request->sellerType,
         );
 
         $propertyId = $this->commandBus->dispatch($command);
@@ -238,6 +239,7 @@ class PropertyController extends AbstractController
             longitude: $request->coordinates['longitude'] ?? null,
             images: $request->images,
             amenities: $request->amenities,
+            sellerType: $request->sellerType,
         );
 
         $this->commandBus->dispatch($command);

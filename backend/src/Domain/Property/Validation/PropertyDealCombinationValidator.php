@@ -15,8 +15,5 @@ final class PropertyDealCombinationValidator
         if ($dealType === DealType::Rent->value && $propertyType === PropertyType::Land->value) {
             throw new DomainException('Аренда участков недоступна');
         }
-        if ($dealType === DealType::Daily->value && $propertyType === PropertyType::Room->value) {
-            throw new DomainException('Посуточная сдача комнат недоступна');
-        }
     }
 }

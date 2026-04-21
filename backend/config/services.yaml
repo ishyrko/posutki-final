@@ -77,6 +77,15 @@ services:
     App\Domain\User\Repository\UserPhoneRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\UserPhoneRepository
 
+    App\Domain\User\Repository\UserIndividualProfileRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\UserIndividualProfileRepository
+
+    App\Domain\User\Repository\UserBusinessProfileRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\UserBusinessProfileRepository
+
+    App\Domain\User\Service\DailyListingSellerProfileGuardInterface:
+        class: App\Domain\User\Service\DailyListingSellerProfileGuard
+
     App\Domain\User\Repository\PhoneAuthCodeRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\PhoneAuthCodeRepository
 
@@ -181,6 +190,12 @@ services:
 
     # User Profile Handlers
     App\Application\Command\User\UpdateUserProfile\UpdateUserProfileHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\User\UpdateUserIndividualProfile\UpdateUserIndividualProfileHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\User\UpdateUserBusinessProfile\UpdateUserBusinessProfileHandler:
         tags: [ { name: messenger.message_handler, bus: command.bus } ]
 
     App\Application\Command\User\ChangePassword\ChangePasswordHandler:

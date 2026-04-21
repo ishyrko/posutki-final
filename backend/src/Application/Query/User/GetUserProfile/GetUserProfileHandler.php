@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Application\Query\User\GetUserProfile;
 
 use App\Application\DTO\UserDTO;
+use App\Domain\User\Repository\UserBusinessProfileRepositoryInterface;
+use App\Domain\User\Repository\UserIndividualProfileRepositoryInterface;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
 use App\Domain\Shared\Exception\DomainException;
@@ -13,6 +15,8 @@ final class GetUserProfileHandler
 {
     public function __construct(
         private readonly UserRepositoryInterface $userRepository,
+        private readonly UserIndividualProfileRepositoryInterface $individualProfileRepository,
+        private readonly UserBusinessProfileRepositoryInterface $businessProfileRepository,
     ) {
     }
 
@@ -25,6 +29,9 @@ final class GetUserProfileHandler
             throw new DomainException('Пользователь не найден');
         }
 
-        return UserDTO::fromEntity($user);
+        $individual = $this->individualProfileRepository->findByUserId($userId);
+        $business = $this->businessProfileRepository->findByUserId($userId);
+
+        return UserDTO::fromEntity($user, $individual, $business);
     }
 }

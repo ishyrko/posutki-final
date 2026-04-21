@@ -18,9 +18,6 @@ final class DailyRentDetailsValidator
         ?string $checkOutTime,
     ): void {
         if ($dealType === DealType::Daily->value) {
-            if ($propertyType === 'room') {
-                throw new DomainException('Посуточная аренда комнат недоступна');
-            }
             if ($maxDailyGuests === null || $maxDailyGuests <= 0) {
                 throw new DomainException('Укажите максимальное число гостей для посуточной аренды');
             }

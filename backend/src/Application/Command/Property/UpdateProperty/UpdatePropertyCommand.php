@@ -43,6 +43,7 @@ readonly class UpdatePropertyCommand
         public ?array $amenities = null,
         public ?string $contactPhone = null,
         public ?string $contactName = null,
+        public ?string $sellerType = null,
     ) {
     }
 }

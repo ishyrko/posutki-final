@@ -9,8 +9,12 @@ use App\Application\Query\User\GetUserProfile\GetUserProfileQuery;
 use App\Application\Command\CommandBusInterface;
 use App\Application\Query\QueryBusInterface;
 use App\Presentation\Api\Request\RegisterUserRequest;
+use App\Presentation\Api\Request\UpdateUserBusinessProfileRequest;
+use App\Presentation\Api\Request\UpdateUserIndividualProfileRequest;
 use App\Presentation\Api\Request\UpdateUserProfileRequest;
 use App\Presentation\Api\Request\ChangePasswordRequest;
+use App\Application\Command\User\UpdateUserBusinessProfile\UpdateUserBusinessProfileCommand;
+use App\Application\Command\User\UpdateUserIndividualProfile\UpdateUserIndividualProfileCommand;
 use App\Application\Command\User\UpdateUserProfile\UpdateUserProfileCommand;
 use App\Application\Command\User\ChangePassword\ChangePasswordCommand;
 use App\Application\Command\User\RequestEmailChange\RequestEmailChangeCommand;
@@ -86,6 +90,55 @@ class UserController extends AbstractController
             ApiResponse::success([
                 'message' => 'Проверьте почту и перейдите по ссылке для подтверждения email.',
             ])
+        );
+    }
+
+    #[Route('/users/profile/individual', name: 'update_profile_individual', methods: ['PUT', 'PATCH'])]
+    public function updateIndividualProfile(
+        UpdateUserIndividualProfileRequest $request,
+        #[CurrentUser] ?User $user
+    ): JsonResponse {
+        if (!$user) {
+            return $this->json(
+                ApiResponse::error('Требуется авторизация', 401),
+                401
+            );
+        }
+
+        $this->commandBus->dispatch(new UpdateUserIndividualProfileCommand(
+            userId: (string) $user->getId()->getValue(),
+            lastName: $request->lastName,
+            firstName: $request->firstName,
+            middleName: $request->middleName,
+            unp: $request->unp,
+        ));
+
+        return $this->json(
+            ApiResponse::success(['message' => 'Данные физлица для посуточных объявлений сохранены'])
+        );
+    }
+
+    #[Route('/users/profile/business', name: 'update_profile_business', methods: ['PUT', 'PATCH'])]
+    public function updateBusinessProfile(
+        UpdateUserBusinessProfileRequest $request,
+        #[CurrentUser] ?User $user
+    ): JsonResponse {
+        if (!$user) {
+            return $this->json(
+                ApiResponse::error('Требуется авторизация', 401),
+                401
+            );
+        }
+
+        $this->commandBus->dispatch(new UpdateUserBusinessProfileCommand(
+            userId: (string) $user->getId()->getValue(),
+            organizationName: $request->organizationName,
+            contactName: $request->contactName,
+            unp: $request->unp,
+        ));
+
+        return $this->json(
+            ApiResponse::success(['message' => 'Данные организации для посуточных объявлений сохранены'])
         );
     }
 
