@@ -21,14 +21,11 @@ export default function PhonesPage() {
             className="max-w-2xl w-full min-w-0"
         >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-                <h1 className="text-2xl font-display font-bold text-foreground">
+                <h1 className="font-display text-2xl font-bold text-foreground">
                     Мои телефоны
                 </h1>
-                <Button
-                    onClick={() => setDialogOpen(true)}
-                    className="bg-gradient-primary text-primary-foreground border-0 w-full sm:w-auto"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
+                <Button onClick={() => setDialogOpen(true)} className="gap-2 w-full sm:w-auto">
+                    <Plus className="w-4 h-4" />
                     Добавить
                 </Button>
             </div>
@@ -37,7 +34,7 @@ export default function PhonesPage() {
                 Подтверждённые телефоны можно указывать в объявлениях как контактные.
             </p>
 
-            <div className="bg-card rounded-xl border border-border shadow-card">
+            <div className="bg-card rounded-xl shadow-card">
                 {isLoading ? (
                     <div className="p-8 text-center text-muted-foreground">Загрузка...</div>
                 ) : phones.length === 0 ? (

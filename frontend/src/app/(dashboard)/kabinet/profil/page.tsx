@@ -90,12 +90,12 @@ export default function ProfilePage() {
             transition={{ duration: 0.3 }}
             className="max-w-2xl"
         >
-            <h1 className="text-2xl font-display font-bold text-foreground mb-6">
+            <h1 className="font-display text-2xl font-bold text-foreground mb-6">
                 Профиль и настройки
             </h1>
 
             {/* Avatar & personal info */}
-            <div className="bg-card rounded-xl border border-border p-6 shadow-card mb-6">
+            <div className="bg-card rounded-2xl p-6 shadow-card mb-6">
                 <div className="flex items-center gap-4 mb-6">
                     <div className="relative">
                         <UserAvatar
@@ -241,7 +241,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Password */}
-            <div className="bg-card rounded-xl border border-border p-6 shadow-card mb-6">
+            <div className="bg-card rounded-xl p-6 shadow-card mb-6">
                 <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                     <Lock className="w-4 h-4" />Смена пароля
                 </h3>
@@ -278,7 +278,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Notifications */}
-            <div className="bg-card rounded-xl border border-border p-6 shadow-card">
+            <div className="bg-card rounded-xl p-6 shadow-card">
                 <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                     <Bell className="w-4 h-4" />Уведомления
                 </h3>

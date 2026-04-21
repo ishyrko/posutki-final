@@ -229,9 +229,9 @@ export default function MessagesPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <h1 className="text-2xl font-display font-bold text-foreground mb-6">Сообщения</h1>
+            <h1 className="font-display text-2xl font-bold text-foreground mb-6">Сообщения</h1>
 
-            <div className="bg-card rounded-xl border border-border overflow-hidden shadow-card h-[calc(100vh-14rem)]">
+            <div className="bg-card rounded-xl overflow-hidden shadow-card h-[calc(100vh-14rem)]">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-full">
                         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />

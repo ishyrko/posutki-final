@@ -92,7 +92,7 @@ function ListingCard({ property }: { property: Property }) {
     const boostCooldownOk = isAtLeast24HoursAfterCreation(property.createdAt);
 
     return (
-        <div className="w-full max-w-full flex flex-col sm:flex-row bg-card rounded-2xl border border-border overflow-hidden shadow-card">
+        <div className="w-full max-w-full flex flex-col sm:flex-row bg-card rounded-xl shadow-card overflow-hidden">
             <Link href={propertyHref} className="relative sm:w-48 flex-shrink-0 aspect-[4/3] sm:aspect-auto sm:h-auto overflow-hidden">
                 {property.images[0] ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -262,18 +262,34 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
         >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                 <div>
-                    <h1 className="text-2xl font-display font-bold text-foreground">Мои объявления</h1>
+                    <h1 className="font-display text-2xl font-bold text-foreground">Мои объявления</h1>
                     <p className="text-sm text-muted-foreground mt-1">
                         {filteredProperties.length} объявлений
                     </p>
                 </div>
-                <Button asChild className="bg-gradient-primary text-primary-foreground border-0 w-full sm:w-auto">
+                <Button asChild className="gap-2 w-full sm:w-auto">
                     <Link href="/razmestit/">
-                        <Plus className="w-4 h-4 mr-2" />
+                        <Plus className="w-4 h-4" />
                         Новое объявление
                     </Link>
                 </Button>
             </div>
+
+            {!isLoading && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                    {[
+                        { label: 'Всего', value: properties.length, color: 'text-foreground' },
+                        { label: 'Опубликовано', value: statusCounts.published, color: 'text-primary' },
+                        { label: 'На модерации', value: statusCounts.moderation, color: 'text-foreground' },
+                        { label: 'Отклонено / неактивно', value: statusCounts.rejected + statusCounts.inactive, color: 'text-foreground' },
+                    ].map((stat, i) => (
+                        <div key={i} className="bg-card rounded-xl shadow-card p-4 text-center">
+                            <div className={cn('font-display text-2xl font-bold', stat.color)}>{stat.value}</div>
+                            <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             <div className="flex flex-wrap gap-2 mb-6">
                 {STATUS_TABS.map((tab) => (
@@ -295,17 +311,17 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
             {isLoading ? (
                 <div className="space-y-4">
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="h-36 bg-card rounded-xl border border-border animate-pulse" />
+                        <div key={i} className="h-36 bg-card rounded-xl shadow-card animate-pulse" />
                     ))}
                 </div>
             ) : filteredProperties.length === 0 ? (
-                <div className="text-center py-16 bg-card rounded-xl border border-border">
+                <div className="text-center py-16 bg-card rounded-xl shadow-card">
                     {properties.length === 0 ? (
                         <>
                             <p className="text-muted-foreground mb-4">У вас пока нет объявлений</p>
-                            <Button asChild className="bg-gradient-primary text-primary-foreground border-0">
+                            <Button asChild className="gap-2">
                                 <Link href="/razmestit/">
-                                    <Plus className="w-4 h-4 mr-2" />
+                                    <Plus className="w-4 h-4" />
                                     Создать первое объявление
                                 </Link>
                             </Button>

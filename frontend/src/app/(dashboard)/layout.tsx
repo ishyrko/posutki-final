@@ -49,11 +49,11 @@ export default function DashboardLayout({
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen flex flex-col bg-background">
             <Header />
-            <div className="pt-16 flex">
+            <div className="flex-1 container py-6 flex gap-6">
                 <Sidebar />
-                <main className="flex-1 min-w-0 p-4 md:p-8 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] md:pb-8">
+                <main className="flex-1 min-w-0 pb-24 lg:pb-0">
                     {children}
                 </main>
             </div>

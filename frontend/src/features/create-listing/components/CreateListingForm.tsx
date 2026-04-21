@@ -1,20 +1,16 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
     ArrowLeft,
-    ArrowRight,
     Check,
     Upload,
     X,
     Home,
     MapPin,
-    DollarSign,
-    Image,
-    FileText,
     BedDouble,
     Bath,
     Maximize,
@@ -22,21 +18,11 @@ import {
     Calendar,
     Phone,
     User,
-    Info,
     Loader2,
-    Search,
-    Warehouse,
-    Store,
-    Briefcase,
-    TreePine,
-    Car,
-    Key,
-    Tag,
+    Image as ImageIcon,
+    Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -44,6 +30,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import AddressMapPicker from '@/components/AddressMapPicker';
 import { loadYmaps } from '@/lib/ymaps';
 import { useSearchCities, useSearchStreets, useCreateProperty } from '../hooks';
@@ -100,71 +87,107 @@ import { isAuthenticated } from '@/lib/auth';
 import { PhoneAuthModal } from '@/features/sms-auth/components/PhoneAuthModal';
 import { useUser } from '@/features/auth/hooks';
 
-const STEPS = [
-    { id: 1, label: 'Тип', icon: Home },
-    { id: 2, label: 'Детали', icon: FileText },
-    { id: 3, label: 'Фото', icon: Image },
-    { id: 4, label: 'Адрес', icon: MapPin },
-    { id: 5, label: 'Цена', icon: DollarSign },
+const TOTAL_STEPS = 5;
+
+const inputClass =
+    'w-full px-4 py-2.5 rounded-xl bg-surface border border-border text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all';
+const labelClass = 'text-sm font-semibold text-foreground mb-2 block font-display';
+
+const pillBtnBase = 'px-3 py-1.5 rounded-lg text-sm font-medium transition-all';
+const pillBtnInactive = `${pillBtnBase} bg-surface border border-border text-foreground hover:bg-muted`;
+const pillBtnInactiveLg =
+    'flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border border-border bg-surface text-foreground hover:bg-muted transition-all text-left';
+const pillBtnActiveLg = `${pillBtnInactiveLg} bg-primary text-primary-foreground border-primary hover:bg-primary/90`;
+const chipInactive = `${pillBtnBase} bg-surface border border-border text-foreground hover:bg-muted`;
+const chipActive = `${pillBtnBase} bg-primary text-primary-foreground border border-primary`;
+
+function NumericPillRow({
+    label,
+    value,
+    onChange,
+    min,
+    max,
+    error,
+}: {
+    label: ReactNode;
+    value: string;
+    onChange: (v: string) => void;
+    min: number;
+    max: number;
+    error?: string;
+}) {
+    const n = value.trim() === '' ? NaN : Number(value);
+    const lowPills: number[] = [];
+    if (min <= 0 && max >= 0) lowPills.push(0);
+    const startNum = min <= 0 ? 1 : min;
+    for (let i = startNum; i <= Math.min(4, max); i++) {
+        lowPills.push(i);
+    }
+    const hasPlus = max > 4;
+    const activeLow = Number.isFinite(n) && n >= min && n <= Math.min(4, max) ? Math.trunc(n) : null;
+    const isPlusRange = hasPlus && Number.isFinite(n) && n >= 5 && n <= max;
+
+    return (
+        <div>
+            <label className={cn(labelClass, 'flex items-center gap-1.5 mb-2')}>{label}</label>
+            <div className="flex flex-wrap gap-1.5">
+                {lowPills.map((opt) => (
+                    <button
+                        key={opt}
+                        type="button"
+                        onClick={() => onChange(String(opt))}
+                        className={activeLow === opt ? chipActive : chipInactive}
+                    >
+                        {opt}
+                    </button>
+                ))}
+                {hasPlus && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (!Number.isFinite(n) || n < 5) onChange('5');
+                        }}
+                        className={isPlusRange ? chipActive : chipInactive}
+                    >
+                        5+
+                    </button>
+                )}
+            </div>
+            {hasPlus && isPlusRange && (
+                <input
+                    type="number"
+                    min={5}
+                    max={max}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className={cn(inputClass, 'mt-2', error ? 'border-destructive' : '')}
+                />
+            )}
+            {error ? <p className="text-xs text-destructive mt-1">{error}</p> : null}
+        </div>
+    );
+}
+
+/** Сайт только для посуточной сдачи: квартира или дом. */
+const DAILY_PROPERTY_TYPE_VALUES = ['apartment', 'house'] as const;
+
+const dailyPropertyChoices: { value: (typeof DAILY_PROPERTY_TYPE_VALUES)[number]; label: string; icon: typeof Building2 }[] = [
+    { value: 'apartment', label: 'Квартира на сутки', icon: Building2 },
+    { value: 'house', label: 'Дом на сутки', icon: Home },
 ];
 
-const propertyTypes = [
-    { value: 'apartment', label: 'Квартира', icon: Building2 },
-    { value: 'house', label: 'Дом / Коттедж', icon: Home },
-    { value: 'room', label: 'Комната', icon: BedDouble },
-    { value: 'land', label: 'Участок', icon: MapPin },
-    { value: 'garage', label: 'Гараж', icon: Car },
-    { value: 'parking', label: 'Машиноместо', icon: Car },
-    { value: 'dacha', label: 'Дача', icon: TreePine },
-    { value: 'office', label: 'Офис', icon: Briefcase },
-    { value: 'retail', label: 'Торговое помещение', icon: Store },
-    { value: 'warehouse', label: 'Склад', icon: Warehouse },
-];
+const isAllowedDailyPropertyType = (t: string): boolean =>
+    (DAILY_PROPERTY_TYPE_VALUES as readonly string[]).includes(t);
 
-const dealTypes = [
-    { value: 'sale', label: 'Продажа', icon: Tag },
-    { value: 'rent', label: 'Аренда', icon: Key },
-    { value: 'daily', label: 'Посуточно', icon: Calendar },
-];
-
-const propertyCategories = [
-    { value: 'residential', label: 'Жилая', icon: Home },
-    { value: 'biz', label: 'Коммерческая', icon: Building2 },
-    { value: 'auto', label: 'Для авто', icon: Car },
-];
-
-const propertyKindsByCategory: Record<string, string[]> = {
-    residential: ['apartment', 'room', 'house', 'dacha', 'land'],
-    biz: ['office', 'retail', 'warehouse'],
-    auto: ['garage', 'parking'],
-};
-
-const dailyKinds = ['apartment', 'house', 'dacha'];
 const lotAreaTypes = ['land', 'house', 'dacha'];
 
 const requiresAreaInSquareMeters = (propertyType: string): boolean => propertyType !== 'land';
 const needsLotArea = (propertyType: string): boolean => lotAreaTypes.includes(propertyType);
 
-const availableCategories = (dealType: string): string[] =>
-    dealType === 'daily'
-        ? ['residential']
-        : ['residential', 'biz', 'auto'];
-
-const availablePropertyTypes = (dealType: string, category: string): string[] => {
-    if (!category) return [];
-    const categoryTypes = propertyKindsByCategory[category] ?? [];
-    let types =
-        dealType !== 'daily' ? categoryTypes : categoryTypes.filter((type) => dailyKinds.includes(type));
-    if (dealType === 'rent') {
-        types = types.filter((t) => t !== 'land');
-    }
-    return types;
-};
-
 const titlePlaceholderByType: Record<string, string> = {
-    apartment: 'Например: Светлая 2-комнатная квартира у метро',
+    apartment: 'Например: Уютная квартира на сутки в центре',
     room: 'Например: Комната 18 м² в 3-комнатной квартире',
-    house: 'Например: Дом 140 м² с участком 8 соток',
+    house: 'Например: Дом на сутки с баней и участком',
     dacha: 'Например: Дача с баней и садом в 20 км от города',
     land: 'Например: Участок 10 соток под строительство дома',
     office: 'Например: Офис 75 м² в бизнес-центре класса B',
@@ -198,8 +221,8 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 const INITIAL_FORM: ListingFormData = {
-    dealType: '',
-    propertyCategory: '',
+    dealType: 'daily',
+    propertyCategory: 'residential',
     propertyType: '',
     title: '',
     description: '',
@@ -268,6 +291,7 @@ export function CreateListingForm() {
     const contactPhonePrefilledRef = useRef(false);
     const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
     const [smsAuthOpen, setSmsAuthOpen] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
 
     useEffect(() => {
         if (!isAuthenticated() || contactNamePrefilledRef.current || !user) return;
@@ -310,34 +334,6 @@ export function CreateListingForm() {
 
     const update = useCallback((key: keyof ListingFormData, value: ListingFormData[keyof ListingFormData]) => {
         setForm((prev) => {
-            if (key === 'dealType') {
-                const nextDeal = value as string;
-                const renovationInvalidForDaily =
-                    nextDeal === 'daily' && prev.renovation === 'Без ремонта';
-                return {
-                    ...prev,
-                    dealType: nextDeal,
-                    propertyCategory: '',
-                    propertyType: '',
-                    dealConditions: [],
-                    maxDailyGuests: '',
-                    dailyBedCount: '',
-                    checkInTime: '',
-                    checkOutTime: '',
-                    roomsInDeal: '',
-                    roomsArea: '',
-                    ...(renovationInvalidForDaily ? { renovation: '' } : {}),
-                };
-            }
-            if (key === 'propertyCategory') {
-                return {
-                    ...prev,
-                    propertyCategory: value as string,
-                    propertyType: '',
-                    roomsInDeal: '',
-                    roomsArea: '',
-                };
-            }
             if (key === 'propertyType') {
                 const nextType = value as string;
                 return {
@@ -354,22 +350,6 @@ export function CreateListingForm() {
             const next = { ...prev };
             if (next[key]) {
                 delete next[key];
-            }
-            if (key === 'dealType') {
-                delete next.propertyCategory;
-                delete next.propertyType;
-                delete next.dealConditions;
-                delete next.maxDailyGuests;
-                delete next.dailyBedCount;
-                delete next.checkInTime;
-                delete next.checkOutTime;
-                delete next.roomsInDeal;
-                delete next.roomsArea;
-            }
-            if (key === 'propertyCategory') {
-                delete next.propertyType;
-                delete next.roomsInDeal;
-                delete next.roomsArea;
             }
             if (key === 'propertyType') {
                 delete next.roomsInDeal;
@@ -413,12 +393,10 @@ export function CreateListingForm() {
 
         switch (s) {
             case 1:
-                if (!form.dealType) errs.dealType = 'Выберите тип сделки';
-                if (!form.propertyCategory) errs.propertyCategory = 'Выберите тип недвижимости';
                 if (!form.propertyType) {
-                    errs.propertyType = 'Выберите вид недвижимости';
-                } else if (!availablePropertyTypes(form.dealType, form.propertyCategory).includes(form.propertyType)) {
-                    errs.propertyType = 'Выберите вид недвижимости из списка';
+                    errs.propertyType = 'Выберите тип объекта';
+                } else if (!isAllowedDailyPropertyType(form.propertyType)) {
+                    errs.propertyType = 'Выберите квартиру или дом';
                 }
                 break;
             case 2: {
@@ -552,12 +530,7 @@ export function CreateListingForm() {
     const canProceed = useCallback((): boolean => {
         switch (step) {
             case 1:
-                return !!(
-                    form.dealType
-                    && form.propertyCategory
-                    && form.propertyType
-                    && availablePropertyTypes(form.dealType, form.propertyCategory).includes(form.propertyType)
-                );
+                return !!(form.propertyType && isAllowedDailyPropertyType(form.propertyType));
             case 2:
                 return !!(
                     form.title.trim()
@@ -608,9 +581,22 @@ export function CreateListingForm() {
         }
     }, [step, form]);
 
-    const next = () => { if (validateStep(step)) setStep((s) => Math.min(s + 1, 5)); };
+    const next = () => { if (validateStep(step)) setStep((s) => Math.min(s + 1, TOTAL_STEPS)); };
     const prev = () => setStep((s) => Math.max(s - 1, 1));
     const goToStep = (target: number) => { if (target < step) setStep(target); };
+
+    const resetListing = useCallback(() => {
+        contactNamePrefilledRef.current = false;
+        contactPhonePrefilledRef.current = false;
+        setForm({ ...INITIAL_FORM });
+        setStep(1);
+        setErrors({});
+        setCityQuery('');
+        setStreetQuery('');
+        setCityDropdownOpen(false);
+        setStreetDropdownOpen(false);
+        setSubmitted(false);
+    }, []);
 
     // --- File upload ---
 
@@ -822,7 +808,7 @@ export function CreateListingForm() {
         try {
             await createProperty(payload);
             toast.success('Объявление отправлено на модерацию');
-            router.push('/kabinet');
+            setSubmitted(true);
         } catch (err: unknown) {
             const status = typeof err === 'object' && err !== null && 'response' in err
                 ? (err as { response?: { status?: number } }).response?.status
@@ -877,486 +863,481 @@ export function CreateListingForm() {
         ? [form.latitude, form.longitude]
         : DEFAULT_CENTER;
 
-    return (
-        <div className="pt-24 pb-16">
-            <div className="container mx-auto px-4 max-w-3xl">
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-                    <h1 className="text-3xl font-bold font-display text-foreground mb-2">
-                        Подать объявление
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Заполните информацию о вашем объекте недвижимости
+    if (submitted) {
+        return (
+            <div className="space-y-6 max-w-3xl">
+                <div className="text-center py-16 space-y-4">
+                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                        <Check className="h-9 w-9 text-primary" />
+                    </div>
+                    <h2 className="font-display text-2xl font-bold text-foreground">Объявление создано!</h2>
+                    <p className="text-muted-foreground max-w-md mx-auto text-sm">
+                        Ваше объявление отправлено на модерацию. Обычно проверка занимает до 24 часов.
                     </p>
-                </motion.div>
-
-                {/* Stepper */}
-                <div className="flex items-center gap-1 mb-10 overflow-x-auto pb-2">
-                    {STEPS.map((s, i) => {
-                        const Icon = s.icon;
-                        const isActive = step === s.id;
-                        const isDone = step > s.id;
-                        return (
-                            <div key={s.id} className="flex items-center">
-                                <button
-                                    onClick={() => goToStep(s.id)}
-                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${isActive
-                                            ? 'bg-primary text-primary-foreground shadow-primary'
-                                            : isDone
-                                                ? 'bg-accent text-accent-foreground cursor-pointer'
-                                                : 'bg-muted text-muted-foreground cursor-default'
-                                        }`}
-                                >
-                                    {isDone ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
-                                    <span className="hidden sm:inline">{s.label}</span>
-                                </button>
-                                {i < STEPS.length - 1 && (
-                                    <div className={`w-6 h-px mx-1 ${isDone ? 'bg-primary/40' : 'bg-border'}`} />
-                                )}
-                            </div>
-                        );
-                    })}
+                    <div className="flex flex-wrap gap-3 justify-center pt-4">
+                        <Button variant="outline" onClick={() => router.push('/kabinet')}>
+                            К моим объявлениям
+                        </Button>
+                        <Button onClick={resetListing}>Создать ещё</Button>
+                    </div>
                 </div>
 
-                {/* Step content */}
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={step}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.25 }}
-                        className="bg-card rounded-2xl shadow-card border border-border p-6 sm:p-8"
-                    >
-                        {/* Step 1: Deal type + category + kind */}
+                <PhoneVerifyDialog
+                    open={verifyDialogOpen}
+                    onOpenChange={setVerifyDialogOpen}
+                    initialPhone={form.contactPhone.trim()}
+                    onVerified={() => {
+                        setVerifyDialogOpen(false);
+                        submitProperty();
+                    }}
+                />
+                <PhoneAuthModal
+                    open={smsAuthOpen}
+                    onOpenChange={setSmsAuthOpen}
+                    initialPhone={form.contactPhone.trim()}
+                    onSuccess={() => {
+                        void submitProperty();
+                    }}
+                />
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6 max-w-3xl">
+            <div className="flex items-center gap-3">
+                <button
+                    type="button"
+                    onClick={() => (step > 1 ? prev() : router.back())}
+                    className="p-2 rounded-lg hover:bg-muted transition-colors"
+                >
+                    <ArrowLeft className="h-5 w-5 text-muted-foreground" />
+                </button>
+                <div>
+                    <h1 className="font-display text-2xl font-bold text-foreground">Новое объявление</h1>
+                    <p className="text-sm text-muted-foreground">
+                        Шаг {step} из {TOTAL_STEPS}
+                    </p>
+                </div>
+            </div>
+
+            <div className="flex gap-2">
+                {Array.from({ length: TOTAL_STEPS }).map((_, i) => {
+                    const segmentStep = i + 1;
+                    const canJumpBack = segmentStep < step;
+                    return (
+                        <button
+                            key={segmentStep}
+                            type="button"
+                            onClick={() => goToStep(segmentStep)}
+                            disabled={!canJumpBack}
+                            className={cn(
+                                'h-1.5 flex-1 rounded-full transition-colors',
+                                segmentStep <= step ? 'bg-primary' : 'bg-border',
+                                canJumpBack ? 'cursor-pointer hover:opacity-90' : 'cursor-default',
+                            )}
+                            aria-label={`Шаг ${segmentStep}`}
+                        />
+                    );
+                })}
+            </div>
+
+            {/* Step content */}
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={step}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.25 }}
+                    className="space-y-6"
+                >
+                        {/* Step 1: только посуточно — квартира или дом */}
                         {step === 1 && (
-                            <div className="space-y-8">
+                            <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                 <div>
-                                    <h2 className="text-lg font-semibold text-foreground mb-1">Тип сделки</h2>
-                                    <p className="text-sm text-muted-foreground mb-4">
-                                        Выберите, что вы хотите сделать с объектом
+                                    <h2 className="font-display text-lg font-semibold text-foreground">Тип объекта</h2>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        Посуточная сдача — выберите квартиру или дом
                                     </p>
-                                    <div className="grid grid-cols-1 min-[600px]:grid-cols-3 gap-3">
-                                        {dealTypes.map((dt) => {
-                                            const Icon = dt.icon;
-                                            return (
-                                                <button
-                                                    key={dt.value}
-                                                    onClick={() => update('dealType', dt.value)}
-                                                    className={`flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border-2 transition-all text-left ${form.dealType === dt.value
-                                                            ? 'border-primary bg-accent text-foreground'
-                                                            : 'border-border hover:border-primary/30 text-muted-foreground hover:text-foreground'
-                                                        }`}
-                                                >
-                                                    <Icon className="w-5 h-5 flex-shrink-0" />
-                                                    {dt.label}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    <FieldError field="dealType" />
                                 </div>
-
-                                <div>
-                                    <h2 className="text-lg font-semibold text-foreground mb-1">Тип недвижимости</h2>
-                                    <p className="text-sm text-muted-foreground mb-4">Укажите категорию объекта</p>
-                                    <div className="grid grid-cols-1 min-[600px]:grid-cols-3 gap-3">
-                                        {propertyCategories
-                                            .filter((category) => availableCategories(form.dealType).includes(category.value))
-                                            .map((category) => {
-                                            const Icon = category.icon;
-                                            return (
-                                                <button
-                                                    key={category.value}
-                                                    onClick={() => update('propertyCategory', category.value)}
-                                                    className={`flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border-2 transition-all text-left ${form.propertyCategory === category.value
-                                                            ? 'border-primary bg-accent text-foreground'
-                                                            : 'border-border hover:border-primary/30 text-muted-foreground hover:text-foreground'
-                                                        }`}
-                                                >
-                                                    <Icon className="w-5 h-5 flex-shrink-0" />
-                                                    {category.label}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    <FieldError field="propertyCategory" />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {dailyPropertyChoices.map((choice) => {
+                                        const Icon = choice.icon;
+                                        return (
+                                            <button
+                                                key={choice.value}
+                                                type="button"
+                                                onClick={() => update('propertyType', choice.value)}
+                                                className={form.propertyType === choice.value ? pillBtnActiveLg : pillBtnInactiveLg}
+                                            >
+                                                <Icon className="w-5 h-5 flex-shrink-0" />
+                                                {choice.label}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
-
-                                <div>
-                                    <h2 className="text-lg font-semibold text-foreground mb-1">Вид недвижимости</h2>
-                                    <p className="text-sm text-muted-foreground mb-4">Выберите конкретный вид объекта</p>
-                                    <div className="grid grid-cols-1 min-[600px]:grid-cols-3 gap-3">
-                                        {availablePropertyTypes(form.dealType, form.propertyCategory).map((typeValue) => {
-                                            const propertyType = propertyTypes.find((pt) => pt.value === typeValue);
-                                            if (!propertyType) return null;
-                                            const Icon = propertyType.icon;
-                                            return (
-                                                <button
-                                                    key={propertyType.value}
-                                                    onClick={() => update('propertyType', propertyType.value)}
-                                                    className={`flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border-2 transition-all text-left ${form.propertyType === propertyType.value
-                                                            ? 'border-primary bg-accent text-foreground'
-                                                            : 'border-border hover:border-primary/30 text-muted-foreground hover:text-foreground'
-                                                        }`}
-                                                >
-                                                    <Icon className="w-5 h-5 flex-shrink-0" />
-                                                    {propertyType.label}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    <FieldError field="propertyType" />
-                                </div>
+                                <FieldError field="propertyType" />
                             </div>
                         )}
 
                         {/* Step 2: Details */}
                         {step === 2 && (
-                            <div className="space-y-6 [&_label]:min-h-5 [&_label]:flex [&_label]:items-center [&_label]:gap-1.5">
-                                <h2 className="text-lg font-semibold text-foreground">Описание объекта</h2>
+                            <>
+                                <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
+                                    <h2 className="font-display text-lg font-semibold text-foreground">Основная информация</h2>
 
-                                <div>
-                                    <Label htmlFor="title" className="text-foreground">
-                                        Заголовок объявления *{' '}
-                                        <span className="font-normal text-muted-foreground/80">
-                                            ({TITLE_MIN_LENGTH}–{TITLE_MAX_LENGTH} символов)
-                                        </span>
-                                    </Label>
-                                    <Input
-                                        id="title"
-                                        value={form.title}
-                                        onChange={(e) => update('title', e.target.value)}
-                                        onBlur={handleTitleBlur}
-                                        placeholder={getTitlePlaceholder(form.propertyType)}
-                                        className={`mt-1.5 ${errors.title ? 'border-destructive' : ''}`}
-                                        maxLength={TITLE_MAX_LENGTH}
-                                        aria-invalid={errors.title ? true : undefined}
-                                    />
-                                    <div className="flex items-center justify-between mt-1">
-                                        <FieldError field="title" />
-                                        <span className="text-xs text-muted-foreground/70 ml-auto tabular-nums">
-                                            {form.title.length}/{TITLE_MAX_LENGTH}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="description" className="text-foreground">
-                                        Подробное описание *{' '}
-                                        <span className="font-normal text-muted-foreground/80">
-                                            ({DESCRIPTION_MIN_LENGTH}–{DESCRIPTION_MAX_LENGTH} символов)
-                                        </span>
-                                    </Label>
-                                    <Textarea
-                                        id="description"
-                                        value={form.description}
-                                        onChange={(e) => update('description', e.target.value)}
-                                        onBlur={handleDescriptionBlur}
-                                        placeholder="Опишите преимущества вашего объекта, расположение, состояние ремонта, инфраструктуру рядом..."
-                                        rows={4}
-                                        className={`mt-1.5 resize-none ${errors.description ? 'border-destructive' : ''}`}
-                                        maxLength={DESCRIPTION_MAX_LENGTH}
-                                        aria-invalid={errors.description ? true : undefined}
-                                    />
-                                    <div className="flex items-center justify-between mt-1">
-                                        <FieldError field="description" />
-                                        <span className="text-xs text-muted-foreground/70 ml-auto tabular-nums">
-                                            {form.description.length}/{DESCRIPTION_MAX_LENGTH}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
-                                    {showRooms(form.propertyType) && (
-                                        <div>
-                                        <Label className="text-foreground flex items-center gap-1.5">
-                                            <BedDouble className="w-3.5 h-3.5" /> Комнат {roomsRequired(form.propertyType) ? '*' : ''}
-                                        </Label>
-                                        <Input
-                                            type="number" min={ROOMS_MIN} max={ROOMS_MAX}
-                                            value={form.rooms}
-                                            onChange={(e) => update('rooms', e.target.value)}
-                                            placeholder="Например: 3"
-                                            className={`mt-1.5 ${errors.rooms ? 'border-destructive' : ''}`}
+                                    <div>
+                                        <label htmlFor="title" className={labelClass}>
+                                            Заголовок объявления *
+                                        </label>
+                                        <input
+                                            id="title"
+                                            value={form.title}
+                                            onChange={(e) => update('title', e.target.value)}
+                                            onBlur={handleTitleBlur}
+                                            placeholder={getTitlePlaceholder(form.propertyType)}
+                                            maxLength={TITLE_MAX_LENGTH}
+                                            aria-invalid={errors.title ? true : undefined}
+                                            className={cn(inputClass, errors.title ? 'border-destructive' : '')}
                                         />
-                                        <FieldError field="rooms" />
-                                        </div>
-                                    )}
-                                    {showRoomDealFields(form.propertyType, form.dealType) && (
-                                        <>
-                                            <div>
-                                                <Label className="text-foreground flex items-center gap-1.5">
-                                                    <BedDouble className="w-3.5 h-3.5" /> Комнат в сделке *
-                                                </Label>
-                                                <Input
-                                                    type="number"
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {TITLE_MIN_LENGTH}–{TITLE_MAX_LENGTH} символов · {form.title.length}/{TITLE_MAX_LENGTH}
+                                        </p>
+                                        <FieldError field="title" />
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="description" className={labelClass}>
+                                            Описание *
+                                        </label>
+                                        <textarea
+                                            id="description"
+                                            value={form.description}
+                                            onChange={(e) => update('description', e.target.value)}
+                                            onBlur={handleDescriptionBlur}
+                                            placeholder="Опишите преимущества вашего объекта, расположение, состояние ремонта, инфраструктуру рядом..."
+                                            rows={5}
+                                            maxLength={DESCRIPTION_MAX_LENGTH}
+                                            aria-invalid={errors.description ? true : undefined}
+                                            className={cn(inputClass, 'resize-none', errors.description ? 'border-destructive' : '')}
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {DESCRIPTION_MIN_LENGTH}–{DESCRIPTION_MAX_LENGTH} символов · {form.description.length}/{DESCRIPTION_MAX_LENGTH}
+                                        </p>
+                                        <FieldError field="description" />
+                                    </div>
+                                </div>
+
+                                <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
+                                    <h2 className="font-display text-lg font-semibold text-foreground">Параметры объекта</h2>
+
+                                    <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-5">
+                                        {showRooms(form.propertyType) && (
+                                            <NumericPillRow
+                                                label={
+                                                    <>
+                                                        <BedDouble className="w-3.5 h-3.5" /> Комнат {roomsRequired(form.propertyType) ? '*' : ''}
+                                                    </>
+                                                }
+                                                value={form.rooms}
+                                                onChange={(v) => update('rooms', v)}
+                                                min={ROOMS_MIN}
+                                                max={ROOMS_MAX}
+                                                error={errors.rooms}
+                                            />
+                                        )}
+                                        {showRoomDealFields(form.propertyType, form.dealType) && (
+                                            <>
+                                                <NumericPillRow
+                                                    label={
+                                                        <>
+                                                            <BedDouble className="w-3.5 h-3.5" /> Комнат в сделке *
+                                                        </>
+                                                    }
+                                                    value={form.roomsInDeal}
+                                                    onChange={(v) => update('roomsInDeal', v)}
                                                     min={ROOMS_MIN}
                                                     max={ROOMS_MAX}
-                                                    value={form.roomsInDeal}
-                                                    onChange={(e) => update('roomsInDeal', e.target.value)}
-                                                    placeholder="Например: 2"
-                                                    className={`mt-1.5 ${errors.roomsInDeal ? 'border-destructive' : ''}`}
+                                                    error={errors.roomsInDeal}
                                                 />
-                                                <FieldError field="roomsInDeal" />
-                                            </div>
+                                                <div>
+                                                    <label className={labelClass}>
+                                                        <Maximize className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                                        Площадь комнат в сделке, м² *
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min={AREA_MIN}
+                                                        max={AREA_MAX}
+                                                        step={0.1}
+                                                        value={form.roomsArea}
+                                                        onChange={(e) => update('roomsArea', e.target.value)}
+                                                        placeholder="Например: 35"
+                                                        className={cn(inputClass, errors.roomsArea ? 'border-destructive' : '')}
+                                                    />
+                                                    <FieldError field="roomsArea" />
+                                                </div>
+                                            </>
+                                        )}
+                                        {showBathrooms(form.propertyType) && (
+                                            <NumericPillRow
+                                                label={
+                                                    <>
+                                                        <Bath className="w-3.5 h-3.5" /> Санузлов
+                                                    </>
+                                                }
+                                                value={form.bathrooms}
+                                                onChange={(v) => update('bathrooms', v)}
+                                                min={BATHROOMS_MIN}
+                                                max={BATHROOMS_MAX}
+                                                error={errors.bathrooms}
+                                            />
+                                        )}
+                                        {requiresAreaInSquareMeters(form.propertyType) && (
                                             <div>
-                                                <Label className="text-foreground flex items-center gap-1.5 min-h-5">
-                                                    <Maximize className="w-3.5 h-3.5" /> Площадь комнат в сделке, м² *
-                                                </Label>
-                                                <Input
+                                                <label className={labelClass}>
+                                                    <Maximize className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                                    Площадь общая, м² *
+                                                </label>
+                                                <input
                                                     type="number"
                                                     min={AREA_MIN}
                                                     max={AREA_MAX}
-                                                    step={0.1}
-                                                    value={form.roomsArea}
-                                                    onChange={(e) => update('roomsArea', e.target.value)}
-                                                    placeholder="Например: 35"
-                                                    className={`mt-1.5 ${errors.roomsArea ? 'border-destructive' : ''}`}
+                                                    value={form.area}
+                                                    onChange={(e) => update('area', e.target.value)}
+                                                    placeholder="Например: 65"
+                                                    className={cn(inputClass, errors.area ? 'border-destructive' : '')}
                                                 />
-                                                <FieldError field="roomsArea" />
+                                                <FieldError field="area" />
                                             </div>
-                                        </>
-                                    )}
-                                    {showBathrooms(form.propertyType) && (
-                                        <div>
-                                        <Label className="text-foreground flex items-center gap-1.5">
-                                            <Bath className="w-3.5 h-3.5" /> Санузлов
-                                        </Label>
-                                        <Input
-                                            type="number" min={BATHROOMS_MIN} max={BATHROOMS_MAX}
-                                            value={form.bathrooms}
-                                            onChange={(e) => update('bathrooms', e.target.value)}
-                                            placeholder="Например: 1"
-                                            className={`mt-1.5 ${errors.bathrooms ? 'border-destructive' : ''}`}
-                                        />
-                                        <FieldError field="bathrooms" />
-                                        </div>
-                                    )}
-                                    {requiresAreaInSquareMeters(form.propertyType) && (
-                                        <div>
-                                            <Label className="text-foreground flex items-center gap-1.5 min-h-5">
-                                                <Maximize className="w-3.5 h-3.5" /> Площадь общая, м² *
-                                            </Label>
-                                            <Input
-                                                type="number" min={AREA_MIN} max={AREA_MAX}
-                                                value={form.area}
-                                                onChange={(e) => update('area', e.target.value)}
-                                                placeholder="Например: 65"
-                                                className={`mt-1.5 ${errors.area ? 'border-destructive' : ''}`}
+                                        )}
+                                        {needsLotArea(form.propertyType) && (
+                                            <div>
+                                                <label className={labelClass}>
+                                                    <MapPin className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                                    Площадь участка, соток *
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min={0.01}
+                                                    step={0.01}
+                                                    value={form.landArea}
+                                                    onChange={(e) => update('landArea', e.target.value)}
+                                                    placeholder="Например: 10"
+                                                    className={cn(inputClass, errors.landArea ? 'border-destructive' : '')}
+                                                />
+                                                <FieldError field="landArea" />
+                                            </div>
+                                        )}
+                                        {showFloor(form.propertyType) && (
+                                            <div>
+                                                <label className={labelClass}>Этаж</label>
+                                                <input
+                                                    type="number"
+                                                    min={FLOOR_MIN}
+                                                    max={FLOOR_MAX}
+                                                    value={form.floor}
+                                                    onChange={(e) => update('floor', e.target.value)}
+                                                    placeholder="Например: 5 или подвал"
+                                                    className={cn(inputClass, errors.floor ? 'border-destructive' : '')}
+                                                />
+                                                <FieldError field="floor" />
+                                            </div>
+                                        )}
+                                        {showTotalFloors(form.propertyType) && (
+                                            <NumericPillRow
+                                                label="Этажей в доме"
+                                                value={form.totalFloors}
+                                                onChange={(v) => update('totalFloors', v)}
+                                                min={TOTAL_FLOORS_MIN}
+                                                max={TOTAL_FLOORS_MAX}
+                                                error={errors.totalFloors}
                                             />
-                                            <FieldError field="area" />
-                                        </div>
-                                    )}
-                                    {needsLotArea(form.propertyType) && (
-                                        <div>
-                                            <Label className="text-foreground flex items-center gap-1.5 min-h-5">
-                                                <MapPin className="w-3.5 h-3.5" /> Площадь участка, соток *
-                                            </Label>
-                                            <Input
-                                                type="number"
-                                                min={0.01}
-                                                step={0.01}
-                                                value={form.landArea}
-                                                onChange={(e) => update('landArea', e.target.value)}
-                                                placeholder="Например: 10"
-                                                className={`mt-1.5 ${errors.landArea ? 'border-destructive' : ''}`}
-                                            />
-                                            <FieldError field="landArea" />
-                                        </div>
-                                    )}
-                                    {showFloor(form.propertyType) && (
-                                        <div>
-                                        <Label className="text-foreground flex items-center min-h-5">Этаж</Label>
-                                        <Input
-                                            type="number" min={FLOOR_MIN} max={FLOOR_MAX}
-                                            value={form.floor}
-                                            onChange={(e) => update('floor', e.target.value)}
-                                            placeholder="Например: 5"
-                                            className={`mt-1.5 ${errors.floor ? 'border-destructive' : ''}`}
-                                        />
-                                        <FieldError field="floor" />
-                                        </div>
-                                    )}
-                                    {showTotalFloors(form.propertyType) && (
-                                        <div>
-                                        <Label className="text-foreground">Этажей в доме</Label>
-                                        <Input
-                                            type="number" min={TOTAL_FLOORS_MIN} max={TOTAL_FLOORS_MAX}
-                                            value={form.totalFloors}
-                                            onChange={(e) => update('totalFloors', e.target.value)}
-                                            placeholder="Например: 9"
-                                            className={`mt-1.5 ${errors.totalFloors ? 'border-destructive' : ''}`}
-                                        />
-                                        <FieldError field="totalFloors" />
-                                        </div>
-                                    )}
-                                    {showYearBuilt(form.propertyType) && (
-                                        <div>
-                                        <Label className="text-foreground flex items-center gap-1.5">
-                                            <Calendar className="w-3.5 h-3.5" /> Год постройки
-                                        </Label>
-                                        <Input
-                                            type="number" min={YEAR_BUILT_MIN} max={YEAR_BUILT_MAX}
-                                            value={form.yearBuilt}
-                                            onChange={(e) => update('yearBuilt', e.target.value)}
-                                            placeholder="Например: 2020"
-                                            className={`mt-1.5 ${errors.yearBuilt ? 'border-destructive' : ''}`}
-                                        />
-                                        <FieldError field="yearBuilt" />
-                                        </div>
-                                    )}
-                                </div>
+                                        )}
+                                        {showYearBuilt(form.propertyType) && (
+                                            <div>
+                                                <label className={labelClass}>
+                                                    <Calendar className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                                    Год постройки
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min={YEAR_BUILT_MIN}
+                                                    max={YEAR_BUILT_MAX}
+                                                    value={form.yearBuilt}
+                                                    onChange={(e) => update('yearBuilt', e.target.value)}
+                                                    placeholder="Например: 2020"
+                                                    className={cn(inputClass, errors.yearBuilt ? 'border-destructive' : '')}
+                                                />
+                                                <FieldError field="yearBuilt" />
+                                            </div>
+                                        )}
+                                    </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {showLivingArea(form.propertyType) && (
-                                        <div>
-                                            <Label className="text-foreground">Площадь жилая, м²</Label>
-                                            <Input
-                                                type="number" min={1}
-                                                value={form.livingArea}
-                                                onChange={(e) => update('livingArea', e.target.value)}
-                                                placeholder="Например: 40"
-                                                className={`mt-1.5 ${errors.livingArea ? 'border-destructive' : ''}`}
-                                            />
-                                            <FieldError field="livingArea" />
-                                        </div>
-                                    )}
-                                    {showKitchenArea(form.propertyType) && (
-                                        <div>
-                                            <Label className="text-foreground">Площадь кухни, м²</Label>
-                                            <Input
-                                                type="number" min={1}
-                                                value={form.kitchenArea}
-                                                onChange={(e) => update('kitchenArea', e.target.value)}
-                                                placeholder="Например: 12"
-                                                className={`mt-1.5 ${errors.kitchenArea ? 'border-destructive' : ''}`}
-                                            />
-                                            <FieldError field="kitchenArea" />
-                                        </div>
-                                    )}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {showLivingArea(form.propertyType) && (
+                                            <div>
+                                                <label className={labelClass}>Площадь жилая, м²</label>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    value={form.livingArea}
+                                                    onChange={(e) => update('livingArea', e.target.value)}
+                                                    placeholder="Например: 40"
+                                                    className={cn(inputClass, errors.livingArea ? 'border-destructive' : '')}
+                                                />
+                                                <FieldError field="livingArea" />
+                                            </div>
+                                        )}
+                                        {showKitchenArea(form.propertyType) && (
+                                            <div>
+                                                <label className={labelClass}>Площадь кухни, м²</label>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    value={form.kitchenArea}
+                                                    onChange={(e) => update('kitchenArea', e.target.value)}
+                                                    placeholder="Например: 12"
+                                                    className={cn(inputClass, errors.kitchenArea ? 'border-destructive' : '')}
+                                                />
+                                                <FieldError field="kitchenArea" />
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {form.dealType === 'daily' && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <Label className="text-foreground">Максимальное число гостей *</Label>
-                                            <Input
-                                                type="number"
-                                                min={1}
+                                    <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
+                                        <h2 className="font-display text-lg font-semibold text-foreground">Посуточная аренда</h2>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                            <NumericPillRow
+                                                label={
+                                                    <>
+                                                        <Users className="w-3.5 h-3.5" /> Максимум гостей *
+                                                    </>
+                                                }
                                                 value={form.maxDailyGuests}
-                                                onChange={(e) => update('maxDailyGuests', e.target.value)}
-                                                placeholder="Например: 4"
-                                                className={`mt-1.5 ${errors.maxDailyGuests ? 'border-destructive' : ''}`}
-                                            />
-                                            <FieldError field="maxDailyGuests" />
-                                        </div>
-                                        <div>
-                                            <Label className="text-foreground">Количество кроватей *</Label>
-                                            <Input
-                                                type="number"
+                                                onChange={(v) => update('maxDailyGuests', v)}
                                                 min={1}
+                                                max={99}
+                                                error={errors.maxDailyGuests}
+                                            />
+                                            <NumericPillRow
+                                                label={
+                                                    <>
+                                                        <BedDouble className="w-3.5 h-3.5" /> Кроватей *
+                                                    </>
+                                                }
                                                 value={form.dailyBedCount}
-                                                onChange={(e) => update('dailyBedCount', e.target.value)}
-                                                placeholder="Например: 2"
-                                                className={`mt-1.5 ${errors.dailyBedCount ? 'border-destructive' : ''}`}
+                                                onChange={(v) => update('dailyBedCount', v)}
+                                                min={1}
+                                                max={99}
+                                                error={errors.dailyBedCount}
                                             />
-                                            <FieldError field="dailyBedCount" />
-                                        </div>
-                                        <div>
-                                            <Label className="text-foreground">Время заезда</Label>
-                                            <Input
-                                                type="time"
-                                                value={form.checkInTime}
-                                                onChange={(e) => update('checkInTime', e.target.value)}
-                                                className={`mt-1.5 ${errors.checkInTime ? 'border-destructive' : ''}`}
-                                            />
-                                            <FieldError field="checkInTime" />
-                                        </div>
-                                        <div>
-                                            <Label className="text-foreground">Время выезда</Label>
-                                            <Input
-                                                type="time"
-                                                value={form.checkOutTime}
-                                                onChange={(e) => update('checkOutTime', e.target.value)}
-                                                className={`mt-1.5 ${errors.checkOutTime ? 'border-destructive' : ''}`}
-                                            />
-                                            <FieldError field="checkOutTime" />
+                                            <div>
+                                                <label className={labelClass}>Время заезда</label>
+                                                <input
+                                                    type="time"
+                                                    value={form.checkInTime}
+                                                    onChange={(e) => update('checkInTime', e.target.value)}
+                                                    className={cn(inputClass, errors.checkInTime ? 'border-destructive' : '')}
+                                                />
+                                                <FieldError field="checkInTime" />
+                                            </div>
+                                            <div>
+                                                <label className={labelClass}>Время выезда</label>
+                                                <input
+                                                    type="time"
+                                                    value={form.checkOutTime}
+                                                    onChange={(e) => update('checkOutTime', e.target.value)}
+                                                    className={cn(inputClass, errors.checkOutTime ? 'border-destructive' : '')}
+                                                />
+                                                <FieldError field="checkOutTime" />
+                                            </div>
                                         </div>
                                     </div>
                                 )}
 
-                                {showRenovation(form.propertyType) && (
-                                    <div>
-                                        <Label className="text-foreground">Ремонт</Label>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                                            {renovationOptionsForDeal(form.dealType).map((option) => (
-                                                <button
-                                                    key={option}
-                                                    onClick={() => update('renovation', option)}
-                                                    className={`px-3 py-2 rounded-lg text-sm border transition-all ${form.renovation === option
-                                                            ? 'border-primary bg-accent text-foreground'
-                                                            : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
-                                                        }`}
-                                                >
-                                                    {option}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                                {(showRenovation(form.propertyType) || showBalcony(form.propertyType) || showDealConditions(form.dealType)) && (
+                                    <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
+                                        {showRenovation(form.propertyType) && (
+                                            <div>
+                                                <span className={labelClass}>Ремонт</span>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {renovationOptionsForDeal(form.dealType).map((option) => (
+                                                        <button
+                                                            key={option}
+                                                            type="button"
+                                                            onClick={() => update('renovation', option)}
+                                                            className={form.renovation === option ? chipActive : chipInactive}
+                                                        >
+                                                            {form.renovation === option && (
+                                                                <Check className="h-3.5 w-3.5 inline mr-1.5 -mt-0.5" />
+                                                            )}
+                                                            {option}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
 
-                                {showBalcony(form.propertyType) && (
-                                    <div>
-                                        <Label className="text-foreground">Балкон / Лоджия</Label>
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
-                                            {balconyOptions.map((option) => (
-                                                <button
-                                                    key={option}
-                                                    onClick={() => update('balcony', option)}
-                                                    className={`px-3 py-2 rounded-lg text-sm border transition-all ${form.balcony === option
-                                                            ? 'border-primary bg-accent text-foreground'
-                                                            : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
-                                                        }`}
-                                                >
-                                                    {option}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                                        {showBalcony(form.propertyType) && (
+                                            <div>
+                                                <span className={labelClass}>Балкон / Лоджия</span>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {balconyOptions.map((option) => (
+                                                        <button
+                                                            key={option}
+                                                            type="button"
+                                                            onClick={() => update('balcony', option)}
+                                                            className={form.balcony === option ? chipActive : chipInactive}
+                                                        >
+                                                            {form.balcony === option && (
+                                                                <Check className="h-3.5 w-3.5 inline mr-1.5 -mt-0.5" />
+                                                            )}
+                                                            {option}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
 
-                                {showDealConditions(form.dealType) && (
-                                    <div>
-                                        <Label className="text-foreground">Условия сделки</Label>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                                            {dealConditionOptions(form.dealType, form.propertyType).map((option) => {
-                                                const selected = form.dealConditions.includes(option);
-                                                return (
-                                                    <button
-                                                        key={option}
-                                                        onClick={() => toggleDealCondition(option)}
-                                                        className={`px-3 py-2 rounded-lg text-sm border transition-all ${selected
-                                                                ? 'border-primary bg-accent text-foreground'
-                                                                : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
-                                                            }`}
-                                                    >
-                                                        {option}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
+                                        {showDealConditions(form.dealType) && (
+                                            <div>
+                                                <span className={labelClass}>Условия сделки</span>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {dealConditionOptions(form.dealType, form.propertyType).map((option) => {
+                                                        const selected = form.dealConditions.includes(option);
+                                                        return (
+                                                            <button
+                                                                key={option}
+                                                                type="button"
+                                                                onClick={() => toggleDealCondition(option)}
+                                                                className={selected ? chipActive : chipInactive}
+                                                            >
+                                                                {selected && (
+                                                                    <Check className="h-3.5 w-3.5 inline mr-1.5 -mt-0.5" />
+                                                                )}
+                                                                {option}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
-                            </div>
+                            </>
                         )}
 
                         {/* Step 3: Photos */}
                         {step === 3 && (
-                            <div className="space-y-6">
+                            <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                 <div>
-                                    <h2 className="text-lg font-semibold text-foreground mb-1">Фотографии</h2>
-                                    <p className="text-sm text-muted-foreground">
-                                        Добавьте до {MAX_PHOTOS} фото вашего объекта. Первое фото станет обложкой.
+                                    <h2 className="font-display text-lg font-semibold text-foreground">Фотографии</h2>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        Добавьте до {MAX_PHOTOS} фото. Первое фото станет обложкой.
                                     </p>
                                 </div>
 
@@ -1370,8 +1351,10 @@ export function CreateListingForm() {
                                 />
 
                                 <div
-                                    className={`grid grid-cols-2 sm:grid-cols-3 gap-3 ${dragOver ? 'ring-2 ring-primary ring-offset-2 rounded-xl' : ''
-                                        }`}
+                                    className={cn(
+                                        'grid grid-cols-2 sm:grid-cols-3 gap-3',
+                                        dragOver && 'ring-2 ring-primary ring-offset-2 rounded-xl',
+                                    )}
                                     onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                                     onDragLeave={() => setDragOver(false)}
                                     onDrop={handleDrop}
@@ -1390,200 +1373,212 @@ export function CreateListingForm() {
                                                 </div>
                                             )}
                                             {i === 0 && !photo.uploading && (
-                                                <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-xs font-medium">
+                                                <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold">
                                                     Обложка
                                                 </span>
                                             )}
                                             <button
+                                                type="button"
                                                 onClick={() => removePhoto(i)}
-                                                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-foreground/60 text-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                className="absolute top-2 right-2 p-1.5 rounded-full bg-card/80 backdrop-blur-sm text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                                             >
-                                                <X className="w-3.5 h-3.5" />
+                                                <X className="h-4 w-4" />
                                             </button>
                                         </div>
                                     ))}
 
                                     {form.photos.length < MAX_PHOTOS && (
                                         <button
+                                            type="button"
                                             onClick={() => fileInputRef.current?.click()}
-                                            className={`aspect-[4/3] rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors ${dragOver
+                                            className={cn(
+                                                'aspect-[4/3] rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors group',
+                                                dragOver
                                                     ? 'border-primary bg-primary/5 text-primary'
-                                                    : 'border-border hover:border-primary/40 text-muted-foreground hover:text-primary'
-                                                }`}
+                                                    : 'border-border hover:border-primary/40 bg-surface text-muted-foreground hover:text-primary',
+                                            )}
                                         >
-                                            <Upload className="w-6 h-6" />
-                                            <span className="text-xs font-medium">
-                                                {dragOver ? 'Отпустите файлы' : 'Добавить'}
+                                            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                                                <Upload className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                                            </div>
+                                            <span className="text-xs font-medium text-muted-foreground">
+                                                {dragOver ? 'Отпустите файлы' : 'Загрузить фото'}
                                             </span>
                                         </button>
                                     )}
                                 </div>
 
-                                <div className="flex items-start gap-2 p-3 rounded-xl bg-accent/50 text-sm text-accent-foreground">
-                                    <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                    <span>
-                                        Качественные фото увеличивают просмотры объявления в 3 раза. Рекомендуем
-                                        горизонтальные снимки при хорошем освещении. Допустимые форматы: JPEG, PNG, WebP (до 10 МБ).
-                                    </span>
+                                <div className="bg-muted/50 rounded-xl p-4 flex items-start gap-3">
+                                    <ImageIcon className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                                    <div className="text-sm text-muted-foreground">
+                                        <p className="font-medium text-foreground mb-1">Советы по фото:</p>
+                                        <ul className="space-y-1 list-disc list-inside">
+                                            <li>Используйте горизонтальные фото высокого качества</li>
+                                            <li>Сфотографируйте все комнаты, кухню и ванную</li>
+                                            <li>Обеспечьте хорошее освещение</li>
+                                            <li>Допустимые форматы: JPEG, PNG, WebP (до 10 МБ)</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         )}
 
                         {/* Step 4: Location */}
                         {step === 4 && (
-                            <div className="space-y-6">
-                                <h2 className="text-lg font-semibold text-foreground">Расположение</h2>
+                            <>
+                                <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
+                                    <h2 className="font-display text-lg font-semibold text-foreground">Расположение</h2>
 
-                                {/* City autocomplete */}
-                                <div ref={cityContainerRef} className="relative">
-                                    <Label className="text-foreground">Город *</Label>
-                                    <div className="relative mt-1.5">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                                        <Input
-                                            value={cityQuery}
-                                            onChange={(e) => {
-                                                setCityQuery(e.target.value);
-                                                setCityDropdownOpen(true);
-                                                if (!e.target.value.trim()) {
-                                                    setForm((prev) => ({
-                                                        ...prev,
-                                                        cityId: null,
-                                                        citySlug: '',
-                                                        cityName: '',
-                                                        streetName: '',
-                                                        streetId: null,
-                                                    }));
-                                                    setStreetQuery('');
-                                                }
-                                            }}
-                                            onFocus={() => {
-                                                if (cityQuery.length >= 2) setCityDropdownOpen(true);
-                                            }}
-                                            placeholder="Начните вводить название города..."
-                                            className={`pl-9 ${errors.citySlug ? 'border-destructive' : ''}`}
-                                        />
-                                        {citySearching && (
-                                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
-                                        )}
-                                    </div>
-                                    <FieldError field="citySlug" />
-
-                                    {cityDropdownOpen && cityResults.length > 0 && (
-                                        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg max-h-60 overflow-auto">
-                                            {cityResults.map((city) => {
-                                                const parts = formatCityLabel(city);
-                                                return (
-                                                    <button
-                                                        key={city.id}
-                                                        onClick={() => selectCity(city)}
-                                                        className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
-                                                    >
-                                                        <span className="font-medium text-foreground">{parts[0]}</span>
-                                                        {parts.length > 1 && (
-                                                            <span className="text-sm text-muted-foreground ml-2">
-                                                                {parts.slice(1).join(', ')}
-                                                            </span>
-                                                        )}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Street autocomplete */}
-                                <div ref={streetContainerRef} className="relative">
-                                    <Label className="text-foreground">Улица</Label>
-                                    <div className="relative mt-1.5">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                                        <Input
-                                            value={streetQuery}
-                                            onChange={(e) => {
-                                                setStreetQuery(e.target.value);
-                                                setStreetDropdownOpen(true);
-                                                setForm((prev) => ({
-                                                    ...prev,
-                                                    streetName: e.target.value,
-                                                    streetId: null,
-                                                }));
-                                            }}
-                                            onFocus={() => {
-                                                if (form.cityId && streetQuery.length >= 1) setStreetDropdownOpen(true);
-                                            }}
-                                            placeholder={form.cityId ? 'Начните вводить название улицы...' : 'Сначала выберите город'}
-                                            disabled={!form.cityId}
-                                            className="pl-9"
-                                        />
-                                        {streetSearching && (
-                                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
-                                        )}
-                                    </div>
-
-                                    {streetDropdownOpen && streetResults.length > 0 && (
-                                        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg max-h-60 overflow-auto">
-                                            {streetResults.map((street) => (
-                                                <button
-                                                    key={street.id}
-                                                    onClick={() => {
-                                                        const displayName = street.type
-                                                            ? `${street.type} ${street.name}`
-                                                            : street.name;
-                                                        setStreetQuery(displayName);
+                                    <div ref={cityContainerRef} className="relative">
+                                        <label className={labelClass}>Город *</label>
+                                        <div className="relative">
+                                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                                            <input
+                                                value={cityQuery}
+                                                onChange={(e) => {
+                                                    setCityQuery(e.target.value);
+                                                    setCityDropdownOpen(true);
+                                                    if (!e.target.value.trim()) {
                                                         setForm((prev) => ({
                                                             ...prev,
-                                                            streetName: displayName,
-                                                            streetId: street.id,
+                                                            cityId: null,
+                                                            citySlug: '',
+                                                            cityName: '',
+                                                            streetName: '',
+                                                            streetId: null,
                                                         }));
-                                                        setStreetDropdownOpen(false);
-                                                    }}
-                                                    className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
-                                                >
-                                                    {street.type && (
-                                                        <span className="text-sm text-muted-foreground mr-1">{street.type}</span>
-                                                    )}
-                                                    <span className="font-medium text-foreground">{street.name}</span>
-                                                </button>
-                                            ))}
+                                                        setStreetQuery('');
+                                                    }
+                                                }}
+                                                onFocus={() => {
+                                                    if (cityQuery.length >= 2) setCityDropdownOpen(true);
+                                                }}
+                                                placeholder="Начните вводить название города..."
+                                                className={cn(inputClass, 'pl-10', errors.citySlug ? 'border-destructive' : '')}
+                                            />
+                                            {citySearching && (
+                                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                                            )}
                                         </div>
-                                    )}
-                                </div>
+                                        <FieldError field="citySlug" />
 
-                                {/* Building number */}
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div>
-                                        <Label className="text-foreground">Номер дома</Label>
-                                        <Input
-                                            value={form.building}
-                                            onChange={(e) => update('building', e.target.value)}
-                                            placeholder="Например: 58 (необязательно)"
-                                            className={`mt-1.5 ${errors.building ? 'border-destructive' : ''}`}
-                                        />
-                                        <FieldError field="building" />
+                                        {cityDropdownOpen && cityResults.length > 0 && (
+                                            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg max-h-60 overflow-auto">
+                                                {cityResults.map((city) => {
+                                                    const parts = formatCityLabel(city);
+                                                    return (
+                                                        <button
+                                                            key={city.id}
+                                                            type="button"
+                                                            onClick={() => selectCity(city)}
+                                                            className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
+                                                        >
+                                                            <span className="font-medium text-foreground">{parts[0]}</span>
+                                                            {parts.length > 1 && (
+                                                                <span className="text-sm text-muted-foreground ml-2">
+                                                                    {parts.slice(1).join(', ')}
+                                                                </span>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
-                                    <div>
-                                        <Label className="text-foreground">Корпус</Label>
-                                        <Input
-                                            value={form.block}
-                                            onChange={(e) => update('block', e.target.value)}
-                                            placeholder="Например: 2 (необязательно)"
-                                            className="mt-1.5"
-                                        />
+
+                                    <div ref={streetContainerRef} className="relative">
+                                        <label className={labelClass}>Улица</label>
+                                        <div className="relative">
+                                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                                            <input
+                                                value={streetQuery}
+                                                onChange={(e) => {
+                                                    setStreetQuery(e.target.value);
+                                                    setStreetDropdownOpen(true);
+                                                    setForm((prev) => ({
+                                                        ...prev,
+                                                        streetName: e.target.value,
+                                                        streetId: null,
+                                                    }));
+                                                }}
+                                                onFocus={() => {
+                                                    if (form.cityId && streetQuery.length >= 1) setStreetDropdownOpen(true);
+                                                }}
+                                                placeholder={form.cityId ? 'Начните вводить название улицы...' : 'Сначала выберите город'}
+                                                disabled={!form.cityId}
+                                                className={cn(inputClass, 'pl-10', !form.cityId && 'opacity-60 cursor-not-allowed')}
+                                            />
+                                            {streetSearching && (
+                                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                                            )}
+                                        </div>
+
+                                        {streetDropdownOpen && streetResults.length > 0 && (
+                                            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg max-h-60 overflow-auto">
+                                                {streetResults.map((street) => (
+                                                    <button
+                                                        key={street.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const displayName = street.type
+                                                                ? `${street.type} ${street.name}`
+                                                                : street.name;
+                                                            setStreetQuery(displayName);
+                                                            setForm((prev) => ({
+                                                                ...prev,
+                                                                streetName: displayName,
+                                                                streetId: street.id,
+                                                            }));
+                                                            setStreetDropdownOpen(false);
+                                                        }}
+                                                        className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
+                                                    >
+                                                        {street.type && (
+                                                            <span className="text-sm text-muted-foreground mr-1">{street.type}</span>
+                                                        )}
+                                                        <span className="font-medium text-foreground">{street.name}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="flex items-end">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={geocodeAddress}
-                                            disabled={(
-                                                !form.streetName.trim()
-                                                && !form.building.trim()
-                                                && !form.block.trim()
-                                            ) || geocoding}
-                                            className="gap-2 w-full"
-                                        >
-                                            {geocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-                                            Найти на карте
-                                        </Button>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className={labelClass}>Номер дома</label>
+                                            <input
+                                                value={form.building}
+                                                onChange={(e) => update('building', e.target.value)}
+                                                placeholder="Например: 58 (необязательно)"
+                                                className={cn(inputClass, errors.building ? 'border-destructive' : '')}
+                                            />
+                                            <FieldError field="building" />
+                                        </div>
+                                        <div>
+                                            <label className={labelClass}>Корпус</label>
+                                            <input
+                                                value={form.block}
+                                                onChange={(e) => update('block', e.target.value)}
+                                                placeholder="Например: 2 (необязательно)"
+                                                className={inputClass}
+                                            />
+                                        </div>
+                                        <div className="flex items-end">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={geocodeAddress}
+                                                disabled={(
+                                                    !form.streetName.trim()
+                                                    && !form.building.trim()
+                                                    && !form.block.trim()
+                                                ) || geocoding}
+                                                className="gap-2 w-full h-[46px] rounded-xl"
+                                            >
+                                                {geocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                                                Найти на карте
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1595,30 +1590,37 @@ export function CreateListingForm() {
                                         setForm((prev) => ({ ...prev, latitude: lat, longitude: lng }))
                                     }
                                 />
-                            </div>
+                            </>
                         )}
 
                         {/* Step 5: Price & Contact */}
                         {step === 5 && (
-                            <div className="space-y-8">
-                                <div className="space-y-4">
-                                    <h2 className="text-lg font-semibold text-foreground">Стоимость</h2>
-                                    <div className="grid grid-cols-3 gap-3">
-                                        <div className="col-span-2">
-                                            <Label className="text-foreground">Цена *</Label>
-                                            <Input
-                                                type="number" min={0}
+                            <>
+                                <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
+                                    <h2 className="font-display text-lg font-semibold text-foreground">Стоимость</h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div className="sm:col-span-2">
+                                            <label className={labelClass}>Цена за сутки *</label>
+                                            <input
+                                                type="number"
+                                                min={0}
                                                 value={form.price}
                                                 onChange={(e) => update('price', e.target.value)}
-                                                placeholder="Например: 150 000"
-                                                className={`mt-1.5 ${errors.price ? 'border-destructive' : ''}`}
+                                                placeholder="Например: 85"
+                                                className={cn(inputClass, errors.price ? 'border-destructive' : '')}
                                             />
+                                            <p className="text-xs text-muted-foreground mt-1">Стоимость аренды за одни сутки</p>
                                             <FieldError field="price" />
                                         </div>
                                         <div>
-                                            <Label className="text-foreground">Валюта</Label>
+                                            <label className={labelClass}>Валюта</label>
                                             <Select value={form.currency} onValueChange={(v) => update('currency', v)}>
-                                                <SelectTrigger className="mt-1.5">
+                                                <SelectTrigger
+                                                    className={cn(
+                                                        'h-[46px] w-full rounded-xl border-border bg-surface px-4',
+                                                        'focus:ring-2 focus:ring-primary/20 focus:border-primary',
+                                                    )}
+                                                >
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -1631,103 +1633,97 @@ export function CreateListingForm() {
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <h2 className="text-lg font-semibold text-foreground">Контакты</h2>
+                                <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
+                                    <h2 className="font-display text-lg font-semibold text-foreground">Контакты</h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <Label className="text-foreground flex items-center gap-1.5">
+                                            <label className={cn(labelClass, 'flex items-center gap-1.5')}>
                                                 <User className="w-3.5 h-3.5" /> Ваше имя *
-                                            </Label>
-                                            <Input
+                                            </label>
+                                            <input
                                                 value={form.contactName}
                                                 onChange={(e) => update('contactName', e.target.value)}
                                                 placeholder="Например: Иван Иванов"
-                                                className={`mt-1.5 ${errors.contactName ? 'border-destructive' : ''}`}
                                                 maxLength={100}
+                                                className={cn(inputClass, errors.contactName ? 'border-destructive' : '')}
                                             />
                                             <FieldError field="contactName" />
                                         </div>
                                         <div>
-                                            <Label className="text-foreground flex items-center gap-1.5">
+                                            <label className={cn(labelClass, 'flex items-center gap-1.5')}>
                                                 <Phone className="w-3.5 h-3.5" /> Телефон *
-                                            </Label>
-                                            <Input
+                                            </label>
+                                            <input
                                                 type="tel"
                                                 value={form.contactPhone}
                                                 onChange={(e) => update('contactPhone', e.target.value)}
                                                 placeholder="Например: +375 (29) 123-45-67"
-                                                className={`mt-1.5 ${errors.contactPhone ? 'border-destructive' : ''}`}
                                                 maxLength={20}
+                                                className={cn(inputClass, errors.contactPhone ? 'border-destructive' : '')}
                                             />
                                             <FieldError field="contactPhone" />
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </>
                         )}
                     </motion.div>
                 </AnimatePresence>
 
                 {/* Navigation */}
-                <div className="flex items-center justify-between mt-6">
+                <div className="flex items-center justify-between pt-2">
                     <Button
-                        variant="ghost"
+                        type="button"
+                        variant="outline"
                         onClick={prev}
                         disabled={step === 1 || submitting}
-                        className="gap-2 text-muted-foreground"
                     >
-                        <ArrowLeft className="w-4 h-4" />
                         Назад
                     </Button>
 
-                    {step < 5 ? (
-                        <Button
-                            onClick={next}
-                            disabled={!canProceed()}
-                            className="gap-2 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity border-0"
-                        >
+                    {step < TOTAL_STEPS ? (
+                        <Button type="button" onClick={next} disabled={!canProceed()}>
                             Далее
-                            <ArrowRight className="w-4 h-4" />
                         </Button>
                     ) : (
                         <Button
+                            type="button"
                             onClick={handleSubmit}
                             disabled={!canProceed() || submitting}
-                            className="gap-2 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity border-0"
+                            className="gap-2"
                         >
                             {submitting ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    Отправка...
+                                    Отправка…
                                 </>
                             ) : (
                                 <>
                                     <Check className="w-4 h-4" />
-                                    Отправить на модерацию
+                                    Опубликовать
                                 </>
                             )}
                         </Button>
                     )}
                 </div>
-            </div>
 
-            <PhoneVerifyDialog
-                open={verifyDialogOpen}
-                onOpenChange={setVerifyDialogOpen}
-                initialPhone={form.contactPhone.trim()}
-                onVerified={() => {
-                    setVerifyDialogOpen(false);
-                    submitProperty();
-                }}
-            />
-            <PhoneAuthModal
-                open={smsAuthOpen}
-                onOpenChange={setSmsAuthOpen}
-                initialPhone={form.contactPhone.trim()}
-                onSuccess={() => {
-                    void submitProperty();
-                }}
-            />
-        </div>
+                <PhoneVerifyDialog
+                    open={verifyDialogOpen}
+                    onOpenChange={setVerifyDialogOpen}
+                    initialPhone={form.contactPhone.trim()}
+                    onVerified={() => {
+                        setVerifyDialogOpen(false);
+                        submitProperty();
+                    }}
+                />
+                <PhoneAuthModal
+                    open={smsAuthOpen}
+                    onOpenChange={setSmsAuthOpen}
+                    initialPhone={form.contactPhone.trim()}
+                    onSuccess={() => {
+                        void submitProperty();
+                    }}
+                />
+            </div>
     );
 }
