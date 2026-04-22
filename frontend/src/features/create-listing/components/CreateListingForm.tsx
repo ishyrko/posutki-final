@@ -36,6 +36,7 @@ import { loadYmaps } from '@/lib/ymaps';
 import { useSearchCities, useSearchStreets, useCreateProperty } from '../hooks';
 import { uploadFile, FileTooLargeError } from '../api';
 import type { ListingFormData, UploadedPhoto, CreatePropertyPayload, CitySearchResult } from '../types';
+import { LISTING_AMENITY_GROUPS } from '../listing-amenity-groups';
 import {
     balconyOptions,
     dealConditionOptions,
@@ -87,7 +88,7 @@ import { isAuthenticated } from '@/lib/auth';
 import { PhoneAuthModal } from '@/features/sms-auth/components/PhoneAuthModal';
 import { useUser } from '@/features/auth/hooks';
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 const inputClass =
     'w-full px-4 py-2.5 rounded-xl bg-surface border border-border text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all';
@@ -101,6 +102,9 @@ const pillBtnActiveLg =
     'flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-left';
 const chipInactive = `${pillBtnBase} bg-surface border border-border text-foreground hover:bg-muted`;
 const chipActive = `${pillBtnBase} bg-primary text-primary-foreground border border-primary`;
+/** Чипы удобств: фон ближе к макету (светло-серый неактивный). */
+const amenityChipInactive = `${pillBtnBase} bg-muted/70 border border-transparent text-foreground hover:bg-muted`;
+const amenityChipActive = `${pillBtnBase} bg-primary text-primary-foreground border border-primary`;
 
 function NumericPillRow({
     label,
@@ -259,6 +263,7 @@ const INITIAL_FORM: ListingFormData = {
     currency: 'USD',
     contactName: '',
     contactPhone: '',
+    amenities: [],
 };
 
 export function CreateListingForm() {
@@ -365,6 +370,16 @@ export function CreateListingForm() {
             const exists = prev.dealConditions.includes(condition);
             const dealConditions = exists ? [] : [condition];
             return { ...prev, dealConditions };
+        });
+    }, []);
+
+    const toggleAmenity = useCallback((id: string) => {
+        setForm((prev) => {
+            const has = prev.amenities.includes(id);
+            return {
+                ...prev,
+                amenities: has ? prev.amenities.filter((a) => a !== id) : [...prev.amenities, id],
+            };
         });
     }, []);
 
@@ -511,9 +526,11 @@ export function CreateListingForm() {
             case 3:
                 break;
             case 4:
-                if (!form.cityId) errs.citySlug = 'Выберите город';
                 break;
             case 5:
+                if (!form.cityId) errs.citySlug = 'Выберите город';
+                break;
+            case 6:
                 if (!form.price) errs.price = 'Укажите цену';
                 else if (Number(form.price) <= 0) errs.price = 'Цена должна быть положительной';
                 if (!form.contactName.trim()) errs.contactName = 'Укажите ваше имя';
@@ -570,8 +587,9 @@ export function CreateListingForm() {
                     ))
                 );
             case 3: return true;
-            case 4: return !!form.cityId;
-            case 5:
+            case 4: return true;
+            case 5: return !!form.cityId;
+            case 6:
                 return !!(
                     form.price
                     && form.contactName.trim()
@@ -707,7 +725,7 @@ export function CreateListingForm() {
     // --- Submit ---
 
     const handleSubmit = async () => {
-        if (!validateStep(2) || !validateStep(5)) return;
+        if (!validateStep(2) || !validateStep(6)) return;
 
         if (!isAuthenticated()) {
             setSmsAuthOpen(true);
@@ -801,7 +819,7 @@ export function CreateListingForm() {
             streetId: form.streetId ?? undefined,
             coordinates: { latitude: lat, longitude: lng },
             images: form.photos.filter((p) => !p.uploading).map((p) => p.url),
-            amenities: [],
+            amenities: form.amenities,
             contactPhone: normalizePhoneForApi(form.contactPhone) || undefined,
             contactName: form.contactName.trim() || undefined,
         };
@@ -1332,8 +1350,45 @@ export function CreateListingForm() {
                             </>
                         )}
 
-                        {/* Step 3: Photos */}
+                        {/* Step 3: Удобства (карточки по макету) */}
                         {step === 3 && (
+                            <div className="space-y-5">
+                                {LISTING_AMENITY_GROUPS.map((group) => (
+                                    <div
+                                        key={group.id}
+                                        className="bg-card rounded-2xl shadow-card p-6 space-y-4"
+                                    >
+                                        <h2 className="font-display text-base font-semibold text-foreground">
+                                            {group.title}
+                                        </h2>
+                                        <div className="flex flex-wrap gap-2">
+                                            {group.items.map((item) => {
+                                                const selected = form.amenities.includes(item.id);
+                                                return (
+                                                    <button
+                                                        key={item.id}
+                                                        type="button"
+                                                        onClick={() => toggleAmenity(item.id)}
+                                                        className={cn(
+                                                            'inline-flex items-center gap-1.5',
+                                                            selected ? amenityChipActive : amenityChipInactive,
+                                                        )}
+                                                    >
+                                                        {selected ? (
+                                                            <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                                                        ) : null}
+                                                        {item.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Step 4: Photos */}
+                        {step === 4 && (
                             <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                 <div>
                                     <h2 className="font-display text-lg font-semibold text-foreground">Фотографии</h2>
@@ -1424,8 +1479,8 @@ export function CreateListingForm() {
                             </div>
                         )}
 
-                        {/* Step 4: Location */}
-                        {step === 4 && (
+                        {/* Step 5: Location */}
+                        {step === 5 && (
                             <>
                                 <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                     <h2 className="font-display text-lg font-semibold text-foreground">Расположение</h2>
@@ -1594,8 +1649,8 @@ export function CreateListingForm() {
                             </>
                         )}
 
-                        {/* Step 5: Price & Contact */}
-                        {step === 5 && (
+                        {/* Step 6: Price & Contact */}
+                        {step === 6 && (
                             <>
                                 <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                     <h2 className="font-display text-lg font-semibold text-foreground">Стоимость</h2>

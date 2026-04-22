@@ -113,4 +113,5 @@ export interface ListingFormData {
     currency: string;
     contactName: string;
     contactPhone: string;
+    amenities: string[];
 }
