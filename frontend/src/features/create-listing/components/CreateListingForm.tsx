@@ -97,7 +97,8 @@ const pillBtnBase = 'px-3 py-1.5 rounded-lg text-sm font-medium transition-all';
 const pillBtnInactive = `${pillBtnBase} bg-surface border border-border text-foreground hover:bg-muted`;
 const pillBtnInactiveLg =
     'flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border border-border bg-surface text-foreground hover:bg-muted transition-all text-left';
-const pillBtnActiveLg = `${pillBtnInactiveLg} bg-primary text-primary-foreground border-primary hover:bg-primary/90`;
+const pillBtnActiveLg =
+    'flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-left';
 const chipInactive = `${pillBtnBase} bg-surface border border-border text-foreground hover:bg-muted`;
 const chipActive = `${pillBtnBase} bg-primary text-primary-foreground border border-primary`;
 
@@ -172,8 +173,8 @@ function NumericPillRow({
 const DAILY_PROPERTY_TYPE_VALUES = ['apartment', 'house'] as const;
 
 const dailyPropertyChoices: { value: (typeof DAILY_PROPERTY_TYPE_VALUES)[number]; label: string; icon: typeof Building2 }[] = [
-    { value: 'apartment', label: 'Квартира на сутки', icon: Building2 },
-    { value: 'house', label: 'Дом на сутки', icon: Home },
+    { value: 'apartment', label: 'Квартира', icon: Building2 },
+    { value: 'house', label: 'Дом', icon: Home },
 ];
 
 const isAllowedDailyPropertyType = (t: string): boolean =>
