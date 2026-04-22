@@ -21,6 +21,10 @@ import {
     Loader2,
     Image as ImageIcon,
     Users,
+    FileText,
+    Sparkles,
+    Wallet,
+    type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -88,7 +92,16 @@ import { isAuthenticated } from '@/lib/auth';
 import { PhoneAuthModal } from '@/features/sms-auth/components/PhoneAuthModal';
 import { useUser } from '@/features/auth/hooks';
 
-const TOTAL_STEPS = 6;
+const LISTING_STEPS: readonly { label: string; Icon: LucideIcon }[] = [
+    { label: 'Тип объекта', Icon: Building2 },
+    { label: 'Основная информация', Icon: FileText },
+    { label: 'Удобства', Icon: Sparkles },
+    { label: 'Фотографии', Icon: ImageIcon },
+    { label: 'Расположение', Icon: MapPin },
+    { label: 'Цена и контакты', Icon: Wallet },
+];
+
+const TOTAL_STEPS = LISTING_STEPS.length;
 
 const inputClass =
     'w-full px-4 py-2.5 rounded-xl bg-surface border border-border text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all';
@@ -936,27 +949,57 @@ export function CreateListingForm() {
                     <h1 className="font-display text-2xl font-bold text-foreground">Новое объявление</h1>
                     <p className="text-sm text-muted-foreground">
                         Шаг {step} из {TOTAL_STEPS}
+                        <span className="text-foreground font-medium"> — {LISTING_STEPS[step - 1].label}</span>
                     </p>
                 </div>
             </div>
 
-            <div className="flex gap-2">
-                {Array.from({ length: TOTAL_STEPS }).map((_, i) => {
+            <div className="grid grid-cols-6 gap-1.5 sm:gap-3">
+                {LISTING_STEPS.map(({ label, Icon }, i) => {
                     const segmentStep = i + 1;
-                    const canJumpBack = segmentStep < step;
+                    const isPast = segmentStep < step;
+                    const isCurrent = segmentStep === step;
+                    const isUpcoming = segmentStep > step;
                     return (
                         <button
                             key={segmentStep}
                             type="button"
                             onClick={() => goToStep(segmentStep)}
-                            disabled={!canJumpBack}
+                            disabled={isUpcoming}
+                            title={label}
+                            aria-current={isCurrent ? 'step' : undefined}
+                            aria-label={`Шаг ${segmentStep}: ${label}`}
                             className={cn(
-                                'h-1.5 flex-1 rounded-full transition-colors',
-                                segmentStep <= step ? 'bg-primary' : 'bg-border',
-                                canJumpBack ? 'cursor-pointer hover:opacity-90' : 'cursor-default',
+                                'flex min-h-[44px] sm:min-h-[4.25rem] flex-col items-center justify-center rounded-xl border-2 text-center transition-all outline-none',
+                                'max-sm:px-1 max-sm:py-2 sm:px-2.5 sm:py-3 sm:gap-1.5',
+                                'focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                                isCurrent &&
+                                    'border-primary bg-primary/10 text-foreground shadow-sm ring-1 ring-primary/15',
+                                isPast &&
+                                    'border-border bg-card text-foreground hover:border-primary/45 hover:bg-muted/40 active:scale-[0.98]',
+                                isUpcoming &&
+                                    'cursor-not-allowed border-dashed border-border/80 bg-muted/25 text-muted-foreground opacity-80',
                             )}
-                            aria-label={`Шаг ${segmentStep}`}
-                        />
+                        >
+                            <Icon
+                                className={cn(
+                                    'h-5 w-5 shrink-0',
+                                    isCurrent && 'text-primary',
+                                    isUpcoming && 'text-muted-foreground',
+                                )}
+                                aria-hidden
+                            />
+                            <span
+                                className={cn(
+                                    'hidden sm:block text-[11px] sm:text-xs font-semibold leading-snug text-center w-full',
+                                    label === 'Расположение'
+                                        ? 'whitespace-nowrap'
+                                        : 'line-clamp-3 break-words',
+                                )}
+                            >
+                                {label}
+                            </span>
+                        </button>
                     );
                 })}
             </div>

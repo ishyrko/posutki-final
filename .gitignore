@@ -4,3 +4,4 @@
 
 # Symfony local overrides (full copy or deltas; not committed)
 backend/.env.local
+/backend/public/uploads/
