@@ -91,6 +91,14 @@ import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { isAuthenticated } from '@/lib/auth';
 import { PhoneAuthModal } from '@/features/sms-auth/components/PhoneAuthModal';
 import { useUser } from '@/features/auth/hooks';
+import {
+    applyBathroomTypeSelection,
+    bathroomTypeFromForm,
+    BathroomTypeRow,
+    FloorTotalFloorsRow,
+    NumericPillRow,
+    SegmentedAreaTripleRow,
+} from './listing-parameter-controls';
 
 const LISTING_STEPS: readonly { label: string; Icon: LucideIcon }[] = [
     { label: 'Тип объекта', Icon: Building2 },
@@ -118,73 +126,6 @@ const chipActive = `${pillBtnBase} bg-primary text-primary-foreground border bor
 /** Чипы удобств: фон ближе к макету (светло-серый неактивный). */
 const amenityChipInactive = `${pillBtnBase} bg-muted/70 border border-transparent text-foreground hover:bg-muted`;
 const amenityChipActive = `${pillBtnBase} bg-primary text-primary-foreground border border-primary`;
-
-function NumericPillRow({
-    label,
-    value,
-    onChange,
-    min,
-    max,
-    error,
-}: {
-    label: ReactNode;
-    value: string;
-    onChange: (v: string) => void;
-    min: number;
-    max: number;
-    error?: string;
-}) {
-    const n = value.trim() === '' ? NaN : Number(value);
-    const lowPills: number[] = [];
-    if (min <= 0 && max >= 0) lowPills.push(0);
-    const startNum = min <= 0 ? 1 : min;
-    for (let i = startNum; i <= Math.min(4, max); i++) {
-        lowPills.push(i);
-    }
-    const hasPlus = max > 4;
-    const activeLow = Number.isFinite(n) && n >= min && n <= Math.min(4, max) ? Math.trunc(n) : null;
-    const isPlusRange = hasPlus && Number.isFinite(n) && n >= 5 && n <= max;
-
-    return (
-        <div>
-            <label className={cn(labelClass, 'flex items-center gap-1.5 mb-2')}>{label}</label>
-            <div className="flex flex-wrap gap-1.5">
-                {lowPills.map((opt) => (
-                    <button
-                        key={opt}
-                        type="button"
-                        onClick={() => onChange(String(opt))}
-                        className={activeLow === opt ? chipActive : chipInactive}
-                    >
-                        {opt}
-                    </button>
-                ))}
-                {hasPlus && (
-                    <button
-                        type="button"
-                        onClick={() => {
-                            if (!Number.isFinite(n) || n < 5) onChange('5');
-                        }}
-                        className={isPlusRange ? chipActive : chipInactive}
-                    >
-                        5+
-                    </button>
-                )}
-            </div>
-            {hasPlus && isPlusRange && (
-                <input
-                    type="number"
-                    min={5}
-                    max={max}
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    className={cn(inputClass, 'mt-2', error ? 'border-destructive' : '')}
-                />
-            )}
-            {error ? <p className="text-xs text-destructive mt-1">{error}</p> : null}
-        </div>
-    );
-}
 
 /** Сайт только для посуточной сдачи: квартира или дом. */
 const DAILY_PROPERTY_TYPE_VALUES = ['apartment', 'house'] as const;
@@ -1094,18 +1035,22 @@ export function CreateListingForm() {
                                 <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                     <h2 className="font-display text-lg font-semibold text-foreground">Параметры объекта</h2>
 
-                                    <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-5">
+                                    <div className="flex flex-col gap-5">
                                         {showRooms(form.propertyType) && (
                                             <NumericPillRow
                                                 label={
                                                     <>
-                                                        <BedDouble className="w-3.5 h-3.5" /> Комнат {roomsRequired(form.propertyType) ? '*' : ''}
+                                                        <BedDouble className="w-3.5 h-3.5" /> Количество комнат
+                                                        {roomsRequired(form.propertyType) ? (
+                                                            <span className="text-destructive">*</span>
+                                                        ) : null}
                                                     </>
                                                 }
                                                 value={form.rooms}
                                                 onChange={(v) => update('rooms', v)}
                                                 min={ROOMS_MIN}
                                                 max={ROOMS_MAX}
+                                                plusDiscrete
                                                 error={errors.rooms}
                                             />
                                         )}
@@ -1121,6 +1066,7 @@ export function CreateListingForm() {
                                                     onChange={(v) => update('roomsInDeal', v)}
                                                     min={ROOMS_MIN}
                                                     max={ROOMS_MAX}
+                                                    plusDiscrete
                                                     error={errors.roomsInDeal}
                                                 />
                                                 <div>
@@ -1143,20 +1089,27 @@ export function CreateListingForm() {
                                             </>
                                         )}
                                         {showBathrooms(form.propertyType) && (
-                                            <NumericPillRow
+                                            <BathroomTypeRow
                                                 label={
                                                     <>
-                                                        <Bath className="w-3.5 h-3.5" /> Санузлов
+                                                        <Bath className="w-3.5 h-3.5" /> Тип санузла
                                                     </>
                                                 }
-                                                value={form.bathrooms}
-                                                onChange={(v) => update('bathrooms', v)}
-                                                min={BATHROOMS_MIN}
-                                                max={BATHROOMS_MAX}
+                                                value={bathroomTypeFromForm(form.bathrooms, form.amenities)}
+                                                onChange={(t) =>
+                                                    setForm((prev) => ({
+                                                        ...prev,
+                                                        ...applyBathroomTypeSelection(prev.amenities, t),
+                                                    }))
+                                                }
                                                 error={errors.bathrooms}
                                             />
                                         )}
-                                        {requiresAreaInSquareMeters(form.propertyType) && (
+                                        {requiresAreaInSquareMeters(form.propertyType)
+                                            && !(
+                                                showLivingArea(form.propertyType)
+                                                && showKitchenArea(form.propertyType)
+                                            ) && (
                                             <div>
                                                 <label className={labelClass}>
                                                     <Maximize className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
@@ -1192,7 +1145,17 @@ export function CreateListingForm() {
                                                 <FieldError field="landArea" />
                                             </div>
                                         )}
-                                        {showFloor(form.propertyType) && (
+                                        {showFloor(form.propertyType) && showTotalFloors(form.propertyType) && (
+                                            <FloorTotalFloorsRow
+                                                floor={form.floor}
+                                                totalFloors={form.totalFloors}
+                                                onFloorChange={(v) => update('floor', v)}
+                                                onTotalFloorsChange={(v) => update('totalFloors', v)}
+                                                floorError={errors.floor}
+                                                totalFloorsError={errors.totalFloors}
+                                            />
+                                        )}
+                                        {showFloor(form.propertyType) && !showTotalFloors(form.propertyType) && (
                                             <div>
                                                 <label className={labelClass}>Этаж</label>
                                                 <input
@@ -1207,7 +1170,7 @@ export function CreateListingForm() {
                                                 <FieldError field="floor" />
                                             </div>
                                         )}
-                                        {showTotalFloors(form.propertyType) && (
+                                        {!showFloor(form.propertyType) && showTotalFloors(form.propertyType) && (
                                             <NumericPillRow
                                                 label="Этажей в доме"
                                                 value={form.totalFloors}
@@ -1237,35 +1200,67 @@ export function CreateListingForm() {
                                         )}
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {showLivingArea(form.propertyType) && (
-                                            <div>
-                                                <label className={labelClass}>Площадь жилая, м²</label>
-                                                <input
-                                                    type="number"
-                                                    min={1}
-                                                    value={form.livingArea}
-                                                    onChange={(e) => update('livingArea', e.target.value)}
-                                                    placeholder="Например: 40"
-                                                    className={cn(inputClass, errors.livingArea ? 'border-destructive' : '')}
-                                                />
-                                                <FieldError field="livingArea" />
-                                            </div>
-                                        )}
-                                        {showKitchenArea(form.propertyType) && (
-                                            <div>
-                                                <label className={labelClass}>Площадь кухни, м²</label>
-                                                <input
-                                                    type="number"
-                                                    min={1}
-                                                    value={form.kitchenArea}
-                                                    onChange={(e) => update('kitchenArea', e.target.value)}
-                                                    placeholder="Например: 12"
-                                                    className={cn(inputClass, errors.kitchenArea ? 'border-destructive' : '')}
-                                                />
-                                                <FieldError field="kitchenArea" />
-                                            </div>
-                                        )}
+                                    {requiresAreaInSquareMeters(form.propertyType)
+                                        && showLivingArea(form.propertyType)
+                                        && showKitchenArea(form.propertyType) && (
+                                        <SegmentedAreaTripleRow
+                                            area={form.area}
+                                            livingArea={form.livingArea}
+                                            kitchenArea={form.kitchenArea}
+                                            onAreaChange={(v) => update('area', v)}
+                                            onLivingAreaChange={(v) => update('livingArea', v)}
+                                            onKitchenAreaChange={(v) => update('kitchenArea', v)}
+                                            areaError={errors.area}
+                                            livingError={errors.livingArea}
+                                            kitchenError={errors.kitchenArea}
+                                        />
+                                    )}
+
+                                    <div className="flex flex-col gap-4">
+                                        {!requiresAreaInSquareMeters(form.propertyType)
+                                            ? null
+                                            : !showLivingArea(form.propertyType)
+                                              ? null
+                                              : showKitchenArea(form.propertyType)
+                                                ? null
+                                                : (
+                                                    <div>
+                                                        <label className={labelClass}>Площадь жилая, м²</label>
+                                                        <input
+                                                            type="number"
+                                                            min={1}
+                                                            value={form.livingArea}
+                                                            onChange={(e) => update('livingArea', e.target.value)}
+                                                            placeholder="Например: 40"
+                                                            className={cn(
+                                                                inputClass,
+                                                                errors.livingArea ? 'border-destructive' : '',
+                                                            )}
+                                                        />
+                                                        <FieldError field="livingArea" />
+                                                    </div>
+                                                  )}
+                                        {!requiresAreaInSquareMeters(form.propertyType)
+                                            ? null
+                                            : showLivingArea(form.propertyType)
+                                              ? null
+                                              : showKitchenArea(form.propertyType) && (
+                                                    <div>
+                                                        <label className={labelClass}>Площадь кухни, м²</label>
+                                                        <input
+                                                            type="number"
+                                                            min={1}
+                                                            value={form.kitchenArea}
+                                                            onChange={(e) => update('kitchenArea', e.target.value)}
+                                                            placeholder="Например: 12"
+                                                            className={cn(
+                                                                inputClass,
+                                                                errors.kitchenArea ? 'border-destructive' : '',
+                                                            )}
+                                                        />
+                                                        <FieldError field="kitchenArea" />
+                                                    </div>
+                                                )}
                                     </div>
                                 </div>
 

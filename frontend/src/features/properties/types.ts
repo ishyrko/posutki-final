@@ -106,6 +106,8 @@ export interface Property {
         checkOutTime?: string | null;
     };
     images: PropertyImage[];
+    /** Удобства (id строк), приходят с API на чтение и уходят при обновлении. */
+    amenities?: string[];
     nearMetro?: boolean;
     nearbyMetroStations?: NearbyMetroStation[];
     views?: number;

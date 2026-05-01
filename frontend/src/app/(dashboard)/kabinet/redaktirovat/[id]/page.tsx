@@ -80,6 +80,14 @@ import {
 } from '@/features/create-listing/validation';
 import type { CitySearchResult } from '@/features/create-listing/types';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
+import {
+    applyBathroomTypeSelection,
+    bathroomTypeFromForm,
+    BathroomTypeRow,
+    FloorTotalFloorsRow,
+    NumericPillRow,
+    SegmentedAreaTripleRow,
+} from '@/features/create-listing/components/listing-parameter-controls';
 
 const propertyTypes = [
     { value: 'apartment', label: 'Квартира' },
@@ -143,6 +151,7 @@ interface EditFormData {
     images: { url: string; uploading?: boolean; file?: File }[];
     contactPhone: string;
     contactName: string;
+    amenities: string[];
 }
 
 type EditTitleDescriptionErrors = Partial<Pick<EditFormData, 'title' | 'description'>>;
@@ -235,6 +244,7 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
             : property.images.map((img) => ({ url: img.url })),
         contactPhone: revisionData?.contactPhone ?? '',
         contactName: revisionData?.contactName ?? '',
+        amenities: [...(revisionData?.amenities ?? property.amenities ?? [])],
     };
 }
 
@@ -654,6 +664,7 @@ export default function EditPropertyPage() {
                         ? { latitude: form.latitude, longitude: form.longitude }
                         : undefined,
                 images: form.images.filter((img) => !img.uploading).map((img) => img.url),
+                amenities: form.amenities,
             };
             await updateProperty({ id: propertyId, data: payload });
             toast.success(
@@ -822,35 +833,40 @@ export default function EditPropertyPage() {
                                 </span>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="flex flex-col gap-4">
                             {showRooms(form.type) && (
                                 <div>
-                                    <Label className="text-foreground flex items-center gap-1.5">
-                                        <BedDouble className="w-3.5 h-3.5" /> Комнат
-                                    </Label>
-                                    <Input
-                                        type="number"
+                                    <NumericPillRow
+                                        label={
+                                            <>
+                                                <BedDouble className="w-3.5 h-3.5" /> Количество комнат
+                                                {roomsRequired(form.type) ? (
+                                                    <span className="text-destructive">*</span>
+                                                ) : null}
+                                            </>
+                                        }
+                                        value={form.rooms}
+                                        onChange={(v) => update('rooms', v)}
                                         min={ROOMS_MIN}
                                         max={ROOMS_MAX}
-                                        value={form.rooms}
-                                        onChange={(e) => update('rooms', e.target.value)}
-                                        className="mt-1.5"
+                                        plusDiscrete
                                     />
                                 </div>
                             )}
                             {showRoomDealFields(form.type, form.dealType) && (
                                 <>
                                     <div>
-                                        <Label className="text-foreground flex items-center gap-1.5">
-                                            <BedDouble className="w-3.5 h-3.5" /> Комнат в сделке *
-                                        </Label>
-                                        <Input
-                                            type="number"
+                                        <NumericPillRow
+                                            label={
+                                                <>
+                                                    <BedDouble className="w-3.5 h-3.5" /> Комнат в сделке *
+                                                </>
+                                            }
+                                            value={form.roomsInDeal}
+                                            onChange={(v) => update('roomsInDeal', v)}
                                             min={ROOMS_MIN}
                                             max={ROOMS_MAX}
-                                            value={form.roomsInDeal}
-                                            onChange={(e) => update('roomsInDeal', e.target.value)}
-                                            className="mt-1.5"
+                                            plusDiscrete
                                         />
                                     </div>
                                     <div>
@@ -871,20 +887,23 @@ export default function EditPropertyPage() {
                             )}
                             {showBathrooms(form.type) && (
                                 <div>
-                                    <Label className="text-foreground flex items-center gap-1.5">
-                                        <Bath className="w-3.5 h-3.5" /> Санузлов
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        min={BATHROOMS_MIN}
-                                        max={BATHROOMS_MAX}
-                                        value={form.bathrooms}
-                                        onChange={(e) => update('bathrooms', e.target.value)}
-                                        className="mt-1.5"
+                                    <BathroomTypeRow
+                                        label={
+                                            <>
+                                                <Bath className="w-3.5 h-3.5" /> Тип санузла
+                                            </>
+                                        }
+                                        value={bathroomTypeFromForm(form.bathrooms, form.amenities)}
+                                        onChange={(t) =>
+                                            setForm((prev) =>
+                                                prev ? { ...prev, ...applyBathroomTypeSelection(prev.amenities, t) } : prev,
+                                            )
+                                        }
                                     />
                                 </div>
                             )}
-                            {requiresAreaInSquareMeters(form.type) && (
+                            {requiresAreaInSquareMeters(form.type)
+                                && !(showLivingArea(form.type) && showKitchenArea(form.type)) && (
                                 <div>
                                     <Label className="text-foreground flex items-center gap-1.5">
                                         <Maximize className="w-3.5 h-3.5" /> Площадь общая, м² *
@@ -914,7 +933,17 @@ export default function EditPropertyPage() {
                                     />
                                 </div>
                             )}
-                            {showFloor(form.type) && (
+                            {showFloor(form.type) && showTotalFloors(form.type) && (
+                                <div>
+                                    <FloorTotalFloorsRow
+                                        floor={form.floor}
+                                        totalFloors={form.totalFloors}
+                                        onFloorChange={(v) => update('floor', v)}
+                                        onTotalFloorsChange={(v) => update('totalFloors', v)}
+                                    />
+                                </div>
+                            )}
+                            {showFloor(form.type) && !showTotalFloors(form.type) && (
                                 <div>
                                     <Label className="text-foreground">Этаж</Label>
                                     <Input
@@ -927,16 +956,14 @@ export default function EditPropertyPage() {
                                     />
                                 </div>
                             )}
-                            {showTotalFloors(form.type) && (
+                            {!showFloor(form.type) && showTotalFloors(form.type) && (
                                 <div>
-                                    <Label className="text-foreground">Этажей в доме</Label>
-                                    <Input
-                                        type="number"
+                                    <NumericPillRow
+                                        label="Этажей в доме"
+                                        value={form.totalFloors}
+                                        onChange={(v) => update('totalFloors', v)}
                                         min={TOTAL_FLOORS_MIN}
                                         max={TOTAL_FLOORS_MAX}
-                                        value={form.totalFloors}
-                                        onChange={(e) => update('totalFloors', e.target.value)}
-                                        className="mt-1.5"
                                     />
                                 </div>
                             )}
@@ -957,31 +984,56 @@ export default function EditPropertyPage() {
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {showLivingArea(form.type) && (
-                                <div>
-                                    <Label className="text-foreground">Площадь жилая, м²</Label>
-                                    <Input
-                                        type="number"
-                                        min={1}
-                                        value={form.livingArea}
-                                        onChange={(e) => update('livingArea', e.target.value)}
-                                        className="mt-1.5"
-                                    />
-                                </div>
-                            )}
-                            {showKitchenArea(form.type) && (
-                                <div>
-                                    <Label className="text-foreground">Площадь кухни, м²</Label>
-                                    <Input
-                                        type="number"
-                                        min={1}
-                                        value={form.kitchenArea}
-                                        onChange={(e) => update('kitchenArea', e.target.value)}
-                                        className="mt-1.5"
-                                    />
-                                </div>
-                            )}
+                        {requiresAreaInSquareMeters(form.type)
+                            && showLivingArea(form.type)
+                            && showKitchenArea(form.type) && (
+                            <div className="mt-4">
+                                <SegmentedAreaTripleRow
+                                    area={form.area}
+                                    livingArea={form.livingArea}
+                                    kitchenArea={form.kitchenArea}
+                                    onAreaChange={(v) => update('area', v)}
+                                    onLivingAreaChange={(v) => update('livingArea', v)}
+                                    onKitchenAreaChange={(v) => update('kitchenArea', v)}
+                                />
+                            </div>
+                        )}
+
+                        <div className="flex flex-col gap-4">
+                            {!requiresAreaInSquareMeters(form.type)
+                                ? null
+                                : !showLivingArea(form.type)
+                                  ? null
+                                  : showKitchenArea(form.type)
+                                    ? null
+                                    : (
+                                        <div>
+                                            <Label className="text-foreground">Площадь жилая, м²</Label>
+                                            <Input
+                                                type="number"
+                                                min={1}
+                                                value={form.livingArea}
+                                                onChange={(e) => update('livingArea', e.target.value)}
+                                                className="mt-1.5"
+                                            />
+                                        </div>
+                                      )}
+                            {!requiresAreaInSquareMeters(form.type)
+                                ? null
+                                : showLivingArea(form.type)
+                                  ? null
+                                  : showKitchenArea(form.type) && (
+                                        <div>
+                                            <Label className="text-foreground">Площадь кухни, м²</Label>
+                                            <Input
+                                                type="number"
+                                                min={1}
+                                                value={form.kitchenArea}
+                                                onChange={(e) => update('kitchenArea', e.target.value)}
+                                                className="mt-1.5"
+                                            />
+                                        </div>
+                                    )}
                         </div>
 
                         {form.dealType === 'daily' && (
