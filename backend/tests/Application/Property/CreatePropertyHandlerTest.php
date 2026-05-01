@@ -113,7 +113,7 @@ final class CreatePropertyHandlerTest extends TestCase
         $this->expectException(DomainException::class);
         $this->expectExceptionMessage('Укажите максимальное число гостей для посуточной аренды');
 
-        $handler($this->createValidCommand(dealType: 'daily', maxDailyGuests: null, dailyBedCount: null));
+        $handler($this->createValidCommand(dealType: 'daily', maxDailyGuests: null, dailySingleBeds: null, dailyDoubleBeds: null));
     }
 
     public function testVerifiedContactPhoneAllowsCreate(): void
@@ -166,7 +166,8 @@ final class CreatePropertyHandlerTest extends TestCase
         string $priceCurrency = 'BYN',
         ?string $contactPhone = null,
         ?int $maxDailyGuests = null,
-        ?int $dailyBedCount = null
+        ?int $dailySingleBeds = null,
+        ?int $dailyDoubleBeds = null
     ): CreatePropertyCommand {
         return new CreatePropertyCommand(
             ownerId: '1',
@@ -187,7 +188,8 @@ final class CreatePropertyHandlerTest extends TestCase
             bathrooms: 1,
             yearBuilt: 2018,
             maxDailyGuests: $maxDailyGuests,
-            dailyBedCount: $dailyBedCount,
+            dailySingleBeds: $dailySingleBeds,
+            dailyDoubleBeds: $dailyDoubleBeds,
             checkInTime: '14:00',
             checkOutTime: '12:00',
             contactPhone: $contactPhone,

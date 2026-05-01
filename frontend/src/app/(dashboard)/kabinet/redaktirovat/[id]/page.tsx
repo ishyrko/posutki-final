@@ -68,6 +68,7 @@ import {
     MAX_PHOTOS,
     ROOMS_MAX,
     ROOMS_MIN,
+    DAILY_BEDS_MAX,
     TITLE_MAX_LENGTH,
     TITLE_MIN_LENGTH,
     TOTAL_FLOORS_MAX,
@@ -129,7 +130,8 @@ interface EditFormData {
     livingArea: string;
     kitchenArea: string;
     maxDailyGuests: string;
-    dailyBedCount: string;
+    dailySingleBeds: string;
+    dailyDoubleBeds: string;
     checkInTime: string;
     checkOutTime: string;
     floor: string;
@@ -216,11 +218,18 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
             : property.specifications.maxDailyGuests
                 ? String(property.specifications.maxDailyGuests)
                 : '',
-        dailyBedCount: revisionData?.dailyBedCount
-            ? String(revisionData.dailyBedCount)
-            : property.specifications.dailyBedCount
-                ? String(property.specifications.dailyBedCount)
-                : '',
+        dailySingleBeds:
+            revisionData?.dailySingleBeds != null
+                ? String(revisionData.dailySingleBeds)
+                : property.specifications.dailySingleBeds != null
+                  ? String(property.specifications.dailySingleBeds)
+                  : '0',
+        dailyDoubleBeds:
+            revisionData?.dailyDoubleBeds != null
+                ? String(revisionData.dailyDoubleBeds)
+                : property.specifications.dailyDoubleBeds != null
+                  ? String(property.specifications.dailyDoubleBeds)
+                  : '0',
         checkInTime: revisionData?.checkInTime ?? property.specifications.checkInTime ?? '',
         checkOutTime: revisionData?.checkOutTime ?? property.specifications.checkOutTime ?? '',
         floor: String(revisionData?.floor ?? property.specifications.floor ?? ''),
@@ -484,7 +493,8 @@ export default function EditPropertyPage() {
         const livingArea = Number(form.livingArea);
         const kitchenArea = Number(form.kitchenArea);
         const maxDailyGuests = Number(form.maxDailyGuests);
-        const dailyBedCount = Number(form.dailyBedCount);
+        const dailySingleBeds = Number(form.dailySingleBeds);
+        const dailyDoubleBeds = Number(form.dailyDoubleBeds);
         const price = Number(form.price);
 
         const titleValidationError = getTitleFieldError(form.title);
@@ -594,8 +604,24 @@ export default function EditPropertyPage() {
                 toast.error('Укажите максимальное число гостей');
                 return;
             }
-            if (!form.dailyBedCount || !Number.isFinite(dailyBedCount) || dailyBedCount <= 0) {
-                toast.error('Укажите количество кроватей');
+            if (
+                !Number.isFinite(dailySingleBeds)
+                || dailySingleBeds < 0
+                || dailySingleBeds > DAILY_BEDS_MAX
+            ) {
+                toast.error(`Односпальных кроватей: от 0 до ${DAILY_BEDS_MAX}`);
+                return;
+            }
+            if (
+                !Number.isFinite(dailyDoubleBeds)
+                || dailyDoubleBeds < 0
+                || dailyDoubleBeds > DAILY_BEDS_MAX
+            ) {
+                toast.error(`Двуспальных кроватей: от 0 до ${DAILY_BEDS_MAX}`);
+                return;
+            }
+            if (dailySingleBeds + dailyDoubleBeds < 1) {
+                toast.error('Укажите хотя бы одну кровать');
                 return;
             }
             if (form.checkInTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkInTime)) {
@@ -652,7 +678,8 @@ export default function EditPropertyPage() {
                     : undefined,
                 dealConditions: form.dealType !== 'daily' && form.dealConditions.length ? form.dealConditions : undefined,
                 maxDailyGuests: form.dealType === 'daily' && form.maxDailyGuests ? Number(form.maxDailyGuests) : undefined,
-                dailyBedCount: form.dealType === 'daily' && form.dailyBedCount ? Number(form.dailyBedCount) : undefined,
+                dailySingleBeds: form.dealType === 'daily' ? dailySingleBeds : undefined,
+                dailyDoubleBeds: form.dealType === 'daily' ? dailyDoubleBeds : undefined,
                 checkInTime: form.dealType === 'daily' && form.checkInTime ? form.checkInTime : undefined,
                 checkOutTime: form.dealType === 'daily' && form.checkOutTime ? form.checkOutTime : undefined,
                 building: form.building.trim(),
@@ -1038,26 +1065,47 @@ export default function EditPropertyPage() {
 
                         {form.dealType === 'daily' && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
+                                <div className="sm:col-span-2">
                                     <Label className="text-foreground">Максимальное число гостей *</Label>
                                     <Input
                                         type="number"
+                                        inputMode="numeric"
                                         min={1}
+                                        max={99}
+                                        step={1}
                                         value={form.maxDailyGuests}
                                         onChange={(e) => update('maxDailyGuests', e.target.value)}
                                         className="mt-1.5"
                                     />
                                 </div>
-                                <div>
-                                    <Label className="text-foreground">Количество кроватей *</Label>
-                                    <Input
-                                        type="number"
-                                        min={1}
-                                        value={form.dailyBedCount}
-                                        onChange={(e) => update('dailyBedCount', e.target.value)}
-                                        className="mt-1.5"
-                                    />
-                                </div>
+                                <NumericPillRow
+                                    label={
+                                        <>
+                                            <BedDouble className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                            Односпальных кроватей *
+                                        </>
+                                    }
+                                    value={form.dailySingleBeds}
+                                    onChange={(v) => update('dailySingleBeds', v)}
+                                    min={0}
+                                    max={DAILY_BEDS_MAX}
+                                    plusDiscrete
+                                    plusDiscretePlus="five"
+                                />
+                                <NumericPillRow
+                                    label={
+                                        <>
+                                            <BedDouble className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                            Двуспальных кроватей *
+                                        </>
+                                    }
+                                    value={form.dailyDoubleBeds}
+                                    onChange={(v) => update('dailyDoubleBeds', v)}
+                                    min={0}
+                                    max={DAILY_BEDS_MAX}
+                                    plusDiscrete
+                                    plusDiscretePlus="five"
+                                />
                                 <div>
                                     <Label className="text-foreground">Время заезда</Label>
                                     <Input

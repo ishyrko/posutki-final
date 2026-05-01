@@ -45,7 +45,8 @@ export interface CreatePropertyPayload {
     kitchenArea?: number;
     dealConditions?: string[];
     maxDailyGuests?: number;
-    dailyBedCount?: number;
+    dailySingleBeds?: number;
+    dailyDoubleBeds?: number;
     checkInTime?: string;
     checkOutTime?: string;
     building: string;
@@ -92,7 +93,8 @@ export interface ListingFormData {
     floor: string;
     totalFloors: string;
     maxDailyGuests: string;
-    dailyBedCount: string;
+    dailySingleBeds: string;
+    dailyDoubleBeds: string;
     checkInTime: string;
     checkOutTime: string;
     yearBuilt: string;

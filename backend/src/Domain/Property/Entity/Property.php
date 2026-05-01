@@ -89,8 +89,11 @@ class Property
     #[ORM\Column(type: 'integer', nullable: true, name: 'max_daily_guests')]
     private ?int $maxDailyGuests = null;
 
-    #[ORM\Column(type: 'integer', nullable: true, name: 'daily_bed_count')]
-    private ?int $dailyBedCount = null;
+    #[ORM\Column(type: 'integer', nullable: true, name: 'daily_single_beds')]
+    private ?int $dailySingleBeds = null;
+
+    #[ORM\Column(type: 'integer', nullable: true, name: 'daily_double_beds')]
+    private ?int $dailyDoubleBeds = null;
 
     #[ORM\Column(type: 'string', length: 5, nullable: true, name: 'check_in_time')]
     private ?string $checkInTime = null;
@@ -180,7 +183,8 @@ class Property
         ?float $kitchenArea,
         ?array $dealConditions,
         ?int $maxDailyGuests,
-        ?int $dailyBedCount,
+        ?int $dailySingleBeds,
+        ?int $dailyDoubleBeds,
         ?string $checkInTime,
         ?string $checkOutTime,
         Address $address,
@@ -219,7 +223,8 @@ class Property
         $this->roomsArea = $roomsArea;
         $this->dealConditions = $dealConditions;
         $this->maxDailyGuests = $maxDailyGuests;
-        $this->dailyBedCount = $dailyBedCount;
+        $this->dailySingleBeds = $dailySingleBeds;
+        $this->dailyDoubleBeds = $dailyDoubleBeds;
         $this->checkInTime = $checkInTime;
         $this->checkOutTime = $checkOutTime;
         $this->address = $address;
@@ -479,7 +484,8 @@ class Property
             'roomsArea' => 'Площадь комнат в сделке',
             'dealConditions' => 'Условия сделки',
             'maxDailyGuests' => 'Максимум гостей',
-            'dailyBedCount' => 'Количество кроватей',
+            'dailySingleBeds' => 'Односпальных кроватей',
+            'dailyDoubleBeds' => 'Двуспальных кроватей',
             'checkInTime' => 'Время заезда',
             'checkOutTime' => 'Время выезда',
             'building' => 'Дом',
@@ -546,7 +552,8 @@ class Property
             'roomsArea' => $this->roomsArea,
             'dealConditions' => $this->dealConditions,
             'maxDailyGuests' => $this->maxDailyGuests,
-            'dailyBedCount' => $this->dailyBedCount,
+            'dailySingleBeds' => $this->dailySingleBeds,
+            'dailyDoubleBeds' => $this->dailyDoubleBeds,
             'checkInTime' => $this->checkInTime,
             'checkOutTime' => $this->checkOutTime,
             'building' => $this->address->getBuilding(),
@@ -705,9 +712,14 @@ class Property
         return $this->maxDailyGuests;
     }
 
-    public function getDailyBedCount(): ?int
+    public function getDailySingleBeds(): ?int
     {
-        return $this->dailyBedCount;
+        return $this->dailySingleBeds;
+    }
+
+    public function getDailyDoubleBeds(): ?int
+    {
+        return $this->dailyDoubleBeds;
     }
 
     public function getCheckInTime(): ?string
@@ -877,7 +889,8 @@ class Property
         ?float $roomsArea = null,
         ?array $dealConditions = null,
         ?int $maxDailyGuests = null,
-        ?int $dailyBedCount = null,
+        ?int $dailySingleBeds = null,
+        ?int $dailyDoubleBeds = null,
         ?string $checkInTime = null,
         ?string $checkOutTime = null,
         ?Address $address = null,
@@ -910,7 +923,8 @@ class Property
         if ($roomsArea !== null) $this->roomsArea = $roomsArea;
         if ($dealConditions !== null) $this->dealConditions = $dealConditions;
         if ($maxDailyGuests !== null) $this->maxDailyGuests = $maxDailyGuests;
-        if ($dailyBedCount !== null) $this->dailyBedCount = $dailyBedCount;
+        if ($dailySingleBeds !== null) $this->dailySingleBeds = $dailySingleBeds;
+        if ($dailyDoubleBeds !== null) $this->dailyDoubleBeds = $dailyDoubleBeds;
         if ($checkInTime !== null) $this->checkInTime = $checkInTime;
         if ($checkOutTime !== null) $this->checkOutTime = $checkOutTime;
         if ($address !== null) $this->address = $address;
@@ -924,7 +938,8 @@ class Property
 
         if ($dealType !== null && $dealType !== 'daily') {
             $this->maxDailyGuests = null;
-            $this->dailyBedCount = null;
+            $this->dailySingleBeds = null;
+            $this->dailyDoubleBeds = null;
             $this->checkInTime = null;
             $this->checkOutTime = null;
             $this->sellerType = null;

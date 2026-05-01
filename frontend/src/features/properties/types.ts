@@ -66,7 +66,8 @@ export interface Property {
         roomsArea?: number;
         dealConditions?: string[];
         maxDailyGuests?: number;
-        dailyBedCount?: number;
+        dailySingleBeds?: number;
+        dailyDoubleBeds?: number;
         checkInTime?: string;
         checkOutTime?: string;
         building?: string;
@@ -101,7 +102,8 @@ export interface Property {
         roomsArea?: number | null;
         dealConditions?: string[];
         maxDailyGuests?: number | null;
-        dailyBedCount?: number | null;
+        dailySingleBeds?: number | null;
+        dailyDoubleBeds?: number | null;
         checkInTime?: string | null;
         checkOutTime?: string | null;
     };

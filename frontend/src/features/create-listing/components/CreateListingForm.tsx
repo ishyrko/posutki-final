@@ -73,6 +73,7 @@ import {
     MAX_PHOTOS,
     ROOMS_MAX,
     ROOMS_MIN,
+    DAILY_BEDS_MAX,
     TITLE_MAX_LENGTH,
     TITLE_MIN_LENGTH,
     TOTAL_FLOORS_MAX,
@@ -196,7 +197,8 @@ const INITIAL_FORM: ListingFormData = {
     floor: '',
     totalFloors: '',
     maxDailyGuests: '',
-    dailyBedCount: '',
+    dailySingleBeds: '0',
+    dailyDoubleBeds: '0',
     checkInTime: '',
     checkOutTime: '',
     yearBuilt: '',
@@ -407,10 +409,22 @@ export function CreateListingForm() {
                     } else if (!Number.isFinite(Number(form.maxDailyGuests)) || Number(form.maxDailyGuests) <= 0) {
                         errs.maxDailyGuests = 'Укажите корректное число гостей';
                     }
-                    if (!form.dailyBedCount) {
-                        errs.dailyBedCount = 'Укажите количество кроватей';
-                    } else if (!Number.isFinite(Number(form.dailyBedCount)) || Number(form.dailyBedCount) <= 0) {
-                        errs.dailyBedCount = 'Укажите корректное количество кроватей';
+                    const singleBeds = Number(form.dailySingleBeds);
+                    const doubleBeds = Number(form.dailyDoubleBeds);
+                    if (!Number.isFinite(singleBeds) || singleBeds < 0 || singleBeds > DAILY_BEDS_MAX) {
+                        errs.dailySingleBeds = `Односпальных: от 0 до ${DAILY_BEDS_MAX}`;
+                    }
+                    if (!Number.isFinite(doubleBeds) || doubleBeds < 0 || doubleBeds > DAILY_BEDS_MAX) {
+                        errs.dailyDoubleBeds = `Двуспальных: от 0 до ${DAILY_BEDS_MAX}`;
+                    }
+                    if (
+                        !errs.dailySingleBeds
+                        && !errs.dailyDoubleBeds
+                        && Number.isFinite(singleBeds)
+                        && Number.isFinite(doubleBeds)
+                        && singleBeds + doubleBeds < 1
+                    ) {
+                        errs.dailySingleBeds = 'Укажите хотя бы одну кровать';
                     }
                     if (form.checkInTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkInTime)) {
                         errs.checkInTime = 'Формат времени: ЧЧ:ММ';
@@ -536,8 +550,9 @@ export function CreateListingForm() {
                     && (form.dealType !== 'daily' || (
                         !!form.maxDailyGuests
                         && Number(form.maxDailyGuests) > 0
-                        && !!form.dailyBedCount
-                        && Number(form.dailyBedCount) > 0
+                        && Number(form.dailySingleBeds) >= 0
+                        && Number(form.dailyDoubleBeds) >= 0
+                        && Number(form.dailySingleBeds) + Number(form.dailyDoubleBeds) >= 1
                     ))
                 );
             case 3: return true;
@@ -758,9 +773,10 @@ export function CreateListingForm() {
             maxDailyGuests: form.dealType === 'daily' && form.maxDailyGuests
                 ? Number(form.maxDailyGuests)
                 : undefined,
-            dailyBedCount: form.dealType === 'daily' && form.dailyBedCount
-                ? Number(form.dailyBedCount)
-                : undefined,
+            dailySingleBeds:
+                form.dealType === 'daily' ? Number(form.dailySingleBeds) || 0 : undefined,
+            dailyDoubleBeds:
+                form.dealType === 'daily' ? Number(form.dailyDoubleBeds) || 0 : undefined,
             checkInTime: form.dealType === 'daily' && form.checkInTime
                 ? form.checkInTime
                 : undefined,
@@ -1268,29 +1284,53 @@ export function CreateListingForm() {
                                     <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                         <h2 className="font-display text-lg font-semibold text-foreground">Посуточная аренда</h2>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                            <div className="sm:col-span-2">
+                                                <label className={labelClass}>
+                                                    <Users className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                                    Максимум гостей *
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    inputMode="numeric"
+                                                    min={1}
+                                                    max={99}
+                                                    step={1}
+                                                    value={form.maxDailyGuests}
+                                                    onChange={(e) => update('maxDailyGuests', e.target.value)}
+                                                    placeholder="Например: 4"
+                                                    className={cn(inputClass, errors.maxDailyGuests ? 'border-destructive' : '')}
+                                                />
+                                                <FieldError field="maxDailyGuests" />
+                                            </div>
                                             <NumericPillRow
                                                 label={
                                                     <>
-                                                        <Users className="w-3.5 h-3.5" /> Максимум гостей *
+                                                        <BedDouble className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                                        Односпальных кроватей *
                                                     </>
                                                 }
-                                                value={form.maxDailyGuests}
-                                                onChange={(v) => update('maxDailyGuests', v)}
-                                                min={1}
-                                                max={99}
-                                                error={errors.maxDailyGuests}
+                                                value={form.dailySingleBeds}
+                                                onChange={(v) => update('dailySingleBeds', v)}
+                                                min={0}
+                                                max={DAILY_BEDS_MAX}
+                                                plusDiscrete
+                                                plusDiscretePlus="five"
+                                                error={errors.dailySingleBeds}
                                             />
                                             <NumericPillRow
                                                 label={
                                                     <>
-                                                        <BedDouble className="w-3.5 h-3.5" /> Кроватей *
+                                                        <BedDouble className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                                        Двуспальных кроватей *
                                                     </>
                                                 }
-                                                value={form.dailyBedCount}
-                                                onChange={(v) => update('dailyBedCount', v)}
-                                                min={1}
-                                                max={99}
-                                                error={errors.dailyBedCount}
+                                                value={form.dailyDoubleBeds}
+                                                onChange={(v) => update('dailyDoubleBeds', v)}
+                                                min={0}
+                                                max={DAILY_BEDS_MAX}
+                                                plusDiscrete
+                                                plusDiscretePlus="five"
+                                                error={errors.dailyDoubleBeds}
                                             />
                                             <div>
                                                 <label className={labelClass}>Время заезда</label>

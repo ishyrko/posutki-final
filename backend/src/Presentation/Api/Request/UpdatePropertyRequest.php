@@ -98,8 +98,11 @@ class UpdatePropertyRequest
     #[Assert\Positive(message: 'Максимальное число гостей должно быть положительным')]
     public ?int $maxDailyGuests = null;
 
-    #[Assert\Positive(message: 'Количество спальных мест должно быть положительным')]
-    public ?int $dailyBedCount = null;
+    #[Assert\Range(min: 0, max: 50, notInRangeMessage: 'Число односпальных кроватей от {{ min }} до {{ max }}')]
+    public ?int $dailySingleBeds = null;
+
+    #[Assert\Range(min: 0, max: 50, notInRangeMessage: 'Число двуспальных кроватей от {{ min }} до {{ max }}')]
+    public ?int $dailyDoubleBeds = null;
 
     #[Assert\Regex(
         pattern: '/^(?:[01]\d|2[0-3]):[0-5]\d$/',

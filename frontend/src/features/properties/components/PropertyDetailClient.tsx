@@ -307,8 +307,11 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
     ...(property.dealType === "daily" && property.specifications.maxDailyGuests != null
       ? [{ icon: BedDouble, label: "Гостей", value: String(property.specifications.maxDailyGuests) }]
       : []),
-    ...(property.dealType === "daily" && property.specifications.dailyBedCount != null
-      ? [{ icon: BedDouble, label: "Кроватей", value: String(property.specifications.dailyBedCount) }]
+    ...(property.dealType === "daily" && property.specifications.dailySingleBeds != null
+      ? [{ icon: BedDouble, label: "Односпальных кроватей", value: String(property.specifications.dailySingleBeds) }]
+      : []),
+    ...(property.dealType === "daily" && property.specifications.dailyDoubleBeds != null
+      ? [{ icon: BedDouble, label: "Двуспальных кроватей", value: String(property.specifications.dailyDoubleBeds) }]
       : []),
     ...(property.dealType === "daily" && property.specifications.checkInTime
       ? [{ icon: Clock, label: "Заезд", value: property.specifications.checkInTime }]

@@ -13,7 +13,8 @@ final class DailyRentDetailsValidator
         string $dealType,
         string $propertyType,
         ?int $maxDailyGuests,
-        ?int $dailyBedCount,
+        ?int $dailySingleBeds,
+        ?int $dailyDoubleBeds,
         ?string $checkInTime,
         ?string $checkOutTime,
     ): void {
@@ -21,8 +22,13 @@ final class DailyRentDetailsValidator
             if ($maxDailyGuests === null || $maxDailyGuests <= 0) {
                 throw new DomainException('Укажите максимальное число гостей для посуточной аренды');
             }
-            if ($dailyBedCount === null || $dailyBedCount <= 0) {
-                throw new DomainException('Укажите количество спальных мест для посуточной аренды');
+            $single = $dailySingleBeds ?? 0;
+            $double = $dailyDoubleBeds ?? 0;
+            if ($single < 0 || $double < 0) {
+                throw new DomainException('Некорректное число кроватей для посуточной аренды');
+            }
+            if ($single + $double <= 0) {
+                throw new DomainException('Укажите количество односпальных или двуспальных кроватей');
             }
         }
 

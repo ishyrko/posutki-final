@@ -35,6 +35,7 @@ export function NumericPillRow({
     max,
     error,
     plusDiscrete = false,
+    plusDiscretePlus = 'four',
 }: {
     label: ReactNode;
     value: string;
@@ -42,12 +43,17 @@ export function NumericPillRow({
     min: number;
     max: number;
     error?: string;
-    /** Чип «4+» без дополнительного поля; числовые чипы только до 3, затем «4+» (значения ≥ порога). */
+    /** Чип «4+» или «5+» без дополнительного поля. */
     plusDiscrete?: boolean;
+    /** При plusDiscrete: числовые чипы до 3 + «4+», или до 4 + «5+». */
+    plusDiscretePlus?: 'four' | 'five';
 }) {
-    const exactCap = plusDiscrete ? Math.min(3, max) : Math.min(4, max);
+    const useFivePlusBand = plusDiscrete && plusDiscretePlus === 'five';
+    const exactCap = plusDiscrete
+        ? Math.min(useFivePlusBand ? 4 : 3, max)
+        : Math.min(4, max);
     const plusThreshold = plusDiscrete ? exactCap + 1 : 5;
-    const plusChipLabel = plusDiscrete ? '4+' : '5+';
+    const plusChipLabel = plusDiscrete ? (useFivePlusBand ? '5+' : '4+') : '5+';
 
     const n = value.trim() === '' ? NaN : Number(value);
     const lowPills: number[] = [];
