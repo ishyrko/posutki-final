@@ -12,4 +12,6 @@ interface UserBusinessProfileRepositoryInterface
     public function findByUserId(Id $userId): ?UserBusinessProfile;
 
     public function save(UserBusinessProfile $profile): void;
+
+    public function deleteByUserId(Id $userId): void;
 }

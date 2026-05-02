@@ -12,4 +12,6 @@ interface UserIndividualProfileRepositoryInterface
     public function findByUserId(Id $userId): ?UserIndividualProfile;
 
     public function save(UserIndividualProfile $profile): void;
+
+    public function deleteByUserId(Id $userId): void;
 }

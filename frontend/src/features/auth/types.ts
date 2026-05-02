@@ -1,3 +1,18 @@
+/** Реквизиты физлица для посуточных объявлений (отдельно от имени в аккаунте). */
+export interface UserIndividualProfile {
+    lastName: string;
+    firstName: string;
+    middleName?: string | null;
+    unp: string;
+}
+
+/** Реквизиты организации для посуточных объявлений. */
+export interface UserBusinessProfile {
+    organizationName: string;
+    contactName: string;
+    unp: string;
+}
+
 export interface User {
     id: number;
     email: string | null;
@@ -10,6 +25,8 @@ export interface User {
     isPhoneVerified: boolean;
     isVerified?: boolean;
     roles: string[];
+    individualProfile?: UserIndividualProfile | null;
+    businessProfile?: UserBusinessProfile | null;
 }
 
 export interface LoginResponse {

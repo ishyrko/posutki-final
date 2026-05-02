@@ -9,6 +9,7 @@ use App\Domain\Shared\ValueObject\Unp;
 use App\Domain\User\Entity\UserBusinessProfile;
 use App\Domain\User\Exception\UserNotFoundException;
 use App\Domain\User\Repository\UserBusinessProfileRepositoryInterface;
+use App\Domain\User\Repository\UserIndividualProfileRepositoryInterface;
 use App\Domain\User\Repository\UserRepositoryInterface;
 
 final readonly class UpdateUserBusinessProfileHandler
@@ -16,6 +17,7 @@ final readonly class UpdateUserBusinessProfileHandler
     public function __construct(
         private UserRepositoryInterface $userRepository,
         private UserBusinessProfileRepositoryInterface $businessProfileRepository,
+        private UserIndividualProfileRepositoryInterface $individualProfileRepository,
     ) {
     }
 
@@ -30,6 +32,8 @@ final readonly class UpdateUserBusinessProfileHandler
         $unpValue = Unp::fromString($command->unp)->getValue();
         $organizationName = trim($command->organizationName);
         $contactName = trim($command->contactName);
+
+        $this->individualProfileRepository->deleteByUserId($userId);
 
         $existing = $this->businessProfileRepository->findByUserId($userId);
         if ($existing !== null) {

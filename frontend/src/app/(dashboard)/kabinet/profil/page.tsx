@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { PhoneVerifyDialog } from '@/features/phones/components/PhoneVerifyDialog';
 import { UserAvatar } from '@/components/UserAvatar';
+import { SellerProfileSection } from '@/features/profile/components/SellerProfileSection';
 
 function ProfileEmailSection({
     user,
@@ -249,6 +250,8 @@ export default function ProfilePage() {
                     </div>
                 </form>
             </div>
+
+            <SellerProfileSection user={user} />
 
             {/* Password */}
             <div className="bg-card rounded-xl p-6 shadow-card mb-6">

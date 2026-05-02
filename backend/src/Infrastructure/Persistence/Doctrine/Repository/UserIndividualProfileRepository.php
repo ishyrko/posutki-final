@@ -30,4 +30,16 @@ class UserIndividualProfileRepository extends ServiceEntityRepository implements
         $this->getEntityManager()->persist($profile);
         $this->getEntityManager()->flush();
     }
+
+    public function deleteByUserId(Id $userId): void
+    {
+        $profile = $this->findByUserId($userId);
+        if ($profile === null) {
+            return;
+        }
+
+        $em = $this->getEntityManager();
+        $em->remove($profile);
+        $em->flush();
+    }
 }

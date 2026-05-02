@@ -9,6 +9,7 @@ use App\Domain\Shared\ValueObject\Id;
 use App\Domain\Shared\ValueObject\Unp;
 use App\Domain\User\Entity\UserIndividualProfile;
 use App\Domain\User\Exception\UserNotFoundException;
+use App\Domain\User\Repository\UserBusinessProfileRepositoryInterface;
 use App\Domain\User\Repository\UserIndividualProfileRepositoryInterface;
 use App\Domain\User\Repository\UserRepositoryInterface;
 
@@ -17,6 +18,7 @@ final readonly class UpdateUserIndividualProfileHandler
     public function __construct(
         private UserRepositoryInterface $userRepository,
         private UserIndividualProfileRepositoryInterface $individualProfileRepository,
+        private UserBusinessProfileRepositoryInterface $businessProfileRepository,
     ) {
     }
 
@@ -35,6 +37,8 @@ final readonly class UpdateUserIndividualProfileHandler
         if ($middleName !== null && mb_strlen($middleName) < 2) {
             throw new DomainException('Отчество не короче 2 символов');
         }
+
+        $this->businessProfileRepository->deleteByUserId($userId);
 
         $existing = $this->individualProfileRepository->findByUserId($userId);
         if ($existing !== null) {
