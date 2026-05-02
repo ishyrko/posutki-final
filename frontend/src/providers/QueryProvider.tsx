@@ -37,7 +37,7 @@ export default function QueryProvider({ children }: { children: ReactNode }) {
                 return originalMeasure(...args);
             } catch (error) {
                 if (PERFORMANCE_MEASURE_ERROR_PATTERN.test(String(error && (error as Error).message ? (error as Error).message : error))) {
-                    return undefined as ReturnType<Performance['measure']>;
+                    return undefined as unknown as ReturnType<Performance['measure']>;
                 }
                 throw error;
             }

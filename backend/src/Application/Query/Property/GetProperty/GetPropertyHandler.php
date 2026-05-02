@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Query\Property\GetProperty;
 
+use App\Application\Service\PropertyOwnerPublicContactResolver;
 use App\Application\DTO\PropertyDTO;
 use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\SellerType;
@@ -32,6 +33,7 @@ final class GetPropertyHandler
         private readonly PropertyDailyStatRepositoryInterface $propertyDailyStatRepository,
         private readonly UserIndividualProfileRepositoryInterface $userIndividualProfileRepository,
         private readonly UserBusinessProfileRepositoryInterface $userBusinessProfileRepository,
+        private readonly PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
     ) {
     }
 
@@ -126,6 +128,19 @@ final class GetPropertyHandler
             }
         }
 
-        return PropertyDTO::fromEntity($property, $city, $street, $nearbyMetroStations, 0, $dailySellerLegalProfile);
+        $ownerId = $property->getOwnerId()->getValue();
+        $ownerContact = $this->ownerPublicContactResolver->resolveForOwnerIds([$ownerId])[$ownerId]
+            ?? ['phone' => null, 'name' => null];
+
+        return PropertyDTO::fromEntity(
+            $property,
+            $city,
+            $street,
+            $nearbyMetroStations,
+            0,
+            $dailySellerLegalProfile,
+            $ownerContact['phone'],
+            $ownerContact['name'],
+        );
     }
 }

@@ -1,4 +1,4 @@
-import { Property, PropertyListResponse } from './types';
+import { Property, PropertyFilters, PropertyListResponse } from "./types";
 
 export const mockProperties: Property[] = [
   {
@@ -291,7 +291,7 @@ export const mockProperties: Property[] = [
   },
 ];
 
-export function getMockPropertiesResponse(filters: Record<string, unknown> = {}): PropertyListResponse {
+export function getMockPropertiesResponse(filters: PropertyFilters = {}): PropertyListResponse {
   let result = [...mockProperties];
 
   if (filters.types && Array.isArray(filters.types) && filters.types.length > 0) {
@@ -313,7 +313,8 @@ export function getMockPropertiesResponse(filters: Record<string, unknown> = {})
       if (!countable.includes(p.type as (typeof countable)[number])) {
         return hadTypeFilter;
       }
-      return r >= 4 ? p.specifications.rooms >= 4 : p.specifications.rooms === r;
+      const rooms = p.specifications.rooms ?? 0;
+      return r >= 4 ? rooms >= 4 : rooms === r;
     });
   }
   if (filters.minPrice) {

@@ -17,7 +17,6 @@ function VerifyEmailContent() {
 
     useEffect(() => {
         if (!token || !email) {
-            setStatus('error');
             return;
         }
 

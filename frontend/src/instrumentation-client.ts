@@ -14,7 +14,7 @@ if (typeof window !== "undefined" && typeof window.performance?.measure === "fun
       );
 
       if (PERFORMANCE_MEASURE_ERROR_PATTERN.test(message)) {
-        return undefined as ReturnType<Performance["measure"]>;
+        return undefined as unknown as ReturnType<Performance["measure"]>;
       }
 
       throw error;

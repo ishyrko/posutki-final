@@ -86,7 +86,6 @@ function propertyToListCard(p: Property, rates: ExchangeRates, metroFilterStatio
       ? `${p.specifications.floor}/${p.specifications.totalFloors}`
       : undefined,
     id: p.id,
-    dealType: p.dealType,
     propertyType: p.type,
     nearbyMetroStations: pickMetroStationsForCatalog(p.nearbyMetroStations ?? [], metroFilterStationId),
   };

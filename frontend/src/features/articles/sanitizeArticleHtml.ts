@@ -1,11 +1,11 @@
-import sanitizeHtml from "sanitize-html";
+import sanitizeHtml, { type IOptions } from "sanitize-html";
 import {
-  decodeHtmlEntitiesDeep,
-  hasEntityEncodedTags,
-  hasRawHtmlTags,
+    decodeHtmlEntitiesDeep,
+    hasEntityEncodedTags,
+    hasRawHtmlTags,
 } from "./articleHtmlUtils";
 
-const articleSanitizeOptions: sanitizeHtml.IOptions = {
+const articleSanitizeOptions: IOptions = {
   allowedTags: [...sanitizeHtml.defaults.allowedTags, "img"],
   allowedAttributes: {
     ...sanitizeHtml.defaults.allowedAttributes,

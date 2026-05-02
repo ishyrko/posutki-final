@@ -22,4 +22,12 @@ interface UserPhoneRepositoryInterface
 
     /** @return UserPhone[] */
     public function findVerifiedByUserId(Id $userId): array;
+
+    /**
+     * One verified phone per user (most recently added first).
+     *
+     * @param list<int> $userIds
+     * @return array<int, string>
+     */
+    public function findPrimaryVerifiedPhonesByUserIds(array $userIds): array;
 }

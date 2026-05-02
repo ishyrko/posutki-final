@@ -496,8 +496,6 @@ class Property
             'longitude' => 'Долгота',
             'images' => 'Фото',
             'amenities' => 'Удобства',
-            'contactPhone' => 'Телефон',
-            'contactName' => 'Имя контакта',
         ];
 
         $currentSnapshot = $this->getCurrentSnapshot();
@@ -564,8 +562,6 @@ class Property
             'longitude' => $this->coordinates->getLongitude(),
             'images' => $this->images,
             'amenities' => $this->amenities,
-            'contactPhone' => $this->contactPhone,
-            'contactName' => $this->contactName,
         ];
     }
 

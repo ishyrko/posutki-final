@@ -157,8 +157,6 @@ class PropertyController extends AbstractController
             block: $request->block,
             images: $request->images,
             amenities: $request->amenities,
-            contactPhone: $request->contactPhone,
-            contactName: $request->contactName,
             sellerType: $request->sellerType,
         );
 

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
@@ -16,8 +17,6 @@ import {
     Maximize,
     Building2,
     Calendar,
-    Phone,
-    User,
     Loader2,
     Image as ImageIcon,
     Users,
@@ -82,12 +81,9 @@ import {
     YEAR_BUILT_MIN,
     getDescriptionFieldError,
     getTitleFieldError,
-    isE164Phone,
     isFloorNotAboveTotalFloors,
-    normalizePhoneForApi,
 } from '../validation';
 import { usePhones } from '@/features/phones/hooks';
-import { PhoneVerifyDialog } from '@/features/phones/components/PhoneVerifyDialog';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { isAuthenticated } from '@/lib/auth';
 import { PhoneAuthModal } from '@/features/sms-auth/components/PhoneAuthModal';
@@ -107,7 +103,7 @@ const LISTING_STEPS: readonly { label: string; Icon: LucideIcon }[] = [
     { label: 'Удобства', Icon: Sparkles },
     { label: 'Фотографии', Icon: ImageIcon },
     { label: 'Расположение', Icon: MapPin },
-    { label: 'Цена и контакты', Icon: Wallet },
+    { label: 'Цена', Icon: Wallet },
 ];
 
 const TOTAL_STEPS = LISTING_STEPS.length;
@@ -117,7 +113,6 @@ const inputClass =
 const labelClass = 'text-sm font-semibold text-foreground mb-2 block font-display';
 
 const pillBtnBase = 'px-3 py-1.5 rounded-lg text-sm font-medium transition-all';
-const pillBtnInactive = `${pillBtnBase} bg-surface border border-border text-foreground hover:bg-muted`;
 const pillBtnInactiveLg =
     'flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border border-border bg-surface text-foreground hover:bg-muted transition-all text-left';
 const pillBtnActiveLg =
@@ -163,7 +158,19 @@ const getTitlePlaceholder = (propertyType: string): string =>
 
 const DEFAULT_CENTER: [number, number] = [53.9045, 27.5615];
 
-type FormErrors = Partial<Record<keyof ListingFormData, string>>;
+function hasVerifiedProfilePhone(
+    user: { phone?: string | null; isPhoneVerified?: boolean } | null | undefined,
+    phones: { phone: string; isVerified: boolean }[],
+): boolean {
+    if (user?.phone?.trim() && user.isPhoneVerified) return true;
+    return phones.some((p) => p.isVerified);
+}
+
+function hasProfileDisplayName(user: { firstName?: string; lastName?: string } | null | undefined): boolean {
+    return Boolean(user?.firstName?.trim() && user?.lastName?.trim());
+}
+
+type FormErrors = Partial<Record<keyof ListingFormData | 'profilePhone' | 'profileName', string>>;
 
 function getErrorMessage(error: unknown, fallback: string): string {
     if (typeof error !== 'object' || error === null || !('response' in error)) {
@@ -217,8 +224,6 @@ const INITIAL_FORM: ListingFormData = {
     longitude: null,
     price: '',
     currency: 'USD',
-    contactName: '',
-    contactPhone: '',
     amenities: [],
 };
 
@@ -249,38 +254,8 @@ export function CreateListingForm() {
     const { mutateAsync: createProperty, isPending: submitting } = useCreateProperty();
     const { data: phones = [], refetch: refetchPhones } = usePhones();
     const { data: user } = useUser();
-    const contactNamePrefilledRef = useRef(false);
-    const contactPhonePrefilledRef = useRef(false);
-    const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
     const [smsAuthOpen, setSmsAuthOpen] = useState(false);
     const [submitted, setSubmitted] = useState(false);
-
-    useEffect(() => {
-        if (!isAuthenticated() || contactNamePrefilledRef.current || !user) return;
-        setForm((prev) => {
-            if (contactNamePrefilledRef.current || prev.contactName.trim()) return prev;
-            const name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
-            if (!name) return prev;
-            contactNamePrefilledRef.current = true;
-            return { ...prev, contactName: name };
-        });
-    }, [user]);
-
-    useEffect(() => {
-        if (!isAuthenticated() || contactPhonePrefilledRef.current) return;
-        setForm((prev) => {
-            if (contactPhonePrefilledRef.current || prev.contactPhone.trim()) return prev;
-            const verifiedFromList = phones.find((p) => p.isVerified);
-            const phone =
-                verifiedFromList?.phone ??
-                (user?.phone?.trim() && user.isPhoneVerified ? user.phone.trim() : '');
-            if (!phone) return prev;
-            contactPhonePrefilledRef.current = true;
-            return { ...prev, contactPhone: phone };
-        });
-    }, [phones, user]);
-
-    // Close dropdowns on outside click
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (cityContainerRef.current && !cityContainerRef.current.contains(e.target as Node)) {
@@ -501,17 +476,18 @@ export function CreateListingForm() {
             case 6:
                 if (!form.price) errs.price = 'Укажите цену';
                 else if (Number(form.price) <= 0) errs.price = 'Цена должна быть положительной';
-                if (!form.contactName.trim()) errs.contactName = 'Укажите ваше имя';
-                if (!form.contactPhone.trim()) errs.contactPhone = 'Укажите телефон';
-                else if (!isE164Phone(form.contactPhone)) {
-                    errs.contactPhone = 'Введите корректный телефон';
+                if (!hasVerifiedProfilePhone(user, phones)) {
+                    errs.profilePhone = 'Подтвердите номер в разделе «Телефоны»';
+                }
+                if (!hasProfileDisplayName(user)) {
+                    errs.profileName = 'Укажите имя и фамилию в профиле';
                 }
                 break;
         }
 
         setErrors(errs);
         return Object.keys(errs).length === 0;
-    }, [form]);
+    }, [form, user, phones]);
 
     const canProceed = useCallback((): boolean => {
         switch (step) {
@@ -561,21 +537,19 @@ export function CreateListingForm() {
             case 6:
                 return !!(
                     form.price
-                    && form.contactName.trim()
-                    && form.contactPhone.trim()
-                    && isE164Phone(form.contactPhone)
+                    && Number(form.price) > 0
+                    && hasVerifiedProfilePhone(user, phones)
+                    && hasProfileDisplayName(user)
                 );
             default: return false;
         }
-    }, [step, form]);
+    }, [step, form, user, phones]);
 
     const next = () => { if (validateStep(step)) setStep((s) => Math.min(s + 1, TOTAL_STEPS)); };
     const prev = () => setStep((s) => Math.max(s - 1, 1));
     const goToStep = (target: number) => { if (target < step) setStep(target); };
 
     const resetListing = useCallback(() => {
-        contactNamePrefilledRef.current = false;
-        contactPhonePrefilledRef.current = false;
         setForm({ ...INITIAL_FORM });
         setStep(1);
         setErrors({});
@@ -597,7 +571,7 @@ export function CreateListingForm() {
         const batch = arr.slice(0, remaining);
 
         const validFiles = batch.filter((f) => {
-            if (!ACCEPTED_IMAGE_TYPES.includes(f.type)) {
+            if (!(ACCEPTED_IMAGE_TYPES as readonly string[]).includes(f.type)) {
                 toast.error(`${f.name}: допустимы только JPEG, PNG и WebP`);
                 return false;
             }
@@ -701,7 +675,6 @@ export function CreateListingForm() {
             return;
         }
 
-        const contactPhone = normalizePhoneForApi(form.contactPhone);
         let knownPhones = phones;
         try {
             const { data: freshPhones } = await refetchPhones();
@@ -710,12 +683,22 @@ export function CreateListingForm() {
             knownPhones = phones;
         }
 
-        const isPhoneVerified = knownPhones.some(
-            (p) => normalizePhoneForApi(p.phone) === contactPhone && p.isVerified,
-        );
-
-        if (!isPhoneVerified) {
-            setVerifyDialogOpen(true);
+        if (!hasVerifiedProfilePhone(user, knownPhones)) {
+            toast.error('Подтвердите номер телефона в профиле', {
+                action: {
+                    label: 'К телефонам',
+                    onClick: () => router.push('/kabinet/telefony'),
+                },
+            });
+            return;
+        }
+        if (!hasProfileDisplayName(user)) {
+            toast.error('Укажите имя и фамилию в профиле', {
+                action: {
+                    label: 'Профиль',
+                    onClick: () => router.push('/kabinet/profil'),
+                },
+            });
             return;
         }
 
@@ -790,8 +773,6 @@ export function CreateListingForm() {
             coordinates: { latitude: lat, longitude: lng },
             images: form.photos.filter((p) => !p.uploading).map((p) => p.url),
             amenities: form.amenities,
-            contactPhone: normalizePhoneForApi(form.contactPhone) || undefined,
-            contactName: form.contactName.trim() || undefined,
         };
 
         try {
@@ -833,7 +814,7 @@ export function CreateListingForm() {
         });
     }, [form.description]);
 
-    const FieldError = ({ field }: { field: keyof ListingFormData }) =>
+    const FieldError = ({ field }: { field: keyof FormErrors }) =>
         errors[field] ? <p className="text-xs text-destructive mt-1">{errors[field]}</p> : null;
 
     // --- City autocomplete display helper ---
@@ -871,19 +852,10 @@ export function CreateListingForm() {
                     </div>
                 </div>
 
-                <PhoneVerifyDialog
-                    open={verifyDialogOpen}
-                    onOpenChange={setVerifyDialogOpen}
-                    initialPhone={form.contactPhone.trim()}
-                    onVerified={() => {
-                        setVerifyDialogOpen(false);
-                        submitProperty();
-                    }}
-                />
                 <PhoneAuthModal
                     open={smsAuthOpen}
                     onOpenChange={setSmsAuthOpen}
-                    initialPhone={form.contactPhone.trim()}
+                    initialPhone=""
                     onSuccess={() => {
                         void submitProperty();
                     }}
@@ -1767,37 +1739,21 @@ export function CreateListingForm() {
                                     </div>
                                 </div>
 
-                                <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
-                                    <h2 className="font-display text-lg font-semibold text-foreground">Контакты</h2>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className={cn(labelClass, 'flex items-center gap-1.5')}>
-                                                <User className="w-3.5 h-3.5" /> Ваше имя *
-                                            </label>
-                                            <input
-                                                value={form.contactName}
-                                                onChange={(e) => update('contactName', e.target.value)}
-                                                placeholder="Например: Иван Иванов"
-                                                maxLength={100}
-                                                className={cn(inputClass, errors.contactName ? 'border-destructive' : '')}
-                                            />
-                                            <FieldError field="contactName" />
-                                        </div>
-                                        <div>
-                                            <label className={cn(labelClass, 'flex items-center gap-1.5')}>
-                                                <Phone className="w-3.5 h-3.5" /> Телефон *
-                                            </label>
-                                            <input
-                                                type="tel"
-                                                value={form.contactPhone}
-                                                onChange={(e) => update('contactPhone', e.target.value)}
-                                                placeholder="Например: +375 (29) 123-45-67"
-                                                maxLength={20}
-                                                className={cn(inputClass, errors.contactPhone ? 'border-destructive' : '')}
-                                            />
-                                            <FieldError field="contactPhone" />
-                                        </div>
-                                    </div>
+                                <div className="bg-card rounded-2xl shadow-card p-6 space-y-3">
+                                    <h2 className="font-display text-lg font-semibold text-foreground">Контакты для связи</h2>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">
+                                        Имя и телефон в объявлении берутся из вашего{' '}
+                                        <Link href="/kabinet/profil" className="text-primary font-medium hover:underline">
+                                            профиля
+                                        </Link>{' '}
+                                        и{' '}
+                                        <Link href="/kabinet/telefony" className="text-primary font-medium hover:underline">
+                                            подтверждённых номеров
+                                        </Link>
+                                        . Здесь указывать их не нужно.
+                                    </p>
+                                    <FieldError field="profileName" />
+                                    <FieldError field="profilePhone" />
                                 </div>
                             </>
                         )}
@@ -1841,19 +1797,10 @@ export function CreateListingForm() {
                     )}
                 </div>
 
-                <PhoneVerifyDialog
-                    open={verifyDialogOpen}
-                    onOpenChange={setVerifyDialogOpen}
-                    initialPhone={form.contactPhone.trim()}
-                    onVerified={() => {
-                        setVerifyDialogOpen(false);
-                        submitProperty();
-                    }}
-                />
                 <PhoneAuthModal
                     open={smsAuthOpen}
                     onOpenChange={setSmsAuthOpen}
-                    initialPhone={form.contactPhone.trim()}
+                    initialPhone=""
                     onSuccess={() => {
                         void submitProperty();
                     }}

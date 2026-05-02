@@ -41,8 +41,6 @@ final class CreatePropertyCommand
         public readonly ?string $block = null,
         public readonly array $images = [],
         public readonly array $amenities = [],
-        public readonly ?string $contactPhone = null,
-        public readonly ?string $contactName = null,
         public readonly ?string $sellerType = null,
     ) {
     }

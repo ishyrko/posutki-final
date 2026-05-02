@@ -151,8 +151,6 @@ interface EditFormData {
     latitude: number | null;
     longitude: number | null;
     images: { url: string; uploading?: boolean; file?: File }[];
-    contactPhone: string;
-    contactName: string;
     amenities: string[];
 }
 
@@ -251,8 +249,6 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
         images: revisionData?.images
             ? revisionData.images.map((url) => ({ url }))
             : property.images.map((img) => ({ url: img.url })),
-        contactPhone: revisionData?.contactPhone ?? '',
-        contactName: revisionData?.contactName ?? '',
         amenities: [...(revisionData?.amenities ?? property.amenities ?? [])],
     };
 }

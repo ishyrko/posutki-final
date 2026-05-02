@@ -19,7 +19,6 @@ function ConfirmEmailChangeContent() {
 
     useEffect(() => {
         if (!token || !email) {
-            setStatus('error');
             return;
         }
 

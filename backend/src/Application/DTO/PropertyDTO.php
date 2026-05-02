@@ -86,8 +86,9 @@ final class PropertyDTO implements \JsonSerializable
         array $nearbyMetroStations = [],
         int $favoritesCount = 0,
         ?array $dailySellerLegalProfile = null,
-    ): self
-    {
+        ?string $ownerContactPhone = null,
+        ?string $ownerContactName = null,
+    ): self {
         $district = $city->getRegionDistrict();
         $region = $district?->getRegion();
 
@@ -141,8 +142,8 @@ final class PropertyDTO implements \JsonSerializable
             pendingRevisionStatus: $property->getPendingRevisionStatus(),
             pendingRevisionComment: $property->getPendingRevisionComment(),
             pendingRevisionData: $property->getPendingRevisionData(),
-            contactPhone: $property->getContactPhone(),
-            contactName: $property->getContactName(),
+            contactPhone: $ownerContactPhone,
+            contactName: $ownerContactName,
             dailySellerLegalProfile: $dailySellerLegalProfile,
             nearMetro: $property->isNearMetro(),
             nearbyMetroStations: $nearbyMetroStations,

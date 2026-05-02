@@ -1,0 +1,20 @@
+---
+description: Запуск команд только через Docker или make
+alwaysApply: true
+---
+
+# Окружение: Docker и Make
+
+В этом репозитории сервисы и зависимости поднимаются в **Docker**. Не предлагай и не используй прямые вызовы `composer`, `php`, `npm`, `node`, `symfony` и т.п. на хосте для проектных задач, если это можно сделать в контейнере или через **Makefile**.
+
+## Что делать
+
+- Предпочитай **`make <target>`** из корня репозитория (см. `make help`).
+- Если цели в Makefile нет, используй **`docker compose exec`** (или `docker-compose exec`, как в проекте) в нужный сервис, рабочие пути смотри в `docker-compose.yml` / `Makefile` (например, backend часто в `/var/www/backend`).
+- Для тестов бэкенда: `make test`, `make test-unit`, `make test-functional`.
+
+## Чего избегать
+
+- Запуск `composer test`, `npm run dev`, миграций и консоли Symfony **на голом хосте**, когда проект рассчитан на Docker — это ломает окружение и пути.
+
+Если нужна одноразовая команда без нового target в Makefile, выполни её через `docker compose exec <service> sh -lc '...'` с тем же контекстом, что и в существующих рецептах Makefile.

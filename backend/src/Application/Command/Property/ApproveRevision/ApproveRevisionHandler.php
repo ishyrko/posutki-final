@@ -129,8 +129,6 @@ readonly class ApproveRevisionHandler
             coordinates: $coordinates,
             images: isset($data['images']) && is_array($data['images']) ? $data['images'] : null,
             amenities: isset($data['amenities']) && is_array($data['amenities']) ? $data['amenities'] : null,
-            contactPhone: isset($data['contactPhone']) ? (string) $data['contactPhone'] : null,
-            contactName: isset($data['contactName']) ? (string) $data['contactName'] : null,
             sellerType: isset($data['sellerType']) ? (string) $data['sellerType'] : null,
         );
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Home, Heart, MessageSquare, User, LogOut, Phone, Menu, X, ChevronRight } from 'lucide-react';
 import { useUser, useLogout } from '@/features/auth/hooks';
@@ -51,8 +51,9 @@ export function Sidebar() {
         };
     }, [mobileOpen]);
 
-    useEffect(() => {
-        setMobileOpen(false);
+    useLayoutEffect(() => {
+        const id = requestAnimationFrame(() => setMobileOpen(false));
+        return () => cancelAnimationFrame(id);
     }, [pathname]);
 
     return (

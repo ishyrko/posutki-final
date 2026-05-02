@@ -30,6 +30,7 @@ export function useHeaderRegionSlug(): string {
   );
 
   return useMemo(() => {
+    void regionVersion;
     if (!isMounted) return HEADER_REGION_MINSK_SLUG;
 
     const firstSegment = pathname.split("/").filter(Boolean)[0] ?? "";

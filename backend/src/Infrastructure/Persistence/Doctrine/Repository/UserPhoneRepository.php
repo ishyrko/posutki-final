@@ -68,4 +68,36 @@ class UserPhoneRepository extends ServiceEntityRepository implements UserPhoneRe
             ->getQuery()
             ->getResult();
     }
+
+    public function findPrimaryVerifiedPhonesByUserIds(array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(
+            $userIds,
+            static fn(mixed $id): bool => is_int($id) && $id > 0,
+        )));
+        if ($userIds === []) {
+            return [];
+        }
+
+        /** @var UserPhone[] $rows */
+        $rows = $this->createQueryBuilder('up')
+            ->where('up.userId IN (:ids)')
+            ->andWhere('up.isVerified = :verified')
+            ->setParameter('ids', $userIds)
+            ->setParameter('verified', true)
+            ->orderBy('up.userId', 'ASC')
+            ->addOrderBy('up.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $uid = $row->getUserId()->getValue();
+            if (!isset($map[$uid])) {
+                $map[$uid] = $row->getPhone();
+            }
+        }
+
+        return $map;
+    }
 }

@@ -97,7 +97,9 @@ final class PropertyControllerTest extends ApiTestCase
     {
         $email = 'creator@example.com';
         $password = 'Password123!';
-        $this->createUser($email, $password);
+        $creator = $this->createUser($email, $password);
+        $creator->setVerifiedProfilePhone('+375291112233');
+        $this->entityManager()->flush();
         $token = $this->loginAndGetToken($email, $password);
         if ($token === '') {
             self::markTestSkipped('Could not obtain JWT token for authorized property creation.');

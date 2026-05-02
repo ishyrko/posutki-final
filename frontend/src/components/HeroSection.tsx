@@ -19,7 +19,8 @@ interface HeroSectionProps {
   regionSlug?: string;
 }
 
-const HeroSection = ({ regionSlug: _regionSlug }: HeroSectionProps) => {
+const HeroSection = ({ regionSlug }: HeroSectionProps) => {
+  void regionSlug;
   const router = useRouter();
 
   const handleFind = () => {

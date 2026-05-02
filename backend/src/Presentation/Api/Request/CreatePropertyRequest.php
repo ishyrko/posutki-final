@@ -146,15 +146,6 @@ class CreatePropertyRequest
     #[Assert\Type('array')]
     public array $amenities = [];
 
-    #[Assert\Regex(
-        pattern: '/^\+?[1-9]\d{1,14}$/',
-        message: 'Неверный формат номера телефона'
-    )]
-    public ?string $contactPhone = null;
-
-    #[Assert\Length(max: 100)]
-    public ?string $contactName = null;
-
     #[Assert\Choice(callback: [SellerType::class, 'values'], message: 'Недопустимый тип продавца')]
     public ?string $sellerType = null;
 }

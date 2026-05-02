@@ -78,8 +78,6 @@ export interface Property {
         longitude?: number;
         images?: string[];
         amenities?: string[];
-        contactPhone?: string;
-        contactName?: string;
     } | null;
     price: Price;
     /** BYN equivalent from backend (authoritative for display when set). */
@@ -150,7 +148,7 @@ export interface PropertyFilters {
     type?: string;
     /** Несколько типов; в API уходит как `types=a,b`; приоритетнее одного `type` */
     types?: readonly string[];
-    dealType?: 'sale' | 'rent';
+    dealType?: 'sale' | 'rent' | 'daily';
     regionSlug?: string;
     citySlug?: string;
     cityId?: number;

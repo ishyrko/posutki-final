@@ -12,7 +12,7 @@ import {
 import { formatAddress, Property } from "@/features/properties/types";
 import CatalogPage from "@/features/catalog/CatalogPage";
 import HomePage from "@/features/home/HomePage";
-import { fetchApi, fetchPublicApi, fetchPublicApiNullable } from "@/lib/server-api";
+import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { fetchFeaturedPropertiesForHome } from "@/lib/featured-properties-server";
 import { HEADER_REGION_MINSK_SLUG } from "@/lib/region-header";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";

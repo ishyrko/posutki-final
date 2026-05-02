@@ -3,6 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useUser } from '@/features/auth/hooks';
+import type { User } from '@/features/auth/types';
 import { useUpdateProfile, useChangePassword, useUpdateEmail } from '@/features/profile/hooks';
 import { updateProfileSchema, UpdateProfileData, changePasswordSchema, ChangePasswordData } from '@/features/profile/api';
 import { motion } from 'framer-motion';
@@ -11,9 +12,99 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { PhoneVerifyDialog } from '@/features/phones/components/PhoneVerifyDialog';
 import { UserAvatar } from '@/components/UserAvatar';
+
+function ProfileEmailSection({
+    user,
+    saveEmail,
+    isSavingEmail,
+}: {
+    user: User;
+    saveEmail: (email: string, options?: { onSuccess?: () => void }) => void;
+    isSavingEmail: boolean;
+}) {
+    const [emailDraft, setEmailDraft] = useState(user.email || '');
+    const [emailEditing, setEmailEditing] = useState(!user.email);
+
+    const handleSaveEmail = () => {
+        const trimmed = emailDraft.trim();
+        if (!trimmed) return;
+        saveEmail(trimmed, {
+            onSuccess: () => setEmailEditing(false),
+        });
+    };
+
+    const handleCancelEmailEdit = () => {
+        setEmailDraft(user.email || '');
+        setEmailEditing(false);
+    };
+
+    return (
+        <div className="sm:col-span-2">
+            <label className="text-sm text-muted-foreground mb-1.5 block flex flex-wrap items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5" />Email
+                {user.email && user.isVerified && (
+                    <Badge variant="default" className="ml-1 gap-1 text-[10px] px-1.5 py-0">
+                        <CheckCircle2 className="w-2.5 h-2.5" />Подтверждён
+                    </Badge>
+                )}
+                {user.pendingEmail && (
+                    <Badge variant="secondary" className="ml-1 gap-1 text-[10px] px-1.5 py-0">
+                        <AlertCircle className="w-2.5 h-2.5" />Ожидает подтверждения
+                    </Badge>
+                )}
+                {!user.email && (
+                    <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0">
+                        Не указан
+                    </Badge>
+                )}
+            </label>
+            {user.pendingEmail && (
+                <p className="text-xs text-muted-foreground mb-2">
+                    Письмо отправлено на <span className="text-foreground font-medium">{user.pendingEmail}</span>.
+                    Перейдите по ссылке в письме.
+                </p>
+            )}
+            <div className="flex flex-col sm:flex-row gap-2">
+                <Input
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={emailDraft}
+                    onChange={(e) => setEmailDraft(e.target.value)}
+                    disabled={!!user.email && !emailEditing}
+                    className={!!user.email && !emailEditing ? 'opacity-70' : ''}
+                />
+                <div className="flex gap-2 shrink-0">
+                    {user.email && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => (emailEditing ? handleCancelEmailEdit() : setEmailEditing(true))}
+                        >
+                            {emailEditing ? 'Отмена' : 'Изменить'}
+                        </Button>
+                    )}
+                    <Button
+                        type="button"
+                        size="sm"
+                        className="bg-gradient-primary text-primary-foreground border-0"
+                        onClick={handleSaveEmail}
+                        disabled={isSavingEmail || !emailDraft.trim() || (!!user.email && !emailEditing)}
+                    >
+                        {isSavingEmail ? 'Отправка...' : 'Сохранить email'}
+                    </Button>
+                </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+                После смены или добавления адреса проверьте почту и подтвердите email по ссылке.
+            </p>
+        </div>
+    );
+}
 
 export default function ProfilePage() {
     const { data: user } = useUser();
@@ -21,8 +112,6 @@ export default function ProfilePage() {
     const { mutate: changePassword, isPending: isChangingPassword } = useChangePassword();
     const { mutate: saveEmail, isPending: isSavingEmail } = useUpdateEmail();
     const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
-    const [emailDraft, setEmailDraft] = useState('');
-    const [emailEditing, setEmailEditing] = useState(false);
 
     const profileForm = useForm<UpdateProfileData>({
         resolver: zodResolver(updateProfileSchema),
@@ -32,6 +121,14 @@ export default function ProfilePage() {
             phone: '',
             avatar: '',
         },
+        values: user
+            ? {
+                  firstName: user.firstName || '',
+                  lastName: user.lastName || '',
+                  phone: user.phone || '',
+                  avatar: '',
+              }
+            : undefined,
     });
 
     const passwordForm = useForm<ChangePasswordData>({
@@ -42,36 +139,6 @@ export default function ProfilePage() {
             confirmPassword: '',
         },
     });
-
-    useEffect(() => {
-        if (user) {
-            profileForm.reset({
-                firstName: user.firstName || '',
-                lastName: user.lastName || '',
-                phone: user.phone || '',
-                avatar: '',
-            });
-            setEmailDraft(user.email || '');
-            setEmailEditing(!user.email);
-        }
-    }, [user, profileForm]);
-
-    const handleSaveEmail = () => {
-        const trimmed = emailDraft.trim();
-        if (!trimmed) {
-            return;
-        }
-        saveEmail(trimmed, {
-            onSuccess: () => {
-                setEmailEditing(false);
-            },
-        });
-    };
-
-    const handleCancelEmailEdit = () => {
-        setEmailDraft(user?.email || '');
-        setEmailEditing(false);
-    };
 
     const onProfileSubmit = (data: UpdateProfileData) => {
         updateProfile(data);
@@ -161,71 +228,14 @@ export default function ProfilePage() {
                                 )}
                             </div>
                         </div>
-                        <div className="sm:col-span-2">
-                            <label className="text-sm text-muted-foreground mb-1.5 block flex flex-wrap items-center gap-1.5">
-                                <Mail className="w-3.5 h-3.5" />Email
-                                {user?.email && user.isVerified && (
-                                    <Badge variant="default" className="ml-1 gap-1 text-[10px] px-1.5 py-0">
-                                        <CheckCircle2 className="w-2.5 h-2.5" />Подтверждён
-                                    </Badge>
-                                )}
-                                {user?.pendingEmail && (
-                                    <Badge variant="secondary" className="ml-1 gap-1 text-[10px] px-1.5 py-0">
-                                        <AlertCircle className="w-2.5 h-2.5" />Ожидает подтверждения
-                                    </Badge>
-                                )}
-                                {!user?.email && (
-                                    <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0">
-                                        Не указан
-                                    </Badge>
-                                )}
-                            </label>
-                            {user?.pendingEmail && (
-                                <p className="text-xs text-muted-foreground mb-2">
-                                    Письмо отправлено на <span className="text-foreground font-medium">{user.pendingEmail}</span>.
-                                    Перейдите по ссылке в письме.
-                                </p>
-                            )}
-                            <div className="flex flex-col sm:flex-row gap-2">
-                                <Input
-                                    type="email"
-                                    autoComplete="email"
-                                    placeholder="you@example.com"
-                                    value={emailDraft}
-                                    onChange={(e) => setEmailDraft(e.target.value)}
-                                    disabled={!!user?.email && !emailEditing}
-                                    className={!!user?.email && !emailEditing ? 'opacity-70' : ''}
+                            {user && (
+                                <ProfileEmailSection
+                                    key={`${user.id}-${user.email ?? ''}`}
+                                    user={user}
+                                    saveEmail={saveEmail}
+                                    isSavingEmail={isSavingEmail}
                                 />
-                                <div className="flex gap-2 shrink-0">
-                                    {user?.email && (
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => (emailEditing ? handleCancelEmailEdit() : setEmailEditing(true))}
-                                        >
-                                            {emailEditing ? 'Отмена' : 'Изменить'}
-                                        </Button>
-                                    )}
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        className="bg-gradient-primary text-primary-foreground border-0"
-                                        onClick={handleSaveEmail}
-                                        disabled={
-                                            isSavingEmail ||
-                                            !emailDraft.trim() ||
-                                            (!!user?.email && !emailEditing)
-                                        }
-                                    >
-                                        {isSavingEmail ? 'Отправка...' : 'Сохранить email'}
-                                    </Button>
-                                </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1.5">
-                                После смены или добавления адреса проверьте почту и подтвердите email по ссылке.
-                            </p>
-                        </div>
+                            )}
                     </div>
 
                     <div className="flex justify-end mt-4">

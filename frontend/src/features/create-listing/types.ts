@@ -35,8 +35,8 @@ export interface CreatePropertyPayload {
     rooms?: number;
     roomsInDeal?: number;
     roomsArea?: number;
-    floor: number;
-    totalFloors: number;
+    floor?: number;
+    totalFloors?: number;
     bathrooms?: number;
     yearBuilt?: number;
     renovation?: string;
@@ -56,8 +56,6 @@ export interface CreatePropertyPayload {
     coordinates: { latitude: number; longitude: number };
     images: string[];
     amenities: string[];
-    contactPhone?: string;
-    contactName?: string;
 }
 
 export interface CreatePropertyResponse {
@@ -113,7 +111,5 @@ export interface ListingFormData {
     longitude: number | null;
     price: string;
     currency: string;
-    contactName: string;
-    contactPhone: string;
     amenities: string[];
 }

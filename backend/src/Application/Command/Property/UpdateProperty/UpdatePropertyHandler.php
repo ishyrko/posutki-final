@@ -205,8 +205,6 @@ readonly class UpdatePropertyHandler
             'longitude' => $command->longitude,
             'images' => $command->images,
             'amenities' => $command->amenities,
-            'contactPhone' => $command->contactPhone,
-            'contactName' => $command->contactName,
             'sellerType' => $command->sellerType,
         ], static fn(mixed $value): bool => $value !== null);
     }

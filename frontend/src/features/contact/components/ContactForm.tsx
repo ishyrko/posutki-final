@@ -70,7 +70,13 @@ export function ContactForm() {
             </p>
 
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 rounded-2xl border border-border bg-card/80 p-3 backdrop-blur sm:p-4">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void form.handleSubmit(onSubmit)(e);
+                  }}
+                  className="space-y-4 rounded-2xl border border-border bg-card/80 p-3 backdrop-blur sm:p-4"
+                >
                     <div className="grid gap-5 sm:grid-cols-2">
                         <FormField
                             control={form.control}

@@ -40,7 +40,7 @@ declare global {
       ) => YMap;
       Placemark: new (
         coords: number[],
-        properties: Record<string, string>,
+        properties: Record<string, string | undefined>,
         options: Record<string, string | boolean>
       ) => YPlacemark;
       geocode: (query: string, options?: { results?: number }) => Promise<{

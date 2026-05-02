@@ -29,6 +29,32 @@ class UserRepository extends ServiceEntityRepository implements UserRepositoryIn
         return $this->find($id->getValue());
     }
 
+    public function findByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(
+            $ids,
+            static fn(mixed $id): bool => is_int($id) && $id > 0,
+        )));
+        if ($ids === []) {
+            return [];
+        }
+
+        $users = $this->createQueryBuilder('u')
+            ->where('u.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->getQuery()
+            ->getResult();
+
+        $map = [];
+        foreach ($users as $user) {
+            if ($user instanceof User) {
+                $map[$user->getId()->getValue()] = $user;
+            }
+        }
+
+        return $map;
+    }
+
     public function findByEmail(Email $email): ?User
     {
         return $this->createQueryBuilder('u')

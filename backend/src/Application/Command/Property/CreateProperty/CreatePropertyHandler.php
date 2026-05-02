@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Command\Property\CreateProperty;
 
+use App\Application\Service\PropertyOwnerPublicContactResolver;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Event\PropertySubmittedForModerationEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
@@ -15,7 +16,6 @@ use App\Domain\Property\Validation\RoomDealDetailsValidator;
 use App\Domain\Property\ValueObject\{Price, Address, Coordinates};
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
-use App\Domain\User\Repository\UserPhoneRepositoryInterface;
 use App\Domain\User\Service\DailyListingSellerProfileGuardInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\MetroProximityCalculator;
@@ -25,7 +25,7 @@ final class CreatePropertyHandler
 {
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
-        private readonly UserPhoneRepositoryInterface $userPhoneRepository,
+        private readonly PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
         private readonly ExchangeRateService $exchangeRateService,
         private readonly MetroProximityCalculator $metroProximityCalculator,
         private readonly MessageBusInterface $notificationBus,
@@ -55,14 +55,7 @@ final class CreatePropertyHandler
         FloorTotalFloorsValidator::assertValid($command->floor, $command->totalFloors);
         $this->assertAreaConstraints($command->type, $command->area, $command->landArea);
 
-        if ($command->contactPhone !== null) {
-            $ownerId = Id::fromString($command->ownerId);
-            $userPhone = $this->userPhoneRepository->findByUserIdAndPhone($ownerId, $command->contactPhone);
-
-            if ($userPhone === null || !$userPhone->isVerified()) {
-                throw new DomainException('Подтвердите контактный телефон');
-            }
-        }
+        $this->ownerPublicContactResolver->assertOwnerHasPublicContact($command->ownerId);
 
         $this->dailyListingSellerProfileGuard->assertEligible(
             $command->ownerId,
@@ -105,8 +98,8 @@ final class CreatePropertyHandler
             streetId: $command->streetId,
             images: $command->images,
             amenities: $command->amenities,
-            contactPhone: $command->contactPhone,
-            contactName: $command->contactName,
+            contactPhone: null,
+            contactName: null,
             sellerType: $command->sellerType,
             roomsInDeal: $command->roomsInDeal,
             roomsArea: $command->roomsArea,

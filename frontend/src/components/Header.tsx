@@ -118,7 +118,7 @@ const Header = () => {
   const [activeMega, setActiveMega] = useState<string | null>(null);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const megaRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const isMounted = useSyncExternalStore(
     () => () => {},

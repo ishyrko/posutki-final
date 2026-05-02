@@ -27,7 +27,6 @@ interface PropertyListCardProps {
   year?: number;
   floor?: string;
   id?: number;
-  dealType?: string;
   propertyType?: string;
   nearbyMetroStations?: NearbyMetroStation[];
   /** When true, metro badges stay below the address (e.g. catalog "list + map" on desktop). */
@@ -66,7 +65,6 @@ const PropertyListCard = ({
   year,
   floor,
   id,
-  dealType,
   propertyType,
   nearbyMetroStations = [],
   metroOnSeparateLine = false,

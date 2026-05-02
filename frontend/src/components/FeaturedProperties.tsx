@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import type { PropertyListResponse } from "@/features/properties/types";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
@@ -27,11 +27,6 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
   const headerRegionSlug = useHeaderRegionSlug();
   const effectiveRegionSlug = regionSlug ?? headerRegionSlug;
 
-  const featuredInitialHydratedAt = useRef<number | null>(null);
-  if (featuredInitial && featuredInitialHydratedAt.current === null) {
-    featuredInitialHydratedAt.current = Date.now();
-  }
-
   const featuredFilters = useMemo(
     () => ({
       regionSlug: effectiveRegionSlug,
@@ -49,12 +44,7 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
     : buildCatalogUrl({ propertyType: "apartment" });
   const { data, isLoading } = useProperties(
     featuredFilters,
-    featuredInitial && featuredInitialHydratedAt.current !== null
-      ? {
-          initialData: featuredInitial,
-          initialDataUpdatedAt: featuredInitialHydratedAt.current,
-        }
-      : undefined,
+    featuredInitial ? { initialData: featuredInitial } : undefined,
   );
   const { data: rates } = useExchangeRates();
   const exchangeRates: ExchangeRates = useMemo(

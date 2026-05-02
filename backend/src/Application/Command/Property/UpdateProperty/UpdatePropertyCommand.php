@@ -42,8 +42,6 @@ readonly class UpdatePropertyCommand
         public ?float $longitude = null,
         public ?array $images = null,
         public ?array $amenities = null,
-        public ?string $contactPhone = null,
-        public ?string $contactName = null,
         public ?string $sellerType = null,
     ) {
     }

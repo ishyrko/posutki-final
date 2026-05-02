@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Search, MapPin, Home, CircleDollarSign, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';

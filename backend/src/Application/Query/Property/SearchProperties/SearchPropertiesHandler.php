@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Query\Property\SearchProperties;
 
 use App\Application\DTO\PropertyDTO;
+use App\Application\Service\PropertyOwnerPublicContactResolver;
 use App\Domain\Property\Repository\{
     PropertyRepositoryInterface,
     CityRepositoryInterface,
@@ -24,6 +25,7 @@ final class SearchPropertiesHandler
         private readonly MetroStationRepositoryInterface $metroStationRepository,
         private readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
         private readonly ExchangeRateService $exchangeRateService,
+        private readonly PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
     ) {
     }
 
@@ -153,13 +155,28 @@ final class SearchPropertiesHandler
         }
         unset($metroStations);
 
+        $ownerIds = array_values(array_unique(array_map(
+            static fn($property) => $property->getOwnerId()->getValue(),
+            $properties
+        )));
+        $ownerContacts = $this->ownerPublicContactResolver->resolveForOwnerIds($ownerIds);
+
         return array_map(
-            fn($property) => PropertyDTO::fromEntity(
-                $property,
-                $cities[$property->getCityId()],
-                $streets[$property->getStreetId()] ?? null,
-                $nearbyMetroByPropertyId[$property->getId()->getValue()] ?? []
-            ),
+            function ($property) use ($cities, $streets, $nearbyMetroByPropertyId, $ownerContacts) {
+                $ownerId = $property->getOwnerId()->getValue();
+                $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null];
+
+                return PropertyDTO::fromEntity(
+                    $property,
+                    $cities[$property->getCityId()],
+                    $streets[$property->getStreetId()] ?? null,
+                    $nearbyMetroByPropertyId[$property->getId()->getValue()] ?? [],
+                    0,
+                    null,
+                    $contact['phone'],
+                    $contact['name'],
+                );
+            },
             $properties
         );
     }
