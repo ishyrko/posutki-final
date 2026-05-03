@@ -8,7 +8,7 @@ test-unit:
 
 test-functional:
 	docker compose exec php sh -lc "cd /var/www/backend && composer test:functional"
-.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-fixtures admin-user frontend-install frontend-dev frontend-build clean exchange-rates prod prod-up prod-down prod-restart prod-logs prod-migrate prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user
+.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo admin-user frontend-install frontend-dev frontend-build clean exchange-rates prod prod-up prod-down prod-restart prod-logs prod-migrate prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user
 
 PROD_ENV_FILE = .env.prod
 PROD_COMPOSE  = docker compose -f docker-compose.prod.yml --env-file $(PROD_ENV_FILE)
@@ -70,9 +70,9 @@ backend-migrate: ## Run database migrations (Doctrine)
 
 migrate: backend-migrate ## Alias: run database migrations
 
-backend-fixtures: ## Load database fixtures
-	@echo "${GREEN}Loading fixtures...${RESET}"
-	docker-compose exec php php bin/console doctrine:fixtures:load --no-interaction
+backend-seed-demo: ## Replace all listings with demo data (regions/cities unchanged). Не использовать doctrine:fixtures:load — ломает справочники.
+	@echo "${GREEN}Seeding demo properties (app:seed-demo-properties)...${RESET}"
+	docker-compose exec php sh -lc "cd /var/www/backend && php bin/console app:seed-demo-properties"
 
 admin-user: ## Create or promote admin (EMAIL=... PASSWORD=... optional FIRST= LAST=)
 	@test -n "$(EMAIL)" && test -n "$(PASSWORD)" || (echo "${YELLOW}Usage: make admin-user EMAIL=you@example.com PASSWORD=secret [FIRST=Admin] [LAST=Admin]${RESET}" && exit 1)

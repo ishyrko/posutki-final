@@ -12,9 +12,11 @@ alwaysApply: true
 - Предпочитай **`make <target>`** из корня репозитория (см. `make help`).
 - Если цели в Makefile нет, используй **`docker compose exec`** (или `docker-compose exec`, как в проекте) в нужный сервис, рабочие пути смотри в `docker-compose.yml` / `Makefile` (например, backend часто в `/var/www/backend`).
 - Для тестов бэкенда: `make test`, `make test-unit`, `make test-functional`.
+- Чтобы заполнить **тестовые объявления** (без очистки справочников регионов/городов/улиц): **`make backend-seed-demo`** (`app:seed-demo-properties`).
 
 ## Чего избегать
 
 - Запуск `composer test`, `npm run dev`, миграций и консоли Symfony **на голом хосте**, когда проект рассчитан на Docker — это ломает окружение и пути.
+- **`doctrine:fixtures:load` и любые фикстуры в этом проекте не запускать** — команда по умолчанию чистит все таблицы сущностей Doctrine, включая справочники адресов, при почти пустых `AppFixtures`. Для демо-данных только `make backend-seed-demo`.
 
 Если нужна одноразовая команда без нового target в Makefile, выполни её через `docker compose exec <service> sh -lc '...'` с тем же контекстом, что и в существующих рецептах Makefile.
