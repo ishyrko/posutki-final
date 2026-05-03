@@ -10,7 +10,9 @@ import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
 const Footer = () => {
   const regionSlug = useHeaderRegionSlug();
   const homeHref =
-    regionSlug === HEADER_REGION_MINSK_SLUG ? "/" : `/${regionSlug}/`;
+    regionSlug === HEADER_REGION_MINSK_SLUG
+      ? "/"
+      : withRegionalCatalogHref("/kvartiry/", regionSlug);
 
   const kvartiry = withRegionalCatalogHref("/kvartiry/", regionSlug);
   const doma = withRegionalCatalogHref("/doma/", regionSlug);

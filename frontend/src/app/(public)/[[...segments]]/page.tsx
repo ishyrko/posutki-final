@@ -130,23 +130,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const parsed = parseSegments(segments);
 
   if (!isCatalogRoute(parsed)) {
-    const regionLabel = parsed.regionSlug
-      ? {
-          brest: "Брест и область",
-          vitebsk: "Витебск и область",
-          gomel: "Гомель и область",
-          grodno: "Гродно и область",
-          mogilev: "Могилев и область",
-        }[parsed.regionSlug]
-      : undefined;
+    if (parsed.regionSlug) {
+      notFound();
+    }
 
     return {
-      title: regionLabel
-        ? `Посуточная аренда — ${regionLabel} | posutki.by`
-        : "posutki.by — Квартиры и дома посуточно в Беларуси",
-      description: regionLabel
-        ? `Квартиры и дома посуточно в ${regionLabel}. Актуальные объявления с фото и ценами за сутки.`
-        : "Тысячи проверенных квартир и домов для посуточной аренды по всей Беларуси. Удобный поиск, актуальные цены, фото.",
+      title: "posutki.by — Квартиры и дома посуточно в Беларуси",
+      description:
+        "Тысячи проверенных квартир и домов для посуточной аренды по всей Беларуси. Удобный поиск, актуальные цены, фото.",
     };
   }
 
@@ -182,14 +173,15 @@ export default async function SegmentsPage({ params }: PageProps) {
   const parsed = parseSegments(segments);
 
   if (!isCatalogRoute(parsed)) {
-    const featuredRegionSlug = parsed.regionSlug ?? HEADER_REGION_MINSK_SLUG;
+    if (parsed.regionSlug) {
+      notFound();
+    }
+
+    const featuredRegionSlug = HEADER_REGION_MINSK_SLUG;
     const featuredInitial = await fetchFeaturedPropertiesForHome(featuredRegionSlug);
 
     return (
-      <HomePage
-        regionSlug={parsed.regionSlug}
-        featuredInitial={featuredInitial ?? undefined}
-      />
+      <HomePage featuredInitial={featuredInitial ?? undefined} />
     );
   }
 

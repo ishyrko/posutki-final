@@ -5,11 +5,11 @@ import Link from "next/link";
 
 const cities = [
   { name: "Минск", slug: "minsk", count: "2000+", icon: Building2, href: "/" },
-  { name: "Гродно", slug: "grodno", count: "300+", icon: Castle, href: "/grodno/" },
-  { name: "Брест", slug: "brest", count: "250+", icon: Landmark, href: "/brest/" },
-  { name: "Витебск", slug: "vitebsk", count: "200+", icon: Waves, href: "/vitebsk/" },
-  { name: "Гомель", slug: "gomel", count: "240+", icon: Factory, href: "/gomel/" },
-  { name: "Могилёв", slug: "mogilev", count: "180+", icon: TreePine, href: "/mogilev/" },
+  { name: "Гродно", slug: "grodno", count: "300+", icon: Castle, href: "/grodno/kvartiry/" },
+  { name: "Брест", slug: "brest", count: "250+", icon: Landmark, href: "/brest/kvartiry/" },
+  { name: "Витебск", slug: "vitebsk", count: "200+", icon: Waves, href: "/vitebsk/kvartiry/" },
+  { name: "Гомель", slug: "gomel", count: "240+", icon: Factory, href: "/gomel/kvartiry/" },
+  { name: "Могилёв", slug: "mogilev", count: "180+", icon: TreePine, href: "/mogilev/kvartiry/" },
 ];
 
 const CitySection = () => {

@@ -7,17 +7,16 @@ import FeaturesSection from "@/components/FeaturesSection";
 import type { PropertyListResponse } from "@/features/properties/types";
 
 interface HomePageProps {
-    regionSlug?: string;
     featuredInitial?: PropertyListResponse;
 }
 
-export default function HomePage({ regionSlug, featuredInitial }: HomePageProps) {
+export default function HomePage({ featuredInitial }: HomePageProps) {
     return (
         <div className="min-h-screen">
             <main>
-                <HeroSection regionSlug={regionSlug} />
+                <HeroSection />
                 <CitySection />
-                <FeaturedProperties regionSlug={regionSlug} featuredInitial={featuredInitial} />
+                <FeaturedProperties featuredInitial={featuredInitial} />
                 <FeaturesSection />
             </main>
         </div>

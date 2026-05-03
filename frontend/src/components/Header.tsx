@@ -95,16 +95,16 @@ function buildMegaMenu(regionSlug: string): Record<string, MegaMenuSection[]> {
         title: "Областные центры",
         items: [
           { label: "Минск", desc: "Столица", icon: <MapPin className="h-4 w-4" />, href: "/" },
-          { label: "Гродно", desc: "Город-музей", icon: <MapPin className="h-4 w-4" />, href: "/grodno/" },
-          { label: "Брест", desc: "Запад страны", icon: <MapPin className="h-4 w-4" />, href: "/brest/" },
+          { label: "Гродно", desc: "Город-музей", icon: <MapPin className="h-4 w-4" />, href: "/grodno/kvartiry/" },
+          { label: "Брест", desc: "Запад страны", icon: <MapPin className="h-4 w-4" />, href: "/brest/kvartiry/" },
         ],
       },
       {
         title: "Ещё города",
         items: [
-          { label: "Витебск", desc: "Север", icon: <MapPin className="h-4 w-4" />, href: "/vitebsk/" },
-          { label: "Гомель", desc: "Юг Беларуси", icon: <MapPin className="h-4 w-4" />, href: "/gomel/" },
-          { label: "Могилёв", desc: "Восток", icon: <MapPin className="h-4 w-4" />, href: "/mogilev/" },
+          { label: "Витебск", desc: "Север", icon: <MapPin className="h-4 w-4" />, href: "/vitebsk/kvartiry/" },
+          { label: "Гомель", desc: "Юг Беларуси", icon: <MapPin className="h-4 w-4" />, href: "/gomel/kvartiry/" },
+          { label: "Могилёв", desc: "Восток", icon: <MapPin className="h-4 w-4" />, href: "/mogilev/kvartiry/" },
         ],
       },
     ],

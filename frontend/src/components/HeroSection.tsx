@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, MapPin, CalendarDays, Users } from "lucide-react";
+import { Search, MapPin, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import NextImage from "next/image";
@@ -8,19 +8,14 @@ import { Button } from "@/components/ui/button";
 
 const CITY_HREFS: { label: string; href: string }[] = [
   { label: "Минск", href: "/" },
-  { label: "Гродно", href: "/grodno/" },
-  { label: "Брест", href: "/brest/" },
-  { label: "Витебск", href: "/vitebsk/" },
-  { label: "Гомель", href: "/gomel/" },
-  { label: "Могилёв", href: "/mogilev/" },
+  { label: "Гродно", href: "/grodno/kvartiry/" },
+  { label: "Брест", href: "/brest/kvartiry/" },
+  { label: "Витебск", href: "/vitebsk/kvartiry/" },
+  { label: "Гомель", href: "/gomel/kvartiry/" },
+  { label: "Могилёв", href: "/mogilev/kvartiry/" },
 ];
 
-interface HeroSectionProps {
-  regionSlug?: string;
-}
-
-const HeroSection = ({ regionSlug }: HeroSectionProps) => {
-  void regionSlug;
+const HeroSection = () => {
   const router = useRouter();
 
   const handleFind = () => {
@@ -52,7 +47,7 @@ const HeroSection = ({ regionSlug }: HeroSectionProps) => {
 
         <div className="max-w-4xl mx-auto">
           <div className="bg-card rounded-2xl shadow-elevated p-3 md:p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface">
                 <MapPin className="h-5 w-5 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -60,19 +55,6 @@ const HeroSection = ({ regionSlug }: HeroSectionProps) => {
                   <input
                     type="text"
                     placeholder="Минск"
-                    className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground/60 outline-none"
-                    readOnly
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface">
-                <CalendarDays className="h-5 w-5 text-primary shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <label className="text-xs font-medium text-muted-foreground block">Даты</label>
-                  <input
-                    type="text"
-                    placeholder="Заезд — Выезд"
                     className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground/60 outline-none"
                     readOnly
                   />
