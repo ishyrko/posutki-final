@@ -1,10 +1,25 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+const radixReactIdShim = path.resolve(__dirname, "src/lib/shims/radix-react-id.ts");
+
 const nextConfig: NextConfig = {
   trailingSlash: true,
   /** CJS sanitizer: load from node_modules at runtime (avoids bundler edge cases). */
   serverExternalPackages: ["sanitize-html"],
+  webpack: (config) => {
+    const alias = config.resolve?.alias;
+    const existing =
+      alias && typeof alias === "object" && !Array.isArray(alias)
+        ? { ...(alias as Record<string, string | string[] | false>) }
+        : {};
+    config.resolve = config.resolve ?? {};
+    config.resolve.alias = {
+      ...existing,
+      "@radix-ui/react-id": radixReactIdShim,
+    };
+    return config;
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -61,6 +76,10 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     root: path.resolve(__dirname),
+    /** Relative to `root` — absolute paths break Turbopack resolution (see next build). */
+    resolveAlias: {
+      "@radix-ui/react-id": "./src/lib/shims/radix-react-id.ts",
+    },
   },
 };
 
