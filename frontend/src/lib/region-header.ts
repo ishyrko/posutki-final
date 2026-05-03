@@ -29,7 +29,6 @@ export function withRegionalCatalogHref(href: string, regionSlug: string): strin
   const isRegionalCatalogHref =
     href.startsWith("/kvartiry/") ||
     href.startsWith("/doma/") ||
-    href.startsWith("/dachi/") ||
     href.startsWith("/vozle-metro/");
 
   if (!isRegionalCatalogHref) return href;

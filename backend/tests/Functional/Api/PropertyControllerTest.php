@@ -141,7 +141,7 @@ final class PropertyControllerTest extends ApiTestCase
     {
         return [
             'type' => 'apartment',
-            'dealType' => 'sale',
+            'dealType' => 'daily',
             'title' => 'Modern apartment in central district',
             'description' => 'Long listing description for functional tests with enough symbols to pass validator.',
             'price' => [
@@ -162,6 +162,12 @@ final class PropertyControllerTest extends ApiTestCase
             ],
             'images' => [],
             'amenities' => [],
+            'maxDailyGuests' => 4,
+            'dailySingleBeds' => 2,
+            'dailyDoubleBeds' => 1,
+            'checkInTime' => '14:00',
+            'checkOutTime' => '12:00',
+            'sellerType' => 'individual',
         ];
     }
 }

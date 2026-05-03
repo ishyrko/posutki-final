@@ -93,26 +93,11 @@ import {
 
 const propertyTypes = [
     { value: 'apartment', label: 'Квартира' },
-    { value: 'house', label: 'Дом / Коттедж' },
-    { value: 'room', label: 'Комната' },
-    { value: 'land', label: 'Участок' },
-    { value: 'garage', label: 'Гараж' },
-    { value: 'parking', label: 'Машиноместо' },
-    { value: 'dacha', label: 'Дача' },
-    { value: 'office', label: 'Офис' },
-    { value: 'retail', label: 'Торговое помещение' },
-    { value: 'warehouse', label: 'Склад' },
+    { value: 'house', label: 'Дом / коттедж' },
 ];
+const lotAreaTypes = ['house'];
 
-const dealTypes = [
-    { value: 'sale', label: 'Продажа' },
-    { value: 'rent', label: 'Аренда' },
-    { value: 'daily', label: 'Посуточно' },
-];
-const dailyKinds = ['apartment', 'house', 'dacha'];
-const lotAreaTypes = ['land', 'house', 'dacha'];
-
-const requiresAreaInSquareMeters = (propertyType: string): boolean => propertyType !== 'land';
+const requiresAreaInSquareMeters = (_propertyType: string): boolean => true;
 const needsLotArea = (propertyType: string): boolean => lotAreaTypes.includes(propertyType);
 
 const DEFAULT_CENTER: [number, number] = [53.9045, 27.5615];
@@ -174,12 +159,13 @@ function getErrorMessage(error: unknown, fallback: string): string {
 
 function mapPropertyToForm(property: PropertyItem): EditFormData {
     const revisionData = property.pendingRevisionStatus ? property.pendingRevisionData : null;
-    const type = revisionData?.type ?? property.type;
+    const rawType = revisionData?.type ?? property.type;
+    const type = rawType === 'house' ? 'house' : 'apartment';
     const rawDealConditions = revisionData?.dealConditions ?? property.specifications.dealConditions ?? [];
 
     return {
         type,
-        dealType: revisionData?.dealType ?? property.dealType,
+        dealType: 'daily',
         title: revisionData?.title ?? property.title,
         description: revisionData?.description ?? property.description,
         rooms: String(revisionData?.rooms ?? property.specifications.rooms),
@@ -312,22 +298,11 @@ export default function EditPropertyPage() {
         }
         setForm((prev) => {
             if (!prev) return prev;
-            if (key === 'dealType' && value === 'daily') {
+            if (key === 'type') {
+                const nextType = value as string;
                 return {
                     ...prev,
-                    dealType: 'daily',
-                    ...(prev.type === 'room' ? { type: '', roomsInDeal: '', roomsArea: '' } : {}),
-                    ...(prev.renovation === 'Без ремонта' ? { renovation: '' } : {}),
-                };
-            }
-            if (key === 'dealType' && value === 'rent' && prev.type === 'land') {
-                return { ...prev, dealType: 'rent', type: '', roomsInDeal: '', roomsArea: '' };
-            }
-            if (key === 'dealType' || key === 'type') {
-                const nextType = key === 'type' ? (value as string) : prev.type;
-                return {
-                    ...prev,
-                    [key]: value as string,
+                    type: nextType,
                     roomsInDeal: '',
                     roomsArea: '',
                     dealConditions: sanitizeDealConditionsForPropertyType(nextType, prev.dealConditions),
@@ -722,14 +697,7 @@ export default function EditPropertyPage() {
         form.latitude !== null && form.longitude !== null
             ? [form.latitude, form.longitude]
             : DEFAULT_CENTER;
-    const availablePropertyTypes =
-        form.dealType === 'daily'
-            ? propertyTypes.filter((pt) => dailyKinds.includes(pt.value))
-            : form.dealType === 'rent'
-              ? propertyTypes.filter(
-                    (pt) => pt.value !== 'land' || form.type === 'land',
-                )
-              : propertyTypes;
+    const availablePropertyTypes = propertyTypes;
     const revisionOnModeration = property?.pendingRevisionStatus === 'pending';
     const revisionRejected = property?.pendingRevisionStatus === 'rejected';
     const formReadonly = revisionOnModeration || saving;
@@ -767,18 +735,9 @@ export default function EditPropertyPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <Label className="text-foreground">Тип сделки</Label>
-                            <Select value={form.dealType} onValueChange={(v) => update('dealType', v)}>
-                                <SelectTrigger className="mt-1.5 px-2.5">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {dealTypes.map((dt) => (
-                                        <SelectItem key={dt.value} value={dt.value}>
-                                            {dt.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <p className="mt-1.5 text-sm text-muted-foreground rounded-lg border border-border bg-muted/30 px-3 py-2">
+                                Посуточная аренда
+                            </p>
                         </div>
                         <div>
                             <Label className="text-foreground">Тип недвижимости</Label>

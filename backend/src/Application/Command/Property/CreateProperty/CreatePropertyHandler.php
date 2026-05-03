@@ -109,12 +109,8 @@ final class CreatePropertyHandler
 
     private function assertAreaConstraints(string $propertyType, float $area, ?float $landArea): void
     {
-        if ($propertyType === 'land' && $area !== 0.0) {
-            throw new DomainException('Для участков площадь в м² должна быть 0');
-        }
-
-        if (in_array($propertyType, ['land', 'house', 'dacha'], true) && ($landArea === null || $landArea <= 0)) {
-            throw new DomainException('Укажите площадь участка в сотках для участка, дома и дачи');
+        if ($propertyType === 'house' && ($landArea === null || $landArea <= 0)) {
+            throw new DomainException('Укажите площадь участка в сотках для дома');
         }
     }
 }

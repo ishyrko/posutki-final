@@ -17,15 +17,6 @@ import { showBathrooms, showRooms } from "@/features/create-listing/property-fie
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   apartment: "Квартира",
   house: "Дом",
-  room: "Комната",
-  land: "Участок",
-  garage: "Гараж",
-  parking: "Машиноместо",
-  dacha: "Дача",
-  office: "Офис",
-  retail: "Торговое помещение",
-  warehouse: "Склад",
-  business: "Готовый бизнес",
 };
 
 interface PropertyCardProps {
@@ -91,7 +82,7 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
           {/* Badges */}
           <div className="absolute top-4 left-4 flex gap-2">
             <span className="px-3 py-1 rounded-full bg-dark-bg/60 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider border border-white/10">
-              {dealType === 'sale' ? 'Продажа' : dealType === 'daily' ? 'Посуточно' : 'Аренда'}
+              Посуточно
             </span>
             <span className="px-3 py-1 rounded-full bg-primary text-white text-[10px] font-bold uppercase tracking-wider shadow-primary">
               {property.typeLabel ?? PROPERTY_TYPE_LABELS[type] ?? type}
@@ -117,7 +108,6 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
               <span className="text-lg font-bold font-display">
                 <PriceInByn amount={primaryAmount} />
               </span>
-              {dealType === 'rent' && <span className="text-sm opacity-60 font-normal"> /мес</span>}
               <span className="block text-xs font-normal opacity-85 mt-0.5">{priceSecondary}</span>
             </div>
           </div>

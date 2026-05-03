@@ -85,11 +85,11 @@ final class CreatePropertyHandlerTest extends TestCase
     }
 
     private function createValidCommand(
-        string $dealType = 'sale',
+        string $dealType = 'daily',
         string $priceCurrency = 'BYN',
-        ?int $maxDailyGuests = null,
-        ?int $dailySingleBeds = null,
-        ?int $dailyDoubleBeds = null
+        ?int $maxDailyGuests = 4,
+        ?int $dailySingleBeds = 2,
+        ?int $dailyDoubleBeds = 0
     ): CreatePropertyCommand {
         return new CreatePropertyCommand(
             ownerId: '1',
@@ -114,6 +114,7 @@ final class CreatePropertyHandlerTest extends TestCase
             dailyDoubleBeds: $dailyDoubleBeds,
             checkInTime: '14:00',
             checkOutTime: '12:00',
+            sellerType: 'individual',
         );
     }
 

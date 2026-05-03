@@ -64,7 +64,7 @@ export function PropertyInfo({ property }: PropertyInfoProps) {
                     property.type === 'land'
                         ? { icon: Maximize, label: "Площадь участка", value: property.specifications.landArea ? `${property.specifications.landArea} сот.` : '-' }
                         : { icon: Maximize, label: "Площадь общая", value: `${property.specifications.area} м²` },
-                    ...(property.type === 'house' || property.type === 'dacha'
+                    ...(property.type === 'house'
                         ? [{ icon: MapPin, label: "Площадь участка", value: property.specifications.landArea ? `${property.specifications.landArea} сот.` : '-' }]
                         : []),
                     { icon: BedDouble, label: "Комнаты", value: property.specifications.rooms },

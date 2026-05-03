@@ -305,7 +305,7 @@ export function getMockPropertiesResponse(filters: PropertyFilters = {}): Proper
   }
   if (filters.rooms) {
     const r = Number(filters.rooms);
-    const countable = ["apartment", "house", "dacha"] as const;
+    const countable = ["apartment", "house"] as const;
     const hadTypeFilter =
       (filters.types && Array.isArray(filters.types) && filters.types.length > 0) ||
       (filters.type && filters.type !== "all");

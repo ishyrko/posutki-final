@@ -120,7 +120,7 @@ final class UpdatePropertyHandlerTest extends TestCase
         $property = new Property(
             ownerId: Id::fromInt($ownerId),
             type: 'apartment',
-            dealType: 'sale',
+            dealType: 'daily',
             title: 'Original title',
             description: 'Original description long enough for updates.',
             price: Price::fromAmount(9000000, 'BYN'),

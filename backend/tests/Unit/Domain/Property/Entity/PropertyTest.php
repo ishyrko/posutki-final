@@ -88,7 +88,7 @@ final class PropertyTest extends TestCase
         return new Property(
             ownerId: Id::fromInt($ownerId),
             type: 'apartment',
-            dealType: 'sale',
+            dealType: 'daily',
             title: 'Spacious apartment in city center',
             description: 'Nice and bright apartment with good location and transport access.',
             price: Price::fromAmount(12000000, 'BYN'),

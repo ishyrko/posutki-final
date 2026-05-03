@@ -133,22 +133,14 @@ const dailyPropertyChoices: { value: (typeof DAILY_PROPERTY_TYPE_VALUES)[number]
 const isAllowedDailyPropertyType = (t: string): boolean =>
     (DAILY_PROPERTY_TYPE_VALUES as readonly string[]).includes(t);
 
-const lotAreaTypes = ['land', 'house', 'dacha'];
+const lotAreaTypes = ['house'];
 
-const requiresAreaInSquareMeters = (propertyType: string): boolean => propertyType !== 'land';
+const requiresAreaInSquareMeters = (_propertyType: string): boolean => true;
 const needsLotArea = (propertyType: string): boolean => lotAreaTypes.includes(propertyType);
 
 const titlePlaceholderByType: Record<string, string> = {
     apartment: 'Например: Уютная квартира на сутки в центре',
-    room: 'Например: Комната 18 м² в 3-комнатной квартире',
     house: 'Например: Дом на сутки с баней и участком',
-    dacha: 'Например: Дача с баней и садом в 20 км от города',
-    land: 'Например: Участок 10 соток под строительство дома',
-    office: 'Например: Офис 75 м² в бизнес-центре класса B',
-    retail: 'Например: Торговое помещение 45 м² на первой линии',
-    warehouse: 'Например: Склад 300 м² с удобным подъездом для фур',
-    garage: 'Например: Гараж 24 м² в ГСК с охраной',
-    parking: 'Например: Машиноместо в крытом паркинге у лифта',
 };
 
 const defaultTitlePlaceholder = 'Например: Объект в хорошем районе';

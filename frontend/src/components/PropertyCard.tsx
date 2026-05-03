@@ -151,7 +151,7 @@ const PropertyCard = ({
                   {baths} сан.
                 </span>
                 <span className="flex items-center gap-1">
-                  {propertyType === "land" ? `${area} сот.` : `${area} м²`}
+                  {`${area} м²`}
                 </span>
               </>
             )}

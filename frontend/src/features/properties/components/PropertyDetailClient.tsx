@@ -52,15 +52,6 @@ type PropertyDetailClientProps = {
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   apartment: "Квартира",
   house: "Дом",
-  room: "Комната",
-  land: "Участок",
-  garage: "Гараж",
-  parking: "Машиноместо",
-  dacha: "Дача",
-  office: "Офис",
-  retail: "Торговое помещение",
-  warehouse: "Склад",
-  business: "Готовый бизнес",
 };
 
 function initialsFromContactName(name: string): string {
@@ -255,7 +246,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
           value: property.specifications.landArea ? `${property.specifications.landArea} сот.` : "-",
         }
       : { icon: Maximize, label: "Площадь общая", value: `${property.specifications.area} м²` },
-    ...(property.type === "house" || property.type === "dacha"
+    ...(property.type === "house"
       ? [
           {
             icon: MapPin,

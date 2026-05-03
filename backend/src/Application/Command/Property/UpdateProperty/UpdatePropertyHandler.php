@@ -201,8 +201,8 @@ readonly class UpdatePropertyHandler
 
     private function assertAreaConstraints(string $propertyType, ?float $landArea): void
     {
-        if (in_array($propertyType, ['land', 'house', 'dacha'], true) && ($landArea === null || $landArea <= 0)) {
-            throw new \InvalidArgumentException('Укажите площадь участка в сотках для участка, дома и дачи');
+        if ($propertyType === 'house' && ($landArea === null || $landArea <= 0)) {
+            throw new \InvalidArgumentException('Укажите площадь участка в сотках для дома');
         }
     }
 }

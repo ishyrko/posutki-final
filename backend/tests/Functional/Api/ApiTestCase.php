@@ -119,12 +119,13 @@ abstract class ApiTestCase extends WebTestCase
      *     priceAmount?: int,
      *     priceCurrency?: string,
      *     nearMetro?: bool,
+     *     landArea?: float|null,
      * } $options
      */
     protected function createProperty(User $owner, City $city, string $status = 'published', array $options = []): Property
     {
         $type = $options['type'] ?? 'apartment';
-        $dealType = $options['dealType'] ?? 'sale';
+        $dealType = $options['dealType'] ?? 'daily';
         $rooms = array_key_exists('rooms', $options) ? $options['rooms'] : 2;
         $area = $options['area'] ?? 65.0;
         $priceAmount = $options['priceAmount'] ?? 15000000;
@@ -156,6 +157,7 @@ abstract class ApiTestCase extends WebTestCase
             address: Address::create('12', null),
             cityId: $city->getId(),
             coordinates: Coordinates::create(53.9045, 27.5615),
+            landArea: array_key_exists('landArea', $options) ? $options['landArea'] : null,
         );
 
         if ($status !== 'draft') {

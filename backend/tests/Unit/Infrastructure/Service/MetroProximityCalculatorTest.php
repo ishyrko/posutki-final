@@ -97,7 +97,7 @@ final class MetroProximityCalculatorTest extends TestCase
         $property = new Property(
             ownerId: Id::fromInt(1),
             type: 'apartment',
-            dealType: 'sale',
+            dealType: 'daily',
             title: 'Metro proximity test property',
             description: 'Property used for metro proximity calculator tests and mocks.',
             price: Price::fromAmount(10000000, 'BYN'),

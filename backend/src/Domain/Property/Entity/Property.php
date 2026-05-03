@@ -945,10 +945,8 @@ class Property
             $this->sellerType = $sellerType;
         }
 
-        if ($this->type !== 'room' || $this->dealType === 'daily') {
-            $this->roomsInDeal = null;
-            $this->roomsArea = null;
-        }
+        $this->roomsInDeal = null;
+        $this->roomsArea = null;
 
         $this->updatedAt = new \DateTimeImmutable();
     }

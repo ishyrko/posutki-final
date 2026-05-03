@@ -14,7 +14,6 @@ export const IMPLICIT_DEAL_TYPE = 'daily' as const;
 export const PROPERTY_TYPE_SLUG_TO_VALUE: Record<string, string> = {
   kvartiry: 'apartment',
   doma: 'house',
-  dachi: 'dacha',
 };
 
 export const PROPERTY_TYPE_VALUE_TO_SLUG = Object.fromEntries(
@@ -33,13 +32,11 @@ export const REGION_LABELS: Record<string, string> = {
 export const DAILY_DEAL_PAGE_TITLES: Record<string, string> = {
   apartment: 'Квартиры на сутки',
   house: 'Дома на сутки',
-  dacha: 'Дачи на сутки',
 };
 
 export const PROPERTY_TYPE_LABELS: Record<string, string> = {
   apartment: 'квартир',
   house: 'домов',
-  dacha: 'дач',
 };
 
 export interface ParsedSegments {

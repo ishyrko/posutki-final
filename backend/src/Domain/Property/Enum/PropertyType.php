@@ -6,30 +6,14 @@ namespace App\Domain\Property\Enum;
 
 enum PropertyType: string
 {
-    case Apartment   = 'apartment';
-    case House       = 'house';
-    case Room        = 'room';
-    case Land        = 'land';
-    case Garage      = 'garage';
-    case Parking     = 'parking';
-    case Dacha       = 'dacha';
-    case Office      = 'office';
-    case Retail      = 'retail';
-    case Warehouse   = 'warehouse';
+    case Apartment = 'apartment';
+    case House     = 'house';
 
     public function label(): string
     {
         return match ($this) {
-            self::Apartment   => 'Квартира',
-            self::House       => 'Дом',
-            self::Room        => 'Комната',
-            self::Land        => 'Участок',
-            self::Garage      => 'Гараж',
-            self::Parking     => 'Машиноместо',
-            self::Dacha       => 'Дача',
-            self::Office      => 'Офис',
-            self::Retail      => 'Торговое помещение',
-            self::Warehouse   => 'Склад',
+            self::Apartment => 'Квартира',
+            self::House     => 'Дом',
         };
     }
 
@@ -40,6 +24,7 @@ enum PropertyType: string
         foreach (self::cases() as $case) {
             $choices[$case->label()] = $case->value;
         }
+
         return $choices;
     }
 

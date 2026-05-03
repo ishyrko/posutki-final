@@ -9,33 +9,54 @@ namespace App\Tests\Functional\Api;
  */
 final class PropertyListFilteringTest extends ApiTestCase
 {
-    public function testFilterByDealType(): void
+    public function testFilterByDealTypeDaily(): void
     {
         $owner = $this->createUser('filter-deal@example.com', 'Password123!');
         $city = $this->createCity();
-        $sale = $this->createProperty($owner, $city, 'published', ['dealType' => 'sale']);
-        $rent = $this->createProperty($owner, $city, 'published', ['dealType' => 'rent']);
+        $a = $this->createProperty($owner, $city, 'published', ['dealType' => 'daily']);
+        $b = $this->createProperty($owner, $city, 'published', ['dealType' => 'daily']);
+
+        $this->client->request('GET', '/api/properties?dealType=daily');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $ids = $this->idsFromListPayload();
+        self::assertContains($a->getId()->getValue(), $ids);
+        self::assertContains($b->getId()->getValue(), $ids);
+    }
+
+    public function testFilterByDealTypeSaleReturnsNothingWhenAllDaily(): void
+    {
+        $owner = $this->createUser('filter-deal-sale@example.com', 'Password123!');
+        $city = $this->createCity();
+        $this->createProperty($owner, $city, 'published', ['dealType' => 'daily']);
 
         $this->client->request('GET', '/api/properties?dealType=sale');
 
         self::assertSame(200, $this->client->getResponse()->getStatusCode());
         $ids = $this->idsFromListPayload();
-        self::assertContains($sale->getId()->getValue(), $ids);
-        self::assertNotContains($rent->getId()->getValue(), $ids);
+        self::assertSame([], $ids);
     }
 
     public function testFilterByPropertyType(): void
     {
         $owner = $this->createUser('filter-type@example.com', 'Password123!');
         $city = $this->createCity();
-        $apartment = $this->createProperty($owner, $city, 'published', ['type' => 'apartment']);
-        $garage = $this->createProperty($owner, $city, 'published', ['type' => 'garage', 'rooms' => null, 'area' => 22.0]);
+        $apartment = $this->createProperty($owner, $city, 'published', [
+            'type' => 'apartment',
+            'landArea' => null,
+        ]);
+        $house = $this->createProperty($owner, $city, 'published', [
+            'type' => 'house',
+            'rooms' => 4,
+            'area' => 120.0,
+            'landArea' => 10.0,
+        ]);
 
-        $this->client->request('GET', '/api/properties?type=garage');
+        $this->client->request('GET', '/api/properties?type=house');
 
         self::assertSame(200, $this->client->getResponse()->getStatusCode());
         $ids = $this->idsFromListPayload();
-        self::assertContains($garage->getId()->getValue(), $ids);
+        self::assertContains($house->getId()->getValue(), $ids);
         self::assertNotContains($apartment->getId()->getValue(), $ids);
     }
 
@@ -44,16 +65,19 @@ final class PropertyListFilteringTest extends ApiTestCase
         $owner = $this->createUser('filter-types@example.com', 'Password123!');
         $city = $this->createCity();
         $apartment = $this->createProperty($owner, $city, 'published', ['type' => 'apartment']);
-        $garage = $this->createProperty($owner, $city, 'published', ['type' => 'garage', 'rooms' => null, 'area' => 18.0]);
-        $house = $this->createProperty($owner, $city, 'published', ['type' => 'house', 'rooms' => 5, 'area' => 120.0]);
+        $house = $this->createProperty($owner, $city, 'published', [
+            'type' => 'house',
+            'rooms' => 5,
+            'area' => 120.0,
+            'landArea' => 12.0,
+        ]);
 
-        $this->client->request('GET', '/api/properties?types=apartment,garage');
+        $this->client->request('GET', '/api/properties?types=apartment,house');
 
         self::assertSame(200, $this->client->getResponse()->getStatusCode());
         $ids = $this->idsFromListPayload();
         self::assertContains($apartment->getId()->getValue(), $ids);
-        self::assertContains($garage->getId()->getValue(), $ids);
-        self::assertNotContains($house->getId()->getValue(), $ids);
+        self::assertContains($house->getId()->getValue(), $ids);
     }
 
     public function testFilterByCitySlug(): void
@@ -104,44 +128,6 @@ final class PropertyListFilteringTest extends ApiTestCase
         $ids = $this->idsFromListPayload();
         self::assertContains($twoRooms->getId()->getValue(), $ids);
         self::assertNotContains($threeRooms->getId()->getValue(), $ids);
-    }
-
-    public function testRoomsFilterIgnoredWhenTypeIsNotRoomCountable(): void
-    {
-        $owner = $this->createUser('filter-rooms-skip@example.com', 'Password123!');
-        $city = $this->createCity();
-        $garage = $this->createProperty($owner, $city, 'published', [
-            'type' => 'garage',
-            'rooms' => null,
-            'area' => 22.0,
-        ]);
-
-        $this->client->request('GET', '/api/properties?type=garage&rooms=5');
-
-        self::assertSame(200, $this->client->getResponse()->getStatusCode());
-        $ids = $this->idsFromListPayload();
-        self::assertContains($garage->getId()->getValue(), $ids);
-    }
-
-    public function testRoomsFilterWithMixedTypesIncludesNonCountableTypes(): void
-    {
-        $owner = $this->createUser('filter-rooms-mixed@example.com', 'Password123!');
-        $city = $this->createCity();
-        $garage = $this->createProperty($owner, $city, 'published', [
-            'type' => 'garage',
-            'rooms' => null,
-            'area' => 20.0,
-        ]);
-        $aptTwo = $this->createProperty($owner, $city, 'published', ['type' => 'apartment', 'rooms' => 2]);
-        $aptThree = $this->createProperty($owner, $city, 'published', ['type' => 'apartment', 'rooms' => 3]);
-
-        $this->client->request('GET', '/api/properties?types=apartment,garage&rooms=2');
-
-        self::assertSame(200, $this->client->getResponse()->getStatusCode());
-        $ids = $this->idsFromListPayload();
-        self::assertContains($garage->getId()->getValue(), $ids);
-        self::assertContains($aptTwo->getId()->getValue(), $ids);
-        self::assertNotContains($aptThree->getId()->getValue(), $ids);
     }
 
     public function testFilterByMinAndMaxPriceInByn(): void

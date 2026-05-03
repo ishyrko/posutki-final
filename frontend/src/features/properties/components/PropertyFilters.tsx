@@ -30,7 +30,6 @@ const propertyTypes = [
   { value: "all", label: "Все типы" },
   { value: "apartment", label: "Квартира" },
   { value: "house", label: "Дом" },
-  { value: "dacha", label: "Дача" },
 ];
 
 export function PropertyFilters() {

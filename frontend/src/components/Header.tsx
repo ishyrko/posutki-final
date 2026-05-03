@@ -19,7 +19,6 @@ import {
   Users,
   Wifi,
   Car,
-  TreePine,
   Flame,
   Bath,
   LayoutDashboard,
@@ -71,8 +70,7 @@ function buildMegaMenu(regionSlug: string): Record<string, MegaMenuSection[]> {
         title: "По типу жилья",
         items: [
           { label: "Коттеджи", desc: "Отдельные дома с участком", icon: <Home className="h-4 w-4" />, href: r("/doma/") },
-          { label: "Дачи", desc: "Загородный отдых", icon: <TreePine className="h-4 w-4" />, href: r("/dachi/") },
-          { label: "Все дома", desc: "Просторные дома", icon: <Building2 className="h-4 w-4" />, href: r("/doma/") },
+          { label: "Все дома", desc: "Просторные дома на сутки", icon: <Building2 className="h-4 w-4" />, href: r("/doma/") },
         ],
       },
       {

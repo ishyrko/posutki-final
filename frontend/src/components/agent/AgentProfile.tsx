@@ -12,7 +12,7 @@ const reviews = [
 ];
 
 const AgentProfile = () => {
-  const [tags, setTags] = useState(["Квартиры", "Центр города", "Ипотека"]);
+  const [tags, setTags] = useState(["Квартиры", "Центр города", "Посуточно"]);
   const [newTag, setNewTag] = useState("");
 
   const addTag = () => {

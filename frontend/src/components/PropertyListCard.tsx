@@ -202,9 +202,7 @@ const PropertyListCard = ({
               )}
               <span className="flex items-center gap-1.5 text-sm text-foreground/70">
                 <Maximize className="w-4 h-4" />
-                {propertyType === 'land'
-                  ? (landArea ? `${landArea} сот.` : '-')
-                  : `${area} м²`}
+                  {`${area} м²`}
               </span>
               {floor && (
                 <span className="flex items-center gap-1.5 text-sm text-foreground/70">

@@ -16,11 +16,9 @@ use Doctrine\Persistence\ManagerRegistry;
 
 class PropertyRepository extends ServiceEntityRepository implements PropertyRepositoryInterface
 {
-    /** Property types where the room-count filter applies (apartment, house, dacha) */
     private const ROOM_COUNT_PROPERTY_TYPES = [
         PropertyType::Apartment->value,
         PropertyType::House->value,
-        PropertyType::Dacha->value,
     ];
 
     public function __construct(ManagerRegistry $registry)
