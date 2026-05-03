@@ -1,5 +1,6 @@
 import { TrendingUp, TrendingDown, Eye, MessageSquare, Home, Handshake, CheckSquare, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PriceInByn } from "@/components/BynCurrency";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 export type AgentTab = "overview" | "properties" | "inquiries" | "calendar" | "analytics" | "finance" | "profile" | "settings";
 
@@ -34,9 +35,9 @@ const todayTasks = [
 ];
 
 const topProperties = [
-  { title: "2-комн., ул. Притыцкого 34", price: "150 000 BYN", views: 847, inquiries: 12, image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=100&h=70&fit=crop" },
-  { title: "3-комн., пр. Независимости 89", price: "210 000 BYN", views: 623, inquiries: 8, image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=100&h=70&fit=crop" },
-  { title: "1-комн., ул. Ленина 12", price: "85 000 BYN", views: 512, inquiries: 15, image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=100&h=70&fit=crop" },
+  { title: "2-комн., ул. Притыцкого 34", priceAmount: 150_000, views: 847, inquiries: 12, image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=100&h=70&fit=crop" },
+  { title: "3-комн., пр. Независимости 89", priceAmount: 210_000, views: 623, inquiries: 8, image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=100&h=70&fit=crop" },
+  { title: "1-комн., ул. Ленина 12", priceAmount: 85_000, views: 512, inquiries: 15, image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=100&h=70&fit=crop" },
 ];
 
 const statusColors: Record<string, string> = {
@@ -160,7 +161,7 @@ const AgentOverview = ({ onNavigate }: { onNavigate: (tab: AgentTab) => void }) 
                 <img src={prop.image} alt={prop.title} className="w-14 h-10 rounded-lg object-cover flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{prop.title}</p>
-                  <p className="text-xs text-primary font-medium">{prop.price}</p>
+                  <p className="text-xs text-primary font-medium"><PriceInByn amount={prop.priceAmount} /></p>
                 </div>
                 <div className="text-right text-xs text-muted-foreground">
                   <p>👁 {prop.views}</p>

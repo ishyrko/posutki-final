@@ -1,5 +1,7 @@
 import { Property, formatAddress } from '../types';
+import { normalizeCurrency } from '../price-display';
 import { formatPropertyDealHeading } from '../property-deal-heading';
+import { PriceInByn } from '@/components/BynCurrency';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { BedDouble, Maximize, MapPin, Calendar, Bath, Info } from 'lucide-react';
@@ -9,7 +11,8 @@ interface PropertyInfoProps {
 }
 
 export function PropertyInfo({ property }: PropertyInfoProps) {
-    const formattedPrice = new Intl.NumberFormat('en-US', {
+    const listingCurrency = normalizeCurrency(property.price.currency);
+    const formattedPriceForeign = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: property.price.currency,
         maximumFractionDigits: 0,
@@ -45,7 +48,11 @@ export function PropertyInfo({ property }: PropertyInfoProps) {
                 <div className="bg-muted/50 p-6 rounded-2xl border border-border/50 min-w-[200px] text-center md:text-right">
                     <div className="text-sm text-muted-foreground mb-1 font-medium">Цена</div>
                     <div className="text-3xl font-display font-bold text-foreground">
-                        {formattedPrice}
+                        {listingCurrency === 'BYN' ? (
+                            <PriceInByn amount={property.price.amount} className="font-display" />
+                        ) : (
+                            formattedPriceForeign
+                        )}
                     </div>
                     {property.dealType === 'rent' && <div className="text-xs text-muted-foreground mt-1">в месяц</div>}
                 </div>

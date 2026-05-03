@@ -11,6 +11,7 @@ import { useToggleFavorite, useFavoriteIds, useExchangeRates } from "../hooks";
 import { useUser } from "@/features/auth/hooks";
 import { useRouter } from "next/navigation";
 import { buildPropertyUrl } from "@/features/catalog/slugs";
+import { PriceInByn } from "@/components/BynCurrency";
 import { showBathrooms, showRooms } from "@/features/create-listing/property-field-rules";
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
@@ -58,7 +59,7 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
     () => rates ?? DEFAULT_EXCHANGE_RATES_FALLBACK,
     [rates],
   );
-  const { primary: pricePrimary, secondary: priceSecondary } = formatPropertyPrices(property, exchangeRates);
+  const { primaryAmount, secondary: priceSecondary } = formatPropertyPrices(property, exchangeRates);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -114,7 +115,7 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
           <div className="absolute bottom-4 left-4">
             <div className="px-4 py-2 rounded-xl bg-dark-bg/80 backdrop-blur-md border border-white/10 text-white">
               <span className="text-lg font-bold font-display">
-                {pricePrimary}
+                <PriceInByn amount={primaryAmount} />
               </span>
               {dealType === 'rent' && <span className="text-sm opacity-60 font-normal"> /мес</span>}
               <span className="block text-xs font-normal opacity-85 mt-0.5">{priceSecondary}</span>

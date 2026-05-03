@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -24,14 +24,15 @@ import {
 } from "@/features/properties/price-display";
 import { buildPageTitle, type ParsedSegments } from "@/features/catalog/slugs";
 import { showBathrooms, showRooms, showRoomsCatalogFilter } from "@/features/create-listing/property-field-rules";
+import { BynCurrencyMark, PriceInByn } from "@/components/BynCurrency";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "list" | "list-map" | "map";
 
-const currencies: { value: Currency; label: string }[] = [
-  { value: "BYN", label: "BYN" },
-  { value: "USD", label: "USD" },
-  { value: "EUR", label: "EUR" },
+const currencies: { value: Currency; label: ReactNode }[] = [
+  { value: "BYN", label: <BynCurrencyMark variant="select" /> },
+  { value: "USD", label: "$" },
+  { value: "EUR", label: "€" },
 ];
 
 const roomOptions = [
@@ -70,10 +71,11 @@ function pickMetroStationsForCatalog(
 }
 
 function propertyToListCard(p: Property, rates: ExchangeRates, metroFilterStationId: number | null) {
-  const { primary, secondary } = formatPropertyPrices(p, rates);
+  const { primaryAmount, secondary } = formatPropertyPrices(p, rates);
   return {
     image: p.images?.[0]?.thumbnailUrl || p.images?.[0]?.url || "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800",
-    price: primary,
+    price: <PriceInByn amount={primaryAmount} />,
+    primaryBynAmount: primaryAmount,
     secondaryPrice: secondary,
     title: p.title,
     address: formatAddress(p.address),

@@ -26,6 +26,7 @@ import {
     type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BynCurrencyMark } from '@/components/BynCurrency';
 import {
     Select,
     SelectContent,
@@ -1678,7 +1679,7 @@ export function CreateListingForm() {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="USD">$</SelectItem>
-                                                    <SelectItem value="BYN">BYN</SelectItem>
+                                                    <SelectItem className="text-base" value="BYN"><BynCurrencyMark variant="select" /></SelectItem>
                                                     <SelectItem value="EUR">€</SelectItem>
                                                 </SelectContent>
                                             </Select>

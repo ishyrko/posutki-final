@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 import { parseBynPrice, formatBynWithUsd } from "@/lib/currency";
+import { PriceInByn } from "@/components/BynCurrency";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   active: { label: "Активен", color: "bg-green-500" },
@@ -100,7 +101,7 @@ const AgentProperties = () => {
                     <h3 className="font-semibold text-foreground">{prop.title}</h3>
                   </div>
                   <div className="text-right whitespace-nowrap">
-                    <span className="text-lg font-bold text-foreground">{prop.price}</span>
+                    <span className="text-lg font-bold text-foreground"><PriceInByn amount={parseBynPrice(prop.price)} /></span>
                     <p className="text-xs text-muted-foreground">{formatBynWithUsd(parseBynPrice(prop.price)).usd}</p>
                   </div>
                 </div>
@@ -145,7 +146,7 @@ const AgentProperties = () => {
                 {prop.vip && <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-yellow-500 text-white text-[10px] font-bold">⭐ VIP</span>}
               </div>
               <div className="p-4">
-                <h3 className="font-semibold text-foreground mb-0.5">{prop.price}</h3>
+                <h3 className="font-semibold text-foreground mb-0.5"><PriceInByn amount={parseBynPrice(prop.price)} /></h3>
                 <p className="text-xs text-muted-foreground mb-1">{formatBynWithUsd(parseBynPrice(prop.price)).usd}</p>
                 <p className="text-sm text-foreground/80 mb-1">{prop.title}</p>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mb-3"><MapPin className="w-3 h-3" />{prop.address}</p>

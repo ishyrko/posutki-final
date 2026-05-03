@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useBoostProperty, useExchangeRates, useMyProperties } from '@/features/properties/hooks';
 import { Property, formatAddress } from '@/features/properties/types';
 import { buildPropertyUrl } from '@/features/catalog/slugs';
+import { PriceInByn } from '@/components/BynCurrency';
 
 export type MyAdsStatus = 'published' | 'moderation' | 'rejected' | 'inactive';
 
@@ -83,7 +84,7 @@ function ListingCard({ property }: { property: Property }) {
         () => rates ?? DEFAULT_EXCHANGE_RATES_FALLBACK,
         [rates],
     );
-    const { primary: pricePrimary, secondary: priceSecondary } = formatPropertyPrices(property, exchangeRates);
+    const { primaryAmount, secondary: priceSecondary } = formatPropertyPrices(property, exchangeRates);
     const isActive = property.status === 'published';
     const address = formatAddress(property.address);
     const statusConfig = STATUS_CONFIG[property.status];
@@ -134,7 +135,7 @@ function ListingCard({ property }: { property: Property }) {
                             )}
                         </div>
                         <div className="text-lg font-bold text-foreground whitespace-nowrap sm:text-right space-y-0.5">
-                            <div>{pricePrimary}</div>
+                            <div><PriceInByn amount={primaryAmount} /></div>
                             <div className="text-xs font-normal text-muted-foreground">{priceSecondary}</div>
                         </div>
                     </div>

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { BynCurrencyMark } from '@/components/BynCurrency';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -1432,7 +1433,7 @@ export default function EditPropertyPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="USD">$</SelectItem>
-                                    <SelectItem value="BYN">BYN</SelectItem>
+                                    <SelectItem className="text-base" value="BYN"><BynCurrencyMark variant="select" /></SelectItem>
                                     <SelectItem value="EUR">€</SelectItem>
                                 </SelectContent>
                             </Select>

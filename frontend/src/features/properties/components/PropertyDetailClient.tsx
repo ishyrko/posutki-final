@@ -18,6 +18,7 @@ import { useSendMessage } from "@/features/messages/hooks";
 import { useUser } from "@/features/auth/hooks";
 import { formatAddress, Property } from "@/features/properties/types";
 import type { ExchangeRates } from "@/features/properties/api";
+import { PriceInByn } from "@/components/BynCurrency";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";
 import PropertyMap from "@/components/PropertyMap";
 import { buildCatalogUrl } from "@/features/catalog/slugs";
@@ -357,7 +358,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
     const shareUrl = window.location.href;
     const shareData = {
       title: property.title,
-      text: `${property.title} — ${priceDisplay.primary}`,
+      text: `${property.title} — ${priceDisplay.primaryPlain}`,
       url: shareUrl,
     };
 
@@ -567,7 +568,10 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                   )}
                 </div>
                 <div className="flex items-baseline gap-3 flex-wrap">
-                  <span className="text-3xl font-bold text-gradient-primary">{priceDisplay.primary}</span>
+                  {/* Solid color: text-gradient-primary uses -webkit-text-fill-color: transparent and hides nested nbrb glyph */}
+                  <span className="text-3xl font-bold text-primary">
+                    <PriceInByn amount={priceDisplay.primaryAmount} />
+                  </span>
                   <span className="text-sm text-muted-foreground">{priceDisplay.secondary}</span>
                 </div>
               </motion.div>
@@ -603,7 +607,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                         lat: coords.latitude,
                         lng: coords.longitude,
                         title: property.title,
-                        price: priceDisplay.primary,
+                        price: priceDisplay.primaryPlain,
                         address: addressStr,
                         image: images[0],
                         dealType: property.dealType,

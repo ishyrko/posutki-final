@@ -1,4 +1,50 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+@font-face {
+  font-family: "nbrb";
+  src: url("/fonts/nbrb/nbrb.woff2") format("woff2"),
+    url("/fonts/nbrb/nbrb.woff") format("woff"),
+    url("/fonts/nbrb/nbrb.ttf") format("truetype");
+  /* PUA glyph + letters used by BYN → symbol ligature */
+  unicode-range: U+E901, U+42, U+59, U+4E;
+}
+
+/* National Bank of Belarus ruble font: ligature turns "BYN" into the graphic symbol */
+.nbrb-icon {
+  /* Never use `inherit` here: inherited body font would show literal "BYN" instead of the symbol */
+  font-family: "nbrb", system-ui, sans-serif !important;
+  speak: none;
+  font-style: normal;
+  /* Match surrounding price (e.g. font-semibold on h3); `normal` made the symbol look too light */
+  font-weight: inherit;
+  font-variant: normal;
+  text-transform: none;
+  /* Slightly larger than 1em to align with digits; tune vs. Inter cap height */
+  display: inline-block;
+  font-size: 1.18em;
+  line-height: 1;
+  vertical-align: baseline;
+  transform: translateY(-0.03em);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: normal;
+  -webkit-font-feature-settings: "liga";
+  -moz-font-feature-settings: "liga=1";
+  -moz-font-feature-settings: "liga";
+  -ms-font-feature-settings: "liga" 1;
+  font-feature-settings: "liga";
+  -webkit-font-variant-ligatures: discretionary-ligatures;
+  font-variant-ligatures: discretionary-ligatures;
+}
+
+/* Select / filter only — do not change base .nbrb-icon above (price lines stay separate) */
+.nbrb-icon.nbrb-icon--select {
+  font-size: 1.32em;
+  font-weight: 500;
+  transform: translateY(-0.02em);
+  vertical-align: -0.05em;
+}
+
 @import "tailwindcss";
 @config "../../tailwind.config.ts";
 @plugin "@tailwindcss/typography";

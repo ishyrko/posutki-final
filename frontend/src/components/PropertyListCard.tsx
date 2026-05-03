@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { Heart, MapPin, Maximize, BedDouble, Bath, Calendar, Building2, ArrowRight, TrainFront } from "lucide-react";
 import Link from "next/link";
@@ -9,11 +10,14 @@ import { useToggleFavorite, useFavoriteIds } from "@/features/properties/hooks";
 import { useUser } from "@/features/auth/hooks";
 import { useRouter } from "next/navigation";
 import { buildPropertyUrl } from "@/features/catalog/slugs";
+import { formatBynWithUsd } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 
 interface PropertyListCardProps {
   image: string;
-  price: string;
+  price: ReactNode;
+  /** BYN-equivalent total for secondary USD hint when `secondaryPrice` is omitted. */
+  primaryBynAmount?: number;
   secondaryPrice?: string;
   title: string;
   address: string;
@@ -52,6 +56,7 @@ const formatDistance = (distanceKm: number): string => {
 const PropertyListCard = ({
   image,
   price,
+  primaryBynAmount,
   secondaryPrice,
   title,
   address,
@@ -75,6 +80,9 @@ const PropertyListCard = ({
   const { mutate: toggleFavorite } = useToggleFavorite();
   const router = useRouter();
   const isFavorited = id ? favoriteIds.includes(id) : false;
+  const secondaryLine =
+    secondaryPrice ??
+    (primaryBynAmount != null ? formatBynWithUsd(primaryBynAmount).usd : undefined);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -131,7 +139,9 @@ const PropertyListCard = ({
             <div className="flex items-start justify-between gap-4 mb-2">
               <div>
                 <h3 className="text-xl font-display font-bold text-foreground">{price}</h3>
-                {secondaryPrice && <span className="text-xs text-muted-foreground">{secondaryPrice}</span>}
+                {secondaryLine && (
+                  <span className="text-xs text-muted-foreground">{secondaryLine}</span>
+                )}
               </div>
             </div>
             <p className="text-base font-medium text-foreground/85 mb-1">{title}</p>

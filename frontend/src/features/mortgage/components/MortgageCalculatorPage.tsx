@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Slider } from "@/components/ui/slider";
+import { BynCurrencyMark } from "@/components/BynCurrency";
 
 type MortgageResult = {
   monthly: number;
@@ -97,8 +98,9 @@ export default function MortgageCalculatorPage() {
                 <label className="text-sm font-medium text-dark-fg">
                   Стоимость недвижимости
                 </label>
-                <span className="text-lg font-bold text-primary">
-                  {formatByn(price)} BYN
+                <span className="text-lg font-bold text-primary inline-flex items-baseline gap-1">
+                  {formatByn(price)}
+                  <BynCurrencyMark />
                 </span>
               </div>
               <Slider
@@ -123,8 +125,9 @@ export default function MortgageCalculatorPage() {
                 <label className="text-sm font-medium text-dark-fg">
                   Первоначальный взнос
                 </label>
-                <span className="text-lg font-bold text-primary">
-                  {formatByn(downPayment)} BYN{" "}
+                <span className="text-lg font-bold text-primary inline-flex items-baseline flex-wrap gap-x-1 justify-end">
+                  {formatByn(downPayment)}
+                  <BynCurrencyMark />{" "}
                   <span className="text-sm font-normal text-dark-fg/50">
                     ({downPaymentPercent}%)
                   </span>
@@ -199,8 +202,9 @@ export default function MortgageCalculatorPage() {
               <div className="mb-1 text-sm text-dark-fg/60">
                 Ежемесячный платеж
               </div>
-              <div className="text-3xl font-bold text-primary md:text-4xl">
-                {formatByn(result.monthly)} <span className="text-lg">BYN</span>
+              <div className="text-3xl font-bold text-primary md:text-4xl inline-flex flex-wrap items-baseline justify-center gap-1">
+                {formatByn(result.monthly)}
+                <BynCurrencyMark className="!text-lg md:!text-xl" />
               </div>
             </div>
 
@@ -210,8 +214,9 @@ export default function MortgageCalculatorPage() {
                   <CalendarDays className="h-4 w-4" />
                   Сумма кредита
                 </div>
-                <span className="text-sm font-semibold text-dark-fg">
-                  {formatByn(result.principal)} BYN
+                <span className="text-sm font-semibold text-dark-fg inline-flex items-baseline gap-1">
+                  {formatByn(result.principal)}
+                  <BynCurrencyMark />
                 </span>
               </div>
               <div className="h-px bg-dark-bg" />
@@ -220,8 +225,9 @@ export default function MortgageCalculatorPage() {
                   <Percent className="h-4 w-4" />
                   Переплата по процентам
                 </div>
-                <span className="text-sm font-semibold text-dark-fg">
-                  {formatByn(result.overpayment)} BYN
+                <span className="text-sm font-semibold text-dark-fg inline-flex items-baseline gap-1">
+                  {formatByn(result.overpayment)}
+                  <BynCurrencyMark />
                 </span>
               </div>
               <div className="h-px bg-dark-bg" />
@@ -230,8 +236,9 @@ export default function MortgageCalculatorPage() {
                   <TrendingDown className="h-4 w-4" />
                   Общая выплата
                 </div>
-                <span className="text-sm font-semibold text-dark-fg">
-                  {formatByn(result.total)} BYN
+                <span className="text-sm font-semibold text-dark-fg inline-flex items-baseline gap-1">
+                  {formatByn(result.total)}
+                  <BynCurrencyMark />
                 </span>
               </div>
             </div>

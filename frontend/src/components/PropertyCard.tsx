@@ -1,9 +1,10 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { Heart, MapPin, BedDouble, Bath, Star, Users } from "lucide-react";
 import Link from "next/link";
-import { parseBynPrice, formatBynWithUsd } from "@/lib/currency";
+import { formatBynWithUsd } from "@/lib/currency";
 import { useToggleFavorite, useFavoriteIds } from "@/features/properties/hooks";
 import { useUser } from "@/features/auth/hooks";
 import { useRouter } from "next/navigation";
@@ -12,7 +13,9 @@ import { buildPropertyUrl } from "@/features/catalog/slugs";
 interface PropertyCardProps {
   id: number;
   image: string;
-  price: string;
+  price: ReactNode;
+  /** BYN equivalent for the secondary USD line when `secondaryPrice` is omitted (non-daily). */
+  primaryBynAmount?: number;
   /** Approximate price in listing currency (or USD if listing was in BYN). */
   secondaryPrice?: string;
   title: string;
@@ -36,6 +39,7 @@ const PropertyCard = ({
   id,
   image,
   price,
+  primaryBynAmount,
   secondaryPrice,
   title,
   address,
@@ -158,7 +162,7 @@ const PropertyCard = ({
             {isDaily && <span className="text-sm text-muted-foreground">/ сутки</span>}
             {!isDaily && (
               <span className="text-xs text-muted-foreground">
-                {secondaryPrice ?? formatBynWithUsd(parseBynPrice(price)).usd}
+                {secondaryPrice ?? (primaryBynAmount != null ? formatBynWithUsd(primaryBynAmount).usd : null)}
               </span>
             )}
           </div>

@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Edit, Eye, Heart, Phone, Trash2 } from 'lucide-react';
 import { buildPropertyUrl } from '@/features/catalog/slugs';
+import { PriceInByn } from '@/components/BynCurrency';
 
 const STATUS_LABELS: Record<Property['status'], string> = {
     draft: 'Черновик',
@@ -43,7 +44,7 @@ export function MyPropertyCard({ property, onDelete }: MyPropertyCardProps) {
         () => rates ?? DEFAULT_EXCHANGE_RATES_FALLBACK,
         [rates],
     );
-    const { primary: pricePrimary, secondary: priceSecondary } = formatPropertyPrices(property, exchangeRates);
+    const { primaryAmount, secondary: priceSecondary } = formatPropertyPrices(property, exchangeRates);
 
     const views = property.views ?? 0;
     const phoneViews = property.phoneViews ?? 0;
@@ -70,7 +71,7 @@ export function MyPropertyCard({ property, onDelete }: MyPropertyCardProps) {
             <CardHeader className="p-4 pb-2 flex-grow">
                 <div className="space-y-0.5">
                     <h3 className="text-lg font-bold text-primary truncate">
-                        {pricePrimary}
+                        <PriceInByn amount={primaryAmount} />
                     </h3>
                     <p className="text-xs text-muted-foreground truncate">{priceSecondary}</p>
                 </div>

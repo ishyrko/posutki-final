@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import PropertyCard from "./PropertyCard";
+import { PriceInByn } from "@/components/BynCurrency";
 import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { formatAddress } from "@/features/properties/types";
 import { buildCatalogUrl, REGION_SLUGS } from "@/features/catalog/slugs";
@@ -83,13 +84,14 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
         ) : properties.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {properties.map((property, i) => {
-              const { primary, secondary } = formatPropertyPrices(property, exchangeRates);
+              const { primaryAmount, secondary } = formatPropertyPrices(property, exchangeRates);
               return (
               <PropertyCard
                 key={property.id}
                 id={property.id}
                 image={property.images?.[0]?.thumbnailUrl || property.images?.[0]?.url || "https://placehold.co/600x450?text=No+Image"}
-                price={primary}
+                price={<PriceInByn amount={primaryAmount} />}
+                primaryBynAmount={primaryAmount}
                 secondaryPrice={secondary}
                 title={property.title}
                 address={formatAddress(property.address)}

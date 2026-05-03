@@ -30,6 +30,7 @@ export function convertPrice(
   return Math.round((amount * fromRate) / toRate);
 }
 
+/** Plain-text price (e.g. map balloons, metadata); uses ISO code, not the graphic symbol. */
 export function formatPrice(amount: number, currency: Currency): string {
   return amount.toLocaleString("ru-BY") + " " + currency;
 }
@@ -40,7 +41,10 @@ export function formatSecondaryPrice(amount: number, currency: "USD" | "EUR"): s
 }
 
 export function formatPropertyPrices(property: Property, rates: ExchangeRates): {
-  primary: string;
+  /** BYN-equivalent amount for UI (graphic symbol via `PriceInByn`). */
+  primaryAmount: number;
+  /** Same amount as plain text for share, SEO, map strings. */
+  primaryPlain: string;
   secondary: string;
 } {
   const listingCurrency = normalizeCurrency(property.price.currency);
@@ -63,7 +67,8 @@ export function formatPropertyPrices(property: Property, rates: ExchangeRates): 
   }
 
   return {
-    primary: formatPrice(bynAmount, "BYN"),
+    primaryAmount: bynAmount,
+    primaryPlain: formatPrice(bynAmount, "BYN"),
     secondary: formatSecondaryPrice(secondaryAmount, secondaryCurrency),
   };
 }
