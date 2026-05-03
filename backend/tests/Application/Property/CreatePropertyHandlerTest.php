@@ -6,7 +6,6 @@ namespace App\Tests\Application\Property;
 
 use App\Application\Command\Property\CreateProperty\CreatePropertyCommand;
 use App\Application\Command\Property\CreateProperty\CreatePropertyHandler;
-use App\Application\Service\PropertyOwnerPublicContactResolver;
 use App\Domain\Exchange\Repository\ExchangeRateRepositoryInterface;
 use App\Domain\Property\Event\PropertySubmittedForModerationEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
@@ -14,7 +13,6 @@ use App\Domain\Property\Repository\MetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
-use App\Domain\User\Service\DailyListingSellerProfileGuardInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -29,13 +27,9 @@ final class CreatePropertyHandlerTest extends TestCase
     public function testSuccessfulCreateSavesPropertyAndDispatchesModerationEvent(): void
     {
         $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
-        $resolver = $this->createStub(PropertyOwnerPublicContactResolver::class);
-        $resolver->method('assertOwnerHasPublicContact')->willReturnCallback(static function (): void {
-        });
         $metroCalculator = $this->createMetroCalculator();
         $notificationBus = $this->createMock(MessageBusInterface::class);
         $exchangeRateService = $this->createExchangeRateService(['USD' => 3.2]);
-        $guard = $this->createStub(DailyListingSellerProfileGuardInterface::class);
 
         $propertyRepository
             ->expects(self::exactly(2))
@@ -60,11 +54,9 @@ final class CreatePropertyHandlerTest extends TestCase
 
         $handler = new CreatePropertyHandler(
             $propertyRepository,
-            $resolver,
             $exchangeRateService,
             $metroCalculator,
             $notificationBus,
-            $guard,
         );
 
         $propertyId = $handler($this->createValidCommand(priceCurrency: 'USD'));
@@ -72,51 +64,18 @@ final class CreatePropertyHandlerTest extends TestCase
         self::assertSame(123, $propertyId);
     }
 
-    public function testIncompleteProfileContactThrowsDomainException(): void
-    {
-        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
-        $resolver = $this->createStub(PropertyOwnerPublicContactResolver::class);
-        $resolver
-            ->method('assertOwnerHasPublicContact')
-            ->willThrowException(new DomainException('Подтвердите телефон в профиле'));
-        $metroCalculator = $this->createMetroCalculator();
-        $notificationBus = $this->createStub(MessageBusInterface::class);
-        $exchangeRateService = $this->createExchangeRateService();
-        $guard = $this->createStub(DailyListingSellerProfileGuardInterface::class);
-
-        $handler = new CreatePropertyHandler(
-            $propertyRepository,
-            $resolver,
-            $exchangeRateService,
-            $metroCalculator,
-            $notificationBus,
-            $guard,
-        );
-
-        $this->expectException(DomainException::class);
-        $this->expectExceptionMessage('Подтвердите телефон в профиле');
-
-        $handler($this->createValidCommand());
-    }
-
     public function testDailyRentWithoutRequiredFieldsThrowsDomainException(): void
     {
         $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
-        $resolver = $this->createStub(PropertyOwnerPublicContactResolver::class);
-        $resolver->method('assertOwnerHasPublicContact')->willReturnCallback(static function (): void {
-        });
         $metroCalculator = $this->createMetroCalculator();
         $notificationBus = $this->createStub(MessageBusInterface::class);
         $exchangeRateService = $this->createExchangeRateService();
-        $guard = $this->createStub(DailyListingSellerProfileGuardInterface::class);
 
         $handler = new CreatePropertyHandler(
             $propertyRepository,
-            $resolver,
             $exchangeRateService,
             $metroCalculator,
             $notificationBus,
-            $guard,
         );
 
         $this->expectException(DomainException::class);

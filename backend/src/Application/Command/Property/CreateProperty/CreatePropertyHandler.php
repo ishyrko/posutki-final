@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Application\Command\Property\CreateProperty;
 
-use App\Application\Service\PropertyOwnerPublicContactResolver;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Event\PropertySubmittedForModerationEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
@@ -16,7 +15,6 @@ use App\Domain\Property\Validation\RoomDealDetailsValidator;
 use App\Domain\Property\ValueObject\{Price, Address, Coordinates};
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
-use App\Domain\User\Service\DailyListingSellerProfileGuardInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -25,11 +23,9 @@ final class CreatePropertyHandler
 {
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
-        private readonly PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
         private readonly ExchangeRateService $exchangeRateService,
         private readonly MetroProximityCalculator $metroProximityCalculator,
         private readonly MessageBusInterface $notificationBus,
-        private readonly DailyListingSellerProfileGuardInterface $dailyListingSellerProfileGuard,
     ) {
     }
 
@@ -54,14 +50,6 @@ final class CreatePropertyHandler
         PropertyDealCombinationValidator::assertValid($command->dealType, $command->type);
         FloorTotalFloorsValidator::assertValid($command->floor, $command->totalFloors);
         $this->assertAreaConstraints($command->type, $command->area, $command->landArea);
-
-        $this->ownerPublicContactResolver->assertOwnerHasPublicContact($command->ownerId);
-
-        $this->dailyListingSellerProfileGuard->assertEligible(
-            $command->ownerId,
-            $command->dealType,
-            $command->sellerType,
-        );
 
         $ownerId = Id::fromString($command->ownerId);
         $price = Price::fromAmount($command->priceAmount, $command->priceCurrency);

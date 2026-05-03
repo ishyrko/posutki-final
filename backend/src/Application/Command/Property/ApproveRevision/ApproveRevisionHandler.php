@@ -16,7 +16,6 @@ use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\ValueObject\Id;
-use App\Domain\User\Service\DailyListingSellerProfileGuardInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -29,7 +28,6 @@ readonly class ApproveRevisionHandler
         private ExchangeRateService $exchangeRateService,
         private MetroProximityCalculator $metroProximityCalculator,
         private MessageBusInterface $notificationBus,
-        private DailyListingSellerProfileGuardInterface $dailyListingSellerProfileGuard,
     ) {
     }
 
@@ -90,13 +88,6 @@ readonly class ApproveRevisionHandler
         );
         PropertyDealCombinationValidator::assertValid($effectiveDealType, $effectiveType);
         $this->assertAreaConstraints($effectiveType, $effectiveLandArea);
-
-        $effectiveSellerType = isset($data['sellerType']) ? (string) $data['sellerType'] : $property->getSellerType();
-        $this->dailyListingSellerProfileGuard->assertEligible(
-            (string) $property->getOwnerId()->getValue(),
-            $effectiveDealType,
-            $effectiveSellerType,
-        );
 
         $property->update(
             type: isset($data['type']) ? (string) $data['type'] : null,

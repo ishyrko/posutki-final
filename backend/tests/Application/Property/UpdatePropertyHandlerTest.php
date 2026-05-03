@@ -17,7 +17,6 @@ use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\ValueObject\Id;
-use App\Domain\User\Service\DailyListingSellerProfileGuardInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -58,16 +57,11 @@ final class UpdatePropertyHandlerTest extends TestCase
         $propertyRepository->expects(self::never())->method('save');
         $propertyMetroStationRepository->expects(self::never())->method('deleteByPropertyId');
 
-        $guard = $this->createStub(DailyListingSellerProfileGuardInterface::class);
-        $guard->method('assertEligible')->willReturnCallback(static function (): void {
-        });
-
         $handler = new UpdatePropertyHandler(
             $propertyRepository,
             $revisionRepository,
             $exchangeRateService,
             $metroCalculator,
-            $guard,
         );
 
         $handler(new UpdatePropertyCommand(
@@ -102,16 +96,11 @@ final class UpdatePropertyHandlerTest extends TestCase
         $revisionRepository->expects(self::never())->method('save');
         $propertyMetroStationRepository->expects(self::once())->method('deleteByPropertyId')->with(201);
 
-        $guard = $this->createStub(DailyListingSellerProfileGuardInterface::class);
-        $guard->method('assertEligible')->willReturnCallback(static function (): void {
-        });
-
         $handler = new UpdatePropertyHandler(
             $propertyRepository,
             $revisionRepository,
             $exchangeRateService,
             $metroCalculator,
-            $guard,
         );
 
         $handler(new UpdatePropertyCommand(

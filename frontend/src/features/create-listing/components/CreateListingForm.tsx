@@ -83,11 +83,9 @@ import {
     getTitleFieldError,
     isFloorNotAboveTotalFloors,
 } from '../validation';
-import { usePhones } from '@/features/phones/hooks';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { isAuthenticated } from '@/lib/auth';
 import { PhoneAuthModal } from '@/features/sms-auth/components/PhoneAuthModal';
-import { useUser } from '@/features/auth/hooks';
 import {
     applyBathroomTypeSelection,
     bathroomTypeFromForm,
@@ -103,7 +101,7 @@ const LISTING_STEPS: readonly { label: string; Icon: LucideIcon }[] = [
     { label: 'Удобства', Icon: Sparkles },
     { label: 'Фотографии', Icon: ImageIcon },
     { label: 'Расположение', Icon: MapPin },
-    { label: 'Цена', Icon: Wallet },
+    { label: 'Условия Размещения', Icon: Wallet },
 ];
 
 const TOTAL_STEPS = LISTING_STEPS.length;
@@ -158,19 +156,7 @@ const getTitlePlaceholder = (propertyType: string): string =>
 
 const DEFAULT_CENTER: [number, number] = [53.9045, 27.5615];
 
-function hasVerifiedProfilePhone(
-    user: { phone?: string | null; isPhoneVerified?: boolean } | null | undefined,
-    phones: { phone: string; isVerified: boolean }[],
-): boolean {
-    if (user?.phone?.trim() && user.isPhoneVerified) return true;
-    return phones.some((p) => p.isVerified);
-}
-
-function hasProfileDisplayName(user: { firstName?: string; lastName?: string } | null | undefined): boolean {
-    return Boolean(user?.firstName?.trim() && user?.lastName?.trim());
-}
-
-type FormErrors = Partial<Record<keyof ListingFormData | 'profilePhone' | 'profileName', string>>;
+type FormErrors = Partial<Record<keyof ListingFormData, string>>;
 
 function getErrorMessage(error: unknown, fallback: string): string {
     if (typeof error !== 'object' || error === null || !('response' in error)) {
@@ -252,8 +238,6 @@ export function CreateListingForm() {
     const streetContainerRef = useRef<HTMLDivElement>(null);
 
     const { mutateAsync: createProperty, isPending: submitting } = useCreateProperty();
-    const { data: phones = [], refetch: refetchPhones } = usePhones();
-    const { data: user } = useUser();
     const [smsAuthOpen, setSmsAuthOpen] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     useEffect(() => {
@@ -378,36 +362,6 @@ export function CreateListingForm() {
                         }
                     }
                 }
-                if (form.dealType === 'daily') {
-                    if (!form.maxDailyGuests) {
-                        errs.maxDailyGuests = 'Укажите максимум гостей';
-                    } else if (!Number.isFinite(Number(form.maxDailyGuests)) || Number(form.maxDailyGuests) <= 0) {
-                        errs.maxDailyGuests = 'Укажите корректное число гостей';
-                    }
-                    const singleBeds = Number(form.dailySingleBeds);
-                    const doubleBeds = Number(form.dailyDoubleBeds);
-                    if (!Number.isFinite(singleBeds) || singleBeds < 0 || singleBeds > DAILY_BEDS_MAX) {
-                        errs.dailySingleBeds = `Односпальных: от 0 до ${DAILY_BEDS_MAX}`;
-                    }
-                    if (!Number.isFinite(doubleBeds) || doubleBeds < 0 || doubleBeds > DAILY_BEDS_MAX) {
-                        errs.dailyDoubleBeds = `Двуспальных: от 0 до ${DAILY_BEDS_MAX}`;
-                    }
-                    if (
-                        !errs.dailySingleBeds
-                        && !errs.dailyDoubleBeds
-                        && Number.isFinite(singleBeds)
-                        && Number.isFinite(doubleBeds)
-                        && singleBeds + doubleBeds < 1
-                    ) {
-                        errs.dailySingleBeds = 'Укажите хотя бы одну кровать';
-                    }
-                    if (form.checkInTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkInTime)) {
-                        errs.checkInTime = 'Формат времени: ЧЧ:ММ';
-                    }
-                    if (form.checkOutTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkOutTime)) {
-                        errs.checkOutTime = 'Формат времени: ЧЧ:ММ';
-                    }
-                }
                 if (showBathrooms(form.propertyType) && form.bathrooms) {
                     const bathrooms = Number(form.bathrooms);
                     if (!Number.isFinite(bathrooms) || bathrooms < BATHROOMS_MIN || bathrooms > BATHROOMS_MAX) {
@@ -474,20 +428,44 @@ export function CreateListingForm() {
                 if (!form.cityId) errs.citySlug = 'Выберите город';
                 break;
             case 6:
+                if (form.dealType === 'daily') {
+                    if (!form.maxDailyGuests) {
+                        errs.maxDailyGuests = 'Укажите максимум гостей';
+                    } else if (!Number.isFinite(Number(form.maxDailyGuests)) || Number(form.maxDailyGuests) <= 0) {
+                        errs.maxDailyGuests = 'Укажите корректное число гостей';
+                    }
+                    const singleBeds = Number(form.dailySingleBeds);
+                    const doubleBeds = Number(form.dailyDoubleBeds);
+                    if (!Number.isFinite(singleBeds) || singleBeds < 0 || singleBeds > DAILY_BEDS_MAX) {
+                        errs.dailySingleBeds = `Односпальных: от 0 до ${DAILY_BEDS_MAX}`;
+                    }
+                    if (!Number.isFinite(doubleBeds) || doubleBeds < 0 || doubleBeds > DAILY_BEDS_MAX) {
+                        errs.dailyDoubleBeds = `Двуспальных: от 0 до ${DAILY_BEDS_MAX}`;
+                    }
+                    if (
+                        !errs.dailySingleBeds
+                        && !errs.dailyDoubleBeds
+                        && Number.isFinite(singleBeds)
+                        && Number.isFinite(doubleBeds)
+                        && singleBeds + doubleBeds < 1
+                    ) {
+                        errs.dailySingleBeds = 'Укажите хотя бы одну кровать';
+                    }
+                    if (form.checkInTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkInTime)) {
+                        errs.checkInTime = 'Формат времени: ЧЧ:ММ';
+                    }
+                    if (form.checkOutTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkOutTime)) {
+                        errs.checkOutTime = 'Формат времени: ЧЧ:ММ';
+                    }
+                }
                 if (!form.price) errs.price = 'Укажите цену';
                 else if (Number(form.price) <= 0) errs.price = 'Цена должна быть положительной';
-                if (!hasVerifiedProfilePhone(user, phones)) {
-                    errs.profilePhone = 'Подтвердите номер в разделе «Телефоны»';
-                }
-                if (!hasProfileDisplayName(user)) {
-                    errs.profileName = 'Укажите имя и фамилию в профиле';
-                }
                 break;
         }
 
         setErrors(errs);
         return Object.keys(errs).length === 0;
-    }, [form, user, phones]);
+    }, [form]);
 
     const canProceed = useCallback((): boolean => {
         switch (step) {
@@ -523,13 +501,6 @@ export function CreateListingForm() {
                         && Number(form.roomsArea) >= AREA_MIN
                         && Number(form.roomsArea) <= AREA_MAX
                     ))
-                    && (form.dealType !== 'daily' || (
-                        !!form.maxDailyGuests
-                        && Number(form.maxDailyGuests) > 0
-                        && Number(form.dailySingleBeds) >= 0
-                        && Number(form.dailyDoubleBeds) >= 0
-                        && Number(form.dailySingleBeds) + Number(form.dailyDoubleBeds) >= 1
-                    ))
                 );
             case 3: return true;
             case 4: return true;
@@ -538,12 +509,17 @@ export function CreateListingForm() {
                 return !!(
                     form.price
                     && Number(form.price) > 0
-                    && hasVerifiedProfilePhone(user, phones)
-                    && hasProfileDisplayName(user)
+                    && (form.dealType !== 'daily' || (
+                        !!form.maxDailyGuests
+                        && Number(form.maxDailyGuests) > 0
+                        && Number(form.dailySingleBeds) >= 0
+                        && Number(form.dailyDoubleBeds) >= 0
+                        && Number(form.dailySingleBeds) + Number(form.dailyDoubleBeds) >= 1
+                    ))
                 );
             default: return false;
         }
-    }, [step, form, user, phones]);
+    }, [step, form]);
 
     const next = () => { if (validateStep(step)) setStep((s) => Math.min(s + 1, TOTAL_STEPS)); };
     const prev = () => setStep((s) => Math.max(s - 1, 1));
@@ -672,33 +648,6 @@ export function CreateListingForm() {
 
         if (!isAuthenticated()) {
             setSmsAuthOpen(true);
-            return;
-        }
-
-        let knownPhones = phones;
-        try {
-            const { data: freshPhones } = await refetchPhones();
-            knownPhones = freshPhones ?? phones;
-        } catch {
-            knownPhones = phones;
-        }
-
-        if (!hasVerifiedProfilePhone(user, knownPhones)) {
-            toast.error('Подтвердите номер телефона в профиле', {
-                action: {
-                    label: 'К телефонам',
-                    onClick: () => router.push('/kabinet/telefony'),
-                },
-            });
-            return;
-        }
-        if (!hasProfileDisplayName(user)) {
-            toast.error('Укажите имя и фамилию в профиле', {
-                action: {
-                    label: 'Профиль',
-                    onClick: () => router.push('/kabinet/profil'),
-                },
-            });
             return;
         }
 
@@ -899,7 +848,7 @@ export function CreateListingForm() {
                             aria-current={isCurrent ? 'step' : undefined}
                             aria-label={`Шаг ${segmentStep}: ${label}`}
                             className={cn(
-                                'flex min-h-[44px] sm:min-h-[4.25rem] flex-col items-center justify-center rounded-xl border-2 text-center transition-all outline-none',
+                                'flex min-h-[44px] min-w-0 sm:min-h-[4.25rem] flex-col items-center justify-center rounded-xl border-2 text-center transition-all outline-none',
                                 'max-sm:px-1 max-sm:py-2 sm:px-2.5 sm:py-3 sm:gap-1.5',
                                 'focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                                 isCurrent &&
@@ -920,10 +869,8 @@ export function CreateListingForm() {
                             />
                             <span
                                 className={cn(
-                                    'hidden sm:block text-[11px] sm:text-xs font-semibold leading-snug text-center w-full',
-                                    label === 'Расположение'
-                                        ? 'whitespace-nowrap'
-                                        : 'line-clamp-3 break-words',
+                                    'hidden min-w-0 sm:block text-[11px] sm:text-xs font-semibold leading-snug text-center w-full line-clamp-3 break-words',
+                                    label === 'Расположение' && 'whitespace-nowrap',
                                 )}
                             >
                                 {label}
@@ -1251,82 +1198,6 @@ export function CreateListingForm() {
                                                 )}
                                     </div>
                                 </div>
-
-                                {form.dealType === 'daily' && (
-                                    <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
-                                        <h2 className="font-display text-lg font-semibold text-foreground">Посуточная аренда</h2>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                            <div className="sm:col-span-2">
-                                                <label className={labelClass}>
-                                                    <Users className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
-                                                    Максимум гостей *
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    inputMode="numeric"
-                                                    min={1}
-                                                    max={99}
-                                                    step={1}
-                                                    value={form.maxDailyGuests}
-                                                    onChange={(e) => update('maxDailyGuests', e.target.value)}
-                                                    placeholder="Например: 4"
-                                                    className={cn(inputClass, errors.maxDailyGuests ? 'border-destructive' : '')}
-                                                />
-                                                <FieldError field="maxDailyGuests" />
-                                            </div>
-                                            <NumericPillRow
-                                                label={
-                                                    <>
-                                                        <BedDouble className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
-                                                        Односпальных кроватей *
-                                                    </>
-                                                }
-                                                value={form.dailySingleBeds}
-                                                onChange={(v) => update('dailySingleBeds', v)}
-                                                min={0}
-                                                max={DAILY_BEDS_MAX}
-                                                plusDiscrete
-                                                plusDiscretePlus="five"
-                                                error={errors.dailySingleBeds}
-                                            />
-                                            <NumericPillRow
-                                                label={
-                                                    <>
-                                                        <BedDouble className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
-                                                        Двуспальных кроватей *
-                                                    </>
-                                                }
-                                                value={form.dailyDoubleBeds}
-                                                onChange={(v) => update('dailyDoubleBeds', v)}
-                                                min={0}
-                                                max={DAILY_BEDS_MAX}
-                                                plusDiscrete
-                                                plusDiscretePlus="five"
-                                                error={errors.dailyDoubleBeds}
-                                            />
-                                            <div>
-                                                <label className={labelClass}>Время заезда</label>
-                                                <input
-                                                    type="time"
-                                                    value={form.checkInTime}
-                                                    onChange={(e) => update('checkInTime', e.target.value)}
-                                                    className={cn(inputClass, errors.checkInTime ? 'border-destructive' : '')}
-                                                />
-                                                <FieldError field="checkInTime" />
-                                            </div>
-                                            <div>
-                                                <label className={labelClass}>Время выезда</label>
-                                                <input
-                                                    type="time"
-                                                    value={form.checkOutTime}
-                                                    onChange={(e) => update('checkOutTime', e.target.value)}
-                                                    className={cn(inputClass, errors.checkOutTime ? 'border-destructive' : '')}
-                                                />
-                                                <FieldError field="checkOutTime" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
 
                                 {(showRenovation(form.propertyType) || showBalcony(form.propertyType) || showDealConditions(form.dealType)) && (
                                     <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
@@ -1699,9 +1570,85 @@ export function CreateListingForm() {
                             </>
                         )}
 
-                        {/* Step 6: Price & Contact */}
+                        {/* Step 6: Условия размещения (посуточная аренда + цена) и контакты */}
                         {step === 6 && (
                             <>
+                                {form.dealType === 'daily' && (
+                                    <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
+                                        <h2 className="font-display text-lg font-semibold text-foreground">Посуточная аренда</h2>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                            <div className="sm:col-span-2">
+                                                <label className={labelClass}>
+                                                    <Users className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                                    Максимум гостей *
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    inputMode="numeric"
+                                                    min={1}
+                                                    max={99}
+                                                    step={1}
+                                                    value={form.maxDailyGuests}
+                                                    onChange={(e) => update('maxDailyGuests', e.target.value)}
+                                                    placeholder="Например: 4"
+                                                    className={cn(inputClass, errors.maxDailyGuests ? 'border-destructive' : '')}
+                                                />
+                                                <FieldError field="maxDailyGuests" />
+                                            </div>
+                                            <NumericPillRow
+                                                label={
+                                                    <>
+                                                        <BedDouble className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                                        Односпальных кроватей *
+                                                    </>
+                                                }
+                                                value={form.dailySingleBeds}
+                                                onChange={(v) => update('dailySingleBeds', v)}
+                                                min={0}
+                                                max={DAILY_BEDS_MAX}
+                                                plusDiscrete
+                                                plusDiscretePlus="five"
+                                                error={errors.dailySingleBeds}
+                                            />
+                                            <NumericPillRow
+                                                label={
+                                                    <>
+                                                        <BedDouble className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                                        Двуспальных кроватей *
+                                                    </>
+                                                }
+                                                value={form.dailyDoubleBeds}
+                                                onChange={(v) => update('dailyDoubleBeds', v)}
+                                                min={0}
+                                                max={DAILY_BEDS_MAX}
+                                                plusDiscrete
+                                                plusDiscretePlus="five"
+                                                error={errors.dailyDoubleBeds}
+                                            />
+                                            <div>
+                                                <label className={labelClass}>Время заезда</label>
+                                                <input
+                                                    type="time"
+                                                    value={form.checkInTime}
+                                                    onChange={(e) => update('checkInTime', e.target.value)}
+                                                    className={cn(inputClass, errors.checkInTime ? 'border-destructive' : '')}
+                                                />
+                                                <FieldError field="checkInTime" />
+                                            </div>
+                                            <div>
+                                                <label className={labelClass}>Время выезда</label>
+                                                <input
+                                                    type="time"
+                                                    value={form.checkOutTime}
+                                                    onChange={(e) => update('checkOutTime', e.target.value)}
+                                                    className={cn(inputClass, errors.checkOutTime ? 'border-destructive' : '')}
+                                                />
+                                                <FieldError field="checkOutTime" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                     <h2 className="font-display text-lg font-semibold text-foreground">Стоимость</h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1752,8 +1699,6 @@ export function CreateListingForm() {
                                         </Link>
                                         . Здесь указывать их не нужно.
                                     </p>
-                                    <FieldError field="profileName" />
-                                    <FieldError field="profilePhone" />
                                 </div>
                             </>
                         )}
