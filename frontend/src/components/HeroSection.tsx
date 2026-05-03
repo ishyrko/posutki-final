@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Search, MapPin, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -15,11 +16,30 @@ const CITY_HREFS: { label: string; href: string }[] = [
   { label: "Могилёв", href: "/mogilev/kvartiry/" },
 ];
 
+/** Подбор URL каталога по названию города (кириллица, без учёта регистра). */
+const CITY_CATALOG_MATCH: { names: string[]; href: string }[] = [
+  { names: ["минск"], href: "/kvartiry/" },
+  { names: ["гродно"], href: "/grodno/kvartiry/" },
+  { names: ["брест"], href: "/brest/kvartiry/" },
+  { names: ["витебск"], href: "/vitebsk/kvartiry/" },
+  { names: ["гомель"], href: "/gomel/kvartiry/" },
+  { names: ["могилёв", "могилев"], href: "/mogilev/kvartiry/" },
+];
+
+function resolveCatalogHrefForCity(input: string): string {
+  const key = input.trim().toLowerCase();
+  if (!key) return "/kvartiry/";
+  const row = CITY_CATALOG_MATCH.find((c) => c.names.some((n) => key === n || key.startsWith(`${n} `)));
+  return row?.href ?? "/kvartiry/";
+}
+
 const HeroSection = () => {
   const router = useRouter();
+  const [city, setCity] = useState("Минск");
+  const [guests, setGuests] = useState("2");
 
   const handleFind = () => {
-    router.push("/kvartiry/");
+    router.push(resolveCatalogHrefForCity(city));
   };
 
   return (
@@ -46,17 +66,29 @@ const HeroSection = () => {
         </div>
 
         <div className="max-w-4xl mx-auto">
-          <div className="bg-card rounded-2xl shadow-elevated p-3 md:p-4">
+          <form
+            className="bg-card rounded-2xl shadow-elevated p-3 md:p-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleFind();
+            }}
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface">
                 <MapPin className="h-5 w-5 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <label className="text-xs font-medium text-muted-foreground block">Город</label>
+                  <label htmlFor="hero-city" className="text-xs font-medium text-muted-foreground block">
+                    Город
+                  </label>
                   <input
+                    id="hero-city"
+                    name="city"
                     type="text"
+                    autoComplete="address-level2"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
                     placeholder="Минск"
                     className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground/60 outline-none"
-                    readOnly
                   />
                 </div>
               </div>
@@ -64,26 +96,31 @@ const HeroSection = () => {
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface">
                 <Users className="h-5 w-5 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <label className="text-xs font-medium text-muted-foreground block">Гости</label>
+                  <label htmlFor="hero-guests" className="text-xs font-medium text-muted-foreground block">
+                    Гости
+                  </label>
                   <input
+                    id="hero-guests"
+                    name="guests"
                     type="text"
-                    placeholder="2 гостя"
+                    inputMode="numeric"
+                    value={guests}
+                    onChange={(e) => setGuests(e.target.value)}
+                    placeholder="2"
                     className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground/60 outline-none"
-                    readOnly
                   />
                 </div>
               </div>
 
               <Button
-                type="button"
-                onClick={handleFind}
+                type="submit"
                 className="h-full min-h-[52px] rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-base font-semibold gap-2 shadow-lg"
               >
                 <Search className="h-5 w-5" />
                 Найти
               </Button>
             </div>
-          </div>
+          </form>
 
           <div className="flex flex-wrap justify-center gap-2 mt-6">
             {CITY_HREFS.map((city) => (
