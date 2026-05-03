@@ -74,6 +74,7 @@ import {
     ROOMS_MAX,
     ROOMS_MIN,
     DAILY_BEDS_MAX,
+    MAX_DAILY_GUESTS,
     TITLE_MAX_LENGTH,
     TITLE_MIN_LENGTH,
     TOTAL_FLOORS_MAX,
@@ -426,6 +427,8 @@ export function CreateListingForm() {
                         errs.maxDailyGuests = 'Укажите максимум гостей';
                     } else if (!Number.isFinite(Number(form.maxDailyGuests)) || Number(form.maxDailyGuests) <= 0) {
                         errs.maxDailyGuests = 'Укажите корректное число гостей';
+                    } else if (Number(form.maxDailyGuests) > MAX_DAILY_GUESTS) {
+                        errs.maxDailyGuests = `Не более ${MAX_DAILY_GUESTS} гостей`;
                     }
                     const singleBeds = Number(form.dailySingleBeds);
                     const doubleBeds = Number(form.dailyDoubleBeds);
@@ -505,6 +508,7 @@ export function CreateListingForm() {
                     && (form.dealType !== 'daily' || (
                         !!form.maxDailyGuests
                         && Number(form.maxDailyGuests) > 0
+                        && Number(form.maxDailyGuests) <= MAX_DAILY_GUESTS
                         && Number(form.dailySingleBeds) >= 0
                         && Number(form.dailyDoubleBeds) >= 0
                         && Number(form.dailySingleBeds) + Number(form.dailyDoubleBeds) >= 1
@@ -1579,7 +1583,7 @@ export function CreateListingForm() {
                                                     type="number"
                                                     inputMode="numeric"
                                                     min={1}
-                                                    max={99}
+                                                    max={MAX_DAILY_GUESTS}
                                                     step={1}
                                                     value={form.maxDailyGuests}
                                                     onChange={(e) => update('maxDailyGuests', e.target.value)}

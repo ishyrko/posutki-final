@@ -7,6 +7,8 @@ export const AREA_MAX = 10000;
 export const ROOMS_MIN = 1;
 export const ROOMS_MAX = 50;
 export const DAILY_BEDS_MAX = 50;
+/** Максимум гостей для посуточной аренды (главная, подача, редактирование, API). */
+export const MAX_DAILY_GUESTS = 20;
 export const BATHROOMS_MIN = 0;
 export const BATHROOMS_MAX = 10;
 export const FLOOR_MIN = -5;

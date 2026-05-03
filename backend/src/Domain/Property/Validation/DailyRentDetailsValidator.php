@@ -22,6 +22,9 @@ final class DailyRentDetailsValidator
             if ($maxDailyGuests === null || $maxDailyGuests <= 0) {
                 throw new DomainException('Укажите максимальное число гостей для посуточной аренды');
             }
+            if ($maxDailyGuests > 20) {
+                throw new DomainException('Максимум 20 гостей для посуточной аренды');
+            }
             $single = $dailySingleBeds ?? 0;
             $double = $dailyDoubleBeds ?? 0;
             if ($single < 0 || $double < 0) {

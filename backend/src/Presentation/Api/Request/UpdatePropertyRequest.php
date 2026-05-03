@@ -95,7 +95,11 @@ class UpdatePropertyRequest
     #[Assert\Type('array')]
     public ?array $dealConditions = null;
 
-    #[Assert\Positive(message: 'Максимальное число гостей должно быть положительным')]
+    #[Assert\Range(
+        min: 1,
+        max: 20,
+        notInRangeMessage: 'Максимум гостей: от {{ min }} до {{ max }}'
+    )]
     public ?int $maxDailyGuests = null;
 
     #[Assert\Range(min: 0, max: 50, notInRangeMessage: 'Число односпальных кроватей от {{ min }} до {{ max }}')]

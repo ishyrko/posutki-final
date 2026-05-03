@@ -70,6 +70,7 @@ import {
     ROOMS_MAX,
     ROOMS_MIN,
     DAILY_BEDS_MAX,
+    MAX_DAILY_GUESTS,
     TITLE_MAX_LENGTH,
     TITLE_MIN_LENGTH,
     TOTAL_FLOORS_MAX,
@@ -576,6 +577,10 @@ export default function EditPropertyPage() {
                 toast.error('Укажите максимальное число гостей');
                 return;
             }
+            if (maxDailyGuests > MAX_DAILY_GUESTS) {
+                toast.error(`Максимум ${MAX_DAILY_GUESTS} гостей`);
+                return;
+            }
             if (
                 !Number.isFinite(dailySingleBeds)
                 || dailySingleBeds < 0
@@ -1027,7 +1032,7 @@ export default function EditPropertyPage() {
                                         type="number"
                                         inputMode="numeric"
                                         min={1}
-                                        max={99}
+                                        max={MAX_DAILY_GUESTS}
                                         step={1}
                                         value={form.maxDailyGuests}
                                         onChange={(e) => update('maxDailyGuests', e.target.value)}

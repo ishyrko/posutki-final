@@ -1,11 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Search, MapPin, Users } from "lucide-react";
+import { Search, MapPin, Users, Home, Minus, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import NextImage from "next/image";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { buildCatalogUrl } from "@/features/catalog/slugs";
+import { MAX_DAILY_GUESTS } from "@/features/create-listing/validation";
 
 const CITY_HREFS: { label: string; href: string }[] = [
   { label: "Минск", href: "/" },
@@ -16,30 +25,43 @@ const CITY_HREFS: { label: string; href: string }[] = [
   { label: "Могилёв", href: "/mogilev/kvartiry/" },
 ];
 
-/** Подбор URL каталога по названию города (кириллица, без учёта регистра). */
-const CITY_CATALOG_MATCH: { names: string[]; href: string }[] = [
-  { names: ["минск"], href: "/kvartiry/" },
-  { names: ["гродно"], href: "/grodno/kvartiry/" },
-  { names: ["брест"], href: "/brest/kvartiry/" },
-  { names: ["витебск"], href: "/vitebsk/kvartiry/" },
-  { names: ["гомель"], href: "/gomel/kvartiry/" },
-  { names: ["могилёв", "могилев"], href: "/mogilev/kvartiry/" },
+type CatalogPropertyType = "apartment" | "house";
+
+const MIN_GUESTS = 1;
+
+/** Минск и областные центры в URL каталога. */
+const HERO_REGION_CITIES: { value: string; label: string; region?: string }[] = [
+  { value: "minsk", label: "Минск" },
+  { value: "brest", label: "Брест", region: "brest" },
+  { value: "vitebsk", label: "Витебск", region: "vitebsk" },
+  { value: "gomel", label: "Гомель", region: "gomel" },
+  { value: "grodno", label: "Гродно", region: "grodno" },
+  { value: "mogilev", label: "Могилёв", region: "mogilev" },
 ];
 
-function resolveCatalogHrefForCity(input: string): string {
-  const key = input.trim().toLowerCase();
-  if (!key) return "/kvartiry/";
-  const row = CITY_CATALOG_MATCH.find((c) => c.names.some((n) => key === n || key.startsWith(`${n} `)));
-  return row?.href ?? "/kvartiry/";
+function buildHeroCatalogHref(cityValue: string, propertyType: CatalogPropertyType): string {
+  const row = HERO_REGION_CITIES.find((c) => c.value === cityValue);
+  if (!row) {
+    return buildCatalogUrl({ propertyType });
+  }
+  return buildCatalogUrl({
+    ...(row.region ? { region: row.region } : {}),
+    propertyType,
+  });
+}
+
+function clampGuests(n: number): number {
+  return Math.min(MAX_DAILY_GUESTS, Math.max(MIN_GUESTS, n));
 }
 
 const HeroSection = () => {
   const router = useRouter();
-  const [city, setCity] = useState("Минск");
-  const [guests, setGuests] = useState("2");
+  const [propertyType, setPropertyType] = useState<CatalogPropertyType>("apartment");
+  const [cityValue, setCityValue] = useState("minsk");
+  const [guestCount, setGuestCount] = useState(2);
 
   const handleFind = () => {
-    router.push(resolveCatalogHrefForCity(city));
+    router.push(buildHeroCatalogHref(cityValue, propertyType));
   };
 
   return (
@@ -73,42 +95,102 @@ const HeroSection = () => {
               handleFind();
             }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface">
+                <Home className="h-5 w-5 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <label htmlFor="hero-property-type" className="text-xs font-medium text-muted-foreground block">
+                    Тип жилья
+                  </label>
+                  <Select
+                    value={propertyType}
+                    onValueChange={(v) => setPropertyType(v as CatalogPropertyType)}
+                  >
+                    <SelectTrigger
+                      id="hero-property-type"
+                      className="h-auto min-h-0 border-0 bg-transparent p-0 shadow-none ring-0 ring-offset-0 focus:ring-0 w-full justify-between gap-1 text-sm font-medium text-foreground [&>svg]:shrink-0"
+                    >
+                      <SelectValue placeholder="Квартира" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="apartment">Квартира</SelectItem>
+                      <SelectItem value="house">Дом</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface">
                 <MapPin className="h-5 w-5 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
                   <label htmlFor="hero-city" className="text-xs font-medium text-muted-foreground block">
                     Город
                   </label>
-                  <input
-                    id="hero-city"
-                    name="city"
-                    type="text"
-                    autoComplete="address-level2"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="Минск"
-                    className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground/60 outline-none"
-                  />
+                  <Select value={cityValue} onValueChange={setCityValue}>
+                    <SelectTrigger
+                      id="hero-city"
+                      className="h-auto min-h-0 border-0 bg-transparent p-0 shadow-none ring-0 ring-offset-0 focus:ring-0 w-full justify-between gap-1 text-sm font-medium text-foreground [&>svg]:shrink-0"
+                    >
+                      <SelectValue placeholder="Город" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HERO_REGION_CITIES.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          {c.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface">
                 <Users className="h-5 w-5 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <label htmlFor="hero-guests" className="text-xs font-medium text-muted-foreground block">
+                  <label htmlFor="hero-guests" className="text-xs font-medium text-muted-foreground block mb-1">
                     Гости
                   </label>
-                  <input
-                    id="hero-guests"
-                    name="guests"
-                    type="text"
-                    inputMode="numeric"
-                    value={guests}
-                    onChange={(e) => setGuests(e.target.value)}
-                    placeholder="2"
-                    className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground/60 outline-none"
-                  />
+                  <div className="flex items-center gap-0.5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 text-foreground hover:text-foreground"
+                      aria-label="Меньше гостей"
+                      disabled={guestCount <= MIN_GUESTS}
+                      onClick={() => setGuestCount((n) => clampGuests(n - 1))}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <input
+                      id="hero-guests"
+                      name="guests"
+                      type="number"
+                      inputMode="numeric"
+                      min={MIN_GUESTS}
+                      max={MAX_DAILY_GUESTS}
+                      step={1}
+                      value={guestCount}
+                      onChange={(e) => {
+                        const v = e.target.valueAsNumber;
+                        if (Number.isNaN(v)) return;
+                        setGuestCount(clampGuests(v));
+                      }}
+                      onBlur={() => setGuestCount((n) => clampGuests(n))}
+                      className="min-w-0 w-10 flex-1 max-w-[3.25rem] bg-transparent text-center text-sm font-medium text-foreground tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 text-foreground hover:text-foreground"
+                      aria-label="Больше гостей"
+                      disabled={guestCount >= MAX_DAILY_GUESTS}
+                      onClick={() => setGuestCount((n) => clampGuests(n + 1))}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
