@@ -88,6 +88,7 @@ import {
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { isAuthenticated } from '@/lib/auth';
 import { PhoneAuthModal } from '@/features/sms-auth/components/PhoneAuthModal';
+import { useUser } from '@/features/auth/hooks';
 import {
     applyBathroomTypeSelection,
     bathroomTypeFromForm,
@@ -210,10 +211,13 @@ const INITIAL_FORM: ListingFormData = {
 export function CreateListingForm() {
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { data: user, isLoading: userLoading } = useUser();
+    const hasDailySellerProfile = Boolean(user?.individualProfile || user?.businessProfile);
 
     const [step, setStep] = useState(1);
     const [form, setForm] = useState<ListingFormData>(INITIAL_FORM);
     const [errors, setErrors] = useState<FormErrors>({});
+    const [dailyProfileGateError, setDailyProfileGateError] = useState<string | null>(null);
     const [dragOver, setDragOver] = useState(false);
     const [geocoding, setGeocoding] = useState(false);
 
@@ -315,9 +319,13 @@ export function CreateListingForm() {
 
     const validateStep = useCallback((s: number): boolean => {
         const errs: FormErrors = {};
+        let profileGateError: string | null = null;
 
         switch (s) {
             case 1:
+                if (isAuthenticated() && !userLoading && !hasDailySellerProfile) {
+                    profileGateError = 'Заполните данные для посуточных объявлений в профиле';
+                }
                 if (!form.propertyType) {
                     errs.propertyType = 'Выберите тип объекта';
                 } else if (!isAllowedDailyPropertyType(form.propertyType)) {
@@ -460,13 +468,19 @@ export function CreateListingForm() {
         }
 
         setErrors(errs);
-        return Object.keys(errs).length === 0;
-    }, [form]);
+        setDailyProfileGateError(profileGateError);
+        return Object.keys(errs).length === 0 && !profileGateError;
+    }, [form, hasDailySellerProfile, userLoading]);
 
     const canProceed = useCallback((): boolean => {
         switch (step) {
             case 1:
-                return !!(form.propertyType && isAllowedDailyPropertyType(form.propertyType));
+                return !!(
+                    form.propertyType
+                    && isAllowedDailyPropertyType(form.propertyType)
+                    && !userLoading
+                    && hasDailySellerProfile
+                );
             case 2:
                 return !!(
                     form.title.trim()
@@ -516,7 +530,7 @@ export function CreateListingForm() {
                 );
             default: return false;
         }
-    }, [step, form]);
+    }, [step, form, hasDailySellerProfile, userLoading]);
 
     const next = () => { if (validateStep(step)) setStep((s) => Math.min(s + 1, TOTAL_STEPS)); };
     const prev = () => setStep((s) => Math.max(s - 1, 1));
@@ -896,6 +910,27 @@ export function CreateListingForm() {
                                         Посуточная сдача — выберите квартиру или дом
                                     </p>
                                 </div>
+
+                                {!userLoading && !hasDailySellerProfile && (
+                                    <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+                                        <div className="space-y-1">
+                                            <h3 className="font-semibold text-foreground">
+                                                Данные для посуточных объявлений
+                                            </h3>
+                                            <p className="text-sm text-muted-foreground max-w-xl">
+                                                Для подачи посуточных объявлений заполните реквизиты в профиле (физлицо или организация).
+                                            </p>
+                                        </div>
+
+                                        <p className="text-sm text-amber-700 dark:text-amber-400">
+                                            {dailyProfileGateError ?? 'Заполните данные в профиле, чтобы продолжить.'}{' '}
+                                            <Link href="/kabinet/profil" className="font-medium underline underline-offset-2">
+                                                Открыть профиль
+                                            </Link>
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {dailyPropertyChoices.map((choice) => {
                                         const Icon = choice.icon;

@@ -451,7 +451,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
               type="button"
               aria-label="Предыдущее фото"
               onClick={prevImage}
-              className="p-1.5 rounded-full bg-muted touch-manipulation transition-[transform,background-color,color] duration-150 ease-out active:scale-95 active:bg-primary/25 active:text-primary"
+              className="cursor-pointer p-1.5 rounded-full bg-muted touch-manipulation transition-[transform,background-color,color] duration-150 ease-out active:scale-95 active:bg-primary/25 active:text-primary"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -460,7 +460,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
               type="button"
               aria-label="Следующее фото"
               onClick={nextImage}
-              className="p-1.5 rounded-full bg-muted touch-manipulation transition-[transform,background-color,color] duration-150 ease-out active:scale-95 active:bg-primary/25 active:text-primary"
+              className="cursor-pointer p-1.5 rounded-full bg-muted touch-manipulation transition-[transform,background-color,color] duration-150 ease-out active:scale-95 active:bg-primary/25 active:text-primary"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -780,7 +780,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
               type="button"
               aria-label="Закрыть просмотр"
               onClick={() => setLightboxOpen(false)}
-              className="absolute top-4 right-4 p-2 text-background/70 transition-[opacity,transform,color] duration-150 hover:text-background active:scale-95 active:text-primary active:opacity-100"
+              className="cursor-pointer absolute top-4 right-4 p-2 text-background/70 transition-[opacity,transform,color] duration-150 hover:text-background active:scale-95 active:text-primary active:opacity-100"
             >
               <X className="w-6 h-6" />
             </button>
@@ -788,7 +788,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
               type="button"
               aria-label="Предыдущее фото"
               onClick={(e) => { e.stopPropagation(); prevImage(); }}
-              className="absolute left-4 touch-manipulation rounded-full bg-background/10 p-2 text-background transition-[transform,background-color,color] duration-150 hover:bg-background/20 active:scale-95 active:bg-primary active:text-primary-foreground"
+              className="cursor-pointer absolute left-4 touch-manipulation rounded-full bg-background/10 p-2 text-background transition-[transform,background-color,color] duration-150 hover:bg-background/20 active:scale-95 active:bg-primary active:text-primary-foreground"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
@@ -805,7 +805,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
               type="button"
               aria-label="Следующее фото"
               onClick={(e) => { e.stopPropagation(); nextImage(); }}
-              className="absolute right-4 touch-manipulation rounded-full bg-background/10 p-2 text-background transition-[transform,background-color,color] duration-150 hover:bg-background/20 active:scale-95 active:bg-primary active:text-primary-foreground"
+              className="cursor-pointer absolute right-4 touch-manipulation rounded-full bg-background/10 p-2 text-background transition-[transform,background-color,color] duration-150 hover:bg-background/20 active:scale-95 active:bg-primary active:text-primary-foreground"
             >
               <ChevronRight className="w-6 h-6" />
             </button>

@@ -46,13 +46,13 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
                     <>
                         <button
                             onClick={prevImage}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/20 backdrop-blur-md text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/40"
+                            className="cursor-pointer absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/20 backdrop-blur-md text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/40"
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </button>
                         <button
                             onClick={nextImage}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/20 backdrop-blur-md text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/40"
+                            className="cursor-pointer absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/20 backdrop-blur-md text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/40"
                         >
                             <ChevronRight className="w-5 h-5" />
                         </button>
@@ -72,7 +72,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
                         <button
                             key={image.id}
                             onClick={() => setCurrentIndex(index)}
-                            className={`relative flex-shrink-0 w-24 aspect-video rounded-xl overflow-hidden border-2 transition-all ${
+                            className={`cursor-pointer relative flex-shrink-0 w-24 aspect-video rounded-xl overflow-hidden border-2 transition-all ${
                                 currentIndex === index ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'
                             }`}
                         >

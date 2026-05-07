@@ -204,7 +204,7 @@ export function PhoneAuthPanel({
                                     type="button"
                                     onClick={() => void handleResend()}
                                     disabled={requesting || (Boolean(siteKey) && !resendCaptchaToken)}
-                                    className="text-sm text-primary hover:underline disabled:pointer-events-none disabled:opacity-50"
+                                    className="cursor-pointer text-sm text-primary hover:underline disabled:pointer-events-none disabled:opacity-50"
                                 >
                                     Отправить код повторно
                                 </button>
@@ -215,7 +215,7 @@ export function PhoneAuthPanel({
                     <button
                         type="button"
                         onClick={goBackToPhone}
-                        className="text-sm text-muted-foreground hover:text-foreground w-full text-center"
+                        className="cursor-pointer text-sm text-muted-foreground hover:text-foreground w-full text-center"
                     >
                         Изменить номер
                     </button>
