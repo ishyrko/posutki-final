@@ -6,6 +6,7 @@ import {
   withRegionalCatalogHref,
 } from "@/lib/region-header";
 import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
+import Image from "next/image";
 
 const Footer = () => {
   const regionSlug = useHeaderRegionSlug();
@@ -22,8 +23,16 @@ const Footer = () => {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           <div className="col-span-2 md:col-span-1">
-            <Link href={homeHref} className="font-display text-xl font-bold text-primary-foreground">
-              posutki.by
+            <Link href={homeHref} className="inline-flex items-center">
+              <Image
+                src="/brand/logo.png"
+                alt="posutki.by"
+                width={180}
+                height={40}
+                sizes="(max-width: 640px) 140px, (max-width: 1024px) 160px, 180px"
+                className="w-36 sm:w-40 lg:w-[180px] h-auto brightness-0 invert"
+              />
+              <span className="sr-only">posutki.by</span>
             </Link>
             <p className="mt-3 text-sm text-primary-foreground/60 leading-relaxed">
               Крупнейший сервис посуточной аренды жилья в Беларуси

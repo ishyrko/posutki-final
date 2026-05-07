@@ -3,13 +3,31 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Search, SlidersHorizontal, X, Map as MapIcon, LayoutGrid, LayoutList, MapPin, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import {
+  SlidersHorizontal,
+  X,
+  Map as MapIcon,
+  LayoutGrid,
+  Rows3,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  ChevronDown,
+  Wifi,
+  Snowflake,
+  Tv,
+  WashingMachine,
+  ChefHat,
+  Bath,
+  Car,
+  Wind,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PropertyListCard from "@/components/PropertyListCard";
+import PropertyCard from "@/components/PropertyCard";
 import PropertyMap, { type MapProperty } from "@/components/PropertyMap";
 import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { useMetroStations } from "@/features/metro/hooks";
@@ -27,7 +45,7 @@ import { showBathrooms, showRooms, showRoomsCatalogFilter } from "@/features/cre
 import { BynCurrencyMark, PriceInByn } from "@/components/BynCurrency";
 import { cn } from "@/lib/utils";
 
-type ViewMode = "list" | "list-map" | "map";
+type ViewMode = "grid" | "list" | "map";
 
 const currencies: { value: Currency; label: ReactNode }[] = [
   { value: "BYN", label: <BynCurrencyMark variant="select" /> },
@@ -50,11 +68,73 @@ const sortOptions = [
   { value: "area-desc", label: "Площадь: больше" },
 ];
 
-const viewModes: { value: ViewMode; icon: typeof LayoutList; label: string }[] = [
-  { value: "list", icon: LayoutList, label: "Список" },
-  { value: "list-map", icon: LayoutGrid, label: "Список + Карта" },
-  { value: "map", icon: MapIcon, label: "Карта" },
+const viewModes: { value: ViewMode; icon: typeof LayoutGrid; title: string }[] = [
+  { value: "grid", icon: LayoutGrid, title: "Плитка" },
+  { value: "list", icon: Rows3, title: "Список" },
+  { value: "map", icon: MapIcon, title: "Карта" },
 ];
+
+/** Каталог фильтрует удобства на клиенте (текущая страница выдачи); id совпадают с шагом размещения. */
+const CATALOG_AMENITY_OPTIONS: {
+  id: string;
+  label: string;
+  icon: typeof Wifi;
+  matches: (amenityIds: string[]) => boolean;
+}[] = [
+  { id: "wifi", label: "Wi-Fi", icon: Wifi, matches: (ids) => ids.includes("wifi") },
+  { id: "ac", label: "Кондиционер", icon: Snowflake, matches: (ids) => ids.includes("air_conditioner") },
+  {
+    id: "tv",
+    label: "Телевизор",
+    icon: Tv,
+    matches: (ids) => ["smart_tv", "tv", "projector", "cable_tv"].some((x) => ids.includes(x)),
+  },
+  { id: "washer", label: "Стиральная машина", icon: WashingMachine, matches: (ids) => ids.includes("washing_machine") },
+  {
+    id: "kitchen",
+    label: "Кухня",
+    icon: ChefHat,
+    matches: (ids) =>
+      [
+        "fridge",
+        "electric_stove",
+        "gas_stove",
+        "induction_stove",
+        "oven",
+        "microwave",
+        "dishwasher",
+        "coffee_machine",
+        "kettle",
+        "blender",
+        "dishes_utensils",
+      ].some((x) => ids.includes(x)),
+  },
+  { id: "dishwasher", label: "Посудомоечная", icon: WashingMachine, matches: (ids) => ids.includes("dishwasher") },
+  { id: "jacuzzi", label: "Джакузи", icon: Bath, matches: (ids) => ids.includes("jacuzzi") },
+  {
+    id: "parking",
+    label: "Паркинг",
+    icon: Car,
+    matches: (ids) => ids.some((x) => x.includes("parking") || x.includes("garage")),
+  },
+  { id: "dryer", label: "Сушилка", icon: Wind, matches: (ids) => ids.includes("dryer") },
+];
+
+function foundCountLabel(n: number, loading: boolean): ReactNode {
+  if (loading) {
+    return <span className="text-muted-foreground">Загрузка...</span>;
+  }
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  let word = "вариантов";
+  if (mod10 === 1 && mod100 !== 11) word = "вариант";
+  else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) word = "варианта";
+  return (
+    <>
+      Найдено <span className="font-semibold text-foreground">{n}</span> {word}
+    </>
+  );
+}
 
 /** One station for the card: filtered station when metro filter is active, otherwise the closest. */
 function pickMetroStationsForCatalog(
@@ -118,7 +198,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [search, setSearch] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [priceType, setPriceType] = useState<PriceType>("total");
@@ -127,8 +206,10 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const [metroStationId, setMetroStationId] = useState("all");
   const [nearMetro, setNearMetro] = useState(false);
   const [sort, setSort] = useState("default");
-  const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>("list-map");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showAllAmenities, setShowAllAmenities] = useState(false);
+  const [selectedAmenityIds, setSelectedAmenityIds] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [activeMarker, setActiveMarker] = useState<number | null>(null);
   const isSaleDeal = false;
   const pageFromQuery = Number(searchParams.get("page") ?? "1");
@@ -156,19 +237,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     }
   }, [roomsFilterVisible]);
 
-  /** "List + map" is hidden on narrow viewports; avoid leaving users in an unavailable mode */
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const collapseListMapOnNarrow = () => {
-      if (mq.matches) {
-        setViewMode((v) => (v === "list-map" ? "list" : v));
-      }
-    };
-    collapseListMapOnNarrow();
-    mq.addEventListener("change", collapseListMapOnNarrow);
-    return () => mq.removeEventListener("change", collapseListMapOnNarrow);
-  }, []);
-
   const hasPriceFilter = minPrice !== "" || maxPrice !== "";
   const metroStationsByLine = useMemo(() => {
     const byLine = new Map<number, typeof metroStations>();
@@ -184,12 +252,12 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
       { line: 3, label: "Зеленолужская", stations: byLine.get(3) ?? [] },
     ];
   }, [metroStations]);
-  const activeFilterCount = [
-    hasPriceFilter,
-    roomsFilterVisible && rooms !== "all",
-    nearMetro && metroStationId !== "all",
-    nearMetro,
-  ].filter(Boolean).length;
+  const activeFilterCount =
+    (hasPriceFilter ? 1 : 0) +
+    (roomsFilterVisible && rooms !== "all" ? 1 : 0) +
+    (nearMetro && metroStationId !== "all" ? 1 : 0) +
+    (nearMetro ? 1 : 0) +
+    selectedAmenityIds.length;
 
   const pageTitle = useMemo(() => {
     if (!parsed.metroStationSlug) return title;
@@ -219,11 +287,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
       : undefined;
 
     if (parsed.dealType) f.dealType = parsed.dealType;
-    /**
-     * Explicit city in URL → filter by city. Regional path (/brest/…) → filter by region only.
-     * Default catalog (no prefix): Minsk region = region slug `minsk`, not city slug —
-     * otherwise only the city of Minsk matches and most seeded listings disappear.
-     */
     if (parsed.citySlug) {
       f.citySlug = parsed.citySlug;
     } else if (parsed.regionSlug) {
@@ -285,15 +348,26 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     router.replace(query ? `${pathname}?${query}` : pathname);
   };
 
-  const displayProperties = useMemo(() => {
-    if (!search) return properties;
-    return properties.filter(
-      (p) =>
-        p.title.toLowerCase().includes(search.toLowerCase()) ||
-        p.address.streetName?.toLowerCase().includes(search.toLowerCase()) ||
-        p.address.cityName?.toLowerCase().includes(search.toLowerCase())
+  const toggleCatalogAmenity = (id: string) => {
+    setSelectedAmenityIds((prev) =>
+      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
     );
-  }, [properties, search]);
+    resetToFirstPage();
+  };
+
+  const displayProperties = useMemo(() => {
+    let list = properties;
+    if (selectedAmenityIds.length > 0) {
+      list = list.filter((p) => {
+        const ids = p.amenities ?? [];
+        return selectedAmenityIds.every((selId) => {
+          const opt = CATALOG_AMENITY_OPTIONS.find((o) => o.id === selId);
+          return opt ? opt.matches(ids) : false;
+        });
+      });
+    }
+    return list;
+  }, [properties, selectedAmenityIds]);
 
   const mapProperties: MapProperty[] = useMemo(() => {
     return displayProperties
@@ -309,344 +383,350 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     setRooms("all");
     setMetroStationId("all");
     setNearMetro(false);
-    setSearch("");
+    setSelectedAmenityIds([]);
+    setShowAllAmenities(false);
     resetToFirstPage();
   };
 
-  const showList = viewMode === "list" || viewMode === "list-map";
-  const showMap = viewMode === "map" || viewMode === "list-map";
+  const filterSurfaceInput =
+    "h-10 rounded-lg bg-surface border-border text-sm tabular-nums focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary";
+
+  const renderCatalogFilters = () => (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-semibold text-foreground mb-2 block font-display">
+          Цена за сутки, BYN
+        </label>
+        <div className="flex w-full min-w-0 flex-nowrap items-center gap-2 sm:flex-wrap">
+          <Input
+            type="number"
+            placeholder="от"
+            value={minPrice}
+            onChange={(e) => { setMinPrice(e.target.value); resetToFirstPage(); }}
+            className={cn(filterSurfaceInput, "min-w-0 flex-1 basis-0 sm:w-[112px] sm:flex-none sm:basis-auto")}
+          />
+          <span className="shrink-0 text-muted-foreground">—</span>
+          <Input
+            type="number"
+            placeholder="до"
+            value={maxPrice}
+            onChange={(e) => { setMaxPrice(e.target.value); resetToFirstPage(); }}
+            className={cn(filterSurfaceInput, "min-w-0 flex-1 basis-0 sm:w-[112px] sm:flex-none sm:basis-auto")}
+          />
+          {isSaleDeal && (
+            <div className="flex h-10 shrink-0 overflow-hidden rounded-lg border border-border">
+              <button
+                type="button"
+                onClick={() => setPriceType("total")}
+                className={cn(
+                  "px-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
+                  priceType === "total" ? "bg-primary text-primary-foreground" : "bg-surface text-muted-foreground hover:bg-muted",
+                )}
+              >
+                всего
+              </button>
+              <button
+                type="button"
+                onClick={() => setPriceType("perMeter")}
+                className={cn(
+                  "border-l border-border px-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
+                  priceType === "perMeter" ? "bg-primary text-primary-foreground" : "bg-surface text-muted-foreground hover:bg-muted",
+                )}
+              >
+                за м²
+              </button>
+            </div>
+          )}
+          <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
+            <SelectTrigger className={cn(filterSurfaceInput, "w-[88px] shrink-0")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border z-50">
+              {currencies.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {roomsFilterVisible && (
+        <div>
+          <label className="text-sm font-semibold text-foreground mb-2 block font-display">Комнаты</label>
+          <div className="flex flex-wrap gap-2">
+            {roomOptions.map((r) => (
+              <button
+                key={r.value}
+                type="button"
+                onClick={() => { setRooms(r.value); resetToFirstPage(); }}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150",
+                  rooms === r.value
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-surface text-foreground hover:bg-muted border border-border",
+                )}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <label className="text-sm font-semibold text-foreground mb-2 block font-display">Станция метро</label>
+        <Select value={metroStationId} onValueChange={setMetroStationId} disabled={!nearMetro}>
+          <SelectTrigger className={cn(filterSurfaceInput, "w-full justify-between gap-2 text-left [&>span]:min-w-0 [&>span]:truncate")}>
+            <SelectValue placeholder="Любая станция" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border z-50 max-h-72">
+            <SelectItem value="all">Любая станция</SelectItem>
+            {metroStationsByLine.map((group) => (
+              group.stations.length > 0 ? (
+                <SelectGroup key={group.line}>
+                  <SelectLabel
+                    className={`pl-6 ${
+                      group.line === 1
+                        ? "text-[#006DB7]"
+                        : group.line === 2
+                          ? "text-[#E3000B]"
+                          : "text-[#007A33]"
+                    }`}
+                  >
+                    {group.label}
+                  </SelectLabel>
+                  {group.stations.map((station) => (
+                    <SelectItem key={station.id} value={String(station.id)}>
+                      {station.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              ) : null
+            ))}
+          </SelectContent>
+        </Select>
+        <label className="mt-3 inline-flex items-center gap-2 text-sm text-foreground/80 cursor-pointer">
+          <Checkbox
+            checked={nearMetro}
+            onCheckedChange={(checked) => {
+              const enabled = checked === true;
+              setNearMetro(enabled);
+              if (!enabled) {
+                setMetroStationId("all");
+              }
+            }}
+          />
+          Рядом с метро
+        </label>
+      </div>
+
+      <div>
+        <label className="text-sm font-semibold text-foreground mb-2 block font-display">Удобства</label>
+        <div className="grid grid-cols-1 gap-2">
+          {(showAllAmenities ? CATALOG_AMENITY_OPTIONS : CATALOG_AMENITY_OPTIONS.slice(0, 4)).map((opt) => {
+            const Icon = opt.icon;
+            const active = selectedAmenityIds.includes(opt.id);
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => toggleCatalogAmenity(opt.id)}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 text-left",
+                  active
+                    ? "bg-primary/10 border-primary text-primary border"
+                    : "bg-surface text-foreground hover:bg-muted border border-border",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{opt.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        {CATALOG_AMENITY_OPTIONS.length > 4 && (
+          <button
+            type="button"
+            onClick={() => setShowAllAmenities((v) => !v)}
+            className="mt-2 text-xs font-semibold text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1"
+          >
+            {showAllAmenities ? "Свернуть" : `Показать ещё ${CATALOG_AMENITY_OPTIONS.length - 4}`}
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showAllAmenities && "rotate-180")} />
+          </button>
+        )}
+      </div>
+
+      {activeFilterCount > 0 && (
+        <button
+          type="button"
+          onClick={clearFilters}
+          className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors"
+        >
+          Сбросить фильтры
+        </button>
+      )}
+    </div>
+  );
+
+  const resultsBottomPadding = viewMode !== "map" ? "pb-24 md:pb-8" : "pb-6";
+
+  const catalogResultCount =
+    selectedAmenityIds.length > 0
+      ? displayProperties.length
+      : totalItems;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero header */}
-      <section className="bg-muted/40 border-b border-border pt-20 pb-8">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-3">
-            {pageTitle}
-          </h1>
-          <div className="flex items-center justify-between">
-            <p className="text-muted-foreground">
-              {isLoading ? "Загрузка..." : `Найдено ${totalItems} объектов`}
-            </p>
-
-            <div className="flex rounded-lg bg-muted p-0.5 w-fit">
-              {viewModes.map((m) => (
-                <button
-                  key={m.value}
-                  type="button"
-                  onClick={() => setViewMode(m.value)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors",
-                    m.value === "list-map" && "hidden md:flex",
-                    viewMode === m.value
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <m.icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{m.label}</span>
-                </button>
-              ))}
+      {showMobileFilters && (
+        <div className="md:hidden bg-card border-b border-border animate-fade-in">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display font-semibold text-foreground">Фильтры</h3>
+              <button type="button" onClick={() => setShowMobileFilters(false)} aria-label="Закрыть">
+                <X className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </div>
+            {renderCatalogFilters()}
+            <div className="mt-5 space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-2 block font-display">Сортировка</label>
+                <Select value={sort} onValueChange={setSort}>
+                  <SelectTrigger className={cn(filterSurfaceInput, "w-full")}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border z-50">
+                    {sortOptions.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-2 block font-display">Вид</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {viewModes.map((m) => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() => { setViewMode(m.value); setShowMobileFilters(false); }}
+                      className={cn(
+                        "flex flex-col items-center justify-center gap-1 py-2.5 rounded-lg text-xs font-medium transition-all",
+                        viewMode === m.value
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-surface text-foreground border border-border",
+                      )}
+                    >
+                      <m.icon className="h-4 w-4" />
+                      {m.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </section>
+      )}
 
-      {/* Filters bar */}
-      <section className="sticky top-16 z-30 bg-card border-b border-border shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative min-w-0 flex-1 max-w-md basis-[min(100%,20rem)]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Поиск по названию или адресу..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 h-10"
-              />
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="relative"
-            >
-              <SlidersHorizontal className="w-4 h-4 mr-2" />
-              Фильтры
-              {activeFilterCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-                  {activeFilterCount}
-                </span>
-              )}
-            </Button>
-
-            <div className="hidden md:block ml-auto">
-              <Select value={sort} onValueChange={setSort}>
-                <SelectTrigger className="w-[200px] h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border z-50">
-                  {sortOptions.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {showFilters && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              {/* xl: flex row + content-sized widths; avoid w-full on flex children (stretches to full row) */}
-              <div
-                className={cn(
-                  "grid min-w-0 grid-cols-1 md:grid-cols-2 gap-3 pt-3 mt-3 border-t border-border",
-                  "xl:flex xl:flex-row xl:flex-wrap xl:items-start xl:gap-x-5 xl:gap-y-3",
-                )}
-              >
-                <div className="min-w-0 md:col-span-2 xl:w-max xl:max-w-full xl:shrink-0">
-                  <label className="text-xs text-muted-foreground mb-1 block">Цена</label>
-                  <div className="flex w-full min-w-0 flex-nowrap items-center gap-x-1.5 sm:flex-wrap sm:gap-x-2 sm:gap-y-2">
-                    <Input
-                      type="number"
-                      placeholder="От"
-                      value={minPrice}
-                      onChange={(e) => { setMinPrice(e.target.value); resetToFirstPage(); }}
-                      className="h-10 min-w-0 flex-1 basis-0 px-2 text-base tabular-nums focus-visible:ring-inset focus-visible:ring-offset-0 sm:text-sm sm:w-[112px] sm:flex-none sm:basis-auto sm:px-3"
-                    />
-                    <span className="-mx-0.5 shrink-0 text-muted-foreground text-xs leading-none sm:mx-0">—</span>
-                    <Input
-                      type="number"
-                      placeholder="До"
-                      value={maxPrice}
-                      onChange={(e) => { setMaxPrice(e.target.value); resetToFirstPage(); }}
-                      className="h-10 min-w-0 flex-1 basis-0 px-2 text-base tabular-nums focus-visible:ring-inset focus-visible:ring-offset-0 sm:text-sm sm:w-[112px] sm:flex-none sm:basis-auto sm:px-3"
-                    />
-                    {isSaleDeal && (
-                      <div className="flex h-10 w-[5rem] max-[399px]:w-[4.5rem] shrink-0 overflow-hidden rounded-md border border-border sm:h-auto sm:w-auto">
-                        <button
-                          type="button"
-                          onClick={() => setPriceType("total")}
-                          className={`flex flex-1 items-center justify-center px-1 py-0 text-xs font-medium transition-colors sm:flex-none sm:px-2 sm:py-2 sm:text-sm ${
-                            priceType === "total"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-background text-muted-foreground hover:bg-muted"
-                          }`}
-                        >
-                          <span className="sm:hidden">все</span>
-                          <span className="hidden sm:inline">всего</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPriceType("perMeter")}
-                          className={`flex flex-1 items-center justify-center border-l border-border px-1 py-0 text-xs font-medium transition-colors sm:flex-none sm:px-2 sm:py-2 sm:text-sm ${
-                            priceType === "perMeter"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-background text-muted-foreground hover:bg-muted"
-                          }`}
-                        >
-                          <span className="sm:hidden">м²</span>
-                          <span className="hidden sm:inline">за м²</span>
-                        </button>
-                      </div>
-                    )}
-                    <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
-                      <SelectTrigger className="h-10 w-[3.65rem] shrink-0 px-2 text-xs focus:ring-inset focus:ring-offset-0 sm:w-[88px] sm:px-3 sm:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-border z-50">
-                        {currencies.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                {roomsFilterVisible && (
-                  <div className="min-w-0 w-full max-w-2xl xl:w-auto xl:max-w-2xl xl:shrink-0">
-                    <label className="text-xs text-muted-foreground mb-1 block">Комнат</label>
-                    <div className="flex min-w-0 flex-wrap gap-2">
-                      {roomOptions.map((r) => (
-                        <button
-                          key={r.value}
-                          type="button"
-                          onClick={() => { setRooms(r.value); resetToFirstPage(); }}
-                          className={`h-10 min-w-[3.25rem] flex-1 basis-0 rounded-md px-2.5 text-sm font-medium transition-colors sm:min-w-[3.5rem] ${
-                            rooms === r.value
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground hover:bg-muted/80"
-                          }`}
-                        >
-                          {r.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="min-w-0 w-[min(100%,18rem)] shrink-0 space-y-3 max-sm:px-0.5 xl:flex-none">
-                  <div className="w-full min-w-0">
-                    <label className="text-xs text-muted-foreground mb-1 block">Станция метро</label>
-                    <Select value={metroStationId} onValueChange={setMetroStationId} disabled={!nearMetro}>
-                      <SelectTrigger className="h-10 w-full min-w-0 justify-between gap-2 text-left focus:ring-inset focus:ring-offset-0 [&>span]:min-w-0 [&>span]:truncate">
-                        <SelectValue placeholder="Любая станция" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-border z-50 max-h-72">
-                        <SelectItem value="all">Любая станция</SelectItem>
-                        {metroStationsByLine.map((group) => (
-                          group.stations.length > 0 ? (
-                            <SelectGroup key={group.line}>
-                              <SelectLabel
-                                className={`pl-6 ${
-                                  group.line === 1
-                                    ? "text-[#006DB7]"
-                                    : group.line === 2
-                                      ? "text-[#E3000B]"
-                                      : "text-[#007A33]"
-                                }`}
-                              >
-                                {group.label}
-                              </SelectLabel>
-                              {group.stations.map((station) => (
-                                <SelectItem key={station.id} value={String(station.id)}>
-                                  {station.name}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          ) : null
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <label className="inline-flex items-center gap-2 text-sm text-foreground/80 cursor-pointer">
-                    <Checkbox
-                      checked={nearMetro}
-                      onCheckedChange={(checked) => {
-                        const enabled = checked === true;
-                        setNearMetro(enabled);
-                        if (!enabled) {
-                          setMetroStationId("all");
-                        }
-                      }}
-                    />
-                    Рядом с метро
-                  </label>
-                </div>
+      <section className={cn("container mx-auto px-4 py-8", resultsBottomPadding)}>
+        <div className="flex gap-8">
+          <aside className="hidden md:block w-64 shrink-0">
+            <div className="sticky top-36 bg-card rounded-xl p-5 shadow-card">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-display font-semibold text-foreground flex items-center gap-2">
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Фильтры
+                </h3>
                 {activeFilterCount > 0 && (
-                  <div className="md:col-span-2 flex items-start justify-end self-end xl:ml-auto xl:shrink-0">
-                    <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground whitespace-nowrap">
-                      <X className="w-3.5 h-3.5 mr-1" />
-                      Сбросить фильтры
-                    </Button>
-                  </div>
+                  <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                    {activeFilterCount}
+                  </span>
                 )}
               </div>
-            </motion.div>
-          )}
-        </div>
-      </section>
+              {renderCatalogFilters()}
+            </div>
+          </aside>
 
-      {/* Results */}
-      <section className="container mx-auto px-4 py-8">
-        <div className={`flex gap-6 ${viewMode === "list-map" ? "lg:flex-row" : ""} flex-col`}>
-          {/* Cards */}
-          {showList && (
-            <div className={viewMode === "list-map" ? "lg:w-1/2 xl:w-3/5" : "w-full"}>
-              {isLoading ? (
-                <div className="flex flex-col gap-5">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-48 bg-muted animate-pulse rounded-2xl" />
+          <div className="flex-1 min-w-0">
+            <div className="mb-5">
+              <h1 className="font-display font-bold text-2xl md:text-3xl text-foreground tracking-tight">
+                {pageTitle}
+              </h1>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+              <p className="text-sm text-muted-foreground">
+                {foundCountLabel(catalogResultCount, isLoading)}
+              </p>
+
+              <div className="flex items-center gap-3 ml-auto">
+                <div className="hidden md:flex items-center bg-surface border border-border rounded-xl overflow-hidden shrink-0">
+                  {viewModes.map((m, i) => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      title={m.title}
+                      aria-label={m.title}
+                      onClick={() => setViewMode(m.value)}
+                      className={cn(
+                        "p-2.5 transition-all duration-150",
+                        i > 0 && "border-l border-border",
+                        viewMode === m.value
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <m.icon className="h-4 w-4" />
+                    </button>
                   ))}
                 </div>
-              ) : displayProperties.length > 0 ? (
-                <>
-                  <div className="flex flex-col gap-5">
-                    {displayProperties.map((property, i) => {
-                      const card = propertyToListCard(property, exchangeRates, metroFilterStationId);
-                      return (
-                        <div
-                          key={property.id}
-                          onMouseEnter={() => setActiveMarker(property.id)}
-                          onMouseLeave={() => setActiveMarker(null)}
-                        >
-                          <PropertyListCard
-                            {...card}
-                            index={i}
-                            metroOnSeparateLine={viewMode === "list-map"}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
 
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-2 mt-8">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        disabled={currentPage === 1}
-                        onClick={() => changePage(Math.max(1, currentPage - 1))}
-                        className="h-9 w-9"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </Button>
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                        <Button
-                          key={page}
-                          variant={currentPage === page ? "default" : "outline"}
-                          size="icon"
-                          onClick={() => changePage(page)}
-                          className="h-9 w-9"
-                        >
-                          {page}
-                        </Button>
+                <div className="hidden md:block shrink-0">
+                  <Select value={sort} onValueChange={setSort}>
+                    <SelectTrigger className="h-auto min-h-0 py-2.5 pl-3 pr-8 rounded-xl border-border bg-surface text-sm shadow-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border z-50">
+                      {sortOptions.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                       ))}
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        disabled={currentPage === totalPages}
-                        onClick={() => changePage(Math.min(totalPages, currentPage + 1))}
-                        className="h-9 w-9"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-20">
-                  <MapPin className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-                  <h3 className="text-xl font-display font-semibold text-foreground mb-2">Ничего не найдено</h3>
-                  <p className="text-muted-foreground mb-2">Попробуйте изменить параметры поиска</p>
-                  <p className="text-sm text-muted-foreground mb-6">Или будьте первым, кто разместит объявление в этом разделе.</p>
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                    <Button size="default" asChild className="bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity border-0">
-                      <Link href="/razmestit/">
-                        <Plus className="w-4 h-4 mr-1.5" />
-                        Подать объявление
-                      </Link>
-                    </Button>
-                    <Button variant="outline" onClick={clearFilters}>Сбросить фильтры</Button>
-                  </div>
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
-            </div>
-          )}
 
-          {/* Map */}
-          {showMap && (
-            <div className={
-              viewMode === "map"
-                ? "w-full"
-                : "hidden lg:block lg:w-1/2 xl:w-2/5"
-            }>
-              <div
-                className={`sticky top-36 rounded-xl overflow-hidden border border-border shadow-card ${
-                  viewMode === "map" ? "h-[calc(100vh-14rem)]" : "h-[calc(100vh-10rem)]"
-                }`}
-              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="md:hidden gap-2 shrink-0"
+                  onClick={() => setShowMobileFilters(!showMobileFilters)}
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Фильтры
+                  {activeFilterCount > 0 && (
+                    <span className="ml-1 w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-semibold">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {viewMode === "map" && isLoading && (
+              <div className="h-[calc(100vh-220px)] min-h-[500px] rounded-xl bg-muted animate-pulse border border-border" />
+            )}
+
+            {viewMode === "map" && !isLoading && displayProperties.length === 0 && (
+              <div className="h-[calc(100vh-220px)] min-h-[500px] flex items-center justify-center bg-surface rounded-xl border border-border">
+                <div className="text-center px-4">
+                  <MapIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="font-display font-semibold text-foreground mb-1">Нет результатов на карте</h3>
+                  <p className="text-sm text-muted-foreground mb-3">Попробуйте изменить фильтры</p>
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    Сбросить фильтры
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {viewMode === "map" && !isLoading && displayProperties.length > 0 && (
+              <div className="h-[calc(100vh-220px)] min-h-[500px] rounded-xl overflow-hidden border border-border shadow-card">
                 <div className="relative h-full min-h-0">
                   <PropertyMap
                     properties={mapProperties}
@@ -655,29 +735,216 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                     regionSlug={parsed.regionSlug ?? "minsk"}
                     citySlug={parsed.citySlug}
                   />
-                  {viewMode === "map" && !isLoading && displayProperties.length === 0 && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none bg-background/65 backdrop-blur-[1px]">
-                      <div className="bg-card rounded-xl p-6 shadow-card-hover text-center pointer-events-auto max-w-sm">
-                        <h3 className="text-lg font-display font-semibold text-foreground mb-2">Ничего не найдено</h3>
-                        <p className="text-sm text-muted-foreground mb-4">Будьте первым — разместите объявление здесь.</p>
-                        <div className="flex flex-col gap-2">
-                          <Button size="default" asChild className="bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity border-0">
-                            <Link href="/razmestit/">
-                              <Plus className="w-4 h-4 mr-1.5" />
-                              Подать объявление
-                            </Link>
-                          </Button>
-                          <Button variant="outline" onClick={clearFilters}>Сбросить фильтры</Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {viewMode === "grid" && (
+              <>
+                {isLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="h-[360px] bg-muted/50 animate-pulse rounded-xl" />
+                    ))}
+                  </div>
+                ) : displayProperties.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {displayProperties.map((property, i) => {
+                        const { primaryAmount, secondary } = formatPropertyPrices(property, exchangeRates);
+                        return (
+                          <PropertyCard
+                            key={property.id}
+                            id={property.id}
+                            image={property.images?.[0]?.thumbnailUrl || property.images?.[0]?.url || "https://placehold.co/600x450?text=No+Image"}
+                            price={<PriceInByn amount={primaryAmount} />}
+                            primaryBynAmount={primaryAmount}
+                            secondaryPrice={secondary}
+                            title={property.title}
+                            address={formatAddress(property.address)}
+                            beds={property.specifications.rooms || 0}
+                            baths={property.specifications.bathrooms ?? 1}
+                            area={property.specifications.area || 0}
+                            maxGuests={property.specifications.maxDailyGuests}
+                            dealType={property.dealType}
+                            propertyType={property.type}
+                            index={i}
+                            animateEntrance={false}
+                          />
+                        );
+                      })}
+                    </div>
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-8">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          disabled={currentPage === 1}
+                          onClick={() => changePage(Math.max(1, currentPage - 1))}
+                          className="h-9 w-9"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="icon"
+                            onClick={() => changePage(page)}
+                            className="h-9 w-9"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          disabled={currentPage === totalPages}
+                          onClick={() => changePage(Math.min(totalPages, currentPage + 1))}
+                          className="h-9 w-9"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-20">
+                    <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                      <SlidersHorizontal className="h-7 w-7 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-display font-semibold text-foreground text-lg mb-2">
+                      Ничего не найдено
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      Попробуйте изменить параметры поиска
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      Или будьте первым, кто разместит объявление в этом разделе.
+                    </p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                      <Button size="default" asChild className="bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity border-0">
+                        <Link href="/razmestit/">
+                          <Plus className="w-4 h-4 mr-1.5" />
+                          Подать объявление
+                        </Link>
+                      </Button>
+                      <Button variant="outline" onClick={clearFilters}>Сбросить фильтры</Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {viewMode === "list" && (
+              <>
+                {isLoading ? (
+                  <div className="flex flex-col gap-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="h-48 bg-muted/50 animate-pulse rounded-xl" />
+                    ))}
+                  </div>
+                ) : displayProperties.length > 0 ? (
+                  <>
+                    <div className="flex flex-col gap-4">
+                      {displayProperties.map((property, i) => {
+                        const card = propertyToListCard(property, exchangeRates, metroFilterStationId);
+                        return (
+                          <div
+                            key={property.id}
+                            onMouseEnter={() => setActiveMarker(property.id)}
+                            onMouseLeave={() => setActiveMarker(null)}
+                          >
+                            <PropertyListCard
+                              {...card}
+                              index={i}
+                              metroOnSeparateLine={false}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-8">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          disabled={currentPage === 1}
+                          onClick={() => changePage(Math.max(1, currentPage - 1))}
+                          className="h-9 w-9"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="icon"
+                            onClick={() => changePage(page)}
+                            className="h-9 w-9"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          disabled={currentPage === totalPages}
+                          onClick={() => changePage(Math.min(totalPages, currentPage + 1))}
+                          className="h-9 w-9"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-20">
+                    <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                      <SlidersHorizontal className="h-7 w-7 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-display font-semibold text-foreground text-lg mb-2">
+                      Ничего не найдено
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      Попробуйте изменить параметры поиска
+                    </p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                      <Button size="default" asChild className="bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity border-0">
+                        <Link href="/razmestit/">
+                          <Plus className="w-4 h-4 mr-1.5" />
+                          Подать объявление
+                        </Link>
+                      </Button>
+                      <Button variant="outline" onClick={clearFilters}>Сбросить фильтры</Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </section>
+
+      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+        <div className="flex items-center bg-card border border-border rounded-full shadow-elevated p-1">
+          {viewModes.map((m) => (
+            <button
+              key={m.value}
+              type="button"
+              title={m.title}
+              aria-label={m.title}
+              onClick={() => setViewMode(m.value)}
+              className={cn(
+                "p-2.5 rounded-full transition-colors",
+                viewMode === m.value ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+              )}
+            >
+              <m.icon className="h-4 w-4" />
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -24,6 +24,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { isAuthenticated } from "@/lib/auth";
 import { withRegionalCatalogHref } from "@/lib/region-header";
@@ -151,8 +152,17 @@ const Header = () => {
   return (
     <header ref={megaRef} className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border relative">
       <div className="container mx-auto px-4 flex items-center justify-between h-16">
-        <Link href="/" className="font-display text-xl font-bold tracking-tight text-primary">
-          posutki.by
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src="/brand/logo.png"
+            alt="posutki.by"
+            width={180}
+            height={40}
+            sizes="(max-width: 640px) 140px, (max-width: 1024px) 160px, 180px"
+            priority
+            className="w-36 sm:w-40 lg:w-[180px] h-auto"
+          />
+          <span className="sr-only">posutki.by</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
@@ -218,20 +228,29 @@ const Header = () => {
           <Button size="sm" className="gap-2 font-semibold" asChild>
             <Link href="/razmestit/">
               <Plus className="h-4 w-4" />
-              Разместить
+              Сдать жилье
             </Link>
           </Button>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden text-foreground"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label={mobileOpen ? "Закрыть меню" : "Открыть меню"}
-        >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
+        <div className="md:hidden flex items-center gap-2">
+          <Button size="sm" className="gap-2 font-semibold" asChild>
+            <Link href="/razmestit/">
+              <Plus className="h-4 w-4" />
+              Сдать жилье
+            </Link>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-foreground"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? "Закрыть меню" : "Открыть меню"}
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
       </div>
 
       {activeMega && megaMenuData[activeMega] && (
@@ -360,7 +379,7 @@ const Header = () => {
             <Link href="/razmestit/" onClick={() => setMobileOpen(false)}>
               <Button size="sm" className="w-full gap-2 justify-center">
                 <Plus className="h-4 w-4" />
-                Разместить объявление
+                Сдать жилье
               </Button>
             </Link>
           </div>
