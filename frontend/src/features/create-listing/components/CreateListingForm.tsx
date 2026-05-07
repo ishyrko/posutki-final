@@ -211,8 +211,13 @@ const INITIAL_FORM: ListingFormData = {
 export function CreateListingForm() {
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isMounted, setIsMounted] = useState(false);
     const { data: user, isLoading: userLoading } = useUser();
-    const hasDailySellerProfile = Boolean(user?.individualProfile || user?.businessProfile);
+    const hasDailySellerProfile = isMounted && Boolean(user?.individualProfile || user?.businessProfile);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const [step, setStep] = useState(1);
     const [form, setForm] = useState<ListingFormData>(INITIAL_FORM);
@@ -880,7 +885,7 @@ export function CreateListingForm() {
                             />
                             <span
                                 className={cn(
-                                    'hidden min-w-0 [@media(min-width:580px)]:block text-[11px] [@media(min-width:580px)]:text-xs font-semibold leading-snug text-center w-full line-clamp-3 break-words',
+                                    'hidden min-w-0 md:block text-[11px] md:text-xs font-semibold leading-snug text-center w-full md:line-clamp-3 break-words',
                                     label === 'Расположение' && 'whitespace-nowrap',
                                 )}
                             >
@@ -911,7 +916,7 @@ export function CreateListingForm() {
                                     </p>
                                 </div>
 
-                                {!userLoading && !hasDailySellerProfile && (
+                                {isMounted && !userLoading && !hasDailySellerProfile && (
                                     <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
                                         <div className="space-y-1">
                                             <h3 className="font-semibold text-foreground">
@@ -1059,7 +1064,7 @@ export function CreateListingForm() {
                                             <BathroomTypeRow
                                                 label={
                                                     <>
-                                                        <Bath className="w-3.5 h-3.5" /> Тип санузла
+                                                        <Bath className="w-3.5 h-3.5" /> Санузел
                                                     </>
                                                 }
                                                 value={bathroomTypeFromForm(form.bathrooms, form.amenities)}

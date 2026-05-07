@@ -878,7 +878,7 @@ export default function EditPropertyPage() {
                                     <BathroomTypeRow
                                         label={
                                             <>
-                                                <Bath className="w-3.5 h-3.5" /> Тип санузла
+                                                <Bath className="w-3.5 h-3.5" /> Санузел
                                             </>
                                         }
                                         value={bathroomTypeFromForm(form.bathrooms, form.amenities)}
