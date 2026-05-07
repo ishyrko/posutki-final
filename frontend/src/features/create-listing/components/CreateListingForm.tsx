@@ -880,7 +880,7 @@ export function CreateListingForm() {
                             />
                             <span
                                 className={cn(
-                                    'hidden min-w-0 sm:block text-[11px] sm:text-xs font-semibold leading-snug text-center w-full line-clamp-3 break-words',
+                                    'hidden min-w-0 [@media(min-width:580px)]:block text-[11px] [@media(min-width:580px)]:text-xs font-semibold leading-snug text-center w-full line-clamp-3 break-words',
                                     label === 'Расположение' && 'whitespace-nowrap',
                                 )}
                             >

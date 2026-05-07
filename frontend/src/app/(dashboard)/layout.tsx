@@ -53,7 +53,7 @@ export default function DashboardLayout({
             <Header />
             <div className="flex-1 container py-6 flex gap-6">
                 <Sidebar />
-                <main className="flex-1 min-w-0 pb-24 lg:pb-0">
+                <main className="flex-1 min-w-0 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
                     {children}
                 </main>
             </div>
