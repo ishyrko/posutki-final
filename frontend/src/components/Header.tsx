@@ -26,6 +26,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { isAuthenticated } from "@/lib/auth";
 import { withRegionalCatalogHref } from "@/lib/region-header";
 import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
@@ -215,23 +216,29 @@ const Header = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          <div className="flex items-center rounded-lg border border-border bg-muted/30 p-0.5 gap-0.5 mr-1">
-            {currencyOptions.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                aria-label={opt.ariaLabel}
-                onClick={() => setSelectedCurrency(opt.value)}
-                className={`min-w-[2rem] h-7 px-2 rounded-md text-xs font-semibold transition-colors duration-150 ${
-                  selectedCurrency === opt.value
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          <TooltipProvider delayDuration={400}>
+            <div className="flex items-center rounded-xl border border-border bg-muted/40 p-1 gap-0.5 mr-1">
+              {currencyOptions.map((opt) => (
+                <Tooltip key={opt.value}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={opt.ariaLabel}
+                      onClick={() => setSelectedCurrency(opt.value)}
+                      className={`min-w-[2.5rem] h-8 px-2.5 rounded-lg text-sm font-semibold transition-all duration-150 ${
+                        selectedCurrency === opt.value
+                          ? "bg-primary text-primary-foreground shadow-md scale-[1.04]"
+                          : "text-muted-foreground/60 hover:text-muted-foreground"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{opt.ariaLabel}</TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </TooltipProvider>
           <Link href="/kabinet/izbrannoe/">
             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
               <Heart className="h-5 w-5" />
@@ -382,17 +389,17 @@ const Header = () => {
           </div>
 
           <div className="p-4 border-t border-border space-y-2">
-            <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-1 mb-3">
+            <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/40 p-1 mb-3">
               {currencyOptions.map((opt) => (
                 <button
                   key={opt.value}
                   type="button"
                   aria-label={opt.ariaLabel}
                   onClick={() => setSelectedCurrency(opt.value)}
-                  className={`flex-1 h-8 rounded-md text-sm font-semibold transition-colors duration-150 ${
+                  className={`flex-1 h-10 rounded-lg text-sm font-semibold transition-all duration-150 ${
                     selectedCurrency === opt.value
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-primary text-primary-foreground shadow-md scale-[1.03]"
+                      : "text-muted-foreground/60 hover:text-muted-foreground"
                   }`}
                 >
                   {opt.label}
