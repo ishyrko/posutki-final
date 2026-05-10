@@ -5,12 +5,12 @@ import type { Currency, Property } from "./types";
 export const DEFAULT_EXCHANGE_RATES_FALLBACK: ExchangeRates = {
   BYN: 1,
   USD: 3.27,
-  EUR: 3.49,
+  RUB: 0.034,
 };
 
 export function normalizeCurrency(c: string): Currency {
   const u = c.trim().toUpperCase();
-  if (u === "BYN" || u === "USD" || u === "EUR") {
+  if (u === "BYN" || u === "USD" || u === "RUB") {
     return u;
   }
   return "BYN";
@@ -35,8 +35,8 @@ export function formatPrice(amount: number, currency: Currency): string {
   return amount.toLocaleString("ru-BY") + " " + currency;
 }
 
-export function formatSecondaryPrice(amount: number, currency: "USD" | "EUR"): string {
-  const symbol = currency === "EUR" ? "€" : "$";
+export function formatSecondaryPrice(amount: number, currency: "USD" | "RUB"): string {
+  const symbol = currency === "RUB" ? "₽" : "$";
   return "≈ " + amount.toLocaleString("ru-BY") + " " + symbol;
 }
 
@@ -53,17 +53,18 @@ export function formatPropertyPrices(property: Property, rates: ExchangeRates): 
       ? property.priceByn
       : convertPrice(property.price.amount, listingCurrency, "BYN", rates);
 
-  let secondaryCurrency: "USD" | "EUR";
+  let secondaryCurrency: "USD" | "RUB";
   let secondaryAmount: number;
-  if (listingCurrency === "BYN") {
+  if (listingCurrency === "RUB") {
+    secondaryCurrency = "RUB";
+    secondaryAmount = property.price.amount;
+  } else if (listingCurrency === "USD") {
     secondaryCurrency = "USD";
-    secondaryAmount = convertPrice(bynAmount, "BYN", "USD", rates);
-  } else if (listingCurrency === "EUR") {
-    secondaryCurrency = "EUR";
     secondaryAmount = property.price.amount;
   } else {
+    // BYN listing — show ≈ USD as secondary
     secondaryCurrency = "USD";
-    secondaryAmount = property.price.amount;
+    secondaryAmount = convertPrice(bynAmount, "BYN", "USD", rates);
   }
 
   return {

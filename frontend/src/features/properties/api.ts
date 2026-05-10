@@ -10,7 +10,7 @@ export const getExchangeRates = async (): Promise<ExchangeRates> => {
         const response = await api.get<{ data: ExchangeRates }>('/exchange-rates');
         return response.data.data;
     } catch {
-        return { BYN: 1, USD: 3.27, EUR: 3.49 };
+        return { BYN: 1, USD: 3.27, RUB: 0.034 };
     }
 };
 

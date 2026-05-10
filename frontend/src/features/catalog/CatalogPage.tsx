@@ -32,7 +32,8 @@ import PropertyMap, { type MapProperty } from "@/components/PropertyMap";
 import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { useMetroStations } from "@/features/metro/hooks";
 import type { NearbyMetroStation } from "@/features/metro/types";
-import { Property, formatAddress, type PriceType, type Currency } from "@/features/properties/types";
+import { Property, formatAddress, type PriceType } from "@/features/properties/types";
+import { useCurrency } from "@/context/CurrencyContext";
 import type { ExchangeRates } from "@/features/properties/api";
 import {
   convertPrice,
@@ -42,16 +43,10 @@ import {
 } from "@/features/properties/price-display";
 import { buildPageTitle, type ParsedSegments } from "@/features/catalog/slugs";
 import { showBathrooms, showRooms, showRoomsCatalogFilter } from "@/features/create-listing/property-field-rules";
-import { BynCurrencyMark, PriceInByn } from "@/components/BynCurrency";
+import { PriceInByn } from "@/components/BynCurrency";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "grid" | "list" | "map";
-
-const currencies: { value: Currency; label: ReactNode }[] = [
-  { value: "BYN", label: <BynCurrencyMark variant="select" /> },
-  { value: "USD", label: "$" },
-  { value: "EUR", label: "€" },
-];
 
 /** Пустая строка — без фильтра по комнатам. */
 const roomCountOptions = [
@@ -218,7 +213,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [priceType, setPriceType] = useState<PriceType>("total");
-  const [currency, setCurrency] = useState<Currency>("BYN");
+  const { selectedCurrency } = useCurrency();
   const [roomBuckets, setRoomBuckets] = useState<RoomBucket[]>([]);
   const [metroStationId, setMetroStationId] = useState("all");
   const [nearMetro, setNearMetro] = useState(false);
@@ -324,12 +319,12 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     if (minPrice) f.minPrice = Number(minPrice);
     if (maxPrice) f.maxPrice = Number(maxPrice);
     if (isSaleDeal && hasPriceFilter && priceType !== "total") f.priceType = priceType;
-    if (hasPriceFilter) f.currency = currency;
+    if (hasPriceFilter) f.currency = selectedCurrency;
     if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     else if (sort === "area-desc") { f.sortBy = "area"; f.sortOrder = "DESC"; }
     return f;
-  }, [currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, priceType, currency, hasPriceFilter, isSaleDeal, sort]);
+  }, [currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, priceType, selectedCurrency, hasPriceFilter, isSaleDeal, sort]);
 
   const { data, isLoading } = useProperties(filters);
   const { data: rates } = useExchangeRates();
@@ -394,7 +389,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     setMinPrice("");
     setMaxPrice("");
     setPriceType("total");
-    setCurrency("BYN");
     setRoomBuckets([]);
     setMetroStationId("all");
     setNearMetro(false);
@@ -457,19 +451,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
               </button>
             </div>
           )}
-          <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
-            <SelectTrigger
-              className={cn(
-                filterSurfaceInput,
-                "w-[3.75rem] min-w-[3.75rem] shrink-0 cursor-pointer gap-0.5 px-1.5 [&>span]:min-w-0 [&>svg]:size-3.5",
-              )}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-card border-border z-50">
-              {currencies.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
         </div>
       </div>
 

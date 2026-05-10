@@ -4,6 +4,7 @@ import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 import { Toaster } from "@/components/ui/sonner";
 import CookieBanner from "@/components/CookieBanner";
+import { CurrencyProvider } from "@/context/CurrencyContext";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -59,7 +60,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <QueryProvider>
-          {children}
+          <CurrencyProvider>
+            {children}
+          </CurrencyProvider>
           <Toaster />
           <CookieBanner />
         </QueryProvider>

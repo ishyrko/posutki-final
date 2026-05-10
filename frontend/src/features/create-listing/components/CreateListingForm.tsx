@@ -1716,7 +1716,7 @@ export function CreateListingForm() {
                                                 <SelectContent>
                                                     <SelectItem value="USD">$</SelectItem>
                                                     <SelectItem className="text-base" value="BYN"><BynCurrencyMark variant="select" /></SelectItem>
-                                                    <SelectItem value="EUR">€</SelectItem>
+                                                    <SelectItem value="RUB">₽</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>

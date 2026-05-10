@@ -140,7 +140,7 @@ export interface PropertyStats {
 }
 
 export type PriceType = 'total' | 'perMeter';
-export type Currency = 'BYN' | 'USD' | 'EUR';
+export type Currency = 'BYN' | 'USD' | 'RUB';
 
 export interface PropertyFilters {
     page?: number;

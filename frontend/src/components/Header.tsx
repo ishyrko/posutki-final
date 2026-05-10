@@ -30,6 +30,9 @@ import { isAuthenticated } from "@/lib/auth";
 import { withRegionalCatalogHref } from "@/lib/region-header";
 import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
 import { useSyncExternalStore } from "react";
+import { useCurrency } from "@/context/CurrencyContext";
+import { BynCurrencyMark } from "@/components/BynCurrency";
+import type { Currency } from "@/features/properties/types";
 
 interface MegaMenuSection {
   title: string;
@@ -127,6 +130,13 @@ const Header = () => {
   const loggedIn = isMounted ? isAuthenticated() : false;
   const regionSlug = useHeaderRegionSlug();
   const megaMenuData = buildMegaMenu(regionSlug);
+  const { selectedCurrency, setSelectedCurrency } = useCurrency();
+
+  const currencyOptions: { value: Currency; label: React.ReactNode; ariaLabel: string }[] = [
+    { value: "BYN", label: <BynCurrencyMark variant="select" />, ariaLabel: "Белорусский рубль" },
+    { value: "USD", label: "$", ariaLabel: "Доллар США" },
+    { value: "RUB", label: "₽", ariaLabel: "Российский рубль" },
+  ];
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -205,6 +215,23 @@ const Header = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
+          <div className="flex items-center rounded-lg border border-border bg-muted/30 p-0.5 gap-0.5 mr-1">
+            {currencyOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                aria-label={opt.ariaLabel}
+                onClick={() => setSelectedCurrency(opt.value)}
+                className={`min-w-[2rem] h-7 px-2 rounded-md text-xs font-semibold transition-colors duration-150 ${
+                  selectedCurrency === opt.value
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <Link href="/kabinet/izbrannoe/">
             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
               <Heart className="h-5 w-5" />
@@ -355,6 +382,23 @@ const Header = () => {
           </div>
 
           <div className="p-4 border-t border-border space-y-2">
+            <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-1 mb-3">
+              {currencyOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  aria-label={opt.ariaLabel}
+                  onClick={() => setSelectedCurrency(opt.value)}
+                  className={`flex-1 h-8 rounded-md text-sm font-semibold transition-colors duration-150 ${
+                    selectedCurrency === opt.value
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
             <Link href="/kabinet/izbrannoe/" onClick={() => setMobileOpen(false)}>
               <Button variant="outline" size="sm" className="w-full gap-2 justify-center mb-2">
                 <Heart className="h-4 w-4" />

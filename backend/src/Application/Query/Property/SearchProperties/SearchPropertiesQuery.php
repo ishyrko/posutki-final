@@ -16,7 +16,7 @@ final class SearchPropertiesQuery
         public readonly ?int $minPrice = null,
         public readonly ?int $maxPrice = null,
         public readonly string $priceType = 'total',  // 'total' | 'perMeter'
-        public readonly ?string $currency = null,      // 'BYN' | 'USD' | 'EUR'
+        public readonly ?string $currency = null,      // 'BYN' | 'USD' | 'RUB'
         public readonly ?float $minArea = null,
         public readonly ?float $maxArea = null,
         /** @var list<int>|null ints 1–4; 4 means four or more rooms; multiple values are OR */
