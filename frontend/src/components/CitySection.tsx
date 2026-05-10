@@ -14,12 +14,12 @@ const cities = [
 
 const CitySection = () => {
   return (
-    <section className="py-16 md:py-24 bg-surface">
+    <section className="bg-surface pt-12 pb-10 md:pt-14 md:pb-6 lg:pt-16 lg:pb-8">
       <div className="container mx-auto px-4">
         <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2 text-center">
           Выберите город
         </h2>
-        <p className="text-muted-foreground text-center mb-10">
+        <p className="text-muted-foreground text-center mb-6 md:mb-8">
           Посуточная аренда по всей Беларуси
         </p>
 

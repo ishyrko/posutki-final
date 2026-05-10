@@ -55,13 +55,13 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
   const properties = data?.data ?? [];
 
   return (
-    <section className="py-12 md:py-14 bg-muted/50">
+    <section className="bg-muted/50 pt-8 pb-10 md:pt-6 md:pb-12 lg:pt-8 lg:pb-14">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="flex items-end justify-between mb-8"
+          className="flex items-end justify-between mb-6 md:mb-8"
         >
           <div>
             <h2 className="text-3xl font-bold text-foreground font-display mb-2">Свежие объявления</h2>
