@@ -95,7 +95,7 @@ const HeroSection = () => {
               handleFind();
             }}
           >
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-4 md:items-stretch">
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface">
                 <Home className="h-5 w-5 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
