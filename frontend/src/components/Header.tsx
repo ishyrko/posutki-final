@@ -11,9 +11,7 @@ import {
   MapPin,
   Sparkles,
   Star,
-  Clock,
   ChevronDown,
-  Plus,
   Search,
   BedDouble,
   Users,
@@ -34,6 +32,7 @@ import { useSyncExternalStore } from "react";
 import { useCurrency } from "@/context/CurrencyContext";
 import { BynCurrencyMark } from "@/components/BynCurrency";
 import type { Currency } from "@/features/properties/types";
+import { cn } from "@/lib/utils";
 
 interface MegaMenuSection {
   title: string;
@@ -116,6 +115,55 @@ function buildMegaMenu(regionSlug: string): Record<string, MegaMenuSection[]> {
   };
 }
 
+function HeaderCurrencyStrip({ variant }: { variant: "desktopToolbar" | "mobileToolbar" | "drawer" }) {
+  const { selectedCurrency, setSelectedCurrency } = useCurrency();
+  const currencyOptions: { value: Currency; label: React.ReactNode; ariaLabel: string }[] = [
+    { value: "BYN", label: <BynCurrencyMark variant="select" />, ariaLabel: "Белорусский рубль" },
+    { value: "USD", label: "$", ariaLabel: "Доллар США" },
+    { value: "RUB", label: "₽", ariaLabel: "Российский рубль" },
+  ];
+
+  const isDrawer = variant === "drawer";
+
+  return (
+    <TooltipProvider delayDuration={400}>
+      <div
+        className={cn(
+          "flex items-center rounded-xl border border-border bg-muted/40 p-1 gap-0.5",
+          variant === "desktopToolbar" && "mr-1",
+          variant === "mobileToolbar" && "shrink-0",
+          isDrawer && "mb-3",
+        )}
+      >
+        {currencyOptions.map((opt) => (
+          <Tooltip key={opt.value}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={opt.ariaLabel}
+                onClick={() => setSelectedCurrency(opt.value)}
+                className={cn(
+                  "rounded-lg text-sm font-semibold transition-all duration-150",
+                  isDrawer ? "flex-1 h-10" : "min-w-[2.5rem] h-8 px-2.5",
+                  selectedCurrency === opt.value
+                    ? cn(
+                        "bg-primary text-primary-foreground shadow-md",
+                        isDrawer ? "scale-[1.03]" : "scale-[1.04]",
+                      )
+                    : "text-muted-foreground/60 hover:text-muted-foreground",
+                )}
+              >
+                {opt.label}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{opt.ariaLabel}</TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+    </TooltipProvider>
+  );
+}
+
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeMega, setActiveMega] = useState<string | null>(null);
@@ -131,13 +179,6 @@ const Header = () => {
   const loggedIn = isMounted ? isAuthenticated() : false;
   const regionSlug = useHeaderRegionSlug();
   const megaMenuData = buildMegaMenu(regionSlug);
-  const { selectedCurrency, setSelectedCurrency } = useCurrency();
-
-  const currencyOptions: { value: Currency; label: React.ReactNode; ariaLabel: string }[] = [
-    { value: "BYN", label: <BynCurrencyMark variant="select" />, ariaLabel: "Белорусский рубль" },
-    { value: "USD", label: "$", ariaLabel: "Доллар США" },
-    { value: "RUB", label: "₽", ariaLabel: "Российский рубль" },
-  ];
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -197,48 +238,10 @@ const Header = () => {
               </button>
             </div>
           ))}
-
-          <Link
-            href={searchHref}
-            className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-150"
-          >
-            <Search className="h-3.5 w-3.5" />
-            Поиск
-          </Link>
-
-          <Link
-            href={`${searchHref}?sort=new`}
-            className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-150"
-          >
-            <Clock className="h-3.5 w-3.5" />
-            Новинки
-          </Link>
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          <TooltipProvider delayDuration={400}>
-            <div className="flex items-center rounded-xl border border-border bg-muted/40 p-1 gap-0.5 mr-1">
-              {currencyOptions.map((opt) => (
-                <Tooltip key={opt.value}>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label={opt.ariaLabel}
-                      onClick={() => setSelectedCurrency(opt.value)}
-                      className={`min-w-[2.5rem] h-8 px-2.5 rounded-lg text-sm font-semibold transition-all duration-150 ${
-                        selectedCurrency === opt.value
-                          ? "bg-primary text-primary-foreground shadow-md scale-[1.04]"
-                          : "text-muted-foreground/60 hover:text-muted-foreground"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">{opt.ariaLabel}</TooltipContent>
-                </Tooltip>
-              ))}
-            </div>
-          </TooltipProvider>
+          <HeaderCurrencyStrip variant="desktopToolbar" />
           <Link href="/kabinet/izbrannoe/">
             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
               <Heart className="h-5 w-5" />
@@ -259,20 +262,17 @@ const Header = () => {
               </Link>
             </Button>
           )}
-          <Button size="sm" className="gap-2 font-semibold" asChild>
-            <Link href="/razmestit/">
-              <Plus className="h-4 w-4" />
-              Сдать жилье
-            </Link>
+          <Button size="sm" className="font-semibold" asChild>
+            <Link href="/razmestit/">Сдать жилье</Link>
           </Button>
         </div>
 
         <div className="md:hidden flex items-center gap-2">
-          <Button size="sm" className="gap-2 font-semibold" asChild>
-            <Link href="/razmestit/">
-              <Plus className="h-4 w-4" />
-              Сдать жилье
-            </Link>
+          <div className="hidden min-[580px]:flex shrink-0">
+            <HeaderCurrencyStrip variant="mobileToolbar" />
+          </div>
+          <Button size="sm" className="font-semibold" asChild>
+            <Link href="/razmestit/">Сдать жилье</Link>
           </Button>
 
           <Button
@@ -377,34 +377,11 @@ const Header = () => {
                 )}
               </div>
             ))}
-
-            <Link
-              href={searchHref}
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3 py-3 px-2 text-sm font-semibold text-foreground rounded-lg hover:bg-muted/50"
-            >
-              <Search className="h-4 w-4 text-primary" />
-              Поиск
-            </Link>
           </div>
 
           <div className="p-4 border-t border-border space-y-2">
-            <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/40 p-1 mb-3">
-              {currencyOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  aria-label={opt.ariaLabel}
-                  onClick={() => setSelectedCurrency(opt.value)}
-                  className={`flex-1 h-10 rounded-lg text-sm font-semibold transition-all duration-150 ${
-                    selectedCurrency === opt.value
-                      ? "bg-primary text-primary-foreground shadow-md scale-[1.03]"
-                      : "text-muted-foreground/60 hover:text-muted-foreground"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <div className="min-[580px]:hidden">
+              <HeaderCurrencyStrip variant="drawer" />
             </div>
             <Link href="/kabinet/izbrannoe/" onClick={() => setMobileOpen(false)}>
               <Button variant="outline" size="sm" className="w-full gap-2 justify-center mb-2">
@@ -428,8 +405,7 @@ const Header = () => {
               </Link>
             )}
             <Link href="/razmestit/" onClick={() => setMobileOpen(false)}>
-              <Button size="sm" className="w-full gap-2 justify-center">
-                <Plus className="h-4 w-4" />
+              <Button size="sm" className="w-full justify-center">
                 Сдать жилье
               </Button>
             </Link>
