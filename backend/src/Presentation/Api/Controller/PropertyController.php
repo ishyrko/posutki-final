@@ -60,6 +60,8 @@ class PropertyController extends AbstractController
             $typesList = $parsed !== [] ? $parsed : null;
         }
 
+        $roomsList = self::parseRoomsQueryList($request->query->get('rooms'));
+
         $query = new SearchPropertiesQuery(
             type: $request->query->get('type'),
             types: $typesList,
@@ -73,7 +75,7 @@ class PropertyController extends AbstractController
             currency: $request->query->get('currency'),
             minArea: $request->query->get('minArea') ? (float) $request->query->get('minArea') : null,
             maxArea: $request->query->get('maxArea') ? (float) $request->query->get('maxArea') : null,
-            rooms: $request->query->getInt('rooms') ?: null,
+            rooms: $roomsList,
             metroStationId: $request->query->getInt('metroStationId') ?: null,
             nearMetro: $request->query->getBoolean('nearMetro', false),
             sortBy: $request->query->get('sortBy', 'createdAt'),
@@ -372,5 +374,41 @@ class PropertyController extends AbstractController
             'totals' => $totals,
             'daily' => $daily,
         ]));
+    }
+
+    /**
+     * @return list<int>|null distinct 1–4; 4 means «four or more» rooms
+     */
+    private static function parseRoomsQueryList(mixed $raw): ?array
+    {
+        if ($raw === null || $raw === '' || $raw === false) {
+            return null;
+        }
+
+        if (\is_int($raw)) {
+            $raw = (string) $raw;
+        }
+
+        if (!\is_string($raw)) {
+            return null;
+        }
+
+        $out = [];
+        foreach (preg_split('/\s*,\s*/', $raw, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $part) {
+            $part = trim($part);
+            if ($part === '4+') {
+                $out[] = 4;
+                continue;
+            }
+            $n = (int) $part;
+            if ($n >= 1 && $n <= 4) {
+                $out[] = $n;
+            }
+        }
+
+        $out = array_values(array_unique($out));
+        sort($out);
+
+        return $out === [] ? null : $out;
     }
 }

@@ -70,7 +70,7 @@ final class SearchPropertiesHandler
         if ($query->maxArea !== null) {
             $filters['maxArea'] = $query->maxArea;
         }
-        if ($query->rooms !== null) {
+        if ($query->rooms !== null && $query->rooms !== []) {
             $filters['rooms'] = $query->rooms;
         }
         if ($query->metroStationId !== null) {

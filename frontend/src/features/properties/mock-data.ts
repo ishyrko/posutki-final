@@ -303,8 +303,9 @@ export function getMockPropertiesResponse(filters: PropertyFilters = {}): Proper
   if (filters.dealType) {
     result = result.filter((p) => p.dealType === filters.dealType);
   }
-  if (filters.rooms) {
-    const r = Number(filters.rooms);
+  if (filters.roomValues && filters.roomValues.length > 0) {
+    const exact = filters.roomValues.filter((v) => v >= 1 && v <= 3);
+    const gte4 = filters.roomValues.some((v) => v >= 4);
     const countable = ["apartment", "house"] as const;
     const hadTypeFilter =
       (filters.types && Array.isArray(filters.types) && filters.types.length > 0) ||
@@ -314,7 +315,9 @@ export function getMockPropertiesResponse(filters: PropertyFilters = {}): Proper
         return hadTypeFilter;
       }
       const rooms = p.specifications.rooms ?? 0;
-      return r >= 4 ? rooms >= 4 : rooms === r;
+      const inExact = exact.length > 0 && exact.includes(rooms);
+      const inPlus = gte4 && rooms >= 4;
+      return inExact || inPlus;
     });
   }
   if (filters.minPrice) {

@@ -12,6 +12,7 @@ use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 class PropertyRepository extends ServiceEntityRepository implements PropertyRepositoryInterface
@@ -169,7 +170,10 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
      */
     private function applyPropertyTypeAndRoomsFilters($qb, array $filters): void
     {
-        $roomsRequested = \array_key_exists('rooms', $filters) && $filters['rooms'] !== null;
+        $roomsList = (isset($filters['rooms']) && \is_array($filters['rooms']) && $filters['rooms'] !== [])
+            ? $this->normalizeRoomsFilterList($filters['rooms'])
+            : null;
+        $roomsRequested = $roomsList !== null && $roomsList !== [];
 
         $allowed = array_fill_keys(PropertyType::values(), true);
         $selectedTypes = null;
@@ -200,14 +204,13 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
             return;
         }
 
-        $roomsValue = $filters['rooms'];
         $roomCountable = self::ROOM_COUNT_PROPERTY_TYPES;
+        $roomsDql = $this->buildPublishedRoomsPredicateDql($qb, $roomsList);
 
         if ($selectedTypes === null) {
             $qb->andWhere('p.type IN (:roomCountTypes)')
                 ->setParameter('roomCountTypes', $roomCountable, ArrayParameterType::STRING)
-                ->andWhere('p.rooms = :rooms')
-                ->setParameter('rooms', $roomsValue);
+                ->andWhere($roomsDql);
 
             return;
         }
@@ -231,24 +234,84 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
             if (\count($withRoomCount) === 1) {
                 $qb->andWhere('p.type = :type')
                     ->setParameter('type', $withRoomCount[0])
-                    ->andWhere('p.rooms = :rooms')
-                    ->setParameter('rooms', $roomsValue);
+                    ->andWhere($roomsDql);
             } else {
                 $qb->andWhere('p.type IN (:types)')
                     ->setParameter('types', $withRoomCount, ArrayParameterType::STRING)
-                    ->andWhere('p.rooms = :rooms')
-                    ->setParameter('rooms', $roomsValue);
+                    ->andWhere($roomsDql);
             }
 
             return;
         }
 
         $qb->andWhere(
-            '(p.type IN (:typesWithoutRoomCount)) OR (p.type IN (:typesWithRoomCount) AND p.rooms = :rooms)'
+            '(p.type IN (:typesWithoutRoomCount)) OR (p.type IN (:typesWithRoomCount) AND ' . $roomsDql . ')'
         )
             ->setParameter('typesWithoutRoomCount', $withoutRoomCount, ArrayParameterType::STRING)
-            ->setParameter('typesWithRoomCount', $withRoomCount, ArrayParameterType::STRING)
-            ->setParameter('rooms', $roomsValue);
+            ->setParameter('typesWithRoomCount', $withRoomCount, ArrayParameterType::STRING);
+    }
+
+    /**
+     * @param list<mixed> $raw
+     *
+     * @return list<int>|null
+     */
+    private function normalizeRoomsFilterList(array $raw): ?array
+    {
+        $out = [];
+        foreach ($raw as $v) {
+            $n = (int) $v;
+            if ($n >= 1 && $n <= 4) {
+                $out[] = $n;
+            }
+        }
+        $out = array_values(array_unique($out));
+        sort($out);
+
+        return $out === [] ? null : $out;
+    }
+
+    /**
+     * @param list<int> $roomsList
+     */
+    private function buildPublishedRoomsPredicateDql(QueryBuilder $qb, array $roomsList): string
+    {
+        $exact = [];
+        $gte4 = false;
+        foreach ($roomsList as $v) {
+            $v = (int) $v;
+            if ($v === 4) {
+                $gte4 = true;
+            } elseif ($v >= 1 && $v <= 3) {
+                $exact[] = $v;
+            }
+        }
+        $exact = array_values(array_unique($exact));
+        sort($exact);
+
+        $chunks = [];
+        if ($exact !== []) {
+            if (\count($exact) === 1) {
+                $qb->setParameter('__prSingle', $exact[0]);
+                $chunks[] = 'p.rooms = :__prSingle';
+            } else {
+                $qb->setParameter('__prMany', $exact, ArrayParameterType::INTEGER);
+                $chunks[] = 'p.rooms IN (:__prMany)';
+            }
+        }
+        if ($gte4) {
+            $qb->setParameter('__prGte4', 4);
+            $chunks[] = 'p.rooms >= :__prGte4';
+        }
+
+        if ($chunks === []) {
+            return '1 = 0';
+        }
+        if (\count($chunks) === 1) {
+            return $chunks[0];
+        }
+
+        return '(' . implode(' OR ', $chunks) . ')';
     }
 
     public function findByOwner(string $ownerId, int $page = 1, int $limit = 20): array

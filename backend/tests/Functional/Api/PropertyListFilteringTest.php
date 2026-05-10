@@ -130,6 +130,38 @@ final class PropertyListFilteringTest extends ApiTestCase
         self::assertNotContains($threeRooms->getId()->getValue(), $ids);
     }
 
+    public function testFilterByRoomsList(): void
+    {
+        $owner = $this->createUser('filter-rooms-list@example.com', 'Password123!');
+        $city = $this->createCity();
+        $one = $this->createProperty($owner, $city, 'published', ['rooms' => 1]);
+        $two = $this->createProperty($owner, $city, 'published', ['rooms' => 2]);
+        $four = $this->createProperty($owner, $city, 'published', ['rooms' => 4]);
+
+        $this->client->request('GET', '/api/properties?rooms=1,2');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $ids = $this->idsFromListPayload();
+        self::assertContains($one->getId()->getValue(), $ids);
+        self::assertContains($two->getId()->getValue(), $ids);
+        self::assertNotContains($four->getId()->getValue(), $ids);
+    }
+
+    public function testFilterByRoomsFourPlusInList(): void
+    {
+        $owner = $this->createUser('filter-rooms-4plus@example.com', 'Password123!');
+        $city = $this->createCity();
+        $three = $this->createProperty($owner, $city, 'published', ['rooms' => 3]);
+        $five = $this->createProperty($owner, $city, 'published', ['rooms' => 5]);
+
+        $this->client->request('GET', '/api/properties?rooms=3,4');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $ids = $this->idsFromListPayload();
+        self::assertContains($three->getId()->getValue(), $ids);
+        self::assertContains($five->getId()->getValue(), $ids);
+    }
+
     public function testFilterByMinAndMaxPriceInByn(): void
     {
         $owner = $this->createUser('filter-price@example.com', 'Password123!');

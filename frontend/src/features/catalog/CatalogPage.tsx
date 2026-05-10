@@ -53,13 +53,30 @@ const currencies: { value: Currency; label: ReactNode }[] = [
   { value: "EUR", label: "€" },
 ];
 
-const roomOptions = [
-  { value: "all", label: "Все" },
+/** Пустая строка — без фильтра по комнатам. */
+const roomCountOptions = [
   { value: "1", label: "1" },
   { value: "2", label: "2" },
   { value: "3", label: "3" },
   { value: "4", label: "4+" },
-];
+] as const;
+
+type RoomBucket = (typeof roomCountOptions)[number]["value"];
+
+function sortRoomBuckets(a: RoomBucket, b: RoomBucket): number {
+  return Number(a) - Number(b);
+}
+
+function parseRoomsFromQuery(raw: string | null): RoomBucket[] {
+  if (!raw) return [];
+  const set = new Set<RoomBucket>();
+  for (const part of raw.split(",")) {
+    const p = part.trim();
+    if (p === "1" || p === "2" || p === "3") set.add(p);
+    if (p === "4" || p === "4+") set.add("4");
+  }
+  return [...set].sort(sortRoomBuckets);
+}
 
 const sortOptions = [
   { value: "default", label: "По умолчанию" },
@@ -202,7 +219,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const [maxPrice, setMaxPrice] = useState("");
   const [priceType, setPriceType] = useState<PriceType>("total");
   const [currency, setCurrency] = useState<Currency>("BYN");
-  const [rooms, setRooms] = useState("all");
+  const [roomBuckets, setRoomBuckets] = useState<RoomBucket[]>([]);
   const [metroStationId, setMetroStationId] = useState("all");
   const [nearMetro, setNearMetro] = useState(false);
   const [sort, setSort] = useState("default");
@@ -226,14 +243,12 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const roomsFromQuery = searchParams.get("rooms");
   useEffect(() => {
     if (!roomsFilterVisible) return;
-    const r = roomsFromQuery;
-    if (r === "1" || r === "2" || r === "3") setRooms(r);
-    else if (r === "4" || r === "4+") setRooms("4");
+    setRoomBuckets(parseRoomsFromQuery(roomsFromQuery));
   }, [roomsFromQuery, roomsFilterVisible]);
 
   useEffect(() => {
     if (!roomsFilterVisible) {
-      setRooms("all");
+      setRoomBuckets([]);
     }
   }, [roomsFilterVisible]);
 
@@ -254,7 +269,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   }, [metroStations]);
   const activeFilterCount =
     (hasPriceFilter ? 1 : 0) +
-    (roomsFilterVisible && rooms !== "all" ? 1 : 0) +
+    (roomsFilterVisible && roomBuckets.length > 0 ? 1 : 0) +
     (nearMetro && metroStationId !== "all" ? 1 : 0) +
     (nearMetro ? 1 : 0) +
     selectedAmenityIds.length;
@@ -295,8 +310,8 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
       f.regionSlug = "minsk";
     }
     if (parsed.propertyType) f.type = parsed.propertyType;
-    if (roomsFilterVisible && rooms !== "all") {
-      f.rooms = rooms === "4" ? undefined : Number(rooms);
+    if (roomsFilterVisible && roomBuckets.length > 0) {
+      f.roomValues = roomBuckets.map((b) => (b === "4" ? 4 : Number(b)));
     }
     if (routeMetroStation) {
       f.metroStationId = routeMetroStation.id;
@@ -314,7 +329,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     else if (sort === "area-desc") { f.sortBy = "area"; f.sortOrder = "DESC"; }
     return f;
-  }, [currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroStations, roomsFilterVisible, rooms, metroStationId, nearMetro, minPrice, maxPrice, priceType, currency, hasPriceFilter, isSaleDeal, sort]);
+  }, [currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, priceType, currency, hasPriceFilter, isSaleDeal, sort]);
 
   const { data, isLoading } = useProperties(filters);
   const { data: rates } = useExchangeRates();
@@ -380,7 +395,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     setMaxPrice("");
     setPriceType("total");
     setCurrency("BYN");
-    setRooms("all");
+    setRoomBuckets([]);
     setMetroStationId("all");
     setNearMetro(false);
     setSelectedAmenityIds([]);
@@ -391,19 +406,24 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const filterSurfaceInput =
     "h-10 rounded-lg bg-surface border-border text-sm tabular-nums focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary";
 
+  const filterPriceNumberInput = cn(
+    filterSurfaceInput,
+    "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+  );
+
   const renderCatalogFilters = () => (
     <div className="space-y-5">
       <div>
         <label className="text-sm font-semibold text-foreground mb-2 block font-display">
-          Цена за сутки, BYN
+          Цена за сутки
         </label>
-        <div className="flex w-full min-w-0 flex-nowrap items-center gap-2 sm:flex-wrap">
+        <div className="flex w-full min-w-0 flex-nowrap items-center gap-2">
           <Input
             type="number"
             placeholder="от"
             value={minPrice}
             onChange={(e) => { setMinPrice(e.target.value); resetToFirstPage(); }}
-            className={cn(filterSurfaceInput, "min-w-0 flex-1 basis-0 sm:w-[112px] sm:flex-none sm:basis-auto")}
+            className={cn(filterPriceNumberInput, "min-w-0 w-0 flex-1 basis-0")}
           />
           <span className="shrink-0 text-muted-foreground">—</span>
           <Input
@@ -411,7 +431,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
             placeholder="до"
             value={maxPrice}
             onChange={(e) => { setMaxPrice(e.target.value); resetToFirstPage(); }}
-            className={cn(filterSurfaceInput, "min-w-0 flex-1 basis-0 sm:w-[112px] sm:flex-none sm:basis-auto")}
+            className={cn(filterPriceNumberInput, "min-w-0 w-0 flex-1 basis-0")}
           />
           {isSaleDeal && (
             <div className="flex h-10 shrink-0 overflow-hidden rounded-lg border border-border">
@@ -419,7 +439,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                 type="button"
                 onClick={() => setPriceType("total")}
                 className={cn(
-                  "px-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
+                  "cursor-pointer px-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
                   priceType === "total" ? "bg-primary text-primary-foreground" : "bg-surface text-muted-foreground hover:bg-muted",
                 )}
               >
@@ -429,7 +449,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                 type="button"
                 onClick={() => setPriceType("perMeter")}
                 className={cn(
-                  "border-l border-border px-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
+                  "cursor-pointer border-l border-border px-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
                   priceType === "perMeter" ? "bg-primary text-primary-foreground" : "bg-surface text-muted-foreground hover:bg-muted",
                 )}
               >
@@ -438,7 +458,12 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
             </div>
           )}
           <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
-            <SelectTrigger className={cn(filterSurfaceInput, "w-[88px] shrink-0")}>
+            <SelectTrigger
+              className={cn(
+                filterSurfaceInput,
+                "w-[3.75rem] min-w-[3.75rem] shrink-0 cursor-pointer gap-0.5 px-1.5 [&>span]:min-w-0 [&>svg]:size-3.5",
+              )}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-card border-border z-50">
@@ -451,17 +476,25 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
       {roomsFilterVisible && (
         <div>
           <label className="text-sm font-semibold text-foreground mb-2 block font-display">Комнаты</label>
-          <div className="flex flex-wrap gap-2">
-            {roomOptions.map((r) => (
+          <div className="grid grid-cols-4 gap-2">
+            {roomCountOptions.map((r) => (
               <button
                 key={r.value}
                 type="button"
-                onClick={() => { setRooms(r.value); resetToFirstPage(); }}
+                onClick={() => {
+                  setRoomBuckets((prev) => {
+                    if (prev.includes(r.value)) {
+                      return prev.filter((x) => x !== r.value).sort(sortRoomBuckets);
+                    }
+                    return [...prev, r.value].sort(sortRoomBuckets);
+                  });
+                  resetToFirstPage();
+                }}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150",
-                  rooms === r.value
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-surface text-foreground hover:bg-muted border border-border",
+                  "min-w-0 cursor-pointer rounded-lg border px-2 py-2 text-center text-sm font-medium transition-all duration-150",
+                  roomBuckets.includes(r.value)
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "border-border bg-surface text-foreground hover:bg-muted",
                 )}
               >
                 {r.label}
@@ -474,7 +507,12 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
       <div>
         <label className="text-sm font-semibold text-foreground mb-2 block font-display">Станция метро</label>
         <Select value={metroStationId} onValueChange={setMetroStationId} disabled={!nearMetro}>
-          <SelectTrigger className={cn(filterSurfaceInput, "w-full justify-between gap-2 text-left [&>span]:min-w-0 [&>span]:truncate")}>
+          <SelectTrigger
+            className={cn(
+              filterSurfaceInput,
+              "w-full cursor-pointer justify-between gap-2 text-left disabled:cursor-not-allowed [&>span]:min-w-0 [&>span]:truncate",
+            )}
+          >
             <SelectValue placeholder="Любая станция" />
           </SelectTrigger>
           <SelectContent className="bg-card border-border z-50 max-h-72">
@@ -530,10 +568,10 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                 type="button"
                 onClick={() => toggleCatalogAmenity(opt.id)}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 text-left",
+                  "flex cursor-pointer items-center gap-2 px-3 py-2 rounded-lg text-left text-xs font-medium transition-all duration-150",
                   active
                     ? "bg-primary/10 border-primary text-primary border"
-                    : "bg-surface text-foreground hover:bg-muted border border-border",
+                    : "border border-border bg-surface text-foreground hover:bg-muted",
                 )}
               >
                 <Icon className="h-3.5 w-3.5 shrink-0" />
@@ -546,7 +584,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
           <button
             type="button"
             onClick={() => setShowAllAmenities((v) => !v)}
-            className="mt-2 text-xs font-semibold text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1"
+            className="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-primary transition-colors hover:text-primary/80"
           >
             {showAllAmenities ? "Свернуть" : `Показать ещё ${CATALOG_AMENITY_OPTIONS.length - 4}`}
             <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showAllAmenities && "rotate-180")} />
@@ -558,7 +596,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
         <button
           type="button"
           onClick={clearFilters}
-          className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors"
+          className="cursor-pointer text-sm font-medium text-destructive transition-colors hover:text-destructive/80"
         >
           Сбросить фильтры
         </button>
@@ -589,7 +627,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
               <div>
                 <label className="text-sm font-semibold text-foreground mb-2 block font-display">Сортировка</label>
                 <Select value={sort} onValueChange={setSort}>
-                  <SelectTrigger className={cn(filterSurfaceInput, "w-full")}>
+                  <SelectTrigger className={cn(filterSurfaceInput, "w-full cursor-pointer")}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border z-50">
@@ -608,7 +646,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                       type="button"
                       onClick={() => { setViewMode(m.value); setShowMobileFilters(false); }}
                       className={cn(
-                        "flex flex-col items-center justify-center gap-1 py-2.5 rounded-lg text-xs font-medium transition-all",
+                        "flex cursor-pointer flex-col items-center justify-center gap-1 py-2.5 rounded-lg text-xs font-medium transition-all",
                         viewMode === m.value
                           ? "bg-primary text-primary-foreground"
                           : "bg-surface text-foreground border border-border",
@@ -666,7 +704,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                       aria-label={m.title}
                       onClick={() => setViewMode(m.value)}
                       className={cn(
-                        "p-2.5 transition-all duration-150",
+                        "cursor-pointer p-2.5 transition-all duration-150",
                         i > 0 && "border-l border-border",
                         viewMode === m.value
                           ? "bg-primary text-primary-foreground"
@@ -680,7 +718,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
 
                 <div className="hidden md:block shrink-0">
                   <Select value={sort} onValueChange={setSort}>
-                    <SelectTrigger className="h-auto min-h-0 py-2.5 pl-3 pr-8 rounded-xl border-border bg-surface text-sm shadow-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0">
+                    <SelectTrigger className="h-auto min-h-0 cursor-pointer rounded-xl border-border bg-surface py-2.5 pl-3 pr-8 text-sm shadow-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border z-50">
@@ -937,7 +975,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
               aria-label={m.title}
               onClick={() => setViewMode(m.value)}
               className={cn(
-                "p-2.5 rounded-full transition-colors",
+                "cursor-pointer p-2.5 rounded-full transition-colors",
                 viewMode === m.value ? "bg-primary text-primary-foreground" : "text-muted-foreground",
               )}
             >

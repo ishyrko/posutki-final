@@ -19,7 +19,8 @@ final class SearchPropertiesQuery
         public readonly ?string $currency = null,      // 'BYN' | 'USD' | 'EUR'
         public readonly ?float $minArea = null,
         public readonly ?float $maxArea = null,
-        public readonly ?int $rooms = null,
+        /** @var list<int>|null ints 1–4; 4 means four or more rooms; multiple values are OR */
+        public readonly ?array $rooms = null,
         public readonly ?int $metroStationId = null,
         public readonly bool $nearMetro = false,
         public readonly string $sortBy = 'createdAt',
