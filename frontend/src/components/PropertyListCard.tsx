@@ -123,7 +123,7 @@ const PropertyListCard = ({
           <button
             type="button"
             onClick={handleFavoriteClick}
-            className={`absolute top-3 right-3 w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors ${
+            className={`absolute top-3 right-3 w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors cursor-pointer ${
               isFavorited
                 ? 'bg-primary text-white'
                 : 'bg-card/80 hover:bg-card text-foreground/70'

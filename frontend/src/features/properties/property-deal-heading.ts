@@ -1,5 +1,5 @@
-/** Именительный падеж: «Квартира на сутки», «Дом на сутки». */
-const PROPERTY_TYPE_NOMINATIVE_DAILY: Record<string, string> = {
+/** Именительный падеж для карточек и подзаголовков («Квартира», «Дом»). */
+export const PROPERTY_TYPE_NOMINATIVE_DAILY: Record<string, string> = {
   apartment: 'Квартира',
   house: 'Дом',
 };

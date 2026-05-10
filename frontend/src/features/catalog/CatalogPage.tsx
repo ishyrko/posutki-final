@@ -768,6 +768,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                             maxGuests={property.specifications.maxDailyGuests}
                             dealType={property.dealType}
                             propertyType={property.type}
+                            typeLabel={property.typeLabel}
                             index={i}
                             animateEntrance={false}
                           />

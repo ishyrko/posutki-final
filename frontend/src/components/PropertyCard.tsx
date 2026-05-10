@@ -9,6 +9,7 @@ import { useToggleFavorite, useFavoriteIds } from "@/features/properties/hooks";
 import { useUser } from "@/features/auth/hooks";
 import { useRouter } from "next/navigation";
 import { buildPropertyUrl } from "@/features/catalog/slugs";
+import { PROPERTY_TYPE_NOMINATIVE_DAILY } from "@/features/properties/property-deal-heading";
 
 interface PropertyCardProps {
   id: number;
@@ -25,7 +26,8 @@ interface PropertyCardProps {
   area: number;
   /** Для посуточной аренды — макс. гостей */
   maxGuests?: number | null;
-  tag?: string;
+  /** Подпись с бэка; иначе берётся из `propertyType`. */
+  typeLabel?: string | null;
   index?: number;
   dealType?: string;
   propertyType?: string;
@@ -47,7 +49,7 @@ const PropertyCard = ({
   baths,
   area,
   maxGuests,
-  tag,
+  typeLabel,
   index = 0,
   dealType,
   propertyType,
@@ -74,6 +76,8 @@ const PropertyCard = ({
   const href = buildPropertyUrl(propertyType, id);
   const isDaily = dealType === "daily";
   const showRating = rating != null && rating > 0;
+  const imageTypeBadge =
+    typeLabel?.trim() || (propertyType ? PROPERTY_TYPE_NOMINATIVE_DAILY[propertyType] : undefined);
 
   return (
     <Link href={href} className="block h-full">
@@ -92,16 +96,16 @@ const PropertyCard = ({
             loading="lazy"
           />
 
-          {tag && (
+          {imageTypeBadge && (
             <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-              {tag}
+              {imageTypeBadge}
             </span>
           )}
 
           <button
             type="button"
             onClick={handleFavoriteClick}
-            className={`absolute top-3 right-3 w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors z-10 ${
+            className={`absolute top-3 right-3 w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors z-10 cursor-pointer ${
               isFavorited ? "bg-primary text-white" : "bg-card/80 hover:bg-card text-foreground/70"
             }`}
           >

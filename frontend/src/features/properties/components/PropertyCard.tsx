@@ -13,11 +13,7 @@ import { useRouter } from "next/navigation";
 import { buildPropertyUrl } from "@/features/catalog/slugs";
 import { PriceInByn } from "@/components/BynCurrency";
 import { showBathrooms, showRooms } from "@/features/create-listing/property-field-rules";
-
-const PROPERTY_TYPE_LABELS: Record<string, string> = {
-  apartment: "Квартира",
-  house: "Дом",
-};
+import { PROPERTY_TYPE_NOMINATIVE_DAILY } from "@/features/properties/property-deal-heading";
 
 interface PropertyCardProps {
   property: Property;
@@ -79,13 +75,9 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
 
-          {/* Badges */}
-          <div className="absolute top-4 left-4 flex gap-2">
-            <span className="px-3 py-1 rounded-full bg-dark-bg/60 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider border border-white/10">
-              Посуточно
-            </span>
+          <div className="absolute top-4 left-4">
             <span className="px-3 py-1 rounded-full bg-primary text-white text-[10px] font-bold uppercase tracking-wider shadow-primary">
-              {property.typeLabel ?? PROPERTY_TYPE_LABELS[type] ?? type}
+              {property.typeLabel ?? PROPERTY_TYPE_NOMINATIVE_DAILY[type] ?? type}
             </span>
           </div>
 
@@ -93,7 +85,7 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
           <button
             type="button"
             onClick={handleFavoriteClick}
-            className={`absolute top-4 right-4 p-2 rounded-full backdrop-blur-md border transition-all duration-300 ${
+            className={`absolute top-4 right-4 p-2 rounded-full backdrop-blur-md border transition-all duration-300 cursor-pointer ${
               isFavorited
                 ? 'bg-primary border-primary text-white'
                 : 'bg-white/10 border-white/20 text-white hover:bg-primary hover:border-primary'
