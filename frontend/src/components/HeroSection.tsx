@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Search, MapPin, Users, Home, Minus, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import NextImage from "next/image";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,15 +14,6 @@ import {
 } from "@/components/ui/select";
 import { buildCatalogUrl } from "@/features/catalog/slugs";
 import { MAX_DAILY_GUESTS } from "@/features/create-listing/validation";
-
-const CITY_HREFS: { label: string; href: string }[] = [
-  { label: "Минск", href: "/" },
-  { label: "Гродно", href: "/grodno/kvartiry/" },
-  { label: "Брест", href: "/brest/kvartiry/" },
-  { label: "Витебск", href: "/vitebsk/kvartiry/" },
-  { label: "Гомель", href: "/gomel/kvartiry/" },
-  { label: "Могилёв", href: "/mogilev/kvartiry/" },
-];
 
 type CatalogPropertyType = "apartment" | "house";
 
@@ -77,8 +67,8 @@ const HeroSection = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/60 via-foreground/40 to-foreground/70" />
       </div>
 
-      <div className="relative container mx-auto px-4 py-24 md:py-36 lg:py-44">
-        <div className="max-w-3xl mx-auto text-center mb-10">
+      <div className="relative container mx-auto px-4 py-12 md:py-16 lg:py-20">
+        <div className="max-w-3xl mx-auto text-center mb-6 md:mb-8">
           <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-primary-foreground mb-4 text-balance">
             Найдите идеальное жильё в Беларуси
           </h1>
@@ -203,18 +193,6 @@ const HeroSection = () => {
               </Button>
             </div>
           </form>
-
-          <div className="flex flex-wrap justify-center gap-2 mt-6">
-            {CITY_HREFS.map((city) => (
-              <Link
-                key={city.label}
-                href={city.href}
-                className="px-4 py-2 rounded-full bg-primary-foreground/15 backdrop-blur-sm text-primary-foreground text-sm font-medium hover:bg-primary-foreground/25 transition-colors duration-150"
-              >
-                {city.label}
-              </Link>
-            ))}
-          </div>
         </div>
       </div>
     </section>
