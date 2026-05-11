@@ -2,9 +2,11 @@
 
 import { Building2, TreePine, Waves, Castle, Factory, Landmark } from "lucide-react";
 import Link from "next/link";
+import { buildCatalogUrl } from "@/features/catalog/slugs";
 
 const cities = [
-  { name: "Минск", slug: "minsk", icon: Building2, href: "/" },
+  /** Минск и область — без префикса региона в URL, как в каталоге. */
+  { name: "Минск", slug: "minsk", icon: Building2, href: buildCatalogUrl({ propertyType: "apartment" }) },
   { name: "Гродно", slug: "grodno", icon: Castle, href: "/grodno/kvartiry/" },
   { name: "Брест", slug: "brest", icon: Landmark, href: "/brest/kvartiry/" },
   { name: "Витебск", slug: "vitebsk", icon: Waves, href: "/vitebsk/kvartiry/" },
