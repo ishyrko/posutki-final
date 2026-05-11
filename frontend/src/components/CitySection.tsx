@@ -4,12 +4,12 @@ import { Building2, TreePine, Waves, Castle, Factory, Landmark } from "lucide-re
 import Link from "next/link";
 
 const cities = [
-  { name: "Минск", slug: "minsk", count: "2000+", icon: Building2, href: "/" },
-  { name: "Гродно", slug: "grodno", count: "300+", icon: Castle, href: "/grodno/kvartiry/" },
-  { name: "Брест", slug: "brest", count: "250+", icon: Landmark, href: "/brest/kvartiry/" },
-  { name: "Витебск", slug: "vitebsk", count: "200+", icon: Waves, href: "/vitebsk/kvartiry/" },
-  { name: "Гомель", slug: "gomel", count: "240+", icon: Factory, href: "/gomel/kvartiry/" },
-  { name: "Могилёв", slug: "mogilev", count: "180+", icon: TreePine, href: "/mogilev/kvartiry/" },
+  { name: "Минск", slug: "minsk", icon: Building2, href: "/" },
+  { name: "Гродно", slug: "grodno", icon: Castle, href: "/grodno/kvartiry/" },
+  { name: "Брест", slug: "brest", icon: Landmark, href: "/brest/kvartiry/" },
+  { name: "Витебск", slug: "vitebsk", icon: Waves, href: "/vitebsk/kvartiry/" },
+  { name: "Гомель", slug: "gomel", icon: Factory, href: "/gomel/kvartiry/" },
+  { name: "Могилёв", slug: "mogilev", icon: TreePine, href: "/mogilev/kvartiry/" },
 ];
 
 const CitySection = () => {
@@ -35,10 +35,7 @@ const CitySection = () => {
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-150">
                   <Icon className="h-6 w-6 text-primary" />
                 </div>
-                <div className="text-center">
-                  <p className="font-display font-semibold text-foreground">{city.name}</p>
-                  <p className="text-sm text-muted-foreground">{city.count} объектов</p>
-                </div>
+                <p className="font-display font-semibold text-foreground text-center">{city.name}</p>
               </Link>
             );
           })}

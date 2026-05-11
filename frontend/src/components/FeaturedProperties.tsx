@@ -65,7 +65,7 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
         >
           <div>
             <h2 className="text-3xl font-bold text-foreground font-display mb-2">Свежие объявления</h2>
-            <p className="text-muted-foreground">Последние публикации в выбранном регионе</p>
+            <p className="text-muted-foreground">Последние размещенные объявления</p>
           </div>
           <Button asChild variant="ghost" className="hidden sm:flex items-center gap-2 text-primary hover:text-primary">
             <Link href={catalogUrl}>
@@ -109,8 +109,14 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
             })}
           </div>
         ) : (
-          <div className="text-center py-12 rounded-2xl border border-dashed border-border/60 bg-card">
-            <p className="text-muted-foreground">В этом регионе пока нет объявлений.</p>
+          <div className="flex flex-col items-center justify-center text-center py-12 px-4 rounded-2xl border border-dashed border-border/60 bg-card">
+            <Button
+              asChild
+              size="lg"
+              className="max-w-full whitespace-normal h-auto min-h-11 py-3 px-5 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity border-0"
+            >
+              <Link href="/razmestit/">Разместить квартиру на сутки бесплатно</Link>
+            </Button>
           </div>
         )}
 
