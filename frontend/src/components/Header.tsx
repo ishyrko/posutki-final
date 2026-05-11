@@ -143,7 +143,7 @@ function HeaderCurrencyStrip({ variant }: { variant: "desktopToolbar" | "mobileT
                 aria-label={opt.ariaLabel}
                 onClick={() => setSelectedCurrency(opt.value)}
                 className={cn(
-                  "rounded-lg text-sm font-semibold transition-all duration-150",
+                  "cursor-pointer rounded-lg text-sm font-semibold transition-all duration-150",
                   isDrawer ? "flex-1 h-10" : "min-w-[2.5rem] h-8 px-2.5",
                   selectedCurrency === opt.value
                     ? cn(

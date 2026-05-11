@@ -73,7 +73,7 @@ const HeroSection = () => {
             Найдите идеальное жильё в Беларуси
           </h1>
           <p className="text-lg md:text-xl text-primary-foreground/80 font-body">
-            Тысячи проверенных квартир и домов для посуточной аренды
+            Квартиры и дома для посуточной аренды от владельцев
           </p>
         </div>
 
