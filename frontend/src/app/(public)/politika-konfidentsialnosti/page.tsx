@@ -12,12 +12,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const page = await fetchStaticPage(SLUG);
   if (!page) {
     return {
-      title: "Политика конфиденциальности | RNB.by",
-      description: "Условия обработки персональных данных и использования cookie на RNB.by.",
+      title: "Политика конфиденциальности | posutki.by",
+      description:
+        "Условия обработки персональных данных и использования cookie на posutki.by.",
     };
   }
   return {
-    title: page.metaTitle ?? `${page.title} | RNB.by`,
+    title: page.metaTitle ?? `${page.title} | posutki.by`,
     description: page.metaDescription ?? undefined,
   };
 }

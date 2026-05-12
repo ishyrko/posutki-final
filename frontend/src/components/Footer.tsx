@@ -35,7 +35,7 @@ const Footer = () => {
               <span className="sr-only">posutki.by</span>
             </Link>
             <p className="mt-3 text-sm text-primary-foreground/60 leading-relaxed">
-              Крупнейший сервис посуточной аренды жилья в Беларуси
+              Сервис посуточной аренды жилья в Беларуси
             </p>
           </div>
 

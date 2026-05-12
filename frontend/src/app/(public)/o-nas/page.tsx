@@ -12,13 +12,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const page = await fetchStaticPage(SLUG);
   if (!page) {
     return {
-      title: "О нас | RNB.by",
+      title: "О нас | posutki.by",
       description:
-        "RNB.by — портал недвижимости в Беларуси: объявления, статьи и инструменты для покупателей, арендаторов и собственников.",
+        "posutki.by — посуточная аренда квартир и домов в Беларуси: удобный поиск жилья для гостей и размещение объявлений для собственников.",
     };
   }
   return {
-    title: page.metaTitle ?? `${page.title} | RNB.by`,
+    title: page.metaTitle ?? `${page.title} | posutki.by`,
     description: page.metaDescription ?? undefined,
   };
 }
