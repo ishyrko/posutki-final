@@ -70,7 +70,7 @@ const HeroSection = () => {
       <div className="relative container mx-auto px-4 py-12 md:py-16 lg:py-20">
         <div className="max-w-3xl mx-auto text-center mb-6 md:mb-8">
           <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-primary-foreground mb-4 text-balance">
-            Найдите идеальное жильё в Беларуси
+            Квартиры и дома на сутки в Беларуси
           </h1>
           <p className="text-lg md:text-xl text-primary-foreground/80 font-body">
             Квартиры и дома для посуточной аренды от владельцев

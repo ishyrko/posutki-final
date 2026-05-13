@@ -39,10 +39,21 @@ class SlugGenerator
 
     public function ensureUnique(string $slug, ArticleRepositoryInterface $repository): string
     {
+        return $this->ensureUniqueByPredicate(
+            $slug,
+            fn (string $candidate): bool => $repository->findBySlug(Slug::fromString($candidate)) !== null,
+        );
+    }
+
+    /**
+     * @param callable(string): bool $isTaken Return true if slug is already used
+     */
+    public function ensureUniqueByPredicate(string $slug, callable $isTaken): string
+    {
         $originalSlug = $slug;
         $counter = 1;
 
-        while ($repository->findBySlug(Slug::fromString($slug)) !== null) {
+        while ($isTaken($slug)) {
             $slug = $originalSlug . '-' . $counter;
             $counter++;
         }
