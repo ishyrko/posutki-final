@@ -98,6 +98,7 @@ export interface UpdatePropertyPayload {
     coordinates?: { latitude: number; longitude: number };
     images?: string[];
     amenities?: string[];
+    weekendPriceNegotiable?: boolean;
 }
 
 export const updateProperty = async (id: number, data: UpdatePropertyPayload): Promise<void> => {

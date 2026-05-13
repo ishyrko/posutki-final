@@ -26,6 +26,7 @@ import {
     type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { BynCurrencyMark } from '@/components/BynCurrency';
 import {
     Select,
@@ -206,8 +207,9 @@ const INITIAL_FORM: ListingFormData = {
     latitude: null,
     longitude: null,
     price: '',
-    currency: 'USD',
+    currency: 'BYN',
     amenities: [],
+    weekendPriceNegotiable: false,
 };
 
 export function CreateListingForm() {
@@ -771,6 +773,7 @@ export function CreateListingForm() {
             coordinates: { latitude: lat, longitude: lng },
             images: form.photos.filter((p) => !p.uploading).map((p) => p.url),
             amenities: form.amenities,
+            weekendPriceNegotiable: form.weekendPriceNegotiable,
         };
 
         try {
@@ -1755,6 +1758,16 @@ export function CreateListingForm() {
                                                 </SelectContent>
                                             </Select>
                                         </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-1">
+                                        <Checkbox
+                                            id="weekendPriceNegotiable"
+                                            checked={form.weekendPriceNegotiable}
+                                            onCheckedChange={(v) => update('weekendPriceNegotiable', !!v)}
+                                        />
+                                        <label htmlFor="weekendPriceNegotiable" className="text-sm text-foreground cursor-pointer select-none">
+                                            В выходные и праздничные дни цена договорная
+                                        </label>
                                     </div>
                                 </div>
 

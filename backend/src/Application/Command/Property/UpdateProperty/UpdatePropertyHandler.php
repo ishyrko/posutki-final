@@ -140,6 +140,7 @@ readonly class UpdatePropertyHandler
             images: $command->images,
             amenities: $command->amenities,
             sellerType: $command->sellerType,
+            weekendPriceNegotiable: $command->weekendPriceNegotiable,
         );
 
         if ($price !== null) {
@@ -196,6 +197,7 @@ readonly class UpdatePropertyHandler
             'images' => $command->images,
             'amenities' => $command->amenities,
             'sellerType' => $command->sellerType,
+            'weekendPriceNegotiable' => $command->weekendPriceNegotiable,
         ], static fn(mixed $value): bool => $value !== null);
     }
 

@@ -93,6 +93,7 @@ final class CreatePropertyHandler
             roomsArea: $command->roomsArea,
         );
         $property->publish();
+        $property->setWeekendPriceNegotiable($command->weekendPriceNegotiable);
 
         $property->setPriceByn(
             $this->exchangeRateService->calculatePriceByn($command->priceAmount, $command->priceCurrency)

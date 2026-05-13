@@ -158,6 +158,9 @@ class Property
     #[ORM\Column(type: 'boolean', name: 'near_metro', options: ['default' => false])]
     private bool $nearMetro = false;
 
+    #[ORM\Column(type: 'boolean', name: 'weekend_price_negotiable', options: ['default' => false])]
+    private bool $weekendPriceNegotiable = false;
+
     /**
      * @var Collection<int, PropertyRevision>
      */
@@ -341,6 +344,17 @@ class Property
     public function setNearMetro(bool $nearMetro): void
     {
         $this->nearMetro = $nearMetro;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function isWeekendPriceNegotiable(): bool
+    {
+        return $this->weekendPriceNegotiable;
+    }
+
+    public function setWeekendPriceNegotiable(bool $weekendPriceNegotiable): void
+    {
+        $this->weekendPriceNegotiable = $weekendPriceNegotiable;
         $this->updatedAt = new \DateTimeImmutable();
     }
 
@@ -898,6 +912,7 @@ class Property
         ?string $contactPhone = null,
         ?string $contactName = null,
         ?string $sellerType = null,
+        ?bool $weekendPriceNegotiable = null,
     ): void {
         if ($type !== null) $this->type = $type;
         if ($dealType !== null) $this->dealType = $dealType;
@@ -943,6 +958,10 @@ class Property
 
         if ($sellerType !== null && $this->dealType === 'daily') {
             $this->sellerType = $sellerType;
+        }
+
+        if ($weekendPriceNegotiable !== null) {
+            $this->weekendPriceNegotiable = $weekendPriceNegotiable;
         }
 
         $this->roomsInDeal = null;

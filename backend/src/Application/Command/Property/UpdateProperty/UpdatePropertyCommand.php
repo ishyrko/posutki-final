@@ -43,6 +43,7 @@ readonly class UpdatePropertyCommand
         public ?array $images = null,
         public ?array $amenities = null,
         public ?string $sellerType = null,
+        public ?bool $weekendPriceNegotiable = null,
     ) {
     }
 }

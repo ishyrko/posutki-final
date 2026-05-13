@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { BynCurrencyMark } from '@/components/BynCurrency';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -141,6 +142,7 @@ interface EditFormData {
     longitude: number | null;
     images: { url: string; uploading?: boolean; file?: File }[];
     amenities: string[];
+    weekendPriceNegotiable: boolean;
 }
 
 type EditTitleDescriptionErrors = Partial<Pick<EditFormData, 'title' | 'description'>>;
@@ -240,6 +242,7 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
             ? revisionData.images.map((url) => ({ url }))
             : property.images.map((img) => ({ url: img.url })),
         amenities: [...(revisionData?.amenities ?? property.amenities ?? [])],
+        weekendPriceNegotiable: property.weekendPriceNegotiable ?? false,
     };
 }
 
@@ -683,6 +686,7 @@ export default function EditPropertyPage() {
                         : undefined,
                 images: form.images.filter((img) => !img.uploading).map((img) => img.url),
                 amenities: form.amenities,
+                weekendPriceNegotiable: form.weekendPriceNegotiable,
             };
             await updateProperty({ id: propertyId, data: payload });
             toast.success(
@@ -1419,6 +1423,16 @@ export default function EditPropertyPage() {
                                 </SelectContent>
                             </Select>
                         </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-4">
+                        <Checkbox
+                            id="weekendPriceNegotiable"
+                            checked={form.weekendPriceNegotiable}
+                            onCheckedChange={(v) => update('weekendPriceNegotiable', !!v)}
+                        />
+                        <label htmlFor="weekendPriceNegotiable" className="text-sm text-foreground cursor-pointer select-none">
+                            В выходные и праздничные дни цена договорная
+                        </label>
                     </div>
                 </section>
                 </fieldset>

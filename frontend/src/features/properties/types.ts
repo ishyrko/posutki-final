@@ -82,6 +82,7 @@ export interface Property {
     price: Price;
     /** BYN equivalent from backend (authoritative for display when set). */
     priceByn?: number | null;
+    weekendPriceNegotiable?: boolean;
     address: Address;
     coordinates?: Coordinates;
     specifications: {

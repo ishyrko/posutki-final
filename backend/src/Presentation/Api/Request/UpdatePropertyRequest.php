@@ -152,4 +152,7 @@ class UpdatePropertyRequest
 
     #[Assert\Choice(callback: [SellerType::class, 'values'], message: 'Недопустимый тип продавца')]
     public ?string $sellerType = null;
+
+    #[Assert\Type('bool')]
+    public ?bool $weekendPriceNegotiable = null;
 }

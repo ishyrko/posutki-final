@@ -25,6 +25,7 @@ final class PropertyDTO implements \JsonSerializable
         public readonly int $priceAmount,
         public readonly string $priceCurrency,
         public readonly ?int $priceByn,
+        public readonly bool $weekendPriceNegotiable,
         public readonly float $area,
         public readonly ?float $landArea,
         public readonly ?int $rooms,
@@ -105,6 +106,7 @@ final class PropertyDTO implements \JsonSerializable
             priceAmount: $property->getPrice()->getAmount(),
             priceCurrency: $property->getPrice()->getCurrency(),
             priceByn: $property->getPriceByn(),
+            weekendPriceNegotiable: $property->isWeekendPriceNegotiable(),
             area: $property->getArea(),
             landArea: $property->getLandArea(),
             rooms: $property->getRooms(),
@@ -174,6 +176,7 @@ final class PropertyDTO implements \JsonSerializable
                 'currency' => $this->priceCurrency,
             ],
             'priceByn' => $this->priceByn,
+            'weekendPriceNegotiable' => $this->weekendPriceNegotiable,
             'address' => [
                 'regionName' => $this->regionName,
                 'districtName' => $this->districtName,

@@ -160,6 +160,7 @@ class PropertyController extends AbstractController
             images: $request->images,
             amenities: $request->amenities,
             sellerType: $request->sellerType,
+            weekendPriceNegotiable: $request->weekendPriceNegotiable,
         );
 
         $propertyId = $this->commandBus->dispatch($command);
@@ -242,6 +243,7 @@ class PropertyController extends AbstractController
             images: $request->images,
             amenities: $request->amenities,
             sellerType: $request->sellerType,
+            weekendPriceNegotiable: $request->weekendPriceNegotiable,
         );
 
         $this->commandBus->dispatch($command);

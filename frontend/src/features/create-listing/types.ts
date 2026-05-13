@@ -56,6 +56,7 @@ export interface CreatePropertyPayload {
     coordinates: { latitude: number; longitude: number };
     images: string[];
     amenities: string[];
+    weekendPriceNegotiable?: boolean;
 }
 
 export interface CreatePropertyResponse {
@@ -112,4 +113,5 @@ export interface ListingFormData {
     price: string;
     currency: string;
     amenities: string[];
+    weekendPriceNegotiable: boolean;
 }
