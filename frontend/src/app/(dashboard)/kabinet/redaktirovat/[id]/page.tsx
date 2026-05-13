@@ -67,6 +67,7 @@ import {
     FLOOR_MIN,
     MAX_FILE_SIZE,
     MAX_PHOTOS,
+    MIN_PHOTOS,
     ROOMS_MAX,
     ROOMS_MIN,
     DAILY_BEDS_MAX,
@@ -628,6 +629,11 @@ export default function EditPropertyPage() {
             toast.error('Дождитесь загрузки всех фото');
             return;
         }
+        const readyImageCount = form.images.filter((img) => !img.uploading).length;
+        if (readyImageCount < MIN_PHOTOS) {
+            toast.error(`Загрузите не менее ${MIN_PHOTOS} фотографий`);
+            return;
+        }
 
         try {
             const payload: UpdatePropertyPayload = {
@@ -1158,7 +1164,10 @@ export default function EditPropertyPage() {
 
                 {/* Photos */}
                 <section className="bg-card rounded-2xl shadow-card border border-border p-6">
-                    <h2 className="text-lg font-semibold text-foreground mb-4">Фотографии</h2>
+                    <h2 className="text-lg font-semibold text-foreground mb-1">Фотографии</h2>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        Не менее {MIN_PHOTOS} и не более {MAX_PHOTOS} фото. Первое фото — обложка объявления.
+                    </p>
                     <input
                         ref={fileInputRef}
                         type="file"

@@ -145,6 +145,12 @@ class CreatePropertyRequest
     public array $coordinates;
 
     #[Assert\Type('array')]
+    #[Assert\Count(
+        min: 3,
+        max: 20,
+        minMessage: 'Загрузите не менее {{ limit }} фотографий',
+        maxMessage: 'Не более {{ limit }} фотографий',
+    )]
     public array $images = [];
 
     #[Assert\Type('array')]

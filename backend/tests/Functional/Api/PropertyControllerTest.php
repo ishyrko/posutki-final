@@ -160,7 +160,11 @@ final class PropertyControllerTest extends ApiTestCase
                 'latitude' => 53.9045,
                 'longitude' => 27.5615,
             ],
-            'images' => [],
+            'images' => [
+                'https://example.com/listing-photo-1.jpg',
+                'https://example.com/listing-photo-2.jpg',
+                'https://example.com/listing-photo-3.jpg',
+            ],
             'amenities' => [],
             'maxDailyGuests' => 4,
             'dailySingleBeds' => 2,

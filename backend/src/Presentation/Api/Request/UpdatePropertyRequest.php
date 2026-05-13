@@ -134,6 +134,17 @@ class UpdatePropertyRequest
     public ?array $coordinates = null;
 
     #[Assert\Type('array')]
+    #[Assert\When(
+        expression: 'value !== null',
+        constraints: [
+            new Assert\Count(
+                min: 3,
+                max: 20,
+                minMessage: 'Загрузите не менее {{ limit }} фотографий',
+                maxMessage: 'Не более {{ limit }} фотографий',
+            ),
+        ],
+    )]
     public ?array $images = null;
 
     #[Assert\Type('array')]

@@ -17,6 +17,8 @@ export const TOTAL_FLOORS_MIN = 1;
 export const TOTAL_FLOORS_MAX = 200;
 export const YEAR_BUILT_MIN = 1000;
 export const YEAR_BUILT_MAX = 2050;
+/** Минимум фотографий при подаче и редактировании (согласовано с API). */
+export const MIN_PHOTOS = 3;
 export const MAX_PHOTOS = 20;
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;

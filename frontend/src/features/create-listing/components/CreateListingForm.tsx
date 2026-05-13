@@ -71,6 +71,7 @@ import {
     FLOOR_MIN,
     MAX_FILE_SIZE,
     MAX_PHOTOS,
+    MIN_PHOTOS,
     ROOMS_MAX,
     ROOMS_MIN,
     DAILY_BEDS_MAX,
@@ -435,8 +436,17 @@ export function CreateListingForm() {
             }
             case 3:
                 break;
-            case 4:
+            case 4: {
+                if (form.photos.some((p) => p.uploading)) {
+                    errs.photos = 'Дождитесь окончания загрузки фото';
+                } else {
+                    const ready = form.photos.filter((p) => !p.uploading).length;
+                    if (ready < MIN_PHOTOS) {
+                        errs.photos = `Загрузите не менее ${MIN_PHOTOS} фотографий`;
+                    }
+                }
                 break;
+            }
             case 5:
                 if (!form.cityId) errs.citySlug = 'Выберите город';
                 break;
@@ -528,7 +538,10 @@ export function CreateListingForm() {
                     )
                 );
             case 3: return true;
-            case 4: return true;
+            case 4: {
+                if (form.photos.some((p) => p.uploading)) return false;
+                return form.photos.filter((p) => !p.uploading).length >= MIN_PHOTOS;
+            }
             case 5: return !!form.cityId;
             case 6:
                 return !!(
@@ -670,7 +683,7 @@ export function CreateListingForm() {
     // --- Submit ---
 
     const handleSubmit = async () => {
-        if (!validateStep(2) || !validateStep(6)) return;
+        if (!validateStep(2) || !validateStep(4) || !validateStep(6)) return;
 
         if (!isAuthenticated()) {
             setSmsAuthOpen(true);
@@ -682,6 +695,16 @@ export function CreateListingForm() {
 
     const submitProperty = async () => {
         if (!form.cityId) { toast.error('Город не найден'); return; }
+
+        if (form.photos.some((p) => p.uploading)) {
+            toast.error('Дождитесь окончания загрузки всех фото');
+            return;
+        }
+        const readyPhotoCount = form.photos.filter((p) => !p.uploading).length;
+        if (readyPhotoCount < MIN_PHOTOS) {
+            toast.error(`Загрузите не менее ${MIN_PHOTOS} фотографий`);
+            return;
+        }
 
         const lat = form.latitude ?? DEFAULT_CENTER[0];
         const lng = form.longitude ?? DEFAULT_CENTER[1];
@@ -1362,8 +1385,9 @@ export function CreateListingForm() {
                                 <div>
                                     <h2 className="font-display text-lg font-semibold text-foreground">Фотографии</h2>
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        Добавьте до {MAX_PHOTOS} фото. Первое фото станет обложкой.
+                                        Не менее {MIN_PHOTOS} и не более {MAX_PHOTOS} фото. Первое фото станет обложкой.
                                     </p>
+                                    <FieldError field="photos" />
                                 </div>
 
                                 <input
