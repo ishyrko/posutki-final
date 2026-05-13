@@ -44,6 +44,16 @@ import { useSearchCities, useSearchStreets, useCreateProperty } from '../hooks';
 import { uploadFile, FileTooLargeError } from '../api';
 import type { ListingFormData, UploadedPhoto, CreatePropertyPayload, CitySearchResult, AdditionalService } from '../types';
 import { LISTING_AMENITY_GROUPS } from '../listing-amenity-groups';
+
+const DEAL_RULE_OPTIONS: { id: string; label: string }[] = [
+    { id: 'contactless_checkin', label: 'Бесконтактное заселение' },
+    { id: '24h_checkin', label: 'Круглосуточное заселение' },
+    { id: 'pets_allowed', label: 'Можно с животными' },
+    { id: 'parties_allowed', label: 'Сдаётся для вечеринок' },
+    { id: 'accounting_docs', label: 'Отчётные документы' },
+    { id: 'no_smoking', label: 'Курение запрещено' },
+    { id: 'children_allowed', label: 'Можно с детьми' },
+];
 import {
     balconyOptions,
     dealConditionOptions,
@@ -295,8 +305,12 @@ export function CreateListingForm() {
     const toggleDealCondition = useCallback((condition: string) => {
         setForm((prev) => {
             const exists = prev.dealConditions.includes(condition);
-            const dealConditions = exists ? [] : [condition];
-            return { ...prev, dealConditions };
+            return {
+                ...prev,
+                dealConditions: exists
+                    ? prev.dealConditions.filter((c) => c !== condition)
+                    : [...prev.dealConditions, condition],
+            };
         });
     }, []);
 
@@ -755,9 +769,7 @@ export function CreateListingForm() {
             roomsArea: showRoomDealFields(form.propertyType, form.dealType) && form.roomsArea !== ''
                 ? Number(form.roomsArea)
                 : undefined,
-            dealConditions: showDealConditions(form.dealType) && form.dealConditions.length > 0
-                ? form.dealConditions
-                : undefined,
+            dealConditions: form.dealConditions.length > 0 ? form.dealConditions : undefined,
             maxDailyGuests: form.dealType === 'daily' && form.maxDailyGuests
                 ? Number(form.maxDailyGuests)
                 : undefined,
@@ -1364,37 +1376,45 @@ export function CreateListingForm() {
                         {/* Step 3: Удобства (карточки по макету) */}
                         {step === 3 && (
                             <div className="space-y-5">
-                                {LISTING_AMENITY_GROUPS.map((group) => (
-                                    <div
-                                        key={group.id}
-                                        className="bg-card rounded-2xl shadow-card p-6 space-y-4"
-                                    >
-                                        <h2 className="font-display text-base font-semibold text-foreground">
-                                            {group.title}
-                                        </h2>
-                                        <div className="flex flex-wrap gap-2">
-                                            {group.items.map((item) => {
-                                                const selected = form.amenities.includes(item.id);
-                                                return (
-                                                    <button
-                                                        key={item.id}
-                                                        type="button"
-                                                        onClick={() => toggleAmenity(item.id)}
-                                                        className={cn(
-                                                            'inline-flex items-center gap-1.5',
-                                                            selected ? amenityChipActive : amenityChipInactive,
-                                                        )}
-                                                    >
-                                                        {selected ? (
-                                                            <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
-                                                        ) : null}
-                                                        {item.label}
-                                                    </button>
-                                                );
-                                            })}
+                                {LISTING_AMENITY_GROUPS.map((group) => {
+                                    const visibleItems = group.items.filter(
+                                        (item) =>
+                                            !item.propertyTypes ||
+                                            item.propertyTypes.includes(form.propertyType),
+                                    );
+                                    if (visibleItems.length === 0) return null;
+                                    return (
+                                        <div
+                                            key={group.id}
+                                            className="bg-card rounded-2xl shadow-card p-6 space-y-4"
+                                        >
+                                            <h2 className="font-display text-base font-semibold text-foreground">
+                                                {group.title}
+                                            </h2>
+                                            <div className="flex flex-wrap gap-2">
+                                                {visibleItems.map((item) => {
+                                                    const selected = form.amenities.includes(item.id);
+                                                    return (
+                                                        <button
+                                                            key={item.id}
+                                                            type="button"
+                                                            onClick={() => toggleAmenity(item.id)}
+                                                            className={cn(
+                                                                'inline-flex items-center gap-1.5',
+                                                                selected ? amenityChipActive : amenityChipInactive,
+                                                            )}
+                                                        >
+                                                            {selected ? (
+                                                                <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                                                            ) : null}
+                                                            {item.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
 
@@ -1736,6 +1756,29 @@ export function CreateListingForm() {
                                                 />
                                                 <FieldError field="checkOutTime" />
                                             </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {['apartment', 'house'].includes(form.propertyType) && (
+                                    <div className="bg-card rounded-2xl shadow-card p-6 space-y-4">
+                                        <h2 className="font-display text-lg font-semibold text-foreground">Правила и условия</h2>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                                            {DEAL_RULE_OPTIONS.map(({ id, label }) => (
+                                                <div key={id} className="flex items-center gap-2.5">
+                                                    <Checkbox
+                                                        id={`rule_${id}`}
+                                                        checked={form.dealConditions.includes(id)}
+                                                        onCheckedChange={() => toggleDealCondition(id)}
+                                                    />
+                                                    <label
+                                                        htmlFor={`rule_${id}`}
+                                                        className="text-sm text-foreground cursor-pointer select-none"
+                                                    >
+                                                        {label}
+                                                    </label>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 )}

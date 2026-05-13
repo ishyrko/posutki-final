@@ -264,9 +264,6 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                 <div>
                     <h1 className="font-display text-2xl font-bold text-foreground">Мои объявления</h1>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        {filteredProperties.length} объявлений
-                    </p>
                 </div>
                 <Button asChild className="gap-2 w-full sm:w-auto">
                     <Link href="/razmestit/">
@@ -275,22 +272,6 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
                     </Link>
                 </Button>
             </div>
-
-            {!isLoading && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                    {[
-                        { label: 'Всего', value: properties.length, color: 'text-foreground' },
-                        { label: 'Опубликовано', value: statusCounts.published, color: 'text-primary' },
-                        { label: 'На модерации', value: statusCounts.moderation, color: 'text-foreground' },
-                        { label: 'Отклонено / неактивно', value: statusCounts.rejected + statusCounts.inactive, color: 'text-foreground' },
-                    ].map((stat, i) => (
-                        <div key={i} className="bg-card rounded-xl shadow-card p-4 text-center">
-                            <div className={cn('font-display text-2xl font-bold', stat.color)}>{stat.value}</div>
-                            <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
-                        </div>
-                    ))}
-                </div>
-            )}
 
             <div className="flex flex-wrap gap-2 mb-6">
                 {STATUS_TABS.map((tab) => (

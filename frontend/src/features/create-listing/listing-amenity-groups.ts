@@ -1,10 +1,17 @@
 /** Удобства посуточного жилья — шаг мастера размещения (группы как в макете). id уходит в API как строка. */
-export type ListingAmenityItem = { id: string; label: string };
+export type ListingAmenityItem = {
+    id: string;
+    label: string;
+    /** Если задано — пункт показывается только для указанных типов объекта */
+    propertyTypes?: string[];
+};
 
 export type ListingAmenityGroup = {
     id: string;
     title: string;
     items: ListingAmenityItem[];
+    /** Если задано — группа показывается только для указанных типов объекта */
+    propertyTypes?: string[];
 };
 
 export const LISTING_AMENITY_GROUPS: ListingAmenityGroup[] = [
@@ -64,6 +71,22 @@ export const LISTING_AMENITY_GROUPS: ListingAmenityGroup[] = [
             { id: 'robot_vacuum', label: 'Робот-пылесос' },
             { id: 'crib', label: 'Детская кроватка' },
             { id: 'high_chair', label: 'Стульчик для кормления' },
+        ],
+    },
+    {
+        id: 'outdoor',
+        title: 'На территории',
+        items: [
+            { id: 'parking_open', label: 'Открытая парковка' },
+            { id: 'parking_covered', label: 'Закрытая парковка' },
+            { id: 'cctv', label: 'Видеонаблюдение' },
+            { id: 'gazebo', label: 'Беседка', propertyTypes: ['house'] },
+            { id: 'pool', label: 'Бассейн', propertyTypes: ['house'] },
+            { id: 'pond', label: 'Пруд', propertyTypes: ['house'] },
+            { id: 'bbq', label: 'Гриль / мангал', propertyTypes: ['house'] },
+            { id: 'sauna', label: 'Баня / сауна', propertyTypes: ['house'] },
+            { id: 'playground', label: 'Детская площадка', propertyTypes: ['house'] },
+            { id: 'garden', label: 'Сад / огород', propertyTypes: ['house'] },
         ],
     },
 ];

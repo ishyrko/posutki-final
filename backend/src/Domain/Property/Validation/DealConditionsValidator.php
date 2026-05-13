@@ -4,25 +4,35 @@ declare(strict_types=1);
 
 namespace App\Domain\Property\Validation;
 
-use App\Domain\Property\Enum\DealType;
 use App\Domain\Shared\Exception\DomainException;
 
 final class DealConditionsValidator
 {
+    private const ALLOWED = [
+        'contactless_checkin',
+        '24h_checkin',
+        'pets_allowed',
+        'parties_allowed',
+        'accounting_docs',
+        'no_smoking',
+        'children_allowed',
+    ];
+
     /**
      * @param array<int, mixed>|null $dealConditions
      */
     public static function assertValid(?array $dealConditions, string $dealType, ?string $propertyType = null): void
     {
-        if ($dealType === DealType::Daily->value && ($dealConditions !== null && $dealConditions !== [])) {
-            throw new DomainException('Для посуточной аренды условия сделки не указываются');
-        }
-
         if ($dealConditions === null || $dealConditions === []) {
             return;
         }
 
-        throw new DomainException('Условия сделки не поддерживаются');
+        $unknown = array_diff($dealConditions, self::ALLOWED);
+        if ($unknown !== []) {
+            throw new DomainException(
+                'Неизвестные условия размещения: ' . implode(', ', $unknown)
+            );
+        }
     }
 
     /**
@@ -30,6 +40,6 @@ final class DealConditionsValidator
      */
     public static function allowedForDealType(string $dealType, ?string $propertyType = null): array
     {
-        return [];
+        return self::ALLOWED;
     }
 }
