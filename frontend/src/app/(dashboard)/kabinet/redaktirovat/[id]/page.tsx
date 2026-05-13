@@ -235,7 +235,7 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
         balcony: revisionData?.balcony ?? property.specifications.balcony ?? '',
         dealConditions: sanitizeDealConditionsForPropertyType(type, rawDealConditions),
         price: String(revisionData?.priceAmount ?? property.price.amount),
-        currency: revisionData?.priceCurrency ?? property.price.currency,
+        currency: 'BYN',
         cityId: revisionData?.cityId ?? property.address.cityId,
         cityName: property.address.cityName || '',
         streetName: property.address.streetName || '',
@@ -1452,7 +1452,7 @@ export default function EditPropertyPage() {
                                         placeholder="Цена"
                                         className="w-28"
                                     />
-                                    <span className="text-sm text-muted-foreground shrink-0">р.</span>
+                                    <BynCurrencyMark className="shrink-0" />
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -1505,29 +1505,17 @@ export default function EditPropertyPage() {
                 {/* Price */}
                 <section className="bg-card rounded-2xl shadow-card border border-border p-6">
                     <h2 className="text-lg font-semibold text-foreground mb-4">Стоимость</h2>
-                    <div className="grid grid-cols-3 gap-3">
-                        <div className="col-span-2">
-                            <Label className="text-foreground">Цена *</Label>
+                    <div>
+                        <Label className="text-foreground">Цена *</Label>
+                        <div className="flex items-center gap-2 mt-1.5">
                             <Input
                                 type="number"
                                 min={0}
                                 value={form.price}
                                 onChange={(e) => update('price', e.target.value)}
-                                className="mt-1.5"
+                                className="flex-1"
                             />
-                        </div>
-                        <div>
-                            <Label className="text-foreground">Валюта</Label>
-                            <Select value={form.currency} onValueChange={(v) => update('currency', v)}>
-                                <SelectTrigger className="mt-1.5">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="USD">$</SelectItem>
-                                    <SelectItem className="text-base" value="BYN"><BynCurrencyMark variant="select" /></SelectItem>
-                                    <SelectItem value="RUB">₽</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <BynCurrencyMark className="shrink-0" />
                         </div>
                     </div>
                     <div className="flex items-center gap-2 mt-4">

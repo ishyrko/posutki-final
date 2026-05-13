@@ -30,13 +30,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BynCurrencyMark } from '@/components/BynCurrency';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import AddressMapPicker from '@/components/AddressMapPicker';
 import { loadYmaps } from '@/lib/ymaps';
@@ -1785,38 +1778,21 @@ export function CreateListingForm() {
 
                                 <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                     <h2 className="font-display text-lg font-semibold text-foreground">Стоимость</h2>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                        <div className="sm:col-span-2">
-                                            <label className={labelClass}>Цена за сутки *</label>
+                                    <div>
+                                        <label className={labelClass}>Цена за сутки *</label>
+                                        <div className="flex items-center gap-2">
                                             <input
                                                 type="number"
                                                 min={0}
                                                 value={form.price}
                                                 onChange={(e) => update('price', e.target.value)}
                                                 placeholder="Например: 85"
-                                                className={cn(inputClass, errors.price ? 'border-destructive' : '')}
+                                                className={cn(inputClass, 'flex-1', errors.price ? 'border-destructive' : '')}
                                             />
-                                            <p className="text-xs text-muted-foreground mt-1">Стоимость аренды за одни сутки</p>
-                                            <FieldError field="price" />
+                                            <BynCurrencyMark className="shrink-0" />
                                         </div>
-                                        <div>
-                                            <label className={labelClass}>Валюта</label>
-                                            <Select value={form.currency} onValueChange={(v) => update('currency', v)}>
-                                                <SelectTrigger
-                                                    className={cn(
-                                                        'h-[46px] w-full rounded-xl border-border bg-surface px-4',
-                                                        'focus:ring-2 focus:ring-primary/20 focus:border-primary',
-                                                    )}
-                                                >
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="USD">$</SelectItem>
-                                                    <SelectItem className="text-base" value="BYN"><BynCurrencyMark variant="select" /></SelectItem>
-                                                    <SelectItem value="RUB">₽</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-1">Стоимость аренды за одни сутки</p>
+                                        <FieldError field="price" />
                                     </div>
                                     <div className="flex items-center gap-2 pt-1">
                                         <Checkbox
@@ -1863,7 +1839,7 @@ export function CreateListingForm() {
                                                         placeholder="Цена услуги"
                                                         className={cn(inputClass, 'w-36')}
                                                     />
-                                                    <span className="text-sm text-muted-foreground shrink-0">р.</span>
+                                                    <BynCurrencyMark className="shrink-0" />
                                                     <button
                                                         type="button"
                                                         onClick={() => {
