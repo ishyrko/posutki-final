@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import type { Currency } from "@/features/properties/types";
 
 /** Belarusian ruble sign via nbrb font ligature: the string "BYN" becomes the official symbol. */
 export function BynCurrencyMark({
@@ -29,4 +30,32 @@ export function PriceInByn({ amount, className }: { amount: number; className?: 
       <span className="sr-only"> BYN</span>
     </span>
   );
+}
+
+/** Renders a price in the given currency with the appropriate symbol. */
+export function PriceDisplay({
+  amount,
+  currency,
+  className,
+}: {
+  amount: number;
+  currency: Currency;
+  className?: string;
+}) {
+  const num = amount.toLocaleString("ru-BY");
+  if (currency === "USD") {
+    return (
+      <span className={cn("font-body", className)}>
+        {num} $
+      </span>
+    );
+  }
+  if (currency === "RUB") {
+    return (
+      <span className={cn("font-body", className)}>
+        {num} ₽
+      </span>
+    );
+  }
+  return <PriceInByn amount={amount} className={className} />;
 }

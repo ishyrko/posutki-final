@@ -40,9 +40,15 @@ export function formatSecondaryPrice(amount: number, currency: "USD" | "RUB"): s
   return "≈ " + amount.toLocaleString("ru-BY") + " " + symbol;
 }
 
-export function formatPropertyPrices(property: Property, rates: ExchangeRates): {
-  /** BYN-equivalent amount for UI (graphic symbol via `PriceInByn`). */
+export function formatPropertyPrices(
+  property: Property,
+  rates: ExchangeRates,
+  displayCurrency: Currency = "BYN",
+): {
+  /** Amount in `displayCurrency` for the primary price line. */
   primaryAmount: number;
+  /** The currency being displayed. */
+  primaryCurrency: Currency;
   /** Same amount as plain text for share, SEO, map strings. */
   primaryPlain: string;
   secondary: string;
@@ -53,23 +59,26 @@ export function formatPropertyPrices(property: Property, rates: ExchangeRates): 
       ? property.priceByn
       : convertPrice(property.price.amount, listingCurrency, "BYN", rates);
 
-  let secondaryCurrency: "USD" | "RUB";
-  let secondaryAmount: number;
-  if (listingCurrency === "RUB") {
-    secondaryCurrency = "RUB";
-    secondaryAmount = property.price.amount;
+  const primaryAmount =
+    displayCurrency === "BYN"
+      ? bynAmount
+      : convertPrice(bynAmount, "BYN", displayCurrency, rates);
+
+  let secondary: string;
+  if (displayCurrency !== "BYN") {
+    secondary = "≈ " + bynAmount.toLocaleString("ru-BY") + " BYN";
+  } else if (listingCurrency === "RUB") {
+    secondary = formatSecondaryPrice(property.price.amount, "RUB");
   } else if (listingCurrency === "USD") {
-    secondaryCurrency = "USD";
-    secondaryAmount = property.price.amount;
+    secondary = formatSecondaryPrice(property.price.amount, "USD");
   } else {
-    // BYN listing — show ≈ USD as secondary
-    secondaryCurrency = "USD";
-    secondaryAmount = convertPrice(bynAmount, "BYN", "USD", rates);
+    secondary = formatSecondaryPrice(convertPrice(bynAmount, "BYN", "USD", rates), "USD");
   }
 
   return {
-    primaryAmount: bynAmount,
-    primaryPlain: formatPrice(bynAmount, "BYN"),
-    secondary: formatSecondaryPrice(secondaryAmount, secondaryCurrency),
+    primaryAmount,
+    primaryCurrency: displayCurrency,
+    primaryPlain: formatPrice(primaryAmount, displayCurrency),
+    secondary,
   };
 }

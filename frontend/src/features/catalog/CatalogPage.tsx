@@ -32,18 +32,16 @@ import PropertyMap, { type MapProperty } from "@/components/PropertyMap";
 import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { useMetroStations } from "@/features/metro/hooks";
 import type { NearbyMetroStation } from "@/features/metro/types";
-import { Property, formatAddress, type PriceType } from "@/features/properties/types";
+import { Property, formatAddress, type PriceType, type Currency } from "@/features/properties/types";
 import { useCurrency } from "@/context/CurrencyContext";
 import type { ExchangeRates } from "@/features/properties/api";
 import {
-  convertPrice,
-  formatPrice,
   formatPropertyPrices,
   DEFAULT_EXCHANGE_RATES_FALLBACK,
 } from "@/features/properties/price-display";
 import { buildPageTitle, type ParsedSegments } from "@/features/catalog/slugs";
 import { showBathrooms, showRooms, showRoomsCatalogFilter } from "@/features/create-listing/property-field-rules";
-import { PriceInByn } from "@/components/BynCurrency";
+import { PriceDisplay } from "@/components/BynCurrency";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "grid" | "list" | "map";
@@ -162,11 +160,11 @@ function pickMetroStationsForCatalog(
   return sorted.slice(0, 1);
 }
 
-function propertyToListCard(p: Property, rates: ExchangeRates, metroFilterStationId: number | null) {
-  const { primaryAmount, secondary } = formatPropertyPrices(p, rates);
+function propertyToListCard(p: Property, rates: ExchangeRates, metroFilterStationId: number | null, displayCurrency: Currency = "BYN") {
+  const { primaryAmount, primaryCurrency, secondary } = formatPropertyPrices(p, rates, displayCurrency);
   return {
     image: p.images?.[0]?.thumbnailUrl || p.images?.[0]?.url || "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800",
-    price: <PriceInByn amount={primaryAmount} />,
+    price: <PriceDisplay amount={primaryAmount} currency={primaryCurrency} />,
     primaryBynAmount: primaryAmount,
     secondaryPrice: secondary,
     title: p.title,
@@ -185,15 +183,15 @@ function propertyToListCard(p: Property, rates: ExchangeRates, metroFilterStatio
   };
 }
 
-function propertyToMapItem(p: Property, rates: ExchangeRates): MapProperty | null {
+function propertyToMapItem(p: Property, rates: ExchangeRates, displayCurrency: Currency = "BYN"): MapProperty | null {
   if (!p.coordinates?.latitude || !p.coordinates?.longitude) return null;
-  const bynAmount = convertPrice(p.price.amount, p.price.currency, "BYN", rates);
+  const { primaryAmount, primaryPlain } = formatPropertyPrices(p, rates, displayCurrency);
   return {
     id: p.id,
     lat: p.coordinates.latitude,
     lng: p.coordinates.longitude,
     title: p.title,
-    price: formatPrice(bynAmount, "BYN"),
+    price: primaryPlain,
     address: formatAddress(p.address),
     image: p.images?.[0]?.thumbnailUrl || p.images?.[0]?.url || "",
     dealType: p.dealType,
@@ -381,9 +379,9 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
 
   const mapProperties: MapProperty[] = useMemo(() => {
     return displayProperties
-      .map((p) => propertyToMapItem(p, exchangeRates))
+      .map((p) => propertyToMapItem(p, exchangeRates, selectedCurrency))
       .filter((m): m is MapProperty => m !== null);
-  }, [displayProperties, exchangeRates]);
+  }, [displayProperties, exchangeRates, selectedCurrency]);
 
   const clearFilters = () => {
     setMinPrice("");
@@ -770,13 +768,13 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                       {displayProperties.map((property, i) => {
-                        const { primaryAmount, secondary } = formatPropertyPrices(property, exchangeRates);
+                        const { primaryAmount, primaryCurrency, secondary } = formatPropertyPrices(property, exchangeRates, selectedCurrency);
                         return (
                           <PropertyCard
                             key={property.id}
                             id={property.id}
                             image={property.images?.[0]?.thumbnailUrl || property.images?.[0]?.url || "https://placehold.co/600x450?text=No+Image"}
-                            price={<PriceInByn amount={primaryAmount} />}
+                            price={<PriceDisplay amount={primaryAmount} currency={primaryCurrency} />}
                             primaryBynAmount={primaryAmount}
                             secondaryPrice={secondary}
                             title={property.title}
@@ -868,7 +866,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                   <>
                     <div className="flex flex-col gap-4">
                       {displayProperties.map((property, i) => {
-                        const card = propertyToListCard(property, exchangeRates, metroFilterStationId);
+                        const card = propertyToListCard(property, exchangeRates, metroFilterStationId, selectedCurrency);
                         return (
                           <div
                             key={property.id}

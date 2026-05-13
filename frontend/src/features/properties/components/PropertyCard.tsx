@@ -11,7 +11,8 @@ import { useToggleFavorite, useFavoriteIds, useExchangeRates } from "../hooks";
 import { useUser } from "@/features/auth/hooks";
 import { useRouter } from "next/navigation";
 import { buildPropertyUrl } from "@/features/catalog/slugs";
-import { PriceInByn } from "@/components/BynCurrency";
+import { PriceDisplay } from "@/components/BynCurrency";
+import { useCurrency } from "@/context/CurrencyContext";
 import { showBathrooms, showRooms } from "@/features/create-listing/property-field-rules";
 import { PROPERTY_TYPE_NOMINATIVE_DAILY } from "@/features/properties/property-deal-heading";
 
@@ -41,12 +42,17 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
   const isFavorited = favoriteIds.includes(id);
   const href = buildPropertyUrl(type, id);
 
+  const { selectedCurrency } = useCurrency();
   const { data: rates } = useExchangeRates();
   const exchangeRates: ExchangeRates = useMemo(
     () => rates ?? DEFAULT_EXCHANGE_RATES_FALLBACK,
     [rates],
   );
-  const { primaryAmount, secondary: priceSecondary } = formatPropertyPrices(property, exchangeRates);
+  const { primaryAmount, primaryCurrency, secondary: priceSecondary } = formatPropertyPrices(
+    property,
+    exchangeRates,
+    selectedCurrency,
+  );
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -98,7 +104,7 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
           <div className="absolute bottom-4 left-4">
             <div className="px-4 py-2 rounded-xl bg-dark-bg/80 backdrop-blur-md border border-white/10 text-white">
               <span className="text-lg font-bold font-display">
-                <PriceInByn amount={primaryAmount} />
+                <PriceDisplay amount={primaryAmount} currency={primaryCurrency} />
               </span>
               <span className="block text-xs font-normal opacity-85 mt-0.5">{priceSecondary}</span>
             </div>

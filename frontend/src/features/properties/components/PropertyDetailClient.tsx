@@ -18,8 +18,9 @@ import { useSendMessage } from "@/features/messages/hooks";
 import { useUser } from "@/features/auth/hooks";
 import { formatAddress, Property } from "@/features/properties/types";
 import type { ExchangeRates } from "@/features/properties/api";
-import { PriceInByn } from "@/components/BynCurrency";
+import { PriceDisplay } from "@/components/BynCurrency";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";
+import { useCurrency } from "@/context/CurrencyContext";
 import PropertyMap from "@/components/PropertyMap";
 import { buildCatalogUrl } from "@/features/catalog/slugs";
 import { toast } from "sonner";
@@ -98,6 +99,7 @@ function phoneToTelHref(phone: string): string {
 
 export default function PropertyDetailClient({ id, initialProperty }: PropertyDetailClientProps) {
   const { data: property, isLoading, isError } = useProperty(id, { initialData: initialProperty });
+  const { selectedCurrency } = useCurrency();
   const { data: rates } = useExchangeRates();
   const exchangeRates: ExchangeRates = useMemo(
     () => rates ?? DEFAULT_EXCHANGE_RATES_FALLBACK,
@@ -105,8 +107,8 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   );
   const priceDisplay = useMemo(() => {
     const p = property ?? initialProperty;
-    return formatPropertyPrices(p, exchangeRates);
-  }, [property, initialProperty, exchangeRates]);
+    return formatPropertyPrices(p, exchangeRates, selectedCurrency);
+  }, [property, initialProperty, exchangeRates, selectedCurrency]);
 
   const { data: currentUser } = useUser();
   const pathname = usePathname();
@@ -561,7 +563,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                 <div className="flex items-baseline gap-3 flex-wrap">
                   {/* Solid color: text-gradient-primary uses -webkit-text-fill-color: transparent and hides nested nbrb glyph */}
                   <span className="text-3xl font-bold text-primary">
-                    <PriceInByn amount={priceDisplay.primaryAmount} />
+                    <PriceDisplay amount={priceDisplay.primaryAmount} currency={priceDisplay.primaryCurrency} />
                   </span>
                   <span className="text-sm text-muted-foreground">{priceDisplay.secondary}</span>
                 </div>
