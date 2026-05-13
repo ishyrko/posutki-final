@@ -18,6 +18,7 @@ import {
     X,
     Info,
     Plus,
+    Check,
     Link as LinkIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -41,6 +42,7 @@ import { useProperty, useUpdateProperty } from '@/features/properties/hooks';
 import type { UpdatePropertyPayload } from '@/features/properties/api';
 import type { Property as PropertyItem } from '@/features/properties/types';
 import { useSearchCities, useSearchStreets } from '@/features/create-listing/hooks';
+import { LISTING_AMENITY_GROUPS } from '@/features/create-listing/listing-amenity-groups';
 import { uploadFile, FileTooLargeError } from '@/features/create-listing/api';
 import {
     balconyOptions,
@@ -108,6 +110,16 @@ const requiresAreaInSquareMeters = (_propertyType: string): boolean => true;
 const needsLotArea = (propertyType: string): boolean => lotAreaTypes.includes(propertyType);
 
 const DEFAULT_CENTER: [number, number] = [53.9045, 27.5615];
+
+const DEAL_RULE_OPTIONS: { id: string; label: string }[] = [
+    { id: 'contactless_checkin', label: 'Бесконтактное заселение' },
+    { id: '24h_checkin', label: 'Круглосуточное заселение' },
+    { id: 'pets_allowed', label: 'Можно с животными' },
+    { id: 'parties_allowed', label: 'Сдаётся для вечеринок' },
+    { id: 'accounting_docs', label: 'Отчётные документы' },
+    { id: 'no_smoking', label: 'Курение запрещено' },
+    { id: 'children_allowed', label: 'Можно с детьми' },
+];
 
 interface EditFormData {
     type: string;
@@ -353,8 +365,21 @@ export default function EditPropertyPage() {
         setForm((prev) => {
             if (!prev) return prev;
             const exists = prev.dealConditions.includes(condition);
-            const dealConditions = exists ? [] : [condition];
+            const dealConditions = exists
+                ? prev.dealConditions.filter((c) => c !== condition)
+                : [...prev.dealConditions, condition];
             return { ...prev, dealConditions };
+        });
+    }, []);
+
+    const toggleAmenity = useCallback((id: string) => {
+        setForm((prev) => {
+            if (!prev) return prev;
+            const has = prev.amenities.includes(id);
+            return {
+                ...prev,
+                amenities: has ? prev.amenities.filter((a) => a !== id) : [...prev.amenities, id],
+            };
         });
     }, []);
 
@@ -681,7 +706,7 @@ export default function EditPropertyPage() {
                 roomsArea: showRoomDealFields(form.type, form.dealType) && form.roomsArea !== ''
                     ? Number(form.roomsArea)
                     : undefined,
-                dealConditions: form.dealType !== 'daily' && form.dealConditions.length ? form.dealConditions : undefined,
+                dealConditions: form.dealConditions.length ? form.dealConditions : undefined,
                 maxDailyGuests: form.dealType === 'daily' && form.maxDailyGuests ? Number(form.maxDailyGuests) : undefined,
                 dailySingleBeds: form.dealType === 'daily' ? dailySingleBeds : undefined,
                 dailyDoubleBeds: form.dealType === 'daily' ? dailyDoubleBeds : undefined,
@@ -1188,6 +1213,42 @@ export default function EditPropertyPage() {
                     </div>
                 </section>
 
+                {/* Amenities */}
+                <div className="space-y-4">
+                    {LISTING_AMENITY_GROUPS.map((group) => {
+                        const visibleItems = group.items.filter(
+                            (item) => !item.propertyTypes || item.propertyTypes.includes(form.type),
+                        );
+                        if (visibleItems.length === 0) return null;
+                        return (
+                            <section key={group.id} className="bg-card rounded-2xl shadow-card border border-border p-6">
+                                <h2 className="text-base font-semibold text-foreground mb-4">{group.title}</h2>
+                                <div className="flex flex-wrap gap-2">
+                                    {visibleItems.map((item) => {
+                                        const selected = form.amenities.includes(item.id);
+                                        return (
+                                            <button
+                                                key={item.id}
+                                                type="button"
+                                                onClick={() => toggleAmenity(item.id)}
+                                                className={cn(
+                                                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all',
+                                                    selected
+                                                        ? 'bg-primary text-primary-foreground border border-primary'
+                                                        : 'bg-muted/70 border border-transparent text-foreground hover:bg-muted',
+                                                )}
+                                            >
+                                                {selected && <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />}
+                                                {item.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        );
+                    })}
+                </div>
+
                 {/* Photos */}
                 <section className="bg-card rounded-2xl shadow-card border border-border p-6">
                     <h2 className="text-lg font-semibold text-foreground mb-1">Фотографии</h2>
@@ -1498,6 +1559,30 @@ export default function EditPropertyPage() {
                                     placeholder="https://example.com"
                                 />
                             </div>
+                        </div>
+                    </section>
+                )}
+
+                {/* Deal rules (daily) */}
+                {['apartment', 'house'].includes(form.type) && (
+                    <section className="bg-card rounded-2xl shadow-card border border-border p-6">
+                        <h2 className="text-lg font-semibold text-foreground mb-4">Правила и условия</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                            {DEAL_RULE_OPTIONS.map(({ id, label }) => (
+                                <div key={id} className="flex items-center gap-2.5">
+                                    <Checkbox
+                                        id={`rule_${id}`}
+                                        checked={form.dealConditions.includes(id)}
+                                        onCheckedChange={() => toggleDealCondition(id)}
+                                    />
+                                    <label
+                                        htmlFor={`rule_${id}`}
+                                        className="text-sm text-foreground cursor-pointer select-none"
+                                    >
+                                        {label}
+                                    </label>
+                                </div>
+                            ))}
                         </div>
                     </section>
                 )}
