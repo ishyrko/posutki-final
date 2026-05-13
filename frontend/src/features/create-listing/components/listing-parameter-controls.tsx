@@ -110,11 +110,35 @@ export function NumericPillRow({
 
 export type BathroomTypeValue = 'combined' | 'separate' | 'two';
 
-export function bathroomTypeFromForm(bathrooms: string, amenities: string[]): BathroomTypeValue {
+/** null — пользователь ещё не выбрал (пустая форма создания). */
+export type BathroomTypeFormValue = BathroomTypeValue | null;
+
+export function bathroomTypeFromForm(bathrooms: string, amenities: string[]): BathroomTypeFormValue {
     const b = Number(bathrooms);
     if (Number.isFinite(b) && b >= 2) return 'two';
     if (amenities.includes('bathroom_separate')) return 'separate';
-    return 'combined';
+    if (amenities.includes('bathroom_combined')) return 'combined';
+    /** Раньше число санузлов могло приходить без флагов удобств — считаем одну ванную «совмещённой». */
+    if (Number.isFinite(b) && b === 1) return 'combined';
+    return null;
+}
+
+/** Число санузлов для API: учитывает выбор чипами и только флаги в удобствах. */
+export function resolvedBathroomsForPayload(bathrooms: string, amenities: string[]): number | undefined {
+    const trimmed = bathrooms.trim();
+    if (trimmed !== '') {
+        const n = Number(trimmed);
+        if (Number.isFinite(n)) return n;
+    }
+    const kind = bathroomTypeFromForm(bathrooms, amenities);
+    if (kind === 'two') return 2;
+    if (
+        (kind === 'combined' || kind === 'separate')
+        && (amenities.includes('bathroom_combined') || amenities.includes('bathroom_separate'))
+    ) {
+        return 1;
+    }
+    return undefined;
 }
 
 export function applyBathroomTypeSelection(
@@ -140,7 +164,7 @@ export function BathroomTypeRow({
     error,
 }: {
     label: ReactNode;
-    value: BathroomTypeValue;
+    value: BathroomTypeFormValue;
     onChange: (v: BathroomTypeValue) => void;
     error?: string;
 }) {

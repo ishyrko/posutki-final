@@ -95,6 +95,7 @@ import {
     BathroomTypeRow,
     FloorTotalFloorsRow,
     NumericPillRow,
+    resolvedBathroomsForPayload,
     SegmentedAreaTripleRow,
 } from './listing-parameter-controls';
 
@@ -369,10 +370,15 @@ export function CreateListingForm() {
                         }
                     }
                 }
-                if (showBathrooms(form.propertyType) && form.bathrooms) {
-                    const bathrooms = Number(form.bathrooms);
-                    if (!Number.isFinite(bathrooms) || bathrooms < BATHROOMS_MIN || bathrooms > BATHROOMS_MAX) {
-                        errs.bathrooms = `Санузлов должно быть от ${BATHROOMS_MIN} до ${BATHROOMS_MAX}`;
+                if (showBathrooms(form.propertyType)) {
+                    const bathroomKind = bathroomTypeFromForm(form.bathrooms, form.amenities);
+                    if (bathroomKind === null) {
+                        errs.bathrooms = 'Выберите тип санузла';
+                    } else if (form.bathrooms.trim() !== '') {
+                        const bathrooms = Number(form.bathrooms);
+                        if (!Number.isFinite(bathrooms) || bathrooms < BATHROOMS_MIN || bathrooms > BATHROOMS_MAX) {
+                            errs.bathrooms = `Санузлов должно быть от ${BATHROOMS_MIN} до ${BATHROOMS_MAX}`;
+                        }
                     }
                 }
                 if (requiresAreaInSquareMeters(form.propertyType)) {
@@ -516,6 +522,10 @@ export function CreateListingForm() {
                         && Number(form.roomsArea) >= AREA_MIN
                         && Number(form.roomsArea) <= AREA_MAX
                     ))
+                    && (
+                        !showBathrooms(form.propertyType)
+                        || bathroomTypeFromForm(form.bathrooms, form.amenities) !== null
+                    )
                 );
             case 3: return true;
             case 4: return true;
@@ -695,8 +705,8 @@ export function CreateListingForm() {
             totalFloors: showTotalFloors(form.propertyType) && form.totalFloors !== ''
                 ? Number(form.totalFloors)
                 : undefined,
-            bathrooms: showBathrooms(form.propertyType) && form.bathrooms !== ''
-                ? Number(form.bathrooms)
+            bathrooms: showBathrooms(form.propertyType)
+                ? resolvedBathroomsForPayload(form.bathrooms, form.amenities)
                 : undefined,
             yearBuilt: showYearBuilt(form.propertyType) && form.yearBuilt
                 ? Number(form.yearBuilt)
@@ -1065,6 +1075,7 @@ export function CreateListingForm() {
                                                 label={
                                                     <>
                                                         <Bath className="w-3.5 h-3.5" /> Санузел
+                                                        <span className="text-destructive">*</span>
                                                     </>
                                                 }
                                                 value={bathroomTypeFromForm(form.bathrooms, form.amenities)}

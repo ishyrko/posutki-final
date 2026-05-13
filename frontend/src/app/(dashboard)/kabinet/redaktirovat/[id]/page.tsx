@@ -89,6 +89,7 @@ import {
     BathroomTypeRow,
     FloorTotalFloorsRow,
     NumericPillRow,
+    resolvedBathroomsForPayload,
     SegmentedAreaTripleRow,
 } from '@/features/create-listing/components/listing-parameter-controls';
 
@@ -526,6 +527,13 @@ export default function EditPropertyPage() {
         }
         if (
             showBathrooms(form.type)
+            && bathroomTypeFromForm(form.bathrooms, form.amenities) === null
+        ) {
+            toast.error('Выберите тип санузла');
+            return;
+        }
+        if (
+            showBathrooms(form.type)
             && form.bathrooms
             && !isNumberInRange(bathrooms, BATHROOMS_MIN, BATHROOMS_MAX)
         ) {
@@ -633,8 +641,8 @@ export default function EditPropertyPage() {
                     ? landArea
                     : undefined,
                 rooms: showRooms(form.type) ? (rooms || 1) : undefined,
-                bathrooms: showBathrooms(form.type) && form.bathrooms !== ''
-                    ? bathrooms
+                bathrooms: showBathrooms(form.type)
+                    ? resolvedBathroomsForPayload(form.bathrooms, form.amenities)
                     : undefined,
                 floor: showFloor(form.type) ? (Number.isFinite(floor) ? floor : undefined) : undefined,
                 totalFloors: showTotalFloors(form.type)
