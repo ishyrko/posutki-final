@@ -161,4 +161,13 @@ class CreatePropertyRequest
 
     #[Assert\Type('bool')]
     public bool $weekendPriceNegotiable = false;
+
+    #[Assert\Type('array')]
+    public ?array $additionalServices = null;
+
+    #[Assert\Length(max: 500)]
+    public ?string $instagramUrl = null;
+
+    #[Assert\Length(max: 500)]
+    public ?string $websiteUrl = null;
 }

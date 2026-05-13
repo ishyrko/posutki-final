@@ -43,6 +43,9 @@ final class CreatePropertyCommand
         public readonly array $amenities = [],
         public readonly ?string $sellerType = null,
         public readonly bool $weekendPriceNegotiable = false,
+        public readonly ?array $additionalServices = null,
+        public readonly ?string $instagramUrl = null,
+        public readonly ?string $websiteUrl = null,
     ) {
     }
 }

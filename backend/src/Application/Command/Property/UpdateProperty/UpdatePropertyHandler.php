@@ -141,6 +141,9 @@ readonly class UpdatePropertyHandler
             amenities: $command->amenities,
             sellerType: $command->sellerType,
             weekendPriceNegotiable: $command->weekendPriceNegotiable,
+            additionalServices: $command->additionalServices,
+            instagramUrl: $command->instagramUrl,
+            websiteUrl: $command->websiteUrl,
         );
 
         if ($price !== null) {
@@ -198,6 +201,9 @@ readonly class UpdatePropertyHandler
             'amenities' => $command->amenities,
             'sellerType' => $command->sellerType,
             'weekendPriceNegotiable' => $command->weekendPriceNegotiable,
+            'additionalServices' => $command->additionalServices,
+            'instagramUrl' => $command->instagramUrl,
+            'websiteUrl' => $command->websiteUrl,
         ], static fn(mixed $value): bool => $value !== null);
     }
 

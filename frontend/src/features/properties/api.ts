@@ -99,6 +99,9 @@ export interface UpdatePropertyPayload {
     images?: string[];
     amenities?: string[];
     weekendPriceNegotiable?: boolean;
+    additionalServices?: Array<{ name: string; price: number }>;
+    instagramUrl?: string;
+    websiteUrl?: string;
 }
 
 export const updateProperty = async (id: number, data: UpdatePropertyPayload): Promise<void> => {

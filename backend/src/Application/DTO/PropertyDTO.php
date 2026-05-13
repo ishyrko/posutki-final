@@ -77,6 +77,10 @@ final class PropertyDTO implements \JsonSerializable
         public readonly \DateTimeImmutable $createdAt,
         public readonly ?\DateTimeImmutable $publishedAt = null,
         public readonly ?\DateTimeImmutable $boostedAt = null,
+        /** @var array<int, array{name: string, price: float}>|null */
+        public readonly ?array $additionalServices = null,
+        public readonly ?string $instagramUrl = null,
+        public readonly ?string $websiteUrl = null,
     ) {
     }
 
@@ -155,6 +159,9 @@ final class PropertyDTO implements \JsonSerializable
             createdAt: $property->getCreatedAt(),
             publishedAt: $property->getPublishedAt(),
             boostedAt: $property->getBoostedAt(),
+            additionalServices: $property->getAdditionalServices(),
+            instagramUrl: $property->getInstagramUrl(),
+            websiteUrl: $property->getWebsiteUrl(),
         );
     }
 
@@ -239,6 +246,9 @@ final class PropertyDTO implements \JsonSerializable
             'createdAt' => $this->createdAt->format('c'),
             'publishedAt' => $this->publishedAt?->format('c'),
             'boostedAt' => $this->boostedAt?->format('c'),
+            'additionalServices' => $this->additionalServices ?? [],
+            'instagramUrl' => $this->instagramUrl,
+            'websiteUrl' => $this->websiteUrl,
         ];
 
         if ($this->dailySellerLegalProfile !== null) {

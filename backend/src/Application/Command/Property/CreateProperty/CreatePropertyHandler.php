@@ -94,6 +94,13 @@ final class CreatePropertyHandler
         );
         $property->publish();
         $property->setWeekendPriceNegotiable($command->weekendPriceNegotiable);
+        $property->setAdditionalServices($command->additionalServices);
+        if ($command->instagramUrl !== null) {
+            $property->setInstagramUrl($command->instagramUrl);
+        }
+        if ($command->websiteUrl !== null) {
+            $property->setWebsiteUrl($command->websiteUrl);
+        }
 
         $property->setPriceByn(
             $this->exchangeRateService->calculatePriceByn($command->priceAmount, $command->priceCurrency)

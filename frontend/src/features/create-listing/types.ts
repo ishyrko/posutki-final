@@ -57,6 +57,9 @@ export interface CreatePropertyPayload {
     images: string[];
     amenities: string[];
     weekendPriceNegotiable?: boolean;
+    additionalServices?: Array<{ name: string; price: number }>;
+    instagramUrl?: string;
+    websiteUrl?: string;
 }
 
 export interface CreatePropertyResponse {
@@ -73,6 +76,11 @@ export interface UploadedPhoto {
     url: string;
     file?: File;
     uploading?: boolean;
+}
+
+export interface AdditionalService {
+    name: string;
+    price: string;
 }
 
 export interface ListingFormData {
@@ -114,4 +122,7 @@ export interface ListingFormData {
     currency: string;
     amenities: string[];
     weekendPriceNegotiable: boolean;
+    additionalServices: AdditionalService[];
+    instagramUrl: string;
+    websiteUrl: string;
 }

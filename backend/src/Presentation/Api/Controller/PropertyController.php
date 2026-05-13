@@ -161,6 +161,9 @@ class PropertyController extends AbstractController
             amenities: $request->amenities,
             sellerType: $request->sellerType,
             weekendPriceNegotiable: $request->weekendPriceNegotiable,
+            additionalServices: $request->additionalServices,
+            instagramUrl: $request->instagramUrl,
+            websiteUrl: $request->websiteUrl,
         );
 
         $propertyId = $this->commandBus->dispatch($command);
@@ -244,6 +247,9 @@ class PropertyController extends AbstractController
             amenities: $request->amenities,
             sellerType: $request->sellerType,
             weekendPriceNegotiable: $request->weekendPriceNegotiable,
+            additionalServices: $request->additionalServices,
+            instagramUrl: $request->instagramUrl,
+            websiteUrl: $request->websiteUrl,
         );
 
         $this->commandBus->dispatch($command);

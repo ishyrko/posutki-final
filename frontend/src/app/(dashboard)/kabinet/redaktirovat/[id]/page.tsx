@@ -17,8 +17,11 @@ import {
     Upload,
     X,
     Info,
+    Plus,
+    Link as LinkIcon,
 } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BynCurrencyMark } from '@/components/BynCurrency';
@@ -83,7 +86,7 @@ import {
     getTitleFieldError,
     isNumberInRange,
 } from '@/features/create-listing/validation';
-import type { CitySearchResult } from '@/features/create-listing/types';
+import type { CitySearchResult, AdditionalService } from '@/features/create-listing/types';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import {
     applyBathroomTypeSelection,
@@ -143,6 +146,9 @@ interface EditFormData {
     images: { url: string; uploading?: boolean; file?: File }[];
     amenities: string[];
     weekendPriceNegotiable: boolean;
+    additionalServices: AdditionalService[];
+    instagramUrl: string;
+    websiteUrl: string;
 }
 
 type EditTitleDescriptionErrors = Partial<Pick<EditFormData, 'title' | 'description'>>;
@@ -243,6 +249,11 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
             : property.images.map((img) => ({ url: img.url })),
         amenities: [...(revisionData?.amenities ?? property.amenities ?? [])],
         weekendPriceNegotiable: property.weekendPriceNegotiable ?? false,
+        additionalServices: (
+            (revisionData?.additionalServices ?? property.additionalServices) as Array<{ name: string; price: number }> | undefined
+        )?.map((s) => ({ name: s.name, price: String(s.price) })) ?? [{ name: '', price: '' }],
+        instagramUrl: (revisionData?.instagramUrl ?? property.instagramUrl) as string ?? '',
+        websiteUrl: (revisionData?.websiteUrl ?? property.websiteUrl) as string ?? '',
     };
 }
 
@@ -687,6 +698,17 @@ export default function EditPropertyPage() {
                 images: form.images.filter((img) => !img.uploading).map((img) => img.url),
                 amenities: form.amenities,
                 weekendPriceNegotiable: form.weekendPriceNegotiable,
+                additionalServices: form.type === 'house'
+                    ? form.additionalServices
+                        .filter((s) => s.name.trim() !== '' && s.price !== '')
+                        .map((s) => ({ name: s.name.trim(), price: Number(s.price) }))
+                    : undefined,
+                instagramUrl: form.type === 'house' && form.instagramUrl.trim()
+                    ? form.instagramUrl.trim()
+                    : undefined,
+                websiteUrl: form.type === 'house' && form.websiteUrl.trim()
+                    ? form.websiteUrl.trim()
+                    : undefined,
             };
             await updateProperty({ id: propertyId, data: payload });
             toast.success(
@@ -1395,6 +1417,90 @@ export default function EditPropertyPage() {
                         />
                     </div>
                 </section>
+
+                {/* Additional services + links (house only) */}
+                {form.type === 'house' && (
+                    <section className="bg-card rounded-2xl shadow-card border border-border p-6 space-y-5">
+                        <div>
+                            <h2 className="text-lg font-semibold text-foreground mb-1">Дополнительные услуги и цены</h2>
+                            <p className="text-xs text-muted-foreground">Напр. &quot;Баня — 30р&quot;</p>
+                        </div>
+                        <div className="space-y-3">
+                            {form.additionalServices.map((svc, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                    <Input
+                                        value={svc.name}
+                                        onChange={(e) => {
+                                            const next = form.additionalServices.map((s, i) =>
+                                                i === idx ? { ...s, name: e.target.value } : s
+                                            );
+                                            update('additionalServices', next);
+                                        }}
+                                        placeholder="Название услуги"
+                                        className="flex-1"
+                                    />
+                                    <Input
+                                        type="number"
+                                        min={0}
+                                        value={svc.price}
+                                        onChange={(e) => {
+                                            const next = form.additionalServices.map((s, i) =>
+                                                i === idx ? { ...s, price: e.target.value } : s
+                                            );
+                                            update('additionalServices', next);
+                                        }}
+                                        placeholder="Цена"
+                                        className="w-28"
+                                    />
+                                    <span className="text-sm text-muted-foreground shrink-0">р.</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const next = form.additionalServices.filter((_, i) => i !== idx);
+                                            update('additionalServices', next.length > 0 ? next : [{ name: '', price: '' }]);
+                                        }}
+                                        className="text-destructive hover:text-destructive/80 transition-colors shrink-0"
+                                        aria-label="Удалить услугу"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={() => update('additionalServices', [...form.additionalServices, { name: '', price: '' }])}
+                            className="gap-2"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Добавить
+                        </Button>
+                        <div className="pt-2 space-y-4">
+                            <div>
+                                <Label className="text-foreground flex items-center gap-1 mb-1.5">
+                                    <LinkIcon className="w-3.5 h-3.5" />
+                                    Ссылка на Instagram:
+                                </Label>
+                                <Input
+                                    value={form.instagramUrl}
+                                    onChange={(e) => update('instagramUrl', e.target.value)}
+                                    placeholder="https://instagram.com/yourprofile"
+                                />
+                            </div>
+                            <div>
+                                <Label className="text-foreground flex items-center gap-1 mb-1.5">
+                                    <LinkIcon className="w-3.5 h-3.5" />
+                                    Ссылка на Сайт/Страницу:
+                                </Label>
+                                <Input
+                                    value={form.websiteUrl}
+                                    onChange={(e) => update('websiteUrl', e.target.value)}
+                                    placeholder="https://example.com"
+                                />
+                            </div>
+                        </div>
+                    </section>
+                )}
 
                 {/* Price */}
                 <section className="bg-card rounded-2xl shadow-card border border-border p-6">

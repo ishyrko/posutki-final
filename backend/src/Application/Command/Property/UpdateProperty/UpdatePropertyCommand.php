@@ -44,6 +44,9 @@ readonly class UpdatePropertyCommand
         public ?array $amenities = null,
         public ?string $sellerType = null,
         public ?bool $weekendPriceNegotiable = null,
+        public ?array $additionalServices = null,
+        public ?string $instagramUrl = null,
+        public ?string $websiteUrl = null,
     ) {
     }
 }

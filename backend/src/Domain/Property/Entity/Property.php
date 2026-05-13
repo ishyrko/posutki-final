@@ -161,6 +161,16 @@ class Property
     #[ORM\Column(type: 'boolean', name: 'weekend_price_negotiable', options: ['default' => false])]
     private bool $weekendPriceNegotiable = false;
 
+    /** @var array<int, array{name: string, price: float}>|null */
+    #[ORM\Column(type: 'json', nullable: true, name: 'additional_services')]
+    private ?array $additionalServices = null;
+
+    #[ORM\Column(type: 'string', length: 500, nullable: true, name: 'instagram_url')]
+    private ?string $instagramUrl = null;
+
+    #[ORM\Column(type: 'string', length: 500, nullable: true, name: 'website_url')]
+    private ?string $websiteUrl = null;
+
     /**
      * @var Collection<int, PropertyRevision>
      */
@@ -203,6 +213,9 @@ class Property
         ?string $sellerType = null,
         ?int $roomsInDeal = null,
         ?float $roomsArea = null,
+        ?array $additionalServices = null,
+        ?string $instagramUrl = null,
+        ?string $websiteUrl = null,
     ) {
         $this->ownerId = $ownerId;
         $this->type = $type;
@@ -239,6 +252,9 @@ class Property
         $this->status = $status;
         $this->contactPhone = $contactPhone;
         $this->contactName = $contactName;
+        $this->additionalServices = $additionalServices;
+        $this->instagramUrl = $instagramUrl;
+        $this->websiteUrl = $websiteUrl;
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
         $this->revisions = new ArrayCollection();
@@ -355,6 +371,41 @@ class Property
     public function setWeekendPriceNegotiable(bool $weekendPriceNegotiable): void
     {
         $this->weekendPriceNegotiable = $weekendPriceNegotiable;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    /** @return array<int, array{name: string, price: float}>|null */
+    public function getAdditionalServices(): ?array
+    {
+        return $this->additionalServices;
+    }
+
+    /** @param array<int, array{name: string, price: float}>|null $additionalServices */
+    public function setAdditionalServices(?array $additionalServices): void
+    {
+        $this->additionalServices = $additionalServices;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getInstagramUrl(): ?string
+    {
+        return $this->instagramUrl;
+    }
+
+    public function setInstagramUrl(?string $instagramUrl): void
+    {
+        $this->instagramUrl = $instagramUrl !== '' ? $instagramUrl : null;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getWebsiteUrl(): ?string
+    {
+        return $this->websiteUrl;
+    }
+
+    public function setWebsiteUrl(?string $websiteUrl): void
+    {
+        $this->websiteUrl = $websiteUrl !== '' ? $websiteUrl : null;
         $this->updatedAt = new \DateTimeImmutable();
     }
 
@@ -913,6 +964,9 @@ class Property
         ?string $contactName = null,
         ?string $sellerType = null,
         ?bool $weekendPriceNegotiable = null,
+        ?array $additionalServices = null,
+        ?string $instagramUrl = null,
+        ?string $websiteUrl = null,
     ): void {
         if ($type !== null) $this->type = $type;
         if ($dealType !== null) $this->dealType = $dealType;
@@ -962,6 +1016,16 @@ class Property
 
         if ($weekendPriceNegotiable !== null) {
             $this->weekendPriceNegotiable = $weekendPriceNegotiable;
+        }
+
+        if ($additionalServices !== null) {
+            $this->additionalServices = $additionalServices;
+        }
+        if ($instagramUrl !== null) {
+            $this->instagramUrl = $instagramUrl !== '' ? $instagramUrl : null;
+        }
+        if ($websiteUrl !== null) {
+            $this->websiteUrl = $websiteUrl !== '' ? $websiteUrl : null;
         }
 
         $this->roomsInDeal = null;

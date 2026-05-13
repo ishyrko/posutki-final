@@ -78,11 +78,17 @@ export interface Property {
         longitude?: number;
         images?: string[];
         amenities?: string[];
+        additionalServices?: Array<{ name: string; price: number }>;
+        instagramUrl?: string;
+        websiteUrl?: string;
     } | null;
     price: Price;
     /** BYN equivalent from backend (authoritative for display when set). */
     priceByn?: number | null;
     weekendPriceNegotiable?: boolean;
+    additionalServices?: Array<{ name: string; price: number }>;
+    instagramUrl?: string | null;
+    websiteUrl?: string | null;
     address: Address;
     coordinates?: Coordinates;
     specifications: {

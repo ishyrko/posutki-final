@@ -23,6 +23,8 @@ import {
     FileText,
     Sparkles,
     Wallet,
+    Plus,
+    Link as LinkIcon,
     type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -40,7 +42,7 @@ import AddressMapPicker from '@/components/AddressMapPicker';
 import { loadYmaps } from '@/lib/ymaps';
 import { useSearchCities, useSearchStreets, useCreateProperty } from '../hooks';
 import { uploadFile, FileTooLargeError } from '../api';
-import type { ListingFormData, UploadedPhoto, CreatePropertyPayload, CitySearchResult } from '../types';
+import type { ListingFormData, UploadedPhoto, CreatePropertyPayload, CitySearchResult, AdditionalService } from '../types';
 import { LISTING_AMENITY_GROUPS } from '../listing-amenity-groups';
 import {
     balconyOptions,
@@ -210,6 +212,9 @@ const INITIAL_FORM: ListingFormData = {
     currency: 'BYN',
     amenities: [],
     weekendPriceNegotiable: false,
+    additionalServices: [{ name: '', price: '' }],
+    instagramUrl: '',
+    websiteUrl: '',
 };
 
 export function CreateListingForm() {
@@ -774,6 +779,17 @@ export function CreateListingForm() {
             images: form.photos.filter((p) => !p.uploading).map((p) => p.url),
             amenities: form.amenities,
             weekendPriceNegotiable: form.weekendPriceNegotiable,
+            additionalServices: form.propertyType === 'house'
+                ? form.additionalServices
+                    .filter((s) => s.name.trim() !== '' && s.price !== '')
+                    .map((s) => ({ name: s.name.trim(), price: Number(s.price) }))
+                : undefined,
+            instagramUrl: form.propertyType === 'house' && form.instagramUrl.trim()
+                ? form.instagramUrl.trim()
+                : undefined,
+            websiteUrl: form.propertyType === 'house' && form.websiteUrl.trim()
+                ? form.websiteUrl.trim()
+                : undefined,
         };
 
         try {
@@ -1770,6 +1786,92 @@ export function CreateListingForm() {
                                         </label>
                                     </div>
                                 </div>
+
+                                {form.propertyType === 'house' && (
+                                    <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
+                                        <h2 className="font-display text-lg font-semibold text-foreground">Дополнительные услуги и цены</h2>
+                                        <p className="text-xs text-muted-foreground -mt-2">
+                                            Напр. &quot;Баня — 30р&quot;
+                                        </p>
+                                        <div className="space-y-3">
+                                            {form.additionalServices.map((svc, idx) => (
+                                                <div key={idx} className="flex items-center gap-2">
+                                                    <input
+                                                        value={svc.name}
+                                                        onChange={(e) => {
+                                                            const next = form.additionalServices.map((s, i) =>
+                                                                i === idx ? { ...s, name: e.target.value } : s
+                                                            );
+                                                            update('additionalServices', next);
+                                                        }}
+                                                        placeholder="Название услуги"
+                                                        className={cn(inputClass, 'flex-1')}
+                                                    />
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        value={svc.price}
+                                                        onChange={(e) => {
+                                                            const next = form.additionalServices.map((s, i) =>
+                                                                i === idx ? { ...s, price: e.target.value } : s
+                                                            );
+                                                            update('additionalServices', next);
+                                                        }}
+                                                        placeholder="Цена услуги"
+                                                        className={cn(inputClass, 'w-36')}
+                                                    />
+                                                    <span className="text-sm text-muted-foreground shrink-0">р.</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const next = form.additionalServices.filter((_, i) => i !== idx);
+                                                            update('additionalServices', next.length > 0 ? next : [{ name: '', price: '' }]);
+                                                        }}
+                                                        className="text-destructive hover:text-destructive/80 transition-colors shrink-0"
+                                                        aria-label="Удалить услугу"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => update('additionalServices', [...form.additionalServices, { name: '', price: '' }])}
+                                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            Добавить
+                                        </button>
+
+                                        <div className="pt-2 space-y-4">
+                                            <div>
+                                                <label className={labelClass}>
+                                                    <LinkIcon className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                                    Ссылка на Instagram:
+                                                </label>
+                                                <input
+                                                    value={form.instagramUrl}
+                                                    onChange={(e) => update('instagramUrl', e.target.value)}
+                                                    placeholder="https://instagram.com/yourprofile"
+                                                    className={inputClass}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className={labelClass}>
+                                                    <LinkIcon className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                                    Ссылка на Сайт/Страницу:
+                                                </label>
+                                                <input
+                                                    value={form.websiteUrl}
+                                                    onChange={(e) => update('websiteUrl', e.target.value)}
+                                                    placeholder="https://example.com"
+                                                    className={inputClass}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="bg-card rounded-2xl shadow-card p-6 space-y-3">
                                     <h2 className="font-display text-lg font-semibold text-foreground">Контакты для связи</h2>
