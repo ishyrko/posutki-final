@@ -298,35 +298,18 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
     "24h_checkin": "Круглосуточное заселение",
   };
 
-  const specs = [
+  // Квадратики: тип/комнаты, площадь, этаж
+  const keySpecs = [
+    {
+      icon: Building2,
+      label: property.typeLabel ?? PROPERTY_TYPE_LABELS[property.type] ?? property.type,
+      value: showRooms(property.type) && property.specifications.rooms != null
+        ? `${property.specifications.rooms}-комн.`
+        : (property.typeLabel ?? PROPERTY_TYPE_LABELS[property.type] ?? property.type),
+    },
     property.type === "land"
-      ? {
-          icon: Maximize,
-          label: "Площадь участка",
-          value: property.specifications.landArea ? `${property.specifications.landArea} сот.` : "-",
-        }
+      ? { icon: Maximize, label: "Площадь участка", value: property.specifications.landArea ? `${property.specifications.landArea} сот.` : "-" }
       : { icon: Maximize, label: "Площадь общая", value: `${property.specifications.area} м²` },
-    ...(property.type === "house"
-      ? [
-          {
-            icon: MapPin,
-            label: "Площадь участка",
-            value: property.specifications.landArea ? `${property.specifications.landArea} сот.` : "-",
-          },
-        ]
-      : []),
-    ...(showRooms(property.type) && property.specifications.rooms != null
-      ? [{ icon: BedDouble, label: "Комнаты", value: String(property.specifications.rooms) }]
-      : []),
-    ...(showRoomDealFields(property.type, property.dealType) && property.specifications.roomsInDeal != null
-      ? [{ icon: BedDouble, label: "Комнат в сделке", value: String(property.specifications.roomsInDeal) }]
-      : []),
-    ...(showRoomDealFields(property.type, property.dealType) && property.specifications.roomsArea != null
-      ? [{ icon: Maximize, label: "Площадь комнат в сделке", value: `${property.specifications.roomsArea} м²` }]
-      : []),
-    ...(showBathrooms(property.type) && property.specifications.bathrooms != null
-      ? [{ icon: Bath, label: "Санузлы", value: String(property.specifications.bathrooms) }]
-      : []),
     ...(showFloor(property.type) && property.specifications.floor != null
       ? [{
           icon: Layers,
@@ -338,29 +321,40 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
       : showTotalFloors(property.type) && property.specifications.totalFloors != null
       ? [{ icon: Layers, label: "Этажей", value: String(property.specifications.totalFloors) }]
       : []),
+  ].filter((spec) => spec.value !== "-");
+
+  // Полная таблица «О доме»
+  const houseInfoSpecs = [
+    ...(showBathrooms(property.type) && property.specifications.bathrooms != null
+      ? [{ icon: Bath, label: "Санузлы", value: String(property.specifications.bathrooms) }]
+      : []),
     ...(showYearBuilt(property.type) && property.specifications.yearBuilt != null
       ? [{ icon: Calendar, label: "Год постройки", value: String(property.specifications.yearBuilt) }]
       : []),
     ...(showRenovation(property.type) && property.specifications.renovation
       ? [{ icon: CheckCircle, label: "Ремонт", value: property.specifications.renovation }]
       : []),
-    ...(showBalcony(property.type) && property.specifications.balcony && property.specifications.balcony !== "Нет"
-      ? [{ icon: CheckCircle, label: "Балкон", value: property.specifications.balcony }]
+    ...(showBalcony(property.type) && property.specifications.balcony
+      ? [{ icon: CheckCircle, label: "Балкон / лоджия", value: property.specifications.balcony }]
       : []),
     ...(showLivingArea(property.type) && property.specifications.livingArea != null
-      ? [{ icon: Maximize, label: "Жилая", value: `${property.specifications.livingArea} м²` }]
+      ? [{ icon: Maximize, label: "Жилая площадь", value: `${property.specifications.livingArea} м²` }]
       : []),
     ...(showKitchenArea(property.type) && property.specifications.kitchenArea != null
-      ? [{ icon: Maximize, label: "Кухня", value: `${property.specifications.kitchenArea} м²` }]
+      ? [{ icon: Maximize, label: "Площадь кухни", value: `${property.specifications.kitchenArea} м²` }]
+      : []),
+    ...(property.type === "house" && property.specifications.landArea != null
+      ? [{ icon: MapPin, label: "Площадь участка", value: `${property.specifications.landArea} сот.` }]
+      : []),
+    ...(showRoomDealFields(property.type, property.dealType) && property.specifications.roomsInDeal != null
+      ? [{ icon: BedDouble, label: "Комнат в сделке", value: String(property.specifications.roomsInDeal) }]
+      : []),
+    ...(showRoomDealFields(property.type, property.dealType) && property.specifications.roomsArea != null
+      ? [{ icon: Maximize, label: "Площадь комнат в сделке", value: `${property.specifications.roomsArea} м²` }]
       : []),
     ...(showDealConditions(property.dealType) && (property.specifications.dealConditions?.length ?? 0) > 0
-      ? [{ icon: CheckCircle, label: "Условия", value: property.specifications.dealConditions!.join(", ") }]
+      ? [{ icon: CheckCircle, label: "Условия сделки", value: property.specifications.dealConditions!.join(", ") }]
       : []),
-    {
-      icon: Building2,
-      label: "Тип",
-      value: property.typeLabel ?? PROPERTY_TYPE_LABELS[property.type] ?? property.type,
-    },
   ].filter((spec) => spec.value !== "-");
 
   const hasCheckInInfo = property.dealType === "daily" && (
@@ -615,42 +609,126 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                     </div>
                   )}
                 </div>
-                <div className="flex items-baseline gap-3 flex-wrap">
-                  {/* Solid color: text-gradient-primary uses -webkit-text-fill-color: transparent and hides nested nbrb glyph */}
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  {property.dealType === "daily" && (
+                    <span className="text-sm text-muted-foreground">от</span>
+                  )}
                   <span className="text-3xl font-bold text-primary">
                     <PriceDisplay amount={priceDisplay.primaryAmount} currency={priceDisplay.primaryCurrency} />
                   </span>
-                  <span className="text-sm text-muted-foreground">{priceDisplay.secondary}</span>
+                  {property.dealType === "daily" && (
+                    <span className="text-sm text-muted-foreground">/ сутки</span>
+                  )}
                 </div>
               </motion.div>
 
-              {/* Compact specs — horizontal scrollable single row */}
+              {/* Key specs — 4 compact squares */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.5 }}
+                className="grid gap-2"
+                style={{ gridTemplateColumns: `repeat(${keySpecs.length}, minmax(0, 1fr))` }}
               >
-                <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {specs.map((spec) => (
-                    <div key={spec.label} className="flex-none bg-muted rounded-xl px-3 py-2.5 text-center min-w-[78px]">
-                      <spec.icon className="w-4 h-4 mx-auto text-primary mb-1" />
-                      <p className="text-[10px] text-muted-foreground whitespace-nowrap leading-tight mb-0.5">{spec.label}</p>
-                      <p className="text-sm font-semibold text-foreground whitespace-nowrap">{spec.value}</p>
-                    </div>
-                  ))}
-                </div>
+                {keySpecs.map((spec) => (
+                  <div key={spec.label} className="bg-muted rounded-xl px-3 py-3 text-center">
+                    <spec.icon className="w-4 h-4 mx-auto text-primary mb-1.5" />
+                    <p className="text-[10px] text-muted-foreground leading-tight mb-0.5">{spec.label}</p>
+                    <p className="text-sm font-semibold text-foreground">{spec.value}</p>
+                  </div>
+                ))}
               </motion.div>
 
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }}>
-                <h2 className="text-xl font-bold text-foreground mb-4">Описание</h2>
-                <div className="text-muted-foreground leading-relaxed space-y-3 whitespace-pre-line">
-                  {property.description}
-                </div>
-              </motion.div>
+              {/* О доме — detailed specs table */}
+              {houseInfoSpecs.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.5 }}>
+                  <h2 className="text-xl font-bold text-foreground mb-3">О доме</h2>
+                  <div className="rounded-xl border border-border/50 overflow-hidden max-w-lg">
+                    {houseInfoSpecs.map((spec, i) => (
+                      <div
+                        key={spec.label}
+                        className={`flex items-center justify-between px-4 py-3 ${i > 0 ? "border-t border-border/40" : ""} ${i % 2 === 0 ? "bg-muted/20" : ""}`}
+                      >
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <spec.icon className="w-4 h-4 text-primary/70 flex-shrink-0" />
+                          {spec.label}
+                        </span>
+                        <span className="text-sm font-medium text-foreground">{spec.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Check-in / house rules (daily only) */}
+              {hasCheckInInfo && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }}>
+                  <h2 className="text-xl font-bold text-foreground mb-3">Условия заселения</h2>
+                  <div className="rounded-xl border border-border/50 overflow-hidden max-w-lg">
+                    {property.specifications.checkInTime && (
+                      <div className="flex items-center justify-between px-4 py-3 bg-muted/20">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <LogIn className="w-4 h-4 text-primary/70" />
+                          Заезд не ранее
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{property.specifications.checkInTime}</span>
+                      </div>
+                    )}
+                    {property.specifications.checkOutTime && (
+                      <div className="flex items-center justify-between px-4 py-3 border-t border-border/40">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <LogOut className="w-4 h-4 text-primary/70" />
+                          Выезд до
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{property.specifications.checkOutTime}</span>
+                      </div>
+                    )}
+                    {property.specifications.maxDailyGuests != null && (
+                      <div className="flex items-center justify-between px-4 py-3 border-t border-border/40 bg-muted/20">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Users className="w-4 h-4 text-primary/70" />
+                          Максимум гостей
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{property.specifications.maxDailyGuests}</span>
+                      </div>
+                    )}
+                    {property.specifications.dailySingleBeds != null && (
+                      <div className="flex items-center justify-between px-4 py-3 border-t border-border/40">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <BedDouble className="w-4 h-4 text-primary/70" />
+                          Односпальных кроватей
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{property.specifications.dailySingleBeds}</span>
+                      </div>
+                    )}
+                    {property.specifications.dailyDoubleBeds != null && (
+                      <div className="flex items-center justify-between px-4 py-3 border-t border-border/40 bg-muted/20">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <BedDouble className="w-4 h-4 text-primary/70" />
+                          Двуспальных кроватей
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{property.specifications.dailyDoubleBeds}</span>
+                      </div>
+                    )}
+                    {(property.specifications.dealConditions?.length ?? 0) > 0 && (
+                      <div className="px-4 py-3 border-t border-border/40">
+                        <div className="flex flex-wrap gap-2">
+                          {property.specifications.dealConditions!.map((cond) => (
+                            <span key={cond} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary rounded-lg px-3 py-1.5 text-sm font-medium">
+                              <UserCheck className="w-3.5 h-3.5 flex-shrink-0" />
+                              {DEAL_CONDITION_LABELS[cond] ?? cond}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
 
               {/* Amenities */}
               {hasAmenities && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.5 }}>
-                  <h2 className="text-xl font-bold text-foreground mb-4">Удобства</h2>
+                  <h2 className="text-xl font-bold text-foreground mb-3">Удобства</h2>
                   <div className="space-y-5">
                     {LISTING_AMENITY_GROUPS.map((group) => {
                       const visibleItems = group.items.filter(
@@ -679,7 +757,6 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                         </div>
                       );
                     })}
-                    {/* Amenities that don't belong to any group (e.g. legacy ids) */}
                     {(() => {
                       const knownIds = LISTING_AMENITY_GROUPS.flatMap((g) => g.items.map((i) => i.id));
                       const unknownAmenities = activeAmenities.filter((id) => !knownIds.includes(id));
@@ -699,71 +776,13 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                 </motion.div>
               )}
 
-              {/* Check-in / house rules (daily only) */}
-              {hasCheckInInfo && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
-                  <h2 className="text-xl font-bold text-foreground mb-4">Условия заселения</h2>
-                  <div className="bg-muted/30 rounded-xl border border-border/50 overflow-hidden">
-                    {property.specifications.checkInTime && (
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
-                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <LogIn className="w-4 h-4 text-primary/70" />
-                          Заезд не ранее
-                        </span>
-                        <span className="text-sm font-semibold text-foreground">{property.specifications.checkInTime}</span>
-                      </div>
-                    )}
-                    {property.specifications.checkOutTime && (
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
-                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <LogOut className="w-4 h-4 text-primary/70" />
-                          Выезд до
-                        </span>
-                        <span className="text-sm font-semibold text-foreground">{property.specifications.checkOutTime}</span>
-                      </div>
-                    )}
-                    {property.specifications.maxDailyGuests != null && (
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
-                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Users className="w-4 h-4 text-primary/70" />
-                          Максимум гостей
-                        </span>
-                        <span className="text-sm font-semibold text-foreground">{property.specifications.maxDailyGuests}</span>
-                      </div>
-                    )}
-                    {property.specifications.dailySingleBeds != null && (
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
-                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <BedDouble className="w-4 h-4 text-primary/70" />
-                          Односпальных кроватей
-                        </span>
-                        <span className="text-sm font-semibold text-foreground">{property.specifications.dailySingleBeds}</span>
-                      </div>
-                    )}
-                    {property.specifications.dailyDoubleBeds != null && (
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
-                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <BedDouble className="w-4 h-4 text-primary/70" />
-                          Двуспальных кроватей
-                        </span>
-                        <span className="text-sm font-semibold text-foreground">{property.specifications.dailyDoubleBeds}</span>
-                      </div>
-                    )}
-                    {(property.specifications.dealConditions?.length ?? 0) > 0 && (
-                      <div className="px-4 py-3">
-                        <div className="flex flex-wrap gap-2">
-                          {property.specifications.dealConditions!.map((cond) => (
-                            <span key={cond} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary rounded-lg px-3 py-1.5 text-sm font-medium">
-                              <UserCheck className="w-3.5 h-3.5 flex-shrink-0" />
-                              {DEAL_CONDITION_LABELS[cond] ?? cond}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
+              {/* Описание — после удобств */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
+                <h2 className="text-xl font-bold text-foreground mb-4">Описание</h2>
+                <div className="text-muted-foreground leading-relaxed space-y-3 whitespace-pre-line">
+                  {property.description}
+                </div>
+              </motion.div>
 
               {coords?.latitude && coords?.longitude && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
