@@ -253,6 +253,80 @@ final class SeedDemoPropertiesCommand extends Command
         };
     }
 
+    private const RENOVATION_OPTIONS = ['Косметический', 'Хороший', 'Евроремонт', 'Дизайнерский'];
+
+    private const BALCONY_OPTIONS = ['Балкон', 'Лоджия', 'Балкон и лоджия', 'Нет'];
+
+    private const CHECKIN_TIMES = ['13:00', '14:00', '15:00', '16:00'];
+
+    private const CHECKOUT_TIMES = ['10:00', '11:00', '12:00'];
+
+    /** @var list<string> Базовые удобства квартиры */
+    private const AMENITIES_APT_BASE = [
+        'wifi', 'fridge', 'electric_stove', 'microwave', 'kettle',
+        'dishes_utensils', 'washing_machine',
+    ];
+
+    /** @var list<string> Удобства квартиры среднего уровня */
+    private const AMENITIES_APT_MID = [
+        'smart_tv', 'air_conditioner', 'iron', 'hairdryer',
+        'bathroom_combined', 'toiletries', 'towels',
+    ];
+
+    /** @var list<string> Премиум-удобства квартиры */
+    private const AMENITIES_APT_PREMIUM = [
+        'coffee_machine', 'dishwasher', 'rain_shower', 'bluetooth_speaker',
+        'robot_vacuum', 'dryer', 'projector',
+    ];
+
+    /** @var list<string> Базовые удобства дома */
+    private const AMENITIES_HOUSE_BASE = [
+        'wifi', 'fridge', 'electric_stove', 'microwave', 'kettle',
+        'dishes_utensils', 'washing_machine', 'parking_open', 'cctv',
+    ];
+
+    /** @var list<string> Удобства дома среднего уровня */
+    private const AMENITIES_HOUSE_MID = [
+        'smart_tv', 'air_conditioner', 'iron', 'bbq', 'gazebo', 'towels',
+    ];
+
+    /** @var list<string> Премиум-удобства дома */
+    private const AMENITIES_HOUSE_PREMIUM = [
+        'coffee_machine', 'dishwasher', 'sauna', 'pool', 'playground',
+        'garden', 'parking_covered', 'bathrobes',
+    ];
+
+    private const APARTMENT_DESCRIPTIONS = [
+        1 => [
+            'Уютная однокомнатная квартира в центре города. Всё необходимое для комфортного проживания: современная мебель, оборудованная кухня, стабильный Wi-Fi.',
+            'Светлая студия с видом на город. Идеальный вариант для командировок и коротких поездок. Рядом кафе, магазины, остановки общественного транспорта.',
+            'Тихая квартира в жилом районе, 5 минут пешком до центра. Свежий ремонт, новая техника, всё для самостоятельного отдыха.',
+        ],
+        2 => [
+            'Двухкомнатная квартира для семьи или компании. Просторная гостиная, отдельная спальня, полностью оснащённая кухня. Бесплатный паркинг во дворе.',
+            'Стильная «двушка» с дизайнерским ремонтом. Кондиционер, Smart TV, скоростной интернет. Всё для комфортного отдыха.',
+            'Уютная квартира в тихом дворе. Две отдельные комнаты, просторная кухня-гостиная. Подходит для длительного проживания.',
+        ],
+        3 => [
+            'Просторная трёхкомнатная квартира для большой компании или семьи. Три отдельные спальни, большая гостиная с диваном, две ванные комнаты.',
+            'Современная квартира с панорамным видом. Три спальни, гардеробная, оборудованная кухня с техникой. Высокий этаж, тихий район.',
+            'Квартира бизнес-класса в центре. Три комнаты, дизайнерская отделка, умная техника. Рядом рестораны, торговые центры.',
+        ],
+        4 => [
+            'Апартаменты премиум-класса на несколько семей или большой компании. Четыре спальни, две ванные, просторная гостиная с кухней-островом.',
+            'Просторные апартаменты с террасой. Четыре отдельные комнаты, два санузла, барная стойка. Идеально для корпоративного отдыха или семейного торжества.',
+            'Люкс-апартаменты в новостройке. Дизайнерский ремонт, smart home, четыре спальни, кинотеатр. Для самых взыскательных гостей.',
+        ],
+    ];
+
+    private const HOUSE_DESCRIPTIONS = [
+        'Загородный дом для отдыха всей семьёй. Просторные комнаты, оборудованная кухня, зона отдыха во дворе. Свежий воздух, тишина и уют.',
+        'Уютный дом с ухоженным участком. Беседка с мангалом, летняя зона отдыха, парковка на несколько автомобилей. Идеально для праздника или длительного отдыха.',
+        'Современный коттедж с баней и бассейном. Несколько спален, просторная гостиная с камином, полностью оснащённая кухня. Незабываемый отдых на природе.',
+        'Дом в экологически чистом районе. Большой участок с садом и огородом, беседка, мангальная зона. Подходит для семей с детьми.',
+        'Кирпичный дом с панорамным видом. Несколько комнат, два санузла, гараж на две машины. Уютная терраса для вечерних посиделок.',
+    ];
+
     /**
      * @param list<string> $images
      * @return array<string, mixed>
@@ -273,8 +347,26 @@ final class SeedDemoPropertiesCommand extends Command
             3 => 'Трёхкомнатная квартира' . $suffix,
             default => 'Четырёхкомнатная квартира' . $suffix,
         };
-
         $base = 11_000_00 + $index * 500_00;
+        $tier = $index % 3;
+        $guests = 2 + ($index % 4);
+        $singleBeds = $rooms > 2 ? $rooms : ($index % 2 === 0 ? $rooms : 0);
+        $doubleBeds = $rooms <= 2 ? 1 : ($index % 2);
+        $checkIn = self::CHECKIN_TIMES[$index % count(self::CHECKIN_TIMES)];
+        $checkOut = self::CHECKOUT_TIMES[$index % count(self::CHECKOUT_TIMES)];
+        $dealConditions = match ($index % 4) {
+            1 => ['contactless_checkin'],
+            2 => ['24h_checkin'],
+            3 => ['contactless_checkin', '24h_checkin'],
+            default => null,
+        };
+        $descPool = self::APARTMENT_DESCRIPTIONS[$rooms] ?? self::APARTMENT_DESCRIPTIONS[1];
+        $desc = $descPool[$index % count($descPool)];
+        $amenities = match ($tier) {
+            0 => self::AMENITIES_APT_BASE,
+            1 => array_merge(self::AMENITIES_APT_BASE, self::AMENITIES_APT_MID),
+            default => array_merge(self::AMENITIES_APT_BASE, self::AMENITIES_APT_MID, self::AMENITIES_APT_PREMIUM),
+        };
 
         return $this->spec(
             PropertyType::Apartment->value,
@@ -287,11 +379,17 @@ final class SeedDemoPropertiesCommand extends Command
             $floor,
             $total,
             $images,
+            $dealConditions,
+            $guests,
+            $singleBeds,
+            $checkIn,
+            $checkOut,
             null,
-            2 + ($index % 4),
-            2 + ($index % 3),
-            '14:00',
-            '12:00',
+            null,
+            $amenities,
+            $desc,
+            $doubleBeds,
+            $index,
         );
     }
 
@@ -310,6 +408,23 @@ final class SeedDemoPropertiesCommand extends Command
         $area = 95.0 + $index * 6.0;
         $title = 'Дом с участком' . $suffix;
         $base = 25_000_00 + $index * 1_000_00;
+        $tier = $index % 3;
+        $guests = 5 + ($index % 4);
+        $singleBeds = $rooms;
+        $doubleBeds = 1 + ($index % 2);
+        $checkIn = self::CHECKIN_TIMES[($index + 1) % count(self::CHECKIN_TIMES)];
+        $checkOut = self::CHECKOUT_TIMES[($index + 1) % count(self::CHECKOUT_TIMES)];
+        $dealConditions = match ($index % 3) {
+            1 => ['contactless_checkin'],
+            2 => ['24h_checkin'],
+            default => null,
+        };
+        $desc = self::HOUSE_DESCRIPTIONS[$index % count(self::HOUSE_DESCRIPTIONS)];
+        $amenities = match ($tier) {
+            0 => self::AMENITIES_HOUSE_BASE,
+            1 => array_merge(self::AMENITIES_HOUSE_BASE, self::AMENITIES_HOUSE_MID),
+            default => array_merge(self::AMENITIES_HOUSE_BASE, self::AMENITIES_HOUSE_MID, self::AMENITIES_HOUSE_PREMIUM),
+        };
 
         return $this->spec(
             PropertyType::House->value,
@@ -322,17 +437,24 @@ final class SeedDemoPropertiesCommand extends Command
             null,
             null,
             $images,
+            $dealConditions,
+            $guests,
+            $singleBeds,
+            $checkIn,
+            $checkOut,
             null,
-            5 + ($index % 4),
-            5 + ($index % 3),
-            '15:00',
-            '11:00',
+            null,
+            $amenities,
+            $desc,
+            $doubleBeds,
+            $index,
         );
     }
 
     /**
      * @param string[] $images
-     * @param string[]|null $dealOne
+     * @param string[]|null $dealConditions
+     * @param list<string> $amenities
      * @return array<string, mixed>
      */
     private function spec(
@@ -346,18 +468,23 @@ final class SeedDemoPropertiesCommand extends Command
         ?int $floor,
         ?int $totalFloors,
         array $images,
-        ?array $dealOne = null,
+        ?array $dealConditions = null,
         ?int $maxGuests = null,
-        ?int $beds = null,
+        ?int $singleBeds = null,
         ?string $checkIn = null,
         ?string $checkOut = null,
         ?int $roomsInDeal = null,
         ?float $roomsArea = null,
+        array $amenities = [],
+        string $description = '',
+        int $doubleBeds = 0,
+        int $index = 0,
     ): array {
         return [
             'type' => $type,
             'dealType' => $dealType,
             'title' => $title,
+            'description' => $description,
             'priceKopecks' => $priceKopecks,
             'area' => $area,
             'landArea' => $landArea,
@@ -365,14 +492,16 @@ final class SeedDemoPropertiesCommand extends Command
             'floor' => $floor,
             'totalFloors' => $totalFloors,
             'images' => $images,
-            'dealConditions' => $dealOne,
+            'dealConditions' => $dealConditions,
             'maxDailyGuests' => $maxGuests,
-            'dailySingleBeds' => $beds,
-            'dailyDoubleBeds' => 0,
+            'dailySingleBeds' => $singleBeds,
+            'dailyDoubleBeds' => $doubleBeds,
             'checkInTime' => $checkIn,
             'checkOutTime' => $checkOut,
             'roomsInDeal' => $roomsInDeal,
             'roomsArea' => $roomsArea,
+            'amenities' => $amenities,
+            'index' => $index,
         ];
     }
 
@@ -383,15 +512,24 @@ final class SeedDemoPropertiesCommand extends Command
     {
         $type = $spec['type'];
         $dealType = $spec['dealType'];
-        $desc = sprintf(
+        $description = (string) ($spec['description'] ?: sprintf(
             'Демонстрационное объявление для тестирования каталога. %s. Подробности по запросу.',
             $spec['title']
-        );
+        ));
 
-        $bathrooms = 1;
-        $yearBuilt = $type === PropertyType::House->value ? 2012 : 2012;
-        $renovation = $type === PropertyType::Apartment->value ? 'cosmetic' : null;
-        $balcony = $type === PropertyType::Apartment->value ? 'yes' : null;
+        $index = $spec['index'] ?? 0;
+        $bathrooms = $type === PropertyType::Apartment->value
+            ? (($index % 3 === 2) ? 2 : 1)
+            : (int) min(2, 1 + (int) ($spec['rooms'] ?? 3) / 4);
+        $yearBuilt = $type === PropertyType::House->value
+            ? (2005 + ($index % 15))
+            : (2008 + ($index % 16));
+        $renovation = $type === PropertyType::Apartment->value
+            ? self::RENOVATION_OPTIONS[$index % count(self::RENOVATION_OPTIONS)]
+            : null;
+        $balcony = $type === PropertyType::Apartment->value
+            ? self::BALCONY_OPTIONS[$index % count(self::BALCONY_OPTIONS)]
+            : null;
         $livingArea = $type === PropertyType::Apartment->value ? round($spec['area'] * 0.72, 1) : null;
         $kitchenArea = $type === PropertyType::Apartment->value ? round($spec['area'] * 0.18, 1) : null;
 
@@ -400,7 +538,7 @@ final class SeedDemoPropertiesCommand extends Command
             type: $type,
             dealType: $dealType,
             title: $spec['title'],
-            description: $desc,
+            description: $description,
             price: Price::fromAmount($spec['priceKopecks'], 'BYN'),
             area: $spec['area'],
             rooms: $spec['rooms'],
@@ -424,7 +562,7 @@ final class SeedDemoPropertiesCommand extends Command
             landArea: $spec['landArea'],
             streetId: null,
             images: $spec['images'],
-            amenities: ['furniture', 'appliances'],
+            amenities: $spec['amenities'] ?? [],
             status: 'draft',
             contactPhone: null,
             contactName: null,

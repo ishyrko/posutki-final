@@ -5,8 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Heart, Share2, MapPin, BedDouble, Bath, Maximize,
   Building2, Calendar, Layers, Phone, MessageCircle, Mail, TrainFront,
-  ChevronLeft, ChevronRight, X, Shield, Eye, Clock, Send, CheckCircle
+  ChevronLeft, ChevronRight, X, Shield, Eye, Clock, Send, CheckCircle,
+  Users, Utensils, Wifi, Tv, Sofa, Car, Waves, Wind,
+  ShowerHead, Flame, Coffee, Snowflake, Baby, WashingMachine,
+  LogIn, LogOut, UserCheck, Sunrise,
 } from "lucide-react";
+import { LISTING_AMENITY_GROUPS } from "@/features/create-listing/listing-amenity-groups";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
@@ -240,6 +244,60 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
     return `~${distanceKm.toFixed(1)} км`;
   };
 
+  const AMENITY_ICON_MAP: Record<string, React.ElementType> = {
+    fridge: Utensils,
+    electric_stove: Flame,
+    gas_stove: Flame,
+    induction_stove: Flame,
+    oven: Utensils,
+    microwave: Utensils,
+    dishwasher: Utensils,
+    coffee_machine: Coffee,
+    kettle: Coffee,
+    blender: Utensils,
+    dishes_utensils: Utensils,
+    bathroom_separate: ShowerHead,
+    bathroom_combined: ShowerHead,
+    jacuzzi: Waves,
+    rain_shower: ShowerHead,
+    towels: Bath,
+    hairdryer: Wind,
+    bathrobes: Bath,
+    toiletries: Bath,
+    smart_tv: Tv,
+    tv: Tv,
+    wifi: Wifi,
+    playstation: Tv,
+    bluetooth_speaker: Tv,
+    projector: Tv,
+    cable_tv: Tv,
+    air_conditioner: Snowflake,
+    heated_floor: Flame,
+    iron: Wind,
+    washing_machine: WashingMachine,
+    dryer: WashingMachine,
+    robot_vacuum: Sofa,
+    crib: Baby,
+    high_chair: Baby,
+    parking_open: Car,
+    parking_covered: Car,
+    cctv: Shield,
+    gazebo: Sofa,
+    pool: Waves,
+    pond: Waves,
+    bbq: Flame,
+    sauna: Waves,
+    playground: Baby,
+    garden: Sofa,
+    furniture: Sofa,
+    appliances: Utensils,
+  };
+
+  const DEAL_CONDITION_LABELS: Record<string, string> = {
+    contactless_checkin: "Бесконтактное заселение",
+    "24h_checkin": "Круглосуточное заселение",
+  };
+
   const specs = [
     property.type === "land"
       ? {
@@ -298,27 +356,24 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
     ...(showDealConditions(property.dealType) && (property.specifications.dealConditions?.length ?? 0) > 0
       ? [{ icon: CheckCircle, label: "Условия", value: property.specifications.dealConditions!.join(", ") }]
       : []),
-    ...(property.dealType === "daily" && property.specifications.maxDailyGuests != null
-      ? [{ icon: BedDouble, label: "Гостей", value: String(property.specifications.maxDailyGuests) }]
-      : []),
-    ...(property.dealType === "daily" && property.specifications.dailySingleBeds != null
-      ? [{ icon: BedDouble, label: "Односпальных кроватей", value: String(property.specifications.dailySingleBeds) }]
-      : []),
-    ...(property.dealType === "daily" && property.specifications.dailyDoubleBeds != null
-      ? [{ icon: BedDouble, label: "Двуспальных кроватей", value: String(property.specifications.dailyDoubleBeds) }]
-      : []),
-    ...(property.dealType === "daily" && property.specifications.checkInTime
-      ? [{ icon: Clock, label: "Заезд", value: property.specifications.checkInTime }]
-      : []),
-    ...(property.dealType === "daily" && property.specifications.checkOutTime
-      ? [{ icon: Clock, label: "Выезд", value: property.specifications.checkOutTime }]
-      : []),
     {
       icon: Building2,
       label: "Тип",
       value: property.typeLabel ?? PROPERTY_TYPE_LABELS[property.type] ?? property.type,
     },
   ].filter((spec) => spec.value !== "-");
+
+  const hasCheckInInfo = property.dealType === "daily" && (
+    property.specifications.checkInTime ||
+    property.specifications.checkOutTime ||
+    (property.specifications.maxDailyGuests != null) ||
+    (property.specifications.dailySingleBeds != null) ||
+    (property.specifications.dailyDoubleBeds != null) ||
+    (property.specifications.dealConditions?.length ?? 0) > 0
+  );
+
+  const activeAmenities = property.amenities ?? [];
+  const hasAmenities = activeAmenities.length > 0;
 
   const prevImage = () => setCurrentImage((p) => (p === 0 ? images.length - 1 : p - 1));
   const nextImage = () => setCurrentImage((p) => (p === images.length - 1 ? 0 : p + 1));
@@ -569,18 +624,20 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                 </div>
               </motion.div>
 
+              {/* Compact specs — horizontal scrollable single row */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.5 }}
-                className="grid grid-cols-3 sm:grid-cols-6 gap-3"
               >
-                {specs.map((spec) => (
-                  <div key={spec.label} className="bg-muted rounded-xl p-3 text-center">
-                    <spec.icon className="w-5 h-5 mx-auto text-primary mb-1.5" />
-                    <p className="text-xs text-muted-foreground mb-0.5">{spec.label}</p>
-                    <p className="text-sm font-semibold text-foreground">{spec.value}</p>
-                  </div>
-                ))}
+                <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {specs.map((spec) => (
+                    <div key={spec.label} className="flex-none bg-muted rounded-xl px-3 py-2.5 text-center min-w-[78px]">
+                      <spec.icon className="w-4 h-4 mx-auto text-primary mb-1" />
+                      <p className="text-[10px] text-muted-foreground whitespace-nowrap leading-tight mb-0.5">{spec.label}</p>
+                      <p className="text-sm font-semibold text-foreground whitespace-nowrap">{spec.value}</p>
+                    </div>
+                  ))}
+                </div>
               </motion.div>
 
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }}>
@@ -589,6 +646,124 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                   {property.description}
                 </div>
               </motion.div>
+
+              {/* Amenities */}
+              {hasAmenities && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.5 }}>
+                  <h2 className="text-xl font-bold text-foreground mb-4">Удобства</h2>
+                  <div className="space-y-5">
+                    {LISTING_AMENITY_GROUPS.map((group) => {
+                      const visibleItems = group.items.filter(
+                        (item) =>
+                          activeAmenities.includes(item.id) &&
+                          (!item.propertyTypes || item.propertyTypes.includes(property.type))
+                      );
+                      if (visibleItems.length === 0) return null;
+                      return (
+                        <div key={group.id}>
+                          <p className="text-sm font-semibold text-muted-foreground mb-2">{group.title}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {visibleItems.map((item) => {
+                              const Icon = AMENITY_ICON_MAP[item.id] ?? CheckCircle;
+                              return (
+                                <span
+                                  key={item.id}
+                                  className="inline-flex items-center gap-1.5 bg-muted rounded-lg px-3 py-1.5 text-sm text-foreground"
+                                >
+                                  <Icon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                  {item.label}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {/* Amenities that don't belong to any group (e.g. legacy ids) */}
+                    {(() => {
+                      const knownIds = LISTING_AMENITY_GROUPS.flatMap((g) => g.items.map((i) => i.id));
+                      const unknownAmenities = activeAmenities.filter((id) => !knownIds.includes(id));
+                      if (!unknownAmenities.length) return null;
+                      return (
+                        <div className="flex flex-wrap gap-2">
+                          {unknownAmenities.map((id) => (
+                            <span key={id} className="inline-flex items-center gap-1.5 bg-muted rounded-lg px-3 py-1.5 text-sm text-foreground">
+                              <CheckCircle className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                              {id}
+                            </span>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Check-in / house rules (daily only) */}
+              {hasCheckInInfo && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
+                  <h2 className="text-xl font-bold text-foreground mb-4">Условия заселения</h2>
+                  <div className="bg-muted/30 rounded-xl border border-border/50 overflow-hidden">
+                    {property.specifications.checkInTime && (
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <LogIn className="w-4 h-4 text-primary/70" />
+                          Заезд не ранее
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{property.specifications.checkInTime}</span>
+                      </div>
+                    )}
+                    {property.specifications.checkOutTime && (
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <LogOut className="w-4 h-4 text-primary/70" />
+                          Выезд до
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{property.specifications.checkOutTime}</span>
+                      </div>
+                    )}
+                    {property.specifications.maxDailyGuests != null && (
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Users className="w-4 h-4 text-primary/70" />
+                          Максимум гостей
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{property.specifications.maxDailyGuests}</span>
+                      </div>
+                    )}
+                    {property.specifications.dailySingleBeds != null && (
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <BedDouble className="w-4 h-4 text-primary/70" />
+                          Односпальных кроватей
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{property.specifications.dailySingleBeds}</span>
+                      </div>
+                    )}
+                    {property.specifications.dailyDoubleBeds != null && (
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <BedDouble className="w-4 h-4 text-primary/70" />
+                          Двуспальных кроватей
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{property.specifications.dailyDoubleBeds}</span>
+                      </div>
+                    )}
+                    {(property.specifications.dealConditions?.length ?? 0) > 0 && (
+                      <div className="px-4 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          {property.specifications.dealConditions!.map((cond) => (
+                            <span key={cond} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary rounded-lg px-3 py-1.5 text-sm font-medium">
+                              <UserCheck className="w-3.5 h-3.5 flex-shrink-0" />
+                              {DEAL_CONDITION_LABELS[cond] ?? cond}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
 
               {coords?.latitude && coords?.longitude && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
