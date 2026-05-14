@@ -638,27 +638,6 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                 ))}
               </motion.div>
 
-              {/* О доме — detailed specs table */}
-              {houseInfoSpecs.length > 0 && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.5 }}>
-                  <h2 className="text-xl font-bold text-foreground mb-3">О доме</h2>
-                  <div className="rounded-xl border border-border/50 overflow-hidden max-w-lg">
-                    {houseInfoSpecs.map((spec, i) => (
-                      <div
-                        key={spec.label}
-                        className={`flex items-center justify-between px-4 py-3 ${i > 0 ? "border-t border-border/40" : ""} ${i % 2 === 0 ? "bg-muted/20" : ""}`}
-                      >
-                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <spec.icon className="w-4 h-4 text-primary/70 flex-shrink-0" />
-                          {spec.label}
-                        </span>
-                        <span className="text-sm font-medium text-foreground">{spec.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
               {/* Check-in / house rules (daily only) */}
               {hasCheckInInfo && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }}>
@@ -772,6 +751,27 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                         </div>
                       );
                     })()}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* О доме — detailed specs table */}
+              {houseInfoSpecs.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
+                  <h2 className="text-xl font-bold text-foreground mb-3">О доме</h2>
+                  <div className="rounded-xl border border-border/50 overflow-hidden max-w-lg">
+                    {houseInfoSpecs.map((spec, i) => (
+                      <div
+                        key={spec.label}
+                        className={`flex items-center justify-between px-4 py-3 ${i > 0 ? "border-t border-border/40" : ""} ${i % 2 === 0 ? "bg-muted/20" : ""}`}
+                      >
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <spec.icon className="w-4 h-4 text-primary/70 flex-shrink-0" />
+                          {spec.label}
+                        </span>
+                        <span className="text-sm font-medium text-foreground">{spec.value}</span>
+                      </div>
+                    ))}
                   </div>
                 </motion.div>
               )}
