@@ -14,6 +14,7 @@ import CatalogPage from "@/features/catalog/CatalogPage";
 import HomePage from "@/features/home/HomePage";
 import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { fetchFeaturedPropertiesForHome } from "@/lib/featured-properties-server";
+import { fetchRecentArticlesForHome } from "@/lib/articles-server";
 import { HEADER_REGION_MINSK_SLUG } from "@/lib/region-header";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";
 import PropertyDetailClient from "../../../features/properties/components/PropertyDetailClient";
@@ -178,10 +179,13 @@ export default async function SegmentsPage({ params }: PageProps) {
     }
 
     const featuredRegionSlug = HEADER_REGION_MINSK_SLUG;
-    const featuredInitial = await fetchFeaturedPropertiesForHome(featuredRegionSlug);
+    const [featuredInitial, articles] = await Promise.all([
+      fetchFeaturedPropertiesForHome(featuredRegionSlug),
+      fetchRecentArticlesForHome(),
+    ]);
 
     return (
-      <HomePage featuredInitial={featuredInitial ?? undefined} />
+      <HomePage featuredInitial={featuredInitial ?? undefined} articles={articles} />
     );
   }
 
