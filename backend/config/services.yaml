@@ -104,6 +104,9 @@ services:
     App\Domain\ContactFeedback\Repository\ContactFeedbackRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\ContactFeedbackRepository
 
+    App\Domain\Review\Repository\ReviewRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\ReviewRepository
+
     App\Domain\User\Service\SmsServiceInterface:
         class: App\Infrastructure\Sms\StubSmsService
 

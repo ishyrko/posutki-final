@@ -81,6 +81,10 @@ final class PropertyDTO implements \JsonSerializable
         public readonly ?array $additionalServices = null,
         public readonly ?string $instagramUrl = null,
         public readonly ?string $websiteUrl = null,
+        public readonly ?float $ratingAvg = null,
+        public readonly int $reviewCount = 0,
+        /** @var array{id:int,status:string}|null Отзыв текущего пользователя (если передан viewer id). */
+        public readonly ?array $viewerReview = null,
     ) {
     }
 
@@ -93,6 +97,9 @@ final class PropertyDTO implements \JsonSerializable
         ?array $dailySellerLegalProfile = null,
         ?string $ownerContactPhone = null,
         ?string $ownerContactName = null,
+        ?float $ratingAvg = null,
+        int $reviewCount = 0,
+        ?array $viewerReview = null,
     ): self {
         $district = $city->getRegionDistrict();
         $region = $district?->getRegion();
@@ -162,6 +169,9 @@ final class PropertyDTO implements \JsonSerializable
             additionalServices: $property->getAdditionalServices(),
             instagramUrl: $property->getInstagramUrl(),
             websiteUrl: $property->getWebsiteUrl(),
+            ratingAvg: $ratingAvg,
+            reviewCount: $reviewCount,
+            viewerReview: $viewerReview,
         );
     }
 
@@ -249,10 +259,16 @@ final class PropertyDTO implements \JsonSerializable
             'additionalServices' => $this->additionalServices ?? [],
             'instagramUrl' => $this->instagramUrl,
             'websiteUrl' => $this->websiteUrl,
+            'ratingAvg' => $this->ratingAvg,
+            'reviewCount' => $this->reviewCount,
         ];
 
         if ($this->dailySellerLegalProfile !== null) {
             $data['dailySellerLegalProfile'] = $this->dailySellerLegalProfile;
+        }
+
+        if ($this->viewerReview !== null) {
+            $data['viewerReview'] = $this->viewerReview;
         }
 
         return $data;

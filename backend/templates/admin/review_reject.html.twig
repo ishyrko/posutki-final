@@ -1,0 +1,21 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}Отклонение отзыва{% endblock %}
+
+{% block main %}
+    <div class="content-body" style="max-width:640px;">
+        <p class="text-secondary mb-2"><strong>Объявление:</strong> {{ review.property.title }} (#{{ review.property.id }})</p>
+        <p class="text-secondary mb-2"><strong>Автор:</strong> {{ review.author }}</p>
+        <p class="text-secondary mb-2"><strong>Оценка:</strong> {{ review.rating }} / 5</p>
+        <p class="mb-4"><strong>Текст:</strong><br>{{ review.text|default('—')|nl2br }}</p>
+
+        <form method="post" action="{{ app.request.requestUri }}" class="ea-form">
+            <div class="form-group mb-3">
+                <label class="form-control-label required" for="moderationComment">Комментарий модерации</label>
+                <textarea id="moderationComment" name="moderationComment" class="form-control" rows="4" placeholder="Причина отклонения (необязательно)"></textarea>
+            </div>
+            <button type="submit" class="btn btn-danger">Отклонить</button>
+            <a href="{{ cancelUrl }}" class="btn btn-secondary ms-2">Отмена</a>
+        </form>
+    </div>
+{% endblock %}

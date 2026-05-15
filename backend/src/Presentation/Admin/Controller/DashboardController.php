@@ -10,6 +10,7 @@ use App\Domain\StaticPage\Entity\StaticPage;
 use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\MetroStation;
 use App\Domain\Property\Entity\Property;
+use App\Domain\Review\Entity\Review;
 use App\Domain\Property\Entity\Street;
 use App\Domain\User\Entity\User;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
@@ -75,6 +76,8 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Объявления', 'fa fa-building', Property::class);
         yield MenuItem::linkToCrud('Модерация объявлений', 'fa fa-shield', Property::class)
             ->setController(PropertyModerationCrudController::class);
+        yield MenuItem::linkToCrud('Модерация отзывов', 'fa fa-star', Review::class)
+            ->setController(ReviewCrudController::class);
         yield MenuItem::linkToCrud('Статьи', 'fa fa-newspaper', Article::class);
         yield MenuItem::linkToCrud('Категории статей', 'fa fa-folder', ArticleCategory::class);
         yield MenuItem::linkToCrud('Страницы', 'fa fa-file-alt', StaticPage::class);

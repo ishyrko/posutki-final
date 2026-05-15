@@ -48,6 +48,10 @@ import {
   showYearBuilt,
 } from "@/features/create-listing/property-field-rules";
 import { formatPropertyDealHeading } from "@/features/properties/property-deal-heading";
+import { ReviewForm } from "@/features/reviews/components/ReviewForm";
+import { ReviewList } from "@/features/reviews/components/ReviewList";
+import { ReviewSummary } from "@/features/reviews/components/ReviewSummary";
+import { useDeletePendingReview, usePropertyReviews } from "@/features/reviews/hooks";
 
 type PropertyDetailClientProps = {
   id: number;
@@ -116,12 +120,15 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
 
   const { data: currentUser } = useUser();
   const pathname = usePathname();
-  const loggedIn = useHasAuthToken();
+  const loggedIn = useHasAuthToken() || !!currentUser;
   const loginWithReturnHref = `/login?next=${encodeURIComponent(pathname)}`;
 
   const { data: favoriteIds = [] } = useFavoriteIds();
   const { mutate: toggleFavorite } = useToggleFavorite();
   const isFavorited = favoriteIds.includes(id);
+
+  const { data: reviewsData, isLoading: reviewsLoading } = usePropertyReviews(id);
+  const deleteReviewMutation = useDeletePendingReview(id);
 
   const [currentImage, setCurrentImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -199,7 +206,16 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
     );
   }
 
-  const isOwner = currentUser?.id != null && currentUser.id === property.ownerId;
+  const isOwner =
+    currentUser?.id != null &&
+    property.ownerId != null &&
+    Number(currentUser.id) === Number(property.ownerId);
+
+  const viewerReview = property.viewerReview;
+  const canLeaveReview =
+    property.status === "published" && !isOwner && loggedIn && (!viewerReview || viewerReview.status === "rejected");
+  const hasPendingOwnReview = viewerReview?.status === "pending";
+  const hasApprovedOwnReview = viewerReview?.status === "approved";
 
   const sellerName = property.contact?.name?.trim() || "Продавец";
   const sellerInitials = property.contact?.name?.trim()
@@ -783,6 +799,64 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                   {property.description}
                 </div>
               </motion.div>
+
+              {property.status === "published" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.32, duration: 0.5 }}
+                  className="rounded-2xl border border-border/50 bg-card/30 p-5 md:p-6"
+                >
+                  <h2 className="text-xl font-bold text-foreground mb-2">Отзывы</h2>
+                  {reviewsLoading ? (
+                    <div className="h-24 animate-pulse rounded-lg bg-muted/50" />
+                  ) : (
+                    <>
+                      <ReviewSummary
+                        ratingAvg={reviewsData?.ratingAvg ?? property.ratingAvg ?? null}
+                        reviewCount={reviewsData?.reviewCount ?? property.reviewCount ?? 0}
+                      />
+                      <ReviewList items={reviewsData?.items ?? []} />
+                      {isOwner && loggedIn && (
+                        <p className="mt-4 text-sm text-muted-foreground">
+                          На собственное объявление нельзя оставить отзыв.
+                        </p>
+                      )}
+                      {hasPendingOwnReview && viewerReview && (
+                        <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-foreground">
+                          <p className="mb-2">Ваш отзыв отправлен на модерацию.</p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={deleteReviewMutation.isPending}
+                            onClick={() => {
+                              deleteReviewMutation.mutate(viewerReview.id, {
+                                onSuccess: () => toast.success("Черновик отзыва удалён"),
+                                onError: () => toast.error("Не удалось удалить отзыв"),
+                              });
+                            }}
+                          >
+                            Удалить черновик
+                          </Button>
+                        </div>
+                      )}
+                      {hasApprovedOwnReview && (
+                        <p className="mt-4 text-sm text-muted-foreground">Спасибо, вы уже оставили отзыв об этом объекте.</p>
+                      )}
+                      {canLeaveReview && <ReviewForm propertyId={property.id} />}
+                      {!loggedIn && property.status === "published" && !isOwner && (
+                        <p className="mt-4 text-sm text-muted-foreground">
+                          <Link href={loginWithReturnHref} className="text-primary font-medium underline-offset-4 hover:underline">
+                            Войдите
+                          </Link>
+                          , чтобы оставить отзыв.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </motion.div>
+              )}
 
               {coords?.latitude && coords?.longitude && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>

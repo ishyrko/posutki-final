@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getToken, removeToken } from '@/lib/auth';
 
 const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -10,7 +11,7 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
+        const token = getToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -26,10 +27,7 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            // Handle unauthorized access (e.g., redirect to login)
-            // For now, we just clear the token
-            localStorage.removeItem('token');
-            // window.location.href = '/login'; // Optional: Redirect
+            removeToken();
         }
         return Promise.reject(error);
     }

@@ -788,6 +788,8 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                             typeLabel={property.typeLabel}
                             index={i}
                             animateEntrance={false}
+                            rating={property.ratingAvg ?? null}
+                            reviewCount={property.reviewCount ?? null}
                           />
                         );
                       })}

@@ -120,6 +120,11 @@ export interface Property {
     views?: number;
     phoneViews?: number;
     favoritesCount?: number;
+    /** Средняя оценка по одобренным отзывам (с бэка). */
+    ratingAvg?: number | null;
+    reviewCount?: number;
+    /** Отзыв текущего пользователя (если авторизован). */
+    viewerReview?: { id: number; status: 'pending' | 'approved' | 'rejected' } | null;
     createdAt: string;
     publishedAt?: string | null;
     boostedAt?: string | null;

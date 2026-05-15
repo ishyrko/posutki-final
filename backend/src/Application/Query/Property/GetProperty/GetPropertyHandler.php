@@ -16,6 +16,7 @@ use App\Domain\Property\Repository\{
     PropertyMetroStationRepositoryInterface,
     PropertyDailyStatRepositoryInterface
 };
+use App\Domain\Review\Repository\ReviewRepositoryInterface;
 use App\Domain\User\Repository\UserBusinessProfileRepositoryInterface;
 use App\Domain\User\Repository\UserIndividualProfileRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
@@ -34,6 +35,7 @@ final class GetPropertyHandler
         private readonly UserIndividualProfileRepositoryInterface $userIndividualProfileRepository,
         private readonly UserBusinessProfileRepositoryInterface $userBusinessProfileRepository,
         private readonly PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
+        private readonly ReviewRepositoryInterface $reviewRepository,
     ) {
     }
 
@@ -132,6 +134,24 @@ final class GetPropertyHandler
         $ownerContact = $this->ownerPublicContactResolver->resolveForOwnerIds([$ownerId])[$ownerId]
             ?? ['phone' => null, 'name' => null];
 
+        $reviewAggregate = $this->reviewRepository->getAggregateByPropertyId($property->getId());
+
+        $viewerReview = null;
+        if ($query->viewerUserId !== null) {
+            try {
+                $viewerId = Id::fromString($query->viewerUserId);
+                $existingReview = $this->reviewRepository->findByAuthorAndProperty($viewerId, $property->getId());
+                if ($existingReview !== null && $existingReview->getId() !== null) {
+                    $viewerReview = [
+                        'id' => $existingReview->getId()->getValue(),
+                        'status' => $existingReview->getStatus()->value,
+                    ];
+                }
+            } catch (\InvalidArgumentException) {
+                // ignore invalid viewer id
+            }
+        }
+
         return PropertyDTO::fromEntity(
             $property,
             $city,
@@ -141,6 +161,9 @@ final class GetPropertyHandler
             $dailySellerLegalProfile,
             $ownerContact['phone'],
             $ownerContact['name'],
+            $reviewAggregate['avg'],
+            $reviewAggregate['count'],
+            $viewerReview,
         );
     }
 }
