@@ -1,0 +1,122 @@
+# Snippet for rnb-upstream edge nginx (docker/nginx/reverse-proxy.conf).
+# Place server blocks BEFORE the catch-all `server_name _;` blocks.
+#
+# Prerequisites on the posutki host:
+#   - posutki stack running (make prod-full), APP_HTTP_BIND=127.0.0.1:9080
+#   - rnb reverse-proxy container can reach the host:
+#       extra_hosts:
+#         - "host.docker.internal:host-gateway"
+#     (add under reverse-proxy in rnb docker-compose.prod.yml if missing)
+#
+# TLS: use posutki certificates here, or terminate on rnb with SNI + separate cert paths.
+
+upstream posutki_app {
+    server host.docker.internal:9080;
+    keepalive 8;
+}
+
+server {
+    listen 80;
+    server_name posutki.by www.posutki.by;
+    client_max_body_size 20m;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        if ($host ~* ^www\.(.+)$) {
+            set $strip_www_host $1;
+            return 301 https://$strip_www_host$request_uri;
+        }
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name posutki.by www.posutki.by;
+    client_max_body_size 20m;
+
+    ssl_certificate /etc/nginx/certs/posutki-fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/posutki-privkey.pem;
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:SSL_POSUTKI:10m;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    if ($host ~* ^www\.(.+)$) {
+        set $strip_www_host_ssl $1;
+        return 301 https://$strip_www_host_ssl$request_uri;
+    }
+
+    # Optional staging gate (separate htpasswd from rnb)
+    # auth_basic "Restricted";
+    # auth_basic_user_file /etc/nginx/auth/posutki.htpasswd;
+
+    location ^~ /api {
+        auth_basic off;
+        proxy_pass http://posutki_app;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port 443;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location = /site.webmanifest {
+        auth_basic off;
+        proxy_pass http://posutki_app;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location = /favicon.ico {
+        auth_basic off;
+        proxy_pass http://posutki_app;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location ^~ /_next/ {
+        auth_basic off;
+        proxy_pass http://posutki_app;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location ^~ /uploads/ {
+        auth_basic off;
+        proxy_pass http://posutki_app;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location ^~ /js/ {
+        auth_basic off;
+        proxy_pass http://posutki_app;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location / {
+        proxy_pass http://posutki_app;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port 443;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_cache_bypass $http_upgrade;
+    }
+}

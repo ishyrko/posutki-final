@@ -8,10 +8,11 @@ test-unit:
 
 test-functional:
 	docker compose exec php sh -lc "cd /var/www/backend && composer test:functional"
-.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo admin-user frontend-install frontend-dev frontend-build clean exchange-rates prod prod-up prod-down prod-restart prod-logs prod-migrate prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user
+.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo admin-user frontend-install frontend-dev frontend-build clean exchange-rates prod prod-up prod-down prod-restart prod-logs prod-migrate prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
 
 PROD_ENV_FILE = .env.prod
 PROD_COMPOSE  = docker compose -f docker-compose.prod.yml --env-file $(PROD_ENV_FILE)
+PROD_EDGE_ARGS = $(shell set -a; . ./$(PROD_ENV_FILE) 2>/dev/null; set +a; [ "$${PROD_ENABLE_EDGE_PROXY:-0}" = "1" ] && echo --profile edge)
 HOST_UID      = $(shell id -u)
 HOST_GID      = $(shell id -g)
 
@@ -143,19 +144,23 @@ test-frontend: ## Run frontend tests
 
 # Production commands
 
-prod-check-env: ## Validate production env and TLS cert paths
+prod-check-env: ## Validate production env (TLS paths only when PROD_ENABLE_EDGE_PROXY=1)
 	@test -f $(PROD_ENV_FILE) || (echo "${YELLOW}Error: $(PROD_ENV_FILE) not found. Copy .env.prod.example -> .env.prod and fill in the values.${RESET}" && exit 1)
-	@grep -q '^SSL_CERT_FULLCHAIN_PATH=' $(PROD_ENV_FILE) || (echo "${YELLOW}Error: SSL_CERT_FULLCHAIN_PATH is missing in $(PROD_ENV_FILE).${RESET}" && exit 1)
-	@grep -q '^SSL_CERT_PRIVKEY_PATH=' $(PROD_ENV_FILE) || (echo "${YELLOW}Error: SSL_CERT_PRIVKEY_PATH is missing in $(PROD_ENV_FILE).${RESET}" && exit 1)
-	@grep -q '^BASIC_AUTH_HTPASSWD_PATH=' $(PROD_ENV_FILE) || (echo "${YELLOW}Error: BASIC_AUTH_HTPASSWD_PATH is missing in $(PROD_ENV_FILE).${RESET}" && exit 1)
+	@grep -q '^APP_HTTP_BIND=' $(PROD_ENV_FILE) || (echo "${YELLOW}Error: APP_HTTP_BIND is missing in $(PROD_ENV_FILE) (e.g. 127.0.0.1:9080).${RESET}" && exit 1)
 	@set -a; . ./$(PROD_ENV_FILE); set +a; \
-	test -n "$$SSL_CERT_FULLCHAIN_PATH" || (echo "${YELLOW}Error: SSL_CERT_FULLCHAIN_PATH is empty.${RESET}" && exit 1); \
-	test -n "$$SSL_CERT_PRIVKEY_PATH" || (echo "${YELLOW}Error: SSL_CERT_PRIVKEY_PATH is empty.${RESET}" && exit 1); \
-	test -n "$$BASIC_AUTH_HTPASSWD_PATH" || (echo "${YELLOW}Error: BASIC_AUTH_HTPASSWD_PATH is empty.${RESET}" && exit 1); \
-	test -f "$$SSL_CERT_FULLCHAIN_PATH" || (echo "${YELLOW}Error: certificate file not found at $$SSL_CERT_FULLCHAIN_PATH.${RESET}" && exit 1); \
-	test -f "$$SSL_CERT_PRIVKEY_PATH" || (echo "${YELLOW}Error: private key file not found at $$SSL_CERT_PRIVKEY_PATH.${RESET}" && exit 1); \
-	test -f "$$BASIC_AUTH_HTPASSWD_PATH" || (echo "${YELLOW}Error: htpasswd file not found at $$BASIC_AUTH_HTPASSWD_PATH.${RESET}" && exit 1)
-	@mkdir -p docker/nginx/acme
+	test -n "$$APP_HTTP_BIND" || (echo "${YELLOW}Error: APP_HTTP_BIND is empty.${RESET}" && exit 1); \
+	if [ "$${PROD_ENABLE_EDGE_PROXY:-0}" = "1" ]; then \
+	  grep -q '^SSL_CERT_FULLCHAIN_PATH=' $(PROD_ENV_FILE) || (echo "${YELLOW}Error: SSL_CERT_FULLCHAIN_PATH is missing in $(PROD_ENV_FILE).${RESET}" && exit 1); \
+	  grep -q '^SSL_CERT_PRIVKEY_PATH=' $(PROD_ENV_FILE) || (echo "${YELLOW}Error: SSL_CERT_PRIVKEY_PATH is missing in $(PROD_ENV_FILE).${RESET}" && exit 1); \
+	  grep -q '^BASIC_AUTH_HTPASSWD_PATH=' $(PROD_ENV_FILE) || (echo "${YELLOW}Error: BASIC_AUTH_HTPASSWD_PATH is missing in $(PROD_ENV_FILE).${RESET}" && exit 1); \
+	  test -n "$$SSL_CERT_FULLCHAIN_PATH" || (echo "${YELLOW}Error: SSL_CERT_FULLCHAIN_PATH is empty.${RESET}" && exit 1); \
+	  test -n "$$SSL_CERT_PRIVKEY_PATH" || (echo "${YELLOW}Error: SSL_CERT_PRIVKEY_PATH is empty.${RESET}" && exit 1); \
+	  test -n "$$BASIC_AUTH_HTPASSWD_PATH" || (echo "${YELLOW}Error: BASIC_AUTH_HTPASSWD_PATH is empty.${RESET}" && exit 1); \
+	  test -f "$$SSL_CERT_FULLCHAIN_PATH" || (echo "${YELLOW}Error: certificate file not found at $$SSL_CERT_FULLCHAIN_PATH.${RESET}" && exit 1); \
+	  test -f "$$SSL_CERT_PRIVKEY_PATH" || (echo "${YELLOW}Error: private key file not found at $$SSL_CERT_PRIVKEY_PATH.${RESET}" && exit 1); \
+	  test -f "$$BASIC_AUTH_HTPASSWD_PATH" || (echo "${YELLOW}Error: htpasswd file not found at $$BASIC_AUTH_HTPASSWD_PATH.${RESET}" && exit 1); \
+	  mkdir -p docker/nginx/acme; \
+	fi
 
 prod: ## Fast production update (cached frontend build + restart + migrate)
 	@make prod-check-env
@@ -179,7 +184,7 @@ prod-full: ## Full production deployment (all images + composer install)
 	@echo "${GREEN}Building production images...${RESET}"
 	$(PROD_COMPOSE) build
 	@echo "${GREEN}Starting production containers...${RESET}"
-	$(PROD_COMPOSE) up -d
+	$(PROD_COMPOSE) $(PROD_EDGE_ARGS) up -d
 	@echo "${GREEN}Installing backend dependencies...${RESET}"
 	$(PROD_COMPOSE) exec -u $(HOST_UID):$(HOST_GID) php composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 	@make prod-fix-assets-perms
@@ -211,7 +216,16 @@ prod-rebuild: ## Rebuild all production images without cache
 
 prod-up: ## Start production containers without rebuilding
 	@make prod-check-env
-	$(PROD_COMPOSE) up -d
+	$(PROD_COMPOSE) $(PROD_EDGE_ARGS) up -d
+
+prod-edge-up: ## Start production with built-in TLS reverse-proxy (:80/:443)
+	@grep -q '^PROD_ENABLE_EDGE_PROXY=1' $(PROD_ENV_FILE) || (echo "${YELLOW}Set PROD_ENABLE_EDGE_PROXY=1 in $(PROD_ENV_FILE) first.${RESET}" && exit 1)
+	@make prod-check-env
+	$(PROD_COMPOSE) --profile edge up -d
+
+prod-edge-full: ## Full deploy with built-in TLS reverse-proxy (:80/:443)
+	@grep -q '^PROD_ENABLE_EDGE_PROXY=1' $(PROD_ENV_FILE) || (echo "${YELLOW}Set PROD_ENABLE_EDGE_PROXY=1 in $(PROD_ENV_FILE) first.${RESET}" && exit 1)
+	@make prod-full
 
 prod-down: ## Stop production containers
 	$(PROD_COMPOSE) down
