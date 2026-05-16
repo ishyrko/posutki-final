@@ -9,6 +9,10 @@ export const CATALOG_AMENITY_FILTER_IDS = [
   "jacuzzi",
   "parking",
   "dryer",
+  /** Удобства на территории (дома); id совпадают с формой размещения. */
+  "sauna",
+  "pool",
+  "pond",
 ] as const;
 
 export type CatalogAmenityFilterId = (typeof CATALOG_AMENITY_FILTER_IDS)[number];

@@ -69,26 +69,22 @@ function buildMegaMenu(regionSlug: string): Record<string, MegaMenuSection[]> {
     ],
     Дома: [
       {
-        title: "По типу жилья",
+        title: "Каталог",
         items: [
-          { label: "Коттеджи", desc: "Отдельные дома с участком", icon: <Home className="h-4 w-4" />, href: r("/doma/") },
-          { label: "Все дома", desc: "Просторные дома на сутки", icon: <Building2 className="h-4 w-4" />, href: r("/doma/") },
+          { label: "Все дома", desc: "Дома и коттеджи на сутки", icon: <Building2 className="h-4 w-4" />, href: r("/doma/") },
         ],
       },
       {
         title: "Особенности",
         items: [
-          { label: "С баней/сауной", desc: "Отдых с парилкой", icon: <Flame className="h-4 w-4" />, href: r("/doma/") },
-          { label: "С бассейном", desc: "Дома с бассейном", icon: <Bath className="h-4 w-4" />, href: r("/doma/") },
-          { label: "У воды", desc: "На берегу водоёма", icon: <MapPin className="h-4 w-4" />, href: r("/doma/") },
+          { label: "С баней/сауной", desc: "Отдых с парилкой", icon: <Flame className="h-4 w-4" />, href: r("/doma/?amenity=sauna") },
+          { label: "С бассейном", desc: "Бассейн на участке", icon: <Bath className="h-4 w-4" />, href: r("/doma/?amenity=pool") },
         ],
       },
       {
         title: "Для кого",
         items: [
-          { label: "Для большой компании", desc: "От 8+ гостей", icon: <Users className="h-4 w-4" />, href: r("/doma/") },
-          { label: "Для семьи", desc: "Семейный отдых", icon: <Heart className="h-4 w-4" />, href: r("/doma/") },
-          { label: "Романтика", desc: "Уединённые домики", icon: <Star className="h-4 w-4" />, href: r("/doma/") },
+          { label: "Для большой компании", desc: "От 8+ гостей", icon: <Users className="h-4 w-4" />, href: r("/doma/?guests=8") },
         ],
       },
     ],

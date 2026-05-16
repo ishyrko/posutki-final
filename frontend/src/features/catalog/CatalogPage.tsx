@@ -21,6 +21,9 @@ import {
   Bath,
   Car,
   Wind,
+  Flame,
+  Waves,
+  Droplets,
   Wallet,
   CreditCard,
   Banknote,
@@ -158,6 +161,9 @@ const CATALOG_AMENITY_OPTIONS: {
     matches: (ids) => ids.some((x) => x.includes("parking") || x.includes("garage")),
   },
   { id: "dryer", label: "Сушилка", icon: Wind, matches: (ids) => ids.includes("dryer") },
+  { id: "sauna", label: "Баня / сауна", icon: Flame, matches: (ids) => ids.includes("sauna") },
+  { id: "pool", label: "Бассейн", icon: Waves, matches: (ids) => ids.includes("pool") },
+  { id: "pond", label: "Пруд", icon: Droplets, matches: (ids) => ids.includes("pond") },
 ];
 
 const CATALOG_PAYMENT_ICONS: Record<string, typeof Wallet> = {
