@@ -124,7 +124,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const address = formatAddress(property.address);
     const { primaryPlain: bynPrice } = formatPropertyPrices(property, DEFAULT_EXCHANGE_RATES_FALLBACK);
     const metaTitle =
-      buildApartmentPropertyMetaTitle(property) ?? `${property.title} | posutki.by`;
+      buildApartmentPropertyMetaTitle(property) ?? `${property.title} | Посутки.by`;
     const metaDescription =
       buildApartmentPropertyMetaDescription(property) ?? `${address} — ${bynPrice}`;
     const firstImage = property.images?.[0]?.url;
@@ -175,7 +175,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const metaDescription = buildCatalogMetaDescription(parsed, metroStationName);
 
   return {
-    title: metaTitle ?? `${h1Title} | posutki.by`,
+    title: metaTitle ?? `${h1Title} | Посутки.by`,
     description:
       metaDescription ??
       `Каталог посуточной аренды: ${h1Title.toLowerCase()}. Актуальные объявления с ценами и фото.`,

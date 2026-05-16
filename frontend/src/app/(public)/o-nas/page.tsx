@@ -12,13 +12,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const page = await fetchStaticPage(SLUG);
   if (!page) {
     return {
-      title: "О нас | posutki.by",
+      title: "О нас | Посутки.by",
       description:
-        "posutki.by — посуточная аренда квартир и домов в Беларуси: удобный поиск жилья для гостей и размещение объявлений для собственников.",
+        "Посутки.by — посуточная аренда квартир и домов в Беларуси: удобный поиск жилья для гостей и размещение объявлений для собственников.",
     };
   }
   return {
-    title: page.metaTitle ?? `${page.title} | posutki.by`,
+    title: page.metaTitle ?? `${page.title} | Посутки.by`,
     description: page.metaDescription ?? undefined,
   };
 }
