@@ -34,7 +34,8 @@ import type { Currency } from "@/features/properties/types";
 import { cn } from "@/lib/utils";
 
 interface MegaMenuSection {
-  title: string;
+  /** Пустой или отсутствует — колонка без подзаголовка (вторая колонка «Города»). */
+  title?: string;
   items: { label: string; desc: string; icon: React.ReactNode; href: string }[];
 }
 
@@ -98,7 +99,6 @@ function buildMegaMenu(regionSlug: string): Record<string, MegaMenuSection[]> {
         ],
       },
       {
-        title: "Ещё города",
         items: [
           { label: "Витебск", desc: "Север", icon: <MapPin className="h-4 w-4" />, href: "/vitebsk/kvartiry/" },
           { label: "Гомель", desc: "Юг Беларуси", icon: <MapPin className="h-4 w-4" />, href: "/gomel/kvartiry/" },
@@ -291,11 +291,15 @@ const Header = () => {
         >
           <div className="container mx-auto px-4 py-6">
             <div className="grid grid-cols-3 gap-8">
-              {megaMenuData[activeMega].map((section) => (
-                <div key={section.title}>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                    {section.title}
-                  </h3>
+              {megaMenuData[activeMega].map((section, sectionIndex) => (
+                <div key={section.title ?? `section-${sectionIndex}`}>
+                  {section.title ? (
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                      {section.title}
+                    </h3>
+                  ) : (
+                    <div className="mb-3 h-4" aria-hidden />
+                  )}
                   <div className="space-y-1">
                     {section.items.map((item) => (
                       <Link
@@ -349,11 +353,13 @@ const Header = () => {
 
                 {mobileExpanded === key && (
                   <div className="pb-2 pl-2 space-y-4 animate-fade-in">
-                    {sections.map((section) => (
-                      <div key={section.title}>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 mb-2">
-                          {section.title}
-                        </p>
+                    {sections.map((section, sectionIndex) => (
+                      <div key={section.title ?? `section-${sectionIndex}`}>
+                        {section.title ? (
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 mb-2">
+                            {section.title}
+                          </p>
+                        ) : null}
                         {section.items.map((item) => (
                           <Link
                             key={item.label}
