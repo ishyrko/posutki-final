@@ -140,14 +140,16 @@ const PropertyListCard = ({
         <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
           <div>
             <div className="flex items-start justify-between gap-4 mb-2">
-              <div>
-                <h3 className="text-xl font-display font-bold text-foreground">{price}</h3>
+              <h3 className="text-xl font-display font-bold text-foreground min-w-0 flex-1 line-clamp-2">
+                {title}
+              </h3>
+              <div className="text-right shrink-0">
+                <div className="text-xl font-display font-bold text-foreground whitespace-nowrap">{price}</div>
                 {secondaryLine && (
                   <span className="text-xs text-muted-foreground">{secondaryLine}</span>
                 )}
               </div>
             </div>
-            <p className="text-base font-medium text-foreground/85 mb-1">{title}</p>
             <div
               className={cn(
                 "mb-3 flex flex-col gap-2",
