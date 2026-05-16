@@ -207,6 +207,21 @@ final class PropertyListFilteringTest extends ApiTestCase
         self::assertNotContains($far->getId()->getValue(), $ids);
     }
 
+    public function testFilterByGuests(): void
+    {
+        $owner = $this->createUser('filter-guests@example.com', 'Password123!');
+        $city = $this->createCity();
+        $forTwo = $this->createProperty($owner, $city, 'published', ['maxDailyGuests' => 2]);
+        $forSix = $this->createProperty($owner, $city, 'published', ['maxDailyGuests' => 6]);
+
+        $this->client->request('GET', '/api/properties?guests=4');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $ids = $this->idsFromListPayload();
+        self::assertNotContains($forTwo->getId()->getValue(), $ids);
+        self::assertContains($forSix->getId()->getValue(), $ids);
+    }
+
     public function testFilterByMetroStationId(): void
     {
         $owner = $this->createUser('filter-metro-id@example.com', 'Password123!');

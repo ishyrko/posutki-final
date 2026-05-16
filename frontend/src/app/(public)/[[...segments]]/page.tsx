@@ -5,6 +5,8 @@ import {
   parseSegments,
   isCatalogRoute,
   buildPageTitle,
+  buildCatalogCanonicalPath,
+  buildSegmentsCanonicalPath,
   isPropertyId,
   REGION_SLUGS,
   PROPERTY_TYPE_SLUG_TO_VALUE,
@@ -119,6 +121,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title: `${property.title} | posutki.by`,
       description: `${address} — ${bynPrice}`,
+      alternates: {
+        canonical: buildSegmentsCanonicalPath(segments ?? []),
+      },
       openGraph: {
         title: property.title,
         description: `${address} — ${bynPrice}`,
@@ -144,10 +149,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const metroStationName = await resolveMetroStationName(parsed.metroStationSlug);
   const title = buildPageTitle(parsed, undefined, metroStationName);
-
   return {
     title: `${title} | posutki.by`,
     description: `Каталог посуточной аренды: ${title.toLowerCase()}. Актуальные объявления с ценами и фото.`,
+    alternates: {
+      canonical: buildCatalogCanonicalPath(parsed),
+    },
   };
 }
 

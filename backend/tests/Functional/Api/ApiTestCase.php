@@ -120,6 +120,7 @@ abstract class ApiTestCase extends WebTestCase
      *     priceCurrency?: string,
      *     nearMetro?: bool,
      *     landArea?: float|null,
+     *     maxDailyGuests?: int|null,
      * } $options
      */
     protected function createProperty(User $owner, City $city, string $status = 'published', array $options = []): Property
@@ -149,7 +150,7 @@ abstract class ApiTestCase extends WebTestCase
             livingArea: null,
             kitchenArea: null,
             dealConditions: null,
-            maxDailyGuests: null,
+            maxDailyGuests: array_key_exists('maxDailyGuests', $options) ? $options['maxDailyGuests'] : 4,
             dailySingleBeds: null,
             dailyDoubleBeds: null,
             checkInTime: null,

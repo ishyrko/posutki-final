@@ -23,6 +23,8 @@ final class SearchPropertiesQuery
         public readonly ?array $rooms = null,
         public readonly ?int $metroStationId = null,
         public readonly bool $nearMetro = false,
+        /** Минимальная вместимость: объявления с maxDailyGuests >= guests */
+        public readonly ?int $guests = null,
         public readonly string $sortBy = 'createdAt',
         public readonly string $sortOrder = 'DESC',
         public readonly int $page = 1,

@@ -102,6 +102,21 @@ export interface BuildCatalogUrlParams {
   metroStation?: string;
 }
 
+/** Путь каталога без query (для canonical). */
+export function buildCatalogCanonicalPath(parsed: ParsedSegments): string {
+  return buildCatalogUrl({
+    region: parsed.regionSlug,
+    propertyType: parsed.propertyType,
+    city: parsed.citySlug,
+    nearMetro: parsed.nearMetro,
+    metroStation: parsed.metroStationSlug,
+  });
+}
+
+export function buildSegmentsCanonicalPath(segments: string[]): string {
+  return `/${segments.join("/")}/`;
+}
+
 export function buildCatalogUrl(params: BuildCatalogUrlParams = {}): string {
   const parts: string[] = [];
 

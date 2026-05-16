@@ -172,6 +172,8 @@ export interface PropertyFilters {
     roomValues?: readonly number[];
     metroStationId?: number;
     nearMetro?: boolean;
+    /** Минимальная вместимость (maxDailyGuests >= guests). */
+    guests?: number;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
 }

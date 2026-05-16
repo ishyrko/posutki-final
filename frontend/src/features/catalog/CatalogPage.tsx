@@ -40,6 +40,12 @@ import {
   DEFAULT_EXCHANGE_RATES_FALLBACK,
 } from "@/features/properties/price-display";
 import { buildPageTitle, type ParsedSegments } from "@/features/catalog/slugs";
+import { GuestCountControl } from "@/features/catalog/GuestCountControl";
+import {
+  clampGuests,
+  GUESTS_QUERY_PARAM,
+  parseGuestsFromQuery,
+} from "@/features/catalog/guests-filter";
 import { showBathrooms, showRooms, showRoomsCatalogFilter } from "@/features/create-listing/property-field-rules";
 import { PriceDisplay } from "@/components/BynCurrency";
 import { cn } from "@/lib/utils";
@@ -234,6 +240,8 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   }, [validPageFromQuery]);
 
   const roomsFromQuery = searchParams.get("rooms");
+  const guestsFromQuery = parseGuestsFromQuery(searchParams.get(GUESTS_QUERY_PARAM));
+
   useEffect(() => {
     if (!roomsFilterVisible) return;
     setRoomBuckets(parseRoomsFromQuery(roomsFromQuery));
@@ -262,6 +270,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   }, [metroStations]);
   const activeFilterCount =
     (hasPriceFilter ? 1 : 0) +
+    (guestsFromQuery !== null ? 1 : 0) +
     (roomsFilterVisible && roomBuckets.length > 0 ? 1 : 0) +
     (nearMetro && metroStationId !== "all" ? 1 : 0) +
     (nearMetro ? 1 : 0) +
@@ -316,13 +325,14 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     }
     if (minPrice) f.minPrice = Number(minPrice);
     if (maxPrice) f.maxPrice = Number(maxPrice);
+    if (guestsFromQuery !== null) f.guests = guestsFromQuery;
     if (isSaleDeal && hasPriceFilter && priceType !== "total") f.priceType = priceType;
     if (hasPriceFilter) f.currency = selectedCurrency;
     if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     else if (sort === "area-desc") { f.sortBy = "area"; f.sortOrder = "DESC"; }
     return f;
-  }, [currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, priceType, selectedCurrency, hasPriceFilter, isSaleDeal, sort]);
+  }, [currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, priceType, selectedCurrency, hasPriceFilter, isSaleDeal, sort]);
 
   const { data, isLoading } = useProperties(filters);
   const { data: rates } = useExchangeRates();
@@ -352,6 +362,15 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     setCurrentPage(1);
     const params = new URLSearchParams(searchParams.toString());
     params.delete("page");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  };
+
+  const setGuestsFilter = (count: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(GUESTS_QUERY_PARAM, String(clampGuests(count)));
+    params.delete("page");
+    setCurrentPage(1);
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname);
   };
@@ -392,7 +411,12 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     setNearMetro(false);
     setSelectedAmenityIds([]);
     setShowAllAmenities(false);
-    resetToFirstPage();
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(GUESTS_QUERY_PARAM);
+    params.delete("page");
+    setCurrentPage(1);
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
   };
 
   const filterSurfaceInput =
@@ -449,6 +473,19 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
               </button>
             </div>
           )}
+        </div>
+      </div>
+
+      <div>
+        <label className="text-sm font-semibold text-foreground mb-2 block font-display">Гости</label>
+        <div className="rounded-lg border border-border bg-surface px-3 py-2">
+          <GuestCountControl
+            id="catalog-guests"
+            value={guestsFromQuery ?? 2}
+            onChange={setGuestsFilter}
+            showIcon={false}
+            hideLabel
+          />
         </div>
       </div>
 

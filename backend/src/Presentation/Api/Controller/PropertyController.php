@@ -61,6 +61,7 @@ class PropertyController extends AbstractController
         }
 
         $roomsList = self::parseRoomsQueryList($request->query->get('rooms'));
+        $guests = self::parseGuestsQuery($request->query->get('guests'));
 
         $query = new SearchPropertiesQuery(
             type: $request->query->get('type'),
@@ -78,6 +79,7 @@ class PropertyController extends AbstractController
             rooms: $roomsList,
             metroStationId: $request->query->getInt('metroStationId') ?: null,
             nearMetro: $request->query->getBoolean('nearMetro', false),
+            guests: $guests,
             sortBy: $request->query->get('sortBy', 'createdAt'),
             sortOrder: $request->query->get('sortOrder', 'DESC'),
             page: $request->query->getInt('page', 1),
@@ -418,5 +420,19 @@ class PropertyController extends AbstractController
         sort($out);
 
         return $out === [] ? null : $out;
+    }
+
+    private static function parseGuestsQuery(mixed $raw): ?int
+    {
+        if ($raw === null || $raw === '' || $raw === false) {
+            return null;
+        }
+
+        $n = \is_int($raw) ? $raw : (int) (string) $raw;
+        if ($n < 1 || $n > 20) {
+            return null;
+        }
+
+        return $n;
     }
 }

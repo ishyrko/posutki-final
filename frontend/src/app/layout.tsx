@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { getSiteOrigin } from "@/lib/site-url";
 import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 import { Toaster } from "@/components/ui/sonner";
@@ -13,6 +14,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteOrigin()),
   title: "posutki.by — Квартиры и дома посуточно в Беларуси",
   description:
     "Проверенные объявления квартир и домов для посуточной аренды по всей Беларуси. Удобный поиск, актуальные цены за сутки, фото.",

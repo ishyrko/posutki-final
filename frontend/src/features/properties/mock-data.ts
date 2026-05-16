@@ -326,6 +326,13 @@ export function getMockPropertiesResponse(filters: PropertyFilters = {}): Proper
   if (filters.maxPrice) {
     result = result.filter((p) => p.price.amount <= Number(filters.maxPrice));
   }
+  if (filters.guests) {
+    const minGuests = Number(filters.guests);
+    result = result.filter((p) => {
+      const max = p.specifications.maxDailyGuests;
+      return max != null && max >= minGuests;
+    });
+  }
 
   if (filters.sortBy === "price") {
     result.sort((a, b) =>

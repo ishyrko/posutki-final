@@ -163,6 +163,12 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
                 ->andWhere('pms.metroStationId = :metroStationId')
                 ->setParameter('metroStationId', $filters['metroStationId']);
         }
+
+        if (isset($filters['minGuests'])) {
+            $qb->andWhere('p.maxDailyGuests IS NOT NULL')
+                ->andWhere('p.maxDailyGuests >= :minGuests')
+                ->setParameter('minGuests', $filters['minGuests']);
+        }
     }
 
     /**

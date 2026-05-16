@@ -79,6 +79,9 @@ final class SearchPropertiesHandler
         if ($query->nearMetro) {
             $filters['nearMetro'] = true;
         }
+        if ($query->guests !== null && $query->guests > 0) {
+            $filters['minGuests'] = $query->guests;
+        }
 
         $filters['sortBy'] = $query->sortBy;
         $filters['sortOrder'] = strtoupper($query->sortOrder) === 'ASC' ? 'ASC' : 'DESC';
