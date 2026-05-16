@@ -36,13 +36,13 @@ export async function generateMetadata({
       next: { tags: ["articles"] },
     });
     return {
-      title: `${category.name} - Статьи | RNB.by`,
-      description: `Статьи по теме "${category.name}" на RNB.by.`,
+      title: `${category.name} - Статьи | Посутки.by`,
+      description: `Статьи по теме "${category.name}" на Posutki.by.`,
     };
   } catch {
     return {
-      title: "Категория статей | RNB.by",
-      description: "Категория статей на RNB.by.",
+      title: "Категория статей | Posutki.by",
+      description: "Категория статей на Posutki.by.",
     };
   }
 }

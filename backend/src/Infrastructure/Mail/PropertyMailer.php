@@ -34,7 +34,7 @@ final readonly class PropertyMailer
         if ($ownerEmail !== null) {
             $this->send(
                 to: $ownerEmail,
-                subject: 'Ваше объявление отправлено на модерацию — RNB.by',
+                subject: 'Ваше объявление отправлено на модерацию — Posutki.by',
                 template: 'email/property/submitted_owner.html.twig',
                 context: $context,
             );

@@ -105,7 +105,7 @@ docker compose -f docker-compose.prod.yml logs -f worker
 Required env vars for email notifications:
 - `MAILER_DSN`
 - `MAILER_FROM`
-- `ADMIN_EMAILS` (JSON array, e.g. `["admin@rnb.by"]`)
+- `ADMIN_EMAILS` (JSON array, e.g. `["admin@posutki.by"]`)
 - `FRONTEND_URL`
 - `MESSENGER_TRANSPORT_DSN` (defaults in `docker-compose.prod.yml` to `doctrine://default?auto_setup=0`; must match a running `worker` and the `messenger_messages` table — run `php bin/console messenger:setup-transports` once if needed)
 

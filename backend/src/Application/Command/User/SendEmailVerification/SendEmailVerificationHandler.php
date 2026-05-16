@@ -51,13 +51,13 @@ readonly class SendEmailVerificationHandler
         $email = (new MimeEmail())
             ->from($this->mailerFrom)
             ->to($toEmail)
-            ->subject('Подтвердите email — RNB.by')
+            ->subject('Подтвердите email — Posutki.by')
             ->html(
                 '<p>Здравствуйте, ' . htmlspecialchars($user->getFirstName()) . '!</p>' .
                 '<p>Подтвердите адрес электронной почты, перейдя по ссылке:</p>' .
                 '<p><a href="' . htmlspecialchars($verifyUrl) . '">Подтвердить email</a></p>' .
                 '<p>Ссылка действительна в течение 24 часов.</p>' .
-                '<p>Если вы не регистрировались на RNB.by, проигнорируйте это письмо.</p>'
+                '<p>Если вы не регистрировались на Posutki.by, проигнорируйте это письмо.</p>'
             );
 
         $this->mailer->send($email);
@@ -70,7 +70,7 @@ readonly class SendEmailVerificationHandler
         $email = (new MimeEmail())
             ->from($this->mailerFrom)
             ->to($toEmail)
-            ->subject('Подтвердите новый email — RNB.by')
+            ->subject('Подтвердите новый email — Posutki.by')
             ->html(
                 '<p>Здравствуйте, ' . htmlspecialchars($user->getFirstName()) . '!</p>' .
                 '<p>Подтвердите новый адрес электронной почты, перейдя по ссылке:</p>' .

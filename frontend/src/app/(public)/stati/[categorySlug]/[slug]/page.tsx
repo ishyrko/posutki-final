@@ -74,7 +74,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${article.title} | RNB.by`,
+    title: `${article.title} | Posutki.by`,
     description: article.excerpt || `Статья о недвижимости: ${article.title}`,
     openGraph: {
       title: article.title,

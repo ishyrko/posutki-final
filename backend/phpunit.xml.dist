@@ -30,7 +30,7 @@
         <env name="DEFAULT_URI" value="http://localhost" force="true"/>
         <env name="GOOGLE_CLIENT_ID" value="test-google-client-id" force="true"/>
         <env name="FRONTEND_URL" value="http://localhost:3000" force="true"/>
-        <env name="MAILER_FROM" value="noreply@rnb.by" force="true"/>
+        <env name="MAILER_FROM" value="noreply@posutki.by" force="true"/>
         <env name="ADMIN_EMAILS" value="[&quot;admin@rnb.by&quot;]" force="true"/>
         <env name="JWT_SECRET_KEY" value="%kernel.project_dir%/config/jwt/private.pem" force="true"/>
         <env name="JWT_PUBLIC_KEY" value="%kernel.project_dir%/config/jwt/public.pem" force="true"/>

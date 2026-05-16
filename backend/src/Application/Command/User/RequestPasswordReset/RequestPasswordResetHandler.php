@@ -36,7 +36,7 @@ readonly class RequestPasswordResetHandler
         $email = (new MimeEmail())
             ->from($this->mailerFrom)
             ->to($command->email)
-            ->subject('Сброс пароля — RNB.by')
+            ->subject('Сброс пароля — Posutki.by')
             ->html(
                 '<p>Здравствуйте, ' . htmlspecialchars($user->getFirstName()) . '!</p>' .
                 '<p>Вы запросили сброс пароля. Перейдите по ссылке ниже, чтобы установить новый пароль:</p>' .

@@ -19,9 +19,9 @@ function ArticlesPageFallback() {
 }
 
 export const metadata: Metadata = {
-  title: "Статьи и аналитика | RNB.by",
+  title: "Статьи и аналитика | Посутки.by",
   description:
-    "Экспертные материалы о рынке недвижимости, советы покупателям и продавцам на RNB.by.",
+    "Экспертные материалы о рынке недвижимости, советы покупателям и продавцам на Posutki.by.",
 };
 
 export default async function ArticlesPage() {

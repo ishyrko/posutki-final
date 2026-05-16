@@ -40,7 +40,7 @@ export function ResetPasswordForm() {
                 <Link href="/" className="inline-flex items-center mb-10">
                     <NextImage
                         src="/rnb-logo-transparent.png"
-                        alt="RNB.by"
+                        alt="Posutki.by"
                         width={600}
                         height={207}
                         className="h-10 w-auto object-contain"

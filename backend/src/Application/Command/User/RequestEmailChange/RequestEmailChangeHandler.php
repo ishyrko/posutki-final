@@ -58,7 +58,7 @@ final class RequestEmailChangeHandler
         $email = (new MimeEmail())
             ->from($this->mailerFrom)
             ->to($newEmail->getValue())
-            ->subject('Подтвердите новый email — RNB.by')
+            ->subject('Подтвердите новый email — Posutki.by')
             ->html(
                 '<p>Здравствуйте, ' . htmlspecialchars($user->getFirstName()) . '!</p>' .
                 '<p>Подтвердите новый адрес электронной почты, перейдя по ссылке:</p>' .

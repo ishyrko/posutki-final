@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { ContactForm } from '@/features/contact/components/ContactForm';
 
 export const metadata: Metadata = {
-    title: 'Обратная связь — RNB.by',
-    description: 'Свяжитесь с командой RNB.by: вопросы, предложения и помощь по сервису.',
+    title: 'Обратная связь — Posutki.by',
+    description: 'Свяжитесь с командой Posutki.by: вопросы, предложения и помощь по сервису.',
 };
 
 export default function ContactPage() {
