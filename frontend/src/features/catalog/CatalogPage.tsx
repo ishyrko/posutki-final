@@ -599,32 +599,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
       </div>
 
       <div>
-        <label className="text-sm font-semibold text-foreground mb-2 block font-display">Способы оплаты</label>
-        <div className="grid grid-cols-1 gap-2">
-          {PAYMENT_METHOD_OPTIONS.map((opt) => {
-            const Icon = CATALOG_PAYMENT_ICONS[opt.id] ?? Wallet;
-            const active = selectedPaymentMethodIds.includes(opt.id);
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => toggleCatalogPaymentMethod(opt.id)}
-                className={cn(
-                  "flex cursor-pointer items-center gap-2 px-3 py-2 rounded-lg text-left text-xs font-medium transition-all duration-150",
-                  active
-                    ? "bg-primary/10 border-primary text-primary border"
-                    : "border border-border bg-surface text-foreground hover:bg-muted",
-                )}
-              >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{opt.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div>
         <label className="text-sm font-semibold text-foreground mb-2 block font-display">Удобства</label>
         <div className="grid grid-cols-1 gap-2">
           {(showAllAmenities ? CATALOG_AMENITY_OPTIONS : CATALOG_AMENITY_OPTIONS.slice(0, 4)).map((opt) => {
@@ -658,6 +632,32 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
             <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showAllAmenities && "rotate-180")} />
           </button>
         )}
+      </div>
+
+      <div>
+        <label className="text-sm font-semibold text-foreground mb-2 block font-display">Способы оплаты</label>
+        <div className="grid grid-cols-1 gap-2">
+          {PAYMENT_METHOD_OPTIONS.map((opt) => {
+            const Icon = CATALOG_PAYMENT_ICONS[opt.id] ?? Wallet;
+            const active = selectedPaymentMethodIds.includes(opt.id);
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => toggleCatalogPaymentMethod(opt.id)}
+                className={cn(
+                  "flex cursor-pointer items-center gap-2 px-3 py-2 rounded-lg text-left text-xs font-medium transition-all duration-150",
+                  active
+                    ? "bg-primary/10 border-primary text-primary border"
+                    : "border border-border bg-surface text-foreground hover:bg-muted",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{opt.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {activeFilterCount > 0 && (
