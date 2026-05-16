@@ -277,3 +277,67 @@ export function buildPageTitle(
 
   return `${typePart} ${location}`;
 }
+
+function resolveApartmentCatalogMetaLocation(
+  parsed: ParsedSegments,
+  metroStationName?: string,
+): string | null {
+  if (parsed.propertyType !== 'apartment') {
+    return null;
+  }
+  if (parsed.nearMetro || parsed.metroStationSlug || metroStationName) {
+    return null;
+  }
+
+  return (
+    CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
+    CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG]
+  );
+}
+
+function resolveHouseCatalogMetaLocation(parsed: ParsedSegments): string | null {
+  if (parsed.propertyType !== 'house') {
+    return null;
+  }
+
+  return (
+    CATALOG_HOUSE_LOCATION[catalogLocationKey(parsed)] ??
+    CATALOG_HOUSE_LOCATION[MINSK_CITY_SLUG]
+  );
+}
+
+/** Meta title каталога (H1 остаётся в {@link buildPageTitle}). */
+export function buildCatalogMetaTitle(
+  parsed: ParsedSegments,
+  metroStationName?: string,
+): string | null {
+  const apartmentLocation = resolveApartmentCatalogMetaLocation(parsed, metroStationName);
+  if (apartmentLocation) {
+    return `Снять квартиру ${apartmentLocation} недорого. Посуточная аренда ${apartmentLocation}.`;
+  }
+
+  const houseLocation = resolveHouseCatalogMetaLocation(parsed);
+  if (houseLocation) {
+    return `Дома и коттеджи на сутки ${houseLocation}. Посуточная аренда домов от владельцев.`;
+  }
+
+  return null;
+}
+
+/** Meta description каталога (H1 остаётся в {@link buildPageTitle}). */
+export function buildCatalogMetaDescription(
+  parsed: ParsedSegments,
+  metroStationName?: string,
+): string | null {
+  const apartmentLocation = resolveApartmentCatalogMetaLocation(parsed, metroStationName);
+  if (apartmentLocation) {
+    return `Квартиры на сутки ${apartmentLocation}. Посуточная аренда квартир ${apartmentLocation} на Posutki.by без посредников.`;
+  }
+
+  const houseLocation = resolveHouseCatalogMetaLocation(parsed);
+  if (houseLocation) {
+    return `Снять дом на сутки ${houseLocation}. Посуточная аренда домов и коттеджей без посредников ${houseLocation} с ценами, описанием и фото на Posutki.by`;
+  }
+
+  return null;
+}

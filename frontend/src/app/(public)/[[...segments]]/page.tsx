@@ -5,6 +5,8 @@ import {
   parseSegments,
   isCatalogRoute,
   buildPageTitle,
+  buildCatalogMetaTitle,
+  buildCatalogMetaDescription,
   buildCatalogCanonicalPath,
   buildPropertyUrlFromRegionName,
   buildSegmentsCanonicalPath,
@@ -152,17 +154,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 
     return {
-      title: "posutki.by — Квартиры и дома посуточно в Беларуси",
+      title:
+        "Квартиры и дома на сутки в Беларуси - посуточная аренда в Минске и других городах",
       description:
-        "Тысячи проверенных квартир и домов для посуточной аренды по всей Беларуси. Удобный поиск, актуальные цены, фото.",
+        "Снимайте квартиры и дома на сутки в Беларуси напрямую от владельцев на Posutki.by. Минск, Гродно, Брест, Витебск, Гомель, Могилёв — актуальные объявления, удобный поиск по городу, типу жилья и количеству гостей.",
     };
   }
 
   const metroStationName = await resolveMetroStationName(parsed.metroStationSlug);
-  const title = buildPageTitle(parsed, undefined, metroStationName);
+  const h1Title = buildPageTitle(parsed, undefined, metroStationName);
+  const metaTitle = buildCatalogMetaTitle(parsed, metroStationName);
+  const metaDescription = buildCatalogMetaDescription(parsed, metroStationName);
+
   return {
-    title: `${title} | posutki.by`,
-    description: `Каталог посуточной аренды: ${title.toLowerCase()}. Актуальные объявления с ценами и фото.`,
+    title: metaTitle ?? `${h1Title} | posutki.by`,
+    description:
+      metaDescription ??
+      `Каталог посуточной аренды: ${h1Title.toLowerCase()}. Актуальные объявления с ценами и фото.`,
     alternates: {
       canonical: buildCatalogCanonicalPath(parsed),
     },
