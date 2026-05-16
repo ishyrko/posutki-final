@@ -18,6 +18,11 @@ use App\Infrastructure\Service\ExchangeRateService;
 
 final class SearchPropertiesHandler
 {
+    private const MINSK_CITY_SLUG = 'minsk';
+
+    /** @var list<string> */
+    private const METRO_EXCLUDED_REGION_SLUGS = ['brest', 'vitebsk', 'gomel', 'grodno', 'mogilev'];
+
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly CityRepositoryInterface $cityRepository,
@@ -73,11 +78,13 @@ final class SearchPropertiesHandler
         if ($query->rooms !== null && $query->rooms !== []) {
             $filters['rooms'] = $query->rooms;
         }
-        if ($query->metroStationId !== null) {
-            $filters['metroStationId'] = $query->metroStationId;
-        }
-        if ($query->nearMetro) {
-            $filters['nearMetro'] = true;
+        if ($this->shouldApplyMetroFilters($query)) {
+            if ($query->metroStationId !== null) {
+                $filters['metroStationId'] = $query->metroStationId;
+            }
+            if ($query->nearMetro) {
+                $filters['nearMetro'] = true;
+            }
         }
         if ($query->guests !== null && $query->guests > 0) {
             $filters['minGuests'] = $query->guests;
@@ -182,5 +189,39 @@ final class SearchPropertiesHandler
             },
             $properties
         );
+    }
+
+    private function shouldApplyMetroFilters(SearchPropertiesQuery $query): bool
+    {
+        if ($query->metroStationId === null && !$query->nearMetro) {
+            return false;
+        }
+
+        if (!$this->isApartmentMetroSearch($query)) {
+            return false;
+        }
+
+        if ($query->regionSlug !== null && \in_array($query->regionSlug, self::METRO_EXCLUDED_REGION_SLUGS, true)) {
+            return false;
+        }
+
+        if ($query->citySlug !== null && $query->citySlug !== self::MINSK_CITY_SLUG) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function isApartmentMetroSearch(SearchPropertiesQuery $query): bool
+    {
+        if ($query->types !== null && $query->types !== []) {
+            return $query->types === ['apartment'];
+        }
+
+        if ($query->type !== null) {
+            return $query->type === 'apartment';
+        }
+
+        return $query->nearMetro || $query->metroStationId !== null;
     }
 }

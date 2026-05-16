@@ -20,6 +20,9 @@ export const PROPERTY_TYPE_VALUE_TO_SLUG = Object.fromEntries(
   Object.entries(PROPERTY_TYPE_SLUG_TO_VALUE).map(([slug, val]) => [val, slug]),
 );
 
+/** Slug города Минска в URL каталога и API (`citySlug`). */
+export const MINSK_CITY_SLUG = 'minsk';
+
 export const REGION_LABELS: Record<string, string> = {
   brest: 'Брест и область',
   vitebsk: 'Витебская область',
@@ -92,6 +95,20 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
 
 export function isCatalogRoute(parsed: ParsedSegments): boolean {
   return parsed.propertyType !== undefined || parsed.nearMetro === true;
+}
+
+/** Фильтр метро — только квартиры в Минске (не дома, не другие области/города). */
+export function isMetroCatalogContext(parsed: ParsedSegments): boolean {
+  if (parsed.propertyType === 'house') {
+    return false;
+  }
+  if (parsed.regionSlug) {
+    return false;
+  }
+  if (parsed.citySlug && parsed.citySlug !== MINSK_CITY_SLUG) {
+    return false;
+  }
+  return parsed.propertyType === 'apartment' || parsed.nearMetro === true;
 }
 
 export interface BuildCatalogUrlParams {

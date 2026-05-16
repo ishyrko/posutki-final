@@ -42,7 +42,7 @@ import {
   formatPropertyPrices,
   DEFAULT_EXCHANGE_RATES_FALLBACK,
 } from "@/features/properties/price-display";
-import { buildPageTitle, type ParsedSegments } from "@/features/catalog/slugs";
+import { buildPageTitle, isMetroCatalogContext, type ParsedSegments } from "@/features/catalog/slugs";
 import { GuestCountControl } from "@/features/catalog/GuestCountControl";
 import {
   clampGuests,
@@ -254,7 +254,8 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const validPageFromQuery = Number.isFinite(pageFromQuery) && pageFromQuery > 0 ? Math.floor(pageFromQuery) : 1;
   const [currentPage, setCurrentPage] = useState(validPageFromQuery);
   const itemsPerPage = 6;
-  const { data: metroStations = [] } = useMetroStations(1);
+  const metroFilterVisible = isMetroCatalogContext(parsed);
+  const { data: metroStations = [] } = useMetroStations(1, metroFilterVisible);
   const roomsFilterVisible = showRoomsCatalogFilter(parsed.propertyType);
 
   useEffect(() => {
@@ -281,6 +282,13 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     }
   }, [roomsFilterVisible]);
 
+  useEffect(() => {
+    if (!metroFilterVisible) {
+      setNearMetro(false);
+      setMetroStationId("all");
+    }
+  }, [metroFilterVisible]);
+
   const hasPriceFilter = minPrice !== "" || maxPrice !== "";
   const metroStationsByLine = useMemo(() => {
     const byLine = new Map<number, typeof metroStations>();
@@ -300,8 +308,8 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     (hasPriceFilter ? 1 : 0) +
     (guestsFromQuery !== null ? 1 : 0) +
     (roomsFilterVisible && roomBuckets.length > 0 ? 1 : 0) +
-    (nearMetro && metroStationId !== "all" ? 1 : 0) +
-    (nearMetro ? 1 : 0) +
+    (metroFilterVisible && nearMetro && metroStationId !== "all" ? 1 : 0) +
+    (metroFilterVisible && nearMetro ? 1 : 0) +
     selectedAmenityIds.length +
     selectedPaymentMethodIds.length;
 
@@ -313,13 +321,14 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
 
   /** Same station id as sent to the API when filtering by metro (URL or sidebar). */
   const metroFilterStationId = useMemo((): number | null => {
+    if (!metroFilterVisible) return null;
     const routeMetroStation = parsed.metroStationSlug
       ? metroStations.find((station) => station.slug === parsed.metroStationSlug)
       : undefined;
     if (routeMetroStation) return routeMetroStation.id;
     if (nearMetro && metroStationId !== "all") return Number(metroStationId);
     return null;
-  }, [parsed.metroStationSlug, metroStations, nearMetro, metroStationId]);
+  }, [metroFilterVisible, parsed.metroStationSlug, metroStations, nearMetro, metroStationId]);
 
   const filters = useMemo(() => {
     const f: Record<string, unknown> = {
@@ -344,13 +353,15 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     if (roomsFilterVisible && roomBuckets.length > 0) {
       f.roomValues = roomBuckets.map((b) => (b === "4" ? 4 : Number(b)));
     }
-    if (routeMetroStation) {
-      f.metroStationId = routeMetroStation.id;
-    } else if (nearMetro && metroStationId !== "all") {
-      f.metroStationId = Number(metroStationId);
-    }
-    if (parsed.nearMetro || nearMetro) {
-      f.nearMetro = true;
+    if (metroFilterVisible) {
+      if (routeMetroStation) {
+        f.metroStationId = routeMetroStation.id;
+      } else if (nearMetro && metroStationId !== "all") {
+        f.metroStationId = Number(metroStationId);
+      }
+      if (parsed.nearMetro || nearMetro) {
+        f.nearMetro = true;
+      }
     }
     if (minPrice) f.minPrice = Number(minPrice);
     if (maxPrice) f.maxPrice = Number(maxPrice);
@@ -361,7 +372,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     else if (sort === "area-desc") { f.sortBy = "area"; f.sortOrder = "DESC"; }
     return f;
-  }, [currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, priceType, selectedCurrency, hasPriceFilter, isSaleDeal, sort]);
+  }, [currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, priceType, selectedCurrency, hasPriceFilter, isSaleDeal, sort]);
 
   const { data, isLoading } = useProperties(filters);
   const { data: rates } = useExchangeRates();
@@ -563,6 +574,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
         </div>
       )}
 
+      {metroFilterVisible && (
       <div>
         <label className="text-sm font-semibold text-foreground mb-2 block font-display">Станция метро</label>
         <Select value={metroStationId} onValueChange={setMetroStationId} disabled={!nearMetro}>
@@ -614,6 +626,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
           Рядом с метро
         </label>
       </div>
+      )}
 
       <div>
         <label className="text-sm font-semibold text-foreground mb-2 block font-display">Удобства</label>

@@ -239,6 +239,38 @@ final class PropertyListFilteringTest extends ApiTestCase
         self::assertNotContains($plain->getId()->getValue(), $ids);
     }
 
+    public function testNearMetroIgnoredForHouses(): void
+    {
+        $owner = $this->createUser('filter-metro-house@example.com', 'Password123!');
+        $city = $this->createCity();
+        $near = $this->createProperty($owner, $city, 'published', ['nearMetro' => true, 'type' => 'house']);
+        $far = $this->createProperty($owner, $city, 'published', ['nearMetro' => false, 'type' => 'house']);
+
+        $this->client->request('GET', '/api/properties?type=house&nearMetro=1');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $ids = $this->idsFromListPayload();
+        self::assertContains($near->getId()->getValue(), $ids);
+        self::assertContains($far->getId()->getValue(), $ids);
+    }
+
+    public function testNearMetroIgnoredOutsideMinskRegion(): void
+    {
+        $owner = $this->createUser('filter-metro-brest@example.com', 'Password123!');
+        $region = $this->createRegion('brest', 'Брестская область');
+        $district = $this->createRegionDistrict($region, 'brest-district', 'Брестский район');
+        $city = $this->createCity('Brest', 'brest', 'г. Брест', $district);
+        $near = $this->createProperty($owner, $city, 'published', ['nearMetro' => true]);
+        $far = $this->createProperty($owner, $city, 'published', ['nearMetro' => false]);
+
+        $this->client->request('GET', '/api/properties?type=apartment&regionSlug=brest&nearMetro=1');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $ids = $this->idsFromListPayload();
+        self::assertContains($near->getId()->getValue(), $ids);
+        self::assertContains($far->getId()->getValue(), $ids);
+    }
+
     /**
      * @return list<int>
      */
