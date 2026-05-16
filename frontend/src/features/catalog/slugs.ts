@@ -1,3 +1,9 @@
+import {
+  HEADER_REGION_MINSK_SLUG,
+  regionNameToHeaderSlug,
+  withRegionalCatalogHref,
+} from "@/lib/region-header";
+
 /** Regional path prefix (областные центры кроме Минска — в URL как первый сегмент). */
 export const REGION_SLUGS: ReadonlySet<string> = new Set([
   'brest',
@@ -164,7 +170,22 @@ export function isPropertyId(segment?: string): boolean {
   return /^\d+$/.test(segment);
 }
 
-/** Страница объявления: …/kvartiry/123 или …/grodno/kvartiry/123 */
+/** Slug региона для URL объявления из адреса API. */
+export function propertyUrlRegionSlug(regionName?: string, citySlug?: string): string | undefined {
+  const fromRegion = regionNameToHeaderSlug(regionName);
+  if (fromRegion === HEADER_REGION_MINSK_SLUG) {
+    return undefined;
+  }
+  if (fromRegion) {
+    return fromRegion;
+  }
+  if (citySlug && REGION_SLUGS.has(citySlug)) {
+    return citySlug;
+  }
+  return undefined;
+}
+
+/** Страница объявления: …/kvartiry/123 или …/vitebsk/kvartiry/123 */
 export function isPropertyDetailPath(pathname: string): boolean {
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length < 2) return false;
@@ -175,12 +196,26 @@ export function isPropertyDetailPath(pathname: string): boolean {
   return parsed.propertyType !== undefined;
 }
 
-export function buildPropertyUrl(propertyType: string | undefined, id: number): string {
+export function buildPropertyUrl(
+  propertyType: string | undefined,
+  id: number,
+  region?: string,
+): string {
   const propertySlug = propertyType ? PROPERTY_TYPE_VALUE_TO_SLUG[propertyType] : undefined;
-  if (!propertySlug) {
-    return `/${id}/`;
+  const base = propertySlug ? `/${propertySlug}/${id}/` : `/${id}/`;
+  if (!region || region === HEADER_REGION_MINSK_SLUG) {
+    return base;
   }
-  return `/${propertySlug}/${id}/`;
+  return withRegionalCatalogHref(base, region);
+}
+
+export function buildPropertyUrlFromRegionName(
+  propertyType: string | undefined,
+  id: number,
+  regionName?: string,
+  citySlug?: string,
+): string {
+  return buildPropertyUrl(propertyType, id, propertyUrlRegionSlug(regionName, citySlug));
 }
 
 export function buildPageTitle(

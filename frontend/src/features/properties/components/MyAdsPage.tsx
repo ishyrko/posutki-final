@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useBoostProperty, useExchangeRates, useMyProperties } from '@/features/properties/hooks';
 import { Property, formatAddress } from '@/features/properties/types';
-import { buildPropertyUrl } from '@/features/catalog/slugs';
+import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
 
 export type MyAdsStatus = 'published' | 'moderation' | 'rejected' | 'inactive';
@@ -88,7 +88,12 @@ function ListingCard({ property }: { property: Property }) {
     const isActive = property.status === 'published';
     const address = formatAddress(property.address);
     const statusConfig = STATUS_CONFIG[property.status];
-    const propertyHref = buildPropertyUrl(property.type, property.id);
+    const propertyHref = buildPropertyUrlFromRegionName(
+        property.type,
+        property.id,
+        property.address?.regionName,
+        property.address?.citySlug,
+    );
     const boostedToday = isBoostedToday(property.boostedAt);
     const boostCooldownOk = isAtLeast24HoursAfterCreation(property.createdAt);
 

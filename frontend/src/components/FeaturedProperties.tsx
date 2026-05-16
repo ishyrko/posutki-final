@@ -8,7 +8,7 @@ import PropertyCard from "./PropertyCard";
 import { PriceInByn } from "@/components/BynCurrency";
 import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { formatAddress } from "@/features/properties/types";
-import { buildCatalogUrl, REGION_SLUGS } from "@/features/catalog/slugs";
+import { buildCatalogUrl, propertyUrlRegionSlug, REGION_SLUGS } from "@/features/catalog/slugs";
 import { RESIDENTIAL_PROPERTY_TYPES } from "@/features/catalog/residential-types";
 import type { ExchangeRates } from "@/features/properties/api";
 import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
@@ -102,6 +102,7 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
                 typeLabel={property.typeLabel}
                 dealType={property.dealType}
                 propertyType={property.type}
+                regionSlug={propertyUrlRegionSlug(property.address.regionName, property.address.citySlug)}
                 index={i}
                 animateEntrance={false}
                 rating={property.ratingAvg ?? null}

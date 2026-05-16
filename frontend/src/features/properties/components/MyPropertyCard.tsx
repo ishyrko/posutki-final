@@ -8,7 +8,7 @@ import { Card, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Edit, Eye, Heart, Phone, Trash2 } from 'lucide-react';
-import { buildPropertyUrl } from '@/features/catalog/slugs';
+import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
 
 const STATUS_LABELS: Record<Property['status'], string> = {
@@ -49,7 +49,12 @@ export function MyPropertyCard({ property, onDelete }: MyPropertyCardProps) {
     const views = property.views ?? 0;
     const phoneViews = property.phoneViews ?? 0;
     const favoritesCount = property.favoritesCount ?? 0;
-    const propertyHref = buildPropertyUrl(property.type, property.id);
+    const propertyHref = buildPropertyUrlFromRegionName(
+        property.type,
+        property.id,
+        property.address?.regionName,
+        property.address?.citySlug,
+    );
 
     return (
         <Card className="overflow-hidden flex flex-col h-full group">

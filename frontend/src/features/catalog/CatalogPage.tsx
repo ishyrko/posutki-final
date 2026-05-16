@@ -42,7 +42,12 @@ import {
   formatPropertyPrices,
   DEFAULT_EXCHANGE_RATES_FALLBACK,
 } from "@/features/properties/price-display";
-import { buildPageTitle, isMetroCatalogContext, type ParsedSegments } from "@/features/catalog/slugs";
+import {
+  buildPageTitle,
+  isMetroCatalogContext,
+  propertyUrlRegionSlug,
+  type ParsedSegments,
+} from "@/features/catalog/slugs";
 import { GuestCountControl } from "@/features/catalog/GuestCountControl";
 import {
   clampGuests,
@@ -201,6 +206,7 @@ function propertyToListCard(p: Property, rates: ExchangeRates, metroFilterStatio
       : undefined,
     id: p.id,
     propertyType: p.type,
+    regionSlug: propertyUrlRegionSlug(p.address.regionName, p.address.citySlug),
     nearbyMetroStations: pickMetroStationsForCatalog(p.nearbyMetroStations ?? [], metroFilterStationId),
   };
 }
@@ -218,6 +224,7 @@ function propertyToMapItem(p: Property, rates: ExchangeRates, displayCurrency: C
     image: p.images?.[0]?.thumbnailUrl || p.images?.[0]?.url || "",
     dealType: p.dealType,
     propertyType: p.type,
+    regionSlug: propertyUrlRegionSlug(p.address.regionName, p.address.citySlug),
   };
 }
 
@@ -924,6 +931,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                             maxGuests={property.specifications.maxDailyGuests}
                             dealType={property.dealType}
                             propertyType={property.type}
+                            regionSlug={propertyUrlRegionSlug(property.address.regionName, property.address.citySlug)}
                             typeLabel={property.typeLabel}
                             index={i}
                             animateEntrance={false}

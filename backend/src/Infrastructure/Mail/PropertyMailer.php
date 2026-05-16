@@ -69,11 +69,7 @@ final readonly class PropertyMailer
             context: [
                 'owner' => $owner,
                 'property' => $property,
-                'propertyUrl' => $this->frontendUrls->publicProperty(
-                    $property->getDealType(),
-                    $property->getType(),
-                    $property->getId()->getValue(),
-                ),
+                'propertyUrl' => $this->frontendUrls->publicPropertyForListing($property),
                 'dashboardUrl' => $this->frontendUrls->cabinet(),
             ],
         );

@@ -31,6 +31,8 @@ interface PropertyCardProps {
   index?: number;
   dealType?: string;
   propertyType?: string;
+  /** Slug региона для URL (brest, vitebsk, …); Минск — не передавать. */
+  regionSlug?: string;
   rating?: number | null;
   reviewCount?: number | null;
   /** When false, skip fade-in on mount (reduces Safari flicker when parent re-renders after auth/rates). */
@@ -53,6 +55,7 @@ const PropertyCard = ({
   index = 0,
   dealType,
   propertyType,
+  regionSlug,
   rating,
   reviewCount,
   animateEntrance = true,
@@ -73,7 +76,7 @@ const PropertyCard = ({
     toggleFavorite({ propertyId: id, isFavorited });
   };
 
-  const href = buildPropertyUrl(propertyType, id);
+  const href = buildPropertyUrl(propertyType, id, regionSlug);
   const isDaily = dealType === "daily";
   const showRating = rating != null && rating > 0;
   const imageTypeBadge =

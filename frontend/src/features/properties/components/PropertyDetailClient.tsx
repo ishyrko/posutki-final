@@ -200,7 +200,14 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
             Объект, который вы ищете, не существует или был удалён.
           </p>
           <Button asChild>
-            <Link href="/kvartiry/">Вернуться в каталог</Link>
+            <Link
+              href={buildCatalogUrl({
+                region: regionNameToHeaderSlug(initialProperty.address.regionName),
+                propertyType: initialProperty.type,
+              }) || "/kvartiry/"}
+            >
+              Вернуться в каталог
+            </Link>
           </Button>
         </div>
       </div>

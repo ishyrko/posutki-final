@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Service;
 
+use App\Domain\Property\Entity\Property;
+use App\Domain\Property\Repository\CityRepositoryInterface;
+
 /**
  * Публичные маршруты Next.js — в синхроне с frontend/src/features/catalog/slugs.ts
- * (посуточно: в URL только kvartiry/doma и id).
+ * (посуточно: kvartiry/doma, id, для областных центров — префикс региона).
  */
 final readonly class FrontendUrlBuilder
 {
@@ -16,8 +19,12 @@ final readonly class FrontendUrlBuilder
         'house' => 'doma',
     ];
 
+    /** @var list<string> */
+    private const URL_REGION_PREFIXES = ['brest', 'vitebsk', 'gomel', 'grodno', 'mogilev'];
+
     public function __construct(
         private string $frontendBaseUrl,
+        private CityRepositoryInterface $cityRepository,
     ) {
     }
 
@@ -42,7 +49,7 @@ final readonly class FrontendUrlBuilder
         return $this->base() . '/admin';
     }
 
-    public function publicProperty(string $dealType, string $propertyType, int $propertyId): string
+    public function publicProperty(string $dealType, string $propertyType, int $propertyId, ?string $regionSlug = null): string
     {
         $typeSlug = self::PROPERTY_TYPE_TO_PATH_SLUG[$propertyType] ?? null;
 
@@ -50,6 +57,36 @@ final readonly class FrontendUrlBuilder
             return $this->base() . '/' . $propertyId . '/';
         }
 
-        return $this->base() . '/' . $typeSlug . '/' . $propertyId . '/';
+        $path = '/' . $typeSlug . '/' . $propertyId . '/';
+        if ($regionSlug !== null && \in_array($regionSlug, self::URL_REGION_PREFIXES, true)) {
+            $path = '/' . $regionSlug . $path;
+        }
+
+        return $this->base() . $path;
+    }
+
+    public function publicPropertyForListing(Property $property): string
+    {
+        return $this->publicProperty(
+            $property->getDealType(),
+            $property->getType(),
+            $property->getId()->getValue(),
+            $this->resolveUrlRegionSlug($property->getCityId()),
+        );
+    }
+
+    private function resolveUrlRegionSlug(int $cityId): ?string
+    {
+        $city = $this->cityRepository->findById($cityId);
+        if ($city === null) {
+            return null;
+        }
+
+        $slug = $city->getRegionDistrict()?->getRegion()?->getSlug();
+        if ($slug === null || $slug === 'minsk' || !\in_array($slug, self::URL_REGION_PREFIXES, true)) {
+            return null;
+        }
+
+        return $slug;
     }
 }

@@ -32,6 +32,8 @@ interface PropertyListCardProps {
   floor?: string;
   id?: number;
   propertyType?: string;
+  /** Slug региона для URL (brest, vitebsk, …); Минск — не передавать. */
+  regionSlug?: string;
   nearbyMetroStations?: NearbyMetroStation[];
   /** When true, metro badges stay below the address (e.g. catalog "list + map" on desktop). */
   metroOnSeparateLine?: boolean;
@@ -71,10 +73,11 @@ const PropertyListCard = ({
   floor,
   id,
   propertyType,
+  regionSlug,
   nearbyMetroStations = [],
   metroOnSeparateLine = false,
 }: PropertyListCardProps) => {
-  const href = id ? buildPropertyUrl(propertyType, id) : `/property/${index}`;
+  const href = id ? buildPropertyUrl(propertyType, id, regionSlug) : `/property/${index}`;
   const { data: user } = useUser();
   const { data: favoriteIds = [] } = useFavoriteIds();
   const { mutate: toggleFavorite } = useToggleFavorite();

@@ -6,6 +6,7 @@ import {
   isCatalogRoute,
   buildPageTitle,
   buildCatalogCanonicalPath,
+  buildPropertyUrlFromRegionName,
   buildSegmentsCanonicalPath,
   isPropertyId,
   REGION_SLUGS,
@@ -117,12 +118,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const address = formatAddress(property.address);
     const { primaryPlain: bynPrice } = formatPropertyPrices(property, DEFAULT_EXCHANGE_RATES_FALLBACK);
     const firstImage = property.images?.[0]?.url;
+    const canonicalPath = buildPropertyUrlFromRegionName(
+      property.type,
+      Number(propertyId),
+      property.address.regionName,
+      property.address.citySlug,
+    );
+    const currentPath = buildSegmentsCanonicalPath(segments ?? []);
+    if (canonicalPath !== currentPath) {
+      notFound();
+    }
 
     return {
       title: `${property.title} | posutki.by`,
       description: `${address} — ${bynPrice}`,
       alternates: {
-        canonical: buildSegmentsCanonicalPath(segments ?? []),
+        canonical: canonicalPath,
       },
       openGraph: {
         title: property.title,
@@ -175,6 +186,18 @@ export default async function SegmentsPage({ params }: PageProps) {
     if (!property) {
       notFound();
     }
+
+    const canonicalPath = buildPropertyUrlFromRegionName(
+      property.type,
+      numericPropertyId,
+      property.address.regionName,
+      property.address.citySlug,
+    );
+    const currentPath = buildSegmentsCanonicalPath(segments ?? []);
+    if (canonicalPath !== currentPath) {
+      notFound();
+    }
+
     return <PropertyDetailClient id={numericPropertyId} initialProperty={property} />;
   }
 

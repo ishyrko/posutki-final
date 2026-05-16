@@ -10,7 +10,7 @@ import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "../price-
 import { useToggleFavorite, useFavoriteIds, useExchangeRates } from "../hooks";
 import { useUser } from "@/features/auth/hooks";
 import { useRouter } from "next/navigation";
-import { buildPropertyUrl } from "@/features/catalog/slugs";
+import { buildPropertyUrlFromRegionName } from "@/features/catalog/slugs";
 import { PriceDisplay } from "@/components/BynCurrency";
 import { useCurrency } from "@/context/CurrencyContext";
 import { showBathrooms, showRooms } from "@/features/create-listing/property-field-rules";
@@ -40,7 +40,7 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
   const { mutate: toggleFavorite } = useToggleFavorite();
   const router = useRouter();
   const isFavorited = favoriteIds.includes(id);
-  const href = buildPropertyUrl(type, id);
+  const href = buildPropertyUrlFromRegionName(type, id, address.regionName, address.citySlug);
 
   const { selectedCurrency } = useCurrency();
   const { data: rates } = useExchangeRates();
