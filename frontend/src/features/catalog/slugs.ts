@@ -29,18 +29,30 @@ export const PROPERTY_TYPE_VALUE_TO_SLUG = Object.fromEntries(
 /** Slug города Минска в URL каталога и API (`citySlug`). */
 export const MINSK_CITY_SLUG = 'minsk';
 
-export const REGION_LABELS: Record<string, string> = {
-  brest: 'Брест и область',
-  vitebsk: 'Витебская область',
-  gomel: 'Гомель и область',
-  grodno: 'Гродно и область',
-  mogilev: 'Могилев и область',
+/** H1 / meta: локация в предложном падеже (с предлогом «в»). */
+const CATALOG_APARTMENT_LOCATION: Record<string, string> = {
+  minsk: 'в Минске',
+  brest: 'в Бресте',
+  vitebsk: 'в Витебске',
+  gomel: 'в Гомеле',
+  grodno: 'в Гродно',
+  mogilev: 'в Могилёве',
+  'minsk-region': 'в Минской области',
+};
+
+const CATALOG_HOUSE_LOCATION: Record<string, string> = {
+  minsk: 'в Минской области',
+  brest: 'в Брестской области',
+  vitebsk: 'в Витебской области',
+  gomel: 'в Гомельской области',
+  grodno: 'в Гродненской области',
+  mogilev: 'в Могилёвской области',
 };
 
 /** H1 / meta для страниц каталога по типу жилья. */
 export const DAILY_DEAL_PAGE_TITLES: Record<string, string> = {
   apartment: 'Квартиры на сутки',
-  house: 'Дома на сутки',
+  house: 'Дома и коттеджи на сутки',
 };
 
 export const PROPERTY_TYPE_LABELS: Record<string, string> = {
@@ -218,37 +230,50 @@ export function buildPropertyUrlFromRegionName(
   return buildPropertyUrl(propertyType, id, propertyUrlRegionSlug(regionName, citySlug));
 }
 
+function catalogLocationKey(parsed: ParsedSegments): string {
+  return parsed.citySlug ?? parsed.regionSlug ?? MINSK_CITY_SLUG;
+}
+
+function resolveCatalogLocation(
+  parsed: ParsedSegments,
+  cityName?: string,
+  metroStationName?: string,
+): string {
+  if (metroStationName) {
+    return `у метро ${metroStationName} в Минске`;
+  }
+  if (parsed.metroStationSlug) {
+    return 'у метро в Минске';
+  }
+  if (parsed.nearMetro) {
+    return 'возле метро в Минске';
+  }
+
+  if (cityName) {
+    return cityName.startsWith('в ') ? cityName : `в ${cityName}`;
+  }
+
+  const key = catalogLocationKey(parsed);
+  const map =
+    parsed.propertyType === 'house' ? CATALOG_HOUSE_LOCATION : CATALOG_APARTMENT_LOCATION;
+
+  return map[key] ?? map[MINSK_CITY_SLUG];
+}
+
 export function buildPageTitle(
   parsed: ParsedSegments,
   cityName?: string,
   metroStationName?: string
 ): string {
-  const parts: string[] = [];
+  const typePart =
+    parsed.propertyType && parsed.propertyType in DAILY_DEAL_PAGE_TITLES
+      ? DAILY_DEAL_PAGE_TITLES[parsed.propertyType]
+      : 'Посуточная аренда';
 
-  if (parsed.propertyType && parsed.propertyType in DAILY_DEAL_PAGE_TITLES) {
-    parts.push(DAILY_DEAL_PAGE_TITLES[parsed.propertyType]);
-  } else if (parsed.nearMetro) {
-    parts.push('Посуточная аренда');
-  } else {
-    parts.push('Посуточная аренда');
+  const location = resolveCatalogLocation(parsed, cityName, metroStationName);
+  if (!location) {
+    return typePart || 'Посуточная аренда в Беларуси';
   }
 
-  const location = cityName
-    ?? (metroStationName
-      ? `метро ${metroStationName}`
-      : parsed.metroStationSlug
-      ? 'метро в Минске'
-      : (parsed.nearMetro
-        ? 'возле метро в Минске'
-        : (parsed.regionSlug ? REGION_LABELS[parsed.regionSlug] : 'Минск и область')));
-
-  if (location) {
-    if (parsed.nearMetro) {
-      parts.push(location);
-    } else {
-      parts.push(`— ${location}`);
-    }
-  }
-
-  return parts.length > 0 ? parts.join(' ') : 'Посуточная аренда в Беларуси';
+  return `${typePart} ${location}`;
 }
