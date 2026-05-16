@@ -53,8 +53,12 @@ import { showBathrooms, showRooms, showRoomsCatalogFilter } from "@/features/cre
 import { PAYMENT_METHOD_OPTIONS } from "@/features/properties/payment-methods";
 import { PriceDisplay } from "@/components/BynCurrency";
 import { cn } from "@/lib/utils";
+import { useMinWidth } from "@/hooks/use-min-width";
 
 type ViewMode = "grid" | "list" | "map";
+
+/** Горизонтальный список (PropertyListCard) рассчитан на широкую колонку результатов. */
+const CATALOG_LIST_VIEW_MIN_WIDTH = 1100;
 
 /** Пустая строка — без фильтра по комнатам. */
 const roomCountOptions = [
@@ -93,6 +97,8 @@ const viewModes: { value: ViewMode; icon: typeof LayoutGrid; title: string }[] =
   { value: "list", icon: Rows3, title: "Список" },
   { value: "map", icon: MapIcon, title: "Карта" },
 ];
+
+const mobileViewModes = viewModes.filter((m) => m.value === "grid" || m.value === "map");
 
 /** Каталог фильтрует удобства на клиенте (текущая страница выдачи); id совпадают с шагом размещения. */
 const CATALOG_AMENITY_OPTIONS: {
@@ -237,6 +243,11 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const [selectedAmenityIds, setSelectedAmenityIds] = useState<string[]>([]);
   const [selectedPaymentMethodIds, setSelectedPaymentMethodIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const listViewAvailable = useMinWidth(CATALOG_LIST_VIEW_MIN_WIDTH);
+  const visibleViewModes = useMemo(
+    () => viewModes.filter((m) => m.value !== "list" || listViewAvailable),
+    [listViewAvailable],
+  );
   const [activeMarker, setActiveMarker] = useState<number | null>(null);
   const isSaleDeal = false;
   const pageFromQuery = Number(searchParams.get("page") ?? "1");
@@ -249,6 +260,12 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   useEffect(() => {
     setCurrentPage(validPageFromQuery);
   }, [validPageFromQuery]);
+
+  useEffect(() => {
+    if (!listViewAvailable && viewMode === "list") {
+      setViewMode("grid");
+    }
+  }, [listViewAvailable, viewMode]);
 
   const roomsFromQuery = searchParams.get("rooms");
   const guestsFromQuery = parseGuestsFromQuery(searchParams.get(GUESTS_QUERY_PARAM));
@@ -672,7 +689,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     </div>
   );
 
-  const resultsBottomPadding = viewMode !== "map" ? "pb-24 md:pb-8" : "pb-6";
+  const resultsBottomPadding = viewMode !== "map" ? "pb-8" : "pb-6";
 
   const catalogResultCount =
     selectedAmenityIds.length > 0 || selectedPaymentMethodIds.length > 0
@@ -707,8 +724,8 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
               </div>
               <div>
                 <label className="text-sm font-semibold text-foreground mb-2 block font-display">Вид</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {viewModes.map((m) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {mobileViewModes.map((m) => (
                     <button
                       key={m.value}
                       type="button"
@@ -763,8 +780,28 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
               </p>
 
               <div className="flex items-center gap-3 ml-auto">
+                <div className="flex md:hidden items-center bg-surface border border-border rounded-xl overflow-hidden shrink-0">
+                  {mobileViewModes.map((m, i) => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      title={m.title}
+                      aria-label={m.title}
+                      onClick={() => setViewMode(m.value)}
+                      className={cn(
+                        "cursor-pointer p-2.5 transition-all duration-150",
+                        i > 0 && "border-l border-border",
+                        viewMode === m.value
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <m.icon className="h-4 w-4" />
+                    </button>
+                  ))}
+                </div>
                 <div className="hidden md:flex items-center bg-surface border border-border rounded-xl overflow-hidden shrink-0">
-                  {viewModes.map((m, i) => (
+                  {visibleViewModes.map((m, i) => (
                     <button
                       key={m.value}
                       type="button"
@@ -1035,25 +1072,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
         </div>
       </section>
 
-      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-        <div className="flex items-center bg-card border border-border rounded-full shadow-elevated p-1">
-          {viewModes.map((m) => (
-            <button
-              key={m.value}
-              type="button"
-              title={m.title}
-              aria-label={m.title}
-              onClick={() => setViewMode(m.value)}
-              className={cn(
-                "cursor-pointer p-2.5 rounded-full transition-colors",
-                viewMode === m.value ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-              )}
-            >
-              <m.icon className="h-4 w-4" />
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
