@@ -14,7 +14,7 @@ import {
 export const listingParameterLabelClass =
     'text-sm font-semibold text-foreground mb-2 block font-display';
 
-const pillBtnBase = 'px-3 py-1.5 rounded-lg text-sm font-medium transition-all';
+const pillBtnBase = 'cursor-pointer px-3 py-1.5 rounded-lg text-sm font-medium transition-all';
 const chipInactive = `${pillBtnBase} bg-surface border border-border text-foreground hover:bg-muted`;
 const chipActive = `${pillBtnBase} bg-primary text-primary-foreground border border-primary`;
 

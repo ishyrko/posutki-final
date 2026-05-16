@@ -121,11 +121,11 @@ const inputClass =
     'w-full px-4 py-2.5 rounded-xl bg-surface border border-border text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all';
 const labelClass = 'text-sm font-semibold text-foreground mb-2 block font-display';
 
-const pillBtnBase = 'px-3 py-1.5 rounded-lg text-sm font-medium transition-all';
+const pillBtnBase = 'cursor-pointer px-3 py-1.5 rounded-lg text-sm font-medium transition-all';
 const pillBtnInactiveLg =
-    'flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border border-border bg-surface text-foreground hover:bg-muted transition-all text-left';
+    'flex w-full cursor-pointer items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border border-border bg-surface text-foreground hover:bg-muted transition-all text-left';
 const pillBtnActiveLg =
-    'flex w-full items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-left';
+    'flex w-full cursor-pointer items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-left';
 const chipInactive = `${pillBtnBase} bg-surface border border-border text-foreground hover:bg-muted`;
 const chipActive = `${pillBtnBase} bg-primary text-primary-foreground border border-primary`;
 /** Чипы удобств: фон ближе к макету (светло-серый неактивный). */
@@ -892,7 +892,7 @@ export function CreateListingForm() {
                 <button
                     type="button"
                     onClick={() => (step > 1 ? prev() : router.back())}
-                    className="p-2 rounded-lg hover:bg-muted transition-colors"
+                    className="cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
                 >
                     <ArrowLeft className="h-5 w-5 text-muted-foreground" />
                 </button>
@@ -927,7 +927,8 @@ export function CreateListingForm() {
                                 isCurrent &&
                                     'border-primary bg-primary/10 text-foreground shadow-sm ring-1 ring-primary/15',
                                 isPast &&
-                                    'border-border bg-card text-foreground hover:border-primary/45 hover:bg-muted/40 active:scale-[0.98]',
+                                    'cursor-pointer border-border bg-card text-foreground hover:border-primary/45 hover:bg-muted/40 active:scale-[0.98]',
+                                isCurrent && 'cursor-default',
                                 isUpcoming &&
                                     'cursor-not-allowed border-dashed border-border/80 bg-muted/25 text-muted-foreground opacity-80',
                             )}
@@ -1461,7 +1462,7 @@ export function CreateListingForm() {
                                             <button
                                                 type="button"
                                                 onClick={() => removePhoto(i)}
-                                                className="absolute top-2 right-2 p-1.5 rounded-full bg-card/80 backdrop-blur-sm text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                                className="absolute top-2 right-2 cursor-pointer rounded-full bg-card/80 p-1.5 text-destructive opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
                                             >
                                                 <X className="h-4 w-4" />
                                             </button>
@@ -1473,7 +1474,7 @@ export function CreateListingForm() {
                                             type="button"
                                             onClick={() => fileInputRef.current?.click()}
                                             className={cn(
-                                                'aspect-[4/3] rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors group',
+                                                'group flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors',
                                                 dragOver
                                                     ? 'border-primary bg-primary/5 text-primary'
                                                     : 'border-border hover:border-primary/40 bg-surface text-muted-foreground hover:text-primary',
@@ -1552,7 +1553,7 @@ export function CreateListingForm() {
                                                             key={city.id}
                                                             type="button"
                                                             onClick={() => selectCity(city)}
-                                                            className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
+                                                            className="w-full cursor-pointer px-4 py-2.5 text-left transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-accent"
                                                         >
                                                             <span className="font-medium text-foreground">{parts[0]}</span>
                                                             {parts.length > 1 && (
@@ -1612,7 +1613,7 @@ export function CreateListingForm() {
                                                             }));
                                                             setStreetDropdownOpen(false);
                                                         }}
-                                                        className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
+                                                        className="w-full cursor-pointer px-4 py-2.5 text-left transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-accent"
                                                     >
                                                         {street.type && (
                                                             <span className="text-sm text-muted-foreground mr-1">{street.type}</span>
@@ -1846,7 +1847,7 @@ export function CreateListingForm() {
                                                             const next = form.additionalServices.filter((_, i) => i !== idx);
                                                             update('additionalServices', next.length > 0 ? next : [{ name: '', price: '' }]);
                                                         }}
-                                                        className="text-destructive hover:text-destructive/80 transition-colors shrink-0"
+                                                        className="shrink-0 cursor-pointer text-destructive transition-colors hover:text-destructive/80"
                                                         aria-label="Удалить услугу"
                                                     >
                                                         <X className="w-4 h-4" />
@@ -1857,7 +1858,7 @@ export function CreateListingForm() {
                                         <button
                                             type="button"
                                             onClick={() => update('additionalServices', [...form.additionalServices, { name: '', price: '' }])}
-                                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                                            className="flex cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                                         >
                                             <Plus className="w-4 h-4" />
                                             Добавить
