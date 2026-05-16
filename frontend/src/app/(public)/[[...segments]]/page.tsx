@@ -22,6 +22,10 @@ import { fetchFeaturedPropertiesForHome } from "@/lib/featured-properties-server
 import { fetchRecentArticlesForHome } from "@/lib/articles-server";
 import { HEADER_REGION_MINSK_SLUG } from "@/lib/region-header";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";
+import {
+  buildApartmentPropertyMetaDescription,
+  buildApartmentPropertyMetaTitle,
+} from "@/features/properties/property-meta-title";
 import PropertyDetailClient from "../../../features/properties/components/PropertyDetailClient";
 
 interface PageProps {
@@ -119,6 +123,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     const address = formatAddress(property.address);
     const { primaryPlain: bynPrice } = formatPropertyPrices(property, DEFAULT_EXCHANGE_RATES_FALLBACK);
+    const metaTitle =
+      buildApartmentPropertyMetaTitle(property) ?? `${property.title} | posutki.by`;
+    const metaDescription =
+      buildApartmentPropertyMetaDescription(property) ?? `${address} — ${bynPrice}`;
     const firstImage = property.images?.[0]?.url;
     const canonicalPath = buildPropertyUrlFromRegionName(
       property.type,
@@ -132,14 +140,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 
     return {
-      title: `${property.title} | posutki.by`,
-      description: `${address} — ${bynPrice}`,
+      title: metaTitle,
+      description: metaDescription,
       alternates: {
         canonical: canonicalPath,
       },
       openGraph: {
-        title: property.title,
-        description: `${address} — ${bynPrice}`,
+        title: metaTitle,
+        description: metaDescription,
         images: firstImage ? [{ url: firstImage }] : undefined,
         type: "website",
       },
