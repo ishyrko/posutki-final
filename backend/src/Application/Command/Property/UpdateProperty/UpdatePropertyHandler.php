@@ -9,6 +9,7 @@ use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
 use App\Domain\Property\Validation\DailyRentDetailsValidator;
 use App\Domain\Property\Validation\DealConditionsValidator;
+use App\Domain\Property\Validation\PaymentMethodsValidator;
 use App\Domain\Property\Validation\FloorTotalFloorsValidator;
 use App\Domain\Property\Validation\PropertyDealCombinationValidator;
 use App\Domain\Property\Validation\RoomDealDetailsValidator;
@@ -50,6 +51,9 @@ readonly class UpdatePropertyHandler
         $effectiveType = $command->type ?? $property->getType();
         if ($command->dealConditions !== null) {
             DealConditionsValidator::assertValid($command->dealConditions, $effectiveDealType, $effectiveType);
+        }
+        if ($command->paymentMethods !== null) {
+            PaymentMethodsValidator::assertValid($command->paymentMethods);
         }
         $effectiveLandArea = $command->landArea ?? $property->getLandArea();
         DailyRentDetailsValidator::assertValid(
@@ -128,6 +132,7 @@ readonly class UpdatePropertyHandler
             roomsInDeal: $command->roomsInDeal,
             roomsArea: $command->roomsArea,
             dealConditions: $command->dealConditions,
+            paymentMethods: $command->paymentMethods,
             maxDailyGuests: $command->maxDailyGuests,
             dailySingleBeds: $command->dailySingleBeds,
             dailyDoubleBeds: $command->dailyDoubleBeds,
@@ -186,6 +191,7 @@ readonly class UpdatePropertyHandler
             'roomsInDeal' => $command->roomsInDeal,
             'roomsArea' => $command->roomsArea,
             'dealConditions' => $command->dealConditions,
+            'paymentMethods' => $command->paymentMethods,
             'maxDailyGuests' => $command->maxDailyGuests,
             'dailySingleBeds' => $command->dailySingleBeds,
             'dailyDoubleBeds' => $command->dailyDoubleBeds,

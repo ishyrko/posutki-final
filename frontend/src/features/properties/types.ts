@@ -65,6 +65,7 @@ export interface Property {
         roomsInDeal?: number;
         roomsArea?: number;
         dealConditions?: string[];
+        paymentMethods?: string[];
         maxDailyGuests?: number;
         dailySingleBeds?: number;
         dailyDoubleBeds?: number;
@@ -106,6 +107,7 @@ export interface Property {
         roomsInDeal?: number | null;
         roomsArea?: number | null;
         dealConditions?: string[];
+        paymentMethods?: string[];
         maxDailyGuests?: number | null;
         dailySingleBeds?: number | null;
         dailyDoubleBeds?: number | null;

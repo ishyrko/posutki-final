@@ -29,6 +29,7 @@ readonly class UpdatePropertyCommand
         public ?int $roomsInDeal = null,
         public ?float $roomsArea = null,
         public ?array $dealConditions = null,
+        public ?array $paymentMethods = null,
         public ?int $maxDailyGuests = null,
         public ?int $dailySingleBeds = null,
         public ?int $dailyDoubleBeds = null,

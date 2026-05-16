@@ -112,6 +112,7 @@ final class MetroProximityCalculatorTest extends TestCase
             livingArea: null,
             kitchenArea: null,
             dealConditions: null,
+            paymentMethods: null,
             maxDailyGuests: null,
             dailySingleBeds: null,
             dailyDoubleBeds: null,

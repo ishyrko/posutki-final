@@ -37,6 +37,7 @@ import { useSearchCities, useSearchStreets, useCreateProperty } from '../hooks';
 import { uploadFile, FileTooLargeError } from '../api';
 import type { ListingFormData, UploadedPhoto, CreatePropertyPayload, CitySearchResult, AdditionalService } from '../types';
 import { LISTING_AMENITY_GROUPS } from '../listing-amenity-groups';
+import { PAYMENT_METHOD_OPTIONS } from '@/features/properties/payment-methods';
 
 const DEAL_RULE_OPTIONS: { id: string; label: string }[] = [
     { id: 'contactless_checkin', label: 'Бесконтактное заселение' },
@@ -201,6 +202,7 @@ const INITIAL_FORM: ListingFormData = {
     renovation: '',
     balcony: '',
     dealConditions: [],
+    paymentMethods: [],
     photos: [],
     cityId: null,
     citySlug: '',
@@ -303,6 +305,18 @@ export function CreateListingForm() {
                 dealConditions: exists
                     ? prev.dealConditions.filter((c) => c !== condition)
                     : [...prev.dealConditions, condition],
+            };
+        });
+    }, []);
+
+    const togglePaymentMethod = useCallback((method: string) => {
+        setForm((prev) => {
+            const exists = prev.paymentMethods.includes(method);
+            return {
+                ...prev,
+                paymentMethods: exists
+                    ? prev.paymentMethods.filter((m) => m !== method)
+                    : [...prev.paymentMethods, method],
             };
         });
     }, []);
@@ -763,6 +777,7 @@ export function CreateListingForm() {
                 ? Number(form.roomsArea)
                 : undefined,
             dealConditions: form.dealConditions.length > 0 ? form.dealConditions : undefined,
+            paymentMethods: form.paymentMethods.length > 0 ? form.paymentMethods : undefined,
             maxDailyGuests: form.dealType === 'daily' && form.maxDailyGuests
                 ? Number(form.maxDailyGuests)
                 : undefined,
@@ -1776,6 +1791,27 @@ export function CreateListingForm() {
                                         </div>
                                     </div>
                                 )}
+
+                                <div className="bg-card rounded-2xl shadow-card p-6 space-y-4">
+                                    <h2 className="font-display text-lg font-semibold text-foreground">Способы оплаты</h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                                        {PAYMENT_METHOD_OPTIONS.map(({ id, label }) => (
+                                            <div key={id} className="flex items-center gap-2.5">
+                                                <Checkbox
+                                                    id={`payment_${id}`}
+                                                    checked={form.paymentMethods.includes(id)}
+                                                    onCheckedChange={() => togglePaymentMethod(id)}
+                                                />
+                                                <label
+                                                    htmlFor={`payment_${id}`}
+                                                    className="text-sm text-foreground cursor-pointer select-none"
+                                                >
+                                                    {label}
+                                                </label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
 
                                 <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                     <h2 className="font-display text-lg font-semibold text-foreground">Стоимость</h2>

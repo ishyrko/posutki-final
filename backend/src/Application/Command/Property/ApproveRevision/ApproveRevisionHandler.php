@@ -10,6 +10,7 @@ use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
 use App\Domain\Property\Validation\DailyRentDetailsValidator;
 use App\Domain\Property\Validation\DealConditionsValidator;
+use App\Domain\Property\Validation\PaymentMethodsValidator;
 use App\Domain\Property\Validation\PropertyDealCombinationValidator;
 use App\Domain\Property\Validation\RoomDealDetailsValidator;
 use App\Domain\Property\ValueObject\Address;
@@ -68,6 +69,9 @@ readonly class ApproveRevisionHandler
         if (isset($data['dealConditions']) && is_array($data['dealConditions'])) {
             DealConditionsValidator::assertValid($data['dealConditions'], $effectiveDealType, $effectiveType);
         }
+        if (isset($data['paymentMethods']) && is_array($data['paymentMethods'])) {
+            PaymentMethodsValidator::assertValid($data['paymentMethods']);
+        }
         $effectiveLandArea = isset($data['landArea']) ? (float) $data['landArea'] : $property->getLandArea();
         DailyRentDetailsValidator::assertValid(
             dealType: $effectiveDealType,
@@ -109,6 +113,7 @@ readonly class ApproveRevisionHandler
             roomsInDeal: isset($data['roomsInDeal']) ? (int) $data['roomsInDeal'] : null,
             roomsArea: isset($data['roomsArea']) ? (float) $data['roomsArea'] : null,
             dealConditions: isset($data['dealConditions']) && is_array($data['dealConditions']) ? $data['dealConditions'] : null,
+            paymentMethods: isset($data['paymentMethods']) && is_array($data['paymentMethods']) ? $data['paymentMethods'] : null,
             maxDailyGuests: isset($data['maxDailyGuests']) ? (int) $data['maxDailyGuests'] : null,
             dailySingleBeds: array_key_exists('dailySingleBeds', $data) ? (int) $data['dailySingleBeds'] : null,
             dailyDoubleBeds: array_key_exists('dailyDoubleBeds', $data) ? (int) $data['dailyDoubleBeds'] : null,

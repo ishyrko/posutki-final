@@ -87,6 +87,7 @@ export interface UpdatePropertyPayload {
     roomsInDeal?: number;
     roomsArea?: number;
     dealConditions?: string[];
+    paymentMethods?: string[];
     maxDailyGuests?: number;
     dailySingleBeds?: number;
     dailyDoubleBeds?: number;

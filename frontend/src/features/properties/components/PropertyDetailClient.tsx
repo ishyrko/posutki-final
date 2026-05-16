@@ -8,9 +8,10 @@ import {
   ChevronLeft, ChevronRight, X, Shield, Eye, Clock, Send, CheckCircle,
   Users, Utensils, Wifi, Tv, Sofa, Car, Waves, Wind,
   ShowerHead, Flame, Coffee, Snowflake, Baby, WashingMachine,
-  LogIn, LogOut, UserCheck, Sunrise,
+  LogIn, LogOut, UserCheck, Sunrise, Wallet,
 } from "lucide-react";
 import { LISTING_AMENITY_GROUPS } from "@/features/create-listing/listing-amenity-groups";
+import { PAYMENT_METHOD_LABELS, type PaymentMethodId } from "@/features/properties/payment-methods";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
@@ -382,6 +383,9 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
     (property.specifications.dealConditions?.length ?? 0) > 0
   );
 
+  const paymentMethods = property.specifications.paymentMethods ?? [];
+  const hasPaymentMethods = paymentMethods.length > 0;
+
   const activeAmenities = property.amenities ?? [];
   const hasAmenities = activeAmenities.length > 0;
 
@@ -716,6 +720,23 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                         </div>
                       </div>
                     )}
+                  </div>
+                </motion.div>
+              )}
+
+              {hasPaymentMethods && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22, duration: 0.5 }}>
+                  <h2 className="text-xl font-bold text-foreground mb-3">Способы оплаты</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {paymentMethods.map((method) => (
+                      <span
+                        key={method}
+                        className="inline-flex items-center gap-1.5 bg-primary/10 text-primary rounded-lg px-3 py-1.5 text-sm font-medium"
+                      >
+                        <Wallet className="w-3.5 h-3.5 flex-shrink-0" />
+                        {PAYMENT_METHOD_LABELS[method as PaymentMethodId] ?? method}
+                      </span>
+                    ))}
                   </div>
                 </motion.div>
               )}

@@ -21,6 +21,9 @@ import {
   Bath,
   Car,
   Wind,
+  Wallet,
+  CreditCard,
+  Banknote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +50,7 @@ import {
   parseGuestsFromQuery,
 } from "@/features/catalog/guests-filter";
 import { showBathrooms, showRooms, showRoomsCatalogFilter } from "@/features/create-listing/property-field-rules";
+import { PAYMENT_METHOD_OPTIONS } from "@/features/properties/payment-methods";
 import { PriceDisplay } from "@/components/BynCurrency";
 import { cn } from "@/lib/utils";
 
@@ -135,6 +139,12 @@ const CATALOG_AMENITY_OPTIONS: {
   },
   { id: "dryer", label: "Сушилка", icon: Wind, matches: (ids) => ids.includes("dryer") },
 ];
+
+const CATALOG_PAYMENT_ICONS: Record<string, typeof Wallet> = {
+  cash: Banknote,
+  card: CreditCard,
+  bank_transfer: Wallet,
+};
 
 function foundCountLabel(n: number, loading: boolean): ReactNode {
   if (loading) {
@@ -225,6 +235,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [selectedAmenityIds, setSelectedAmenityIds] = useState<string[]>([]);
+  const [selectedPaymentMethodIds, setSelectedPaymentMethodIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [activeMarker, setActiveMarker] = useState<number | null>(null);
   const isSaleDeal = false;
@@ -274,7 +285,8 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     (roomsFilterVisible && roomBuckets.length > 0 ? 1 : 0) +
     (nearMetro && metroStationId !== "all" ? 1 : 0) +
     (nearMetro ? 1 : 0) +
-    selectedAmenityIds.length;
+    selectedAmenityIds.length +
+    selectedPaymentMethodIds.length;
 
   const pageTitle = useMemo(() => {
     if (!parsed.metroStationSlug) return title;
@@ -382,6 +394,13 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     resetToFirstPage();
   };
 
+  const toggleCatalogPaymentMethod = (id: string) => {
+    setSelectedPaymentMethodIds((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id],
+    );
+    resetToFirstPage();
+  };
+
   const displayProperties = useMemo(() => {
     let list = properties;
     if (selectedAmenityIds.length > 0) {
@@ -393,8 +412,14 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
         });
       });
     }
+    if (selectedPaymentMethodIds.length > 0) {
+      list = list.filter((p) => {
+        const methods = p.specifications.paymentMethods ?? [];
+        return selectedPaymentMethodIds.every((selId) => methods.includes(selId));
+      });
+    }
     return list;
-  }, [properties, selectedAmenityIds]);
+  }, [properties, selectedAmenityIds, selectedPaymentMethodIds]);
 
   const mapProperties: MapProperty[] = useMemo(() => {
     return displayProperties
@@ -410,6 +435,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     setMetroStationId("all");
     setNearMetro(false);
     setSelectedAmenityIds([]);
+    setSelectedPaymentMethodIds([]);
     setShowAllAmenities(false);
     const params = new URLSearchParams(searchParams.toString());
     params.delete(GUESTS_QUERY_PARAM);
@@ -573,6 +599,32 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
       </div>
 
       <div>
+        <label className="text-sm font-semibold text-foreground mb-2 block font-display">Способы оплаты</label>
+        <div className="grid grid-cols-1 gap-2">
+          {PAYMENT_METHOD_OPTIONS.map((opt) => {
+            const Icon = CATALOG_PAYMENT_ICONS[opt.id] ?? Wallet;
+            const active = selectedPaymentMethodIds.includes(opt.id);
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => toggleCatalogPaymentMethod(opt.id)}
+                className={cn(
+                  "flex cursor-pointer items-center gap-2 px-3 py-2 rounded-lg text-left text-xs font-medium transition-all duration-150",
+                  active
+                    ? "bg-primary/10 border-primary text-primary border"
+                    : "border border-border bg-surface text-foreground hover:bg-muted",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{opt.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
         <label className="text-sm font-semibold text-foreground mb-2 block font-display">Удобства</label>
         <div className="grid grid-cols-1 gap-2">
           {(showAllAmenities ? CATALOG_AMENITY_OPTIONS : CATALOG_AMENITY_OPTIONS.slice(0, 4)).map((opt) => {
@@ -623,7 +675,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const resultsBottomPadding = viewMode !== "map" ? "pb-24 md:pb-8" : "pb-6";
 
   const catalogResultCount =
-    selectedAmenityIds.length > 0
+    selectedAmenityIds.length > 0 || selectedPaymentMethodIds.length > 0
       ? displayProperties.length
       : totalItems;
 

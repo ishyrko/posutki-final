@@ -104,6 +104,9 @@ class CreatePropertyRequest
     #[Assert\Type('array')]
     public ?array $dealConditions = null;
 
+    #[Assert\Type('array')]
+    public ?array $paymentMethods = null;
+
     #[Assert\Range(
         min: 1,
         max: 20,

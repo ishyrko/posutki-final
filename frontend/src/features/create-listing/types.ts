@@ -44,6 +44,7 @@ export interface CreatePropertyPayload {
     livingArea?: number;
     kitchenArea?: number;
     dealConditions?: string[];
+    paymentMethods?: string[];
     maxDailyGuests?: number;
     dailySingleBeds?: number;
     dailyDoubleBeds?: number;
@@ -108,6 +109,7 @@ export interface ListingFormData {
     renovation: string;
     balcony: string;
     dealConditions: string[];
+    paymentMethods: string[];
     photos: UploadedPhoto[];
     cityId: number | null;
     citySlug: string;

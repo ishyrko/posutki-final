@@ -43,6 +43,7 @@ import type { UpdatePropertyPayload } from '@/features/properties/api';
 import type { Property as PropertyItem } from '@/features/properties/types';
 import { useSearchCities, useSearchStreets } from '@/features/create-listing/hooks';
 import { LISTING_AMENITY_GROUPS } from '@/features/create-listing/listing-amenity-groups';
+import { PAYMENT_METHOD_OPTIONS } from '@/features/properties/payment-methods';
 import { uploadFile, FileTooLargeError } from '@/features/create-listing/api';
 import {
     balconyOptions,
@@ -145,6 +146,7 @@ interface EditFormData {
     renovation: string;
     balcony: string;
     dealConditions: string[];
+    paymentMethods: string[];
     price: string;
     currency: string;
     cityId: number | null;
@@ -246,6 +248,9 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
         renovation: revisionData?.renovation ?? property.specifications.renovation ?? '',
         balcony: revisionData?.balcony ?? property.specifications.balcony ?? '',
         dealConditions: sanitizeDealConditionsForPropertyType(type, rawDealConditions),
+        paymentMethods: [
+            ...(revisionData?.paymentMethods ?? property.specifications.paymentMethods ?? []),
+        ],
         price: String(revisionData?.priceAmount ?? property.price.amount),
         currency: 'BYN',
         cityId: revisionData?.cityId ?? property.address.cityId,
@@ -369,6 +374,17 @@ export default function EditPropertyPage() {
                 ? prev.dealConditions.filter((c) => c !== condition)
                 : [...prev.dealConditions, condition];
             return { ...prev, dealConditions };
+        });
+    }, []);
+
+    const togglePaymentMethod = useCallback((method: string) => {
+        setForm((prev) => {
+            if (!prev) return prev;
+            const exists = prev.paymentMethods.includes(method);
+            const paymentMethods = exists
+                ? prev.paymentMethods.filter((m) => m !== method)
+                : [...prev.paymentMethods, method];
+            return { ...prev, paymentMethods };
         });
     }, []);
 
@@ -707,6 +723,7 @@ export default function EditPropertyPage() {
                     ? Number(form.roomsArea)
                     : undefined,
                 dealConditions: form.dealConditions.length ? form.dealConditions : undefined,
+                paymentMethods: form.paymentMethods.length ? form.paymentMethods : undefined,
                 maxDailyGuests: form.dealType === 'daily' && form.maxDailyGuests ? Number(form.maxDailyGuests) : undefined,
                 dailySingleBeds: form.dealType === 'daily' ? dailySingleBeds : undefined,
                 dailyDoubleBeds: form.dealType === 'daily' ? dailyDoubleBeds : undefined,
@@ -1586,6 +1603,27 @@ export default function EditPropertyPage() {
                         </div>
                     </section>
                 )}
+
+                <section className="bg-card rounded-2xl shadow-card border border-border p-6">
+                    <h2 className="text-lg font-semibold text-foreground mb-4">Способы оплаты</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                        {PAYMENT_METHOD_OPTIONS.map(({ id, label }) => (
+                            <div key={id} className="flex items-center gap-2.5">
+                                <Checkbox
+                                    id={`payment_${id}`}
+                                    checked={form.paymentMethods.includes(id)}
+                                    onCheckedChange={() => togglePaymentMethod(id)}
+                                />
+                                <label
+                                    htmlFor={`payment_${id}`}
+                                    className="text-sm text-foreground cursor-pointer select-none"
+                                >
+                                    {label}
+                                </label>
+                            </div>
+                        ))}
+                    </div>
+                </section>
 
                 {/* Price */}
                 <section className="bg-card rounded-2xl shadow-card border border-border p-6">

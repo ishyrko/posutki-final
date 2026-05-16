@@ -150,6 +150,7 @@ abstract class ApiTestCase extends WebTestCase
             livingArea: null,
             kitchenArea: null,
             dealConditions: null,
+            paymentMethods: null,
             maxDailyGuests: array_key_exists('maxDailyGuests', $options) ? $options['maxDailyGuests'] : 4,
             dailySingleBeds: null,
             dailyDoubleBeds: null,

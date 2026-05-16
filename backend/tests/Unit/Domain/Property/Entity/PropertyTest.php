@@ -103,6 +103,7 @@ final class PropertyTest extends TestCase
             livingArea: null,
             kitchenArea: null,
             dealConditions: null,
+            paymentMethods: null,
             maxDailyGuests: null,
             dailySingleBeds: null,
             dailyDoubleBeds: null,

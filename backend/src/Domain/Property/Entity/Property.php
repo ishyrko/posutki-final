@@ -86,6 +86,9 @@ class Property
     #[ORM\Column(type: 'json', nullable: true, name: 'deal_conditions')]
     private ?array $dealConditions = null;
 
+    #[ORM\Column(type: 'json', nullable: true, name: 'payment_methods')]
+    private ?array $paymentMethods = null;
+
     #[ORM\Column(type: 'integer', nullable: true, name: 'max_daily_guests')]
     private ?int $maxDailyGuests = null;
 
@@ -195,7 +198,8 @@ class Property
         ?float $livingArea,
         ?float $kitchenArea,
         ?array $dealConditions,
-        ?int $maxDailyGuests,
+        ?array $paymentMethods = null,
+        ?int $maxDailyGuests = null,
         ?int $dailySingleBeds,
         ?int $dailyDoubleBeds,
         ?string $checkInTime,
@@ -238,6 +242,7 @@ class Property
         $this->roomsInDeal = $roomsInDeal;
         $this->roomsArea = $roomsArea;
         $this->dealConditions = $dealConditions;
+        $this->paymentMethods = $paymentMethods;
         $this->maxDailyGuests = $maxDailyGuests;
         $this->dailySingleBeds = $dailySingleBeds;
         $this->dailyDoubleBeds = $dailyDoubleBeds;
@@ -548,6 +553,7 @@ class Property
             'roomsInDeal' => 'Комнат в сделке',
             'roomsArea' => 'Площадь комнат в сделке',
             'dealConditions' => 'Условия сделки',
+            'paymentMethods' => 'Способы оплаты',
             'maxDailyGuests' => 'Максимум гостей',
             'dailySingleBeds' => 'Односпальных кроватей',
             'dailyDoubleBeds' => 'Двуспальных кроватей',
@@ -614,6 +620,7 @@ class Property
             'roomsInDeal' => $this->roomsInDeal,
             'roomsArea' => $this->roomsArea,
             'dealConditions' => $this->dealConditions,
+            'paymentMethods' => $this->paymentMethods,
             'maxDailyGuests' => $this->maxDailyGuests,
             'dailySingleBeds' => $this->dailySingleBeds,
             'dailyDoubleBeds' => $this->dailyDoubleBeds,
@@ -766,6 +773,11 @@ class Property
     public function getDealConditions(): ?array
     {
         return $this->dealConditions;
+    }
+
+    public function getPaymentMethods(): ?array
+    {
+        return $this->paymentMethods;
     }
 
     public function getMaxDailyGuests(): ?int
@@ -949,6 +961,7 @@ class Property
         ?int $roomsInDeal = null,
         ?float $roomsArea = null,
         ?array $dealConditions = null,
+        ?array $paymentMethods = null,
         ?int $maxDailyGuests = null,
         ?int $dailySingleBeds = null,
         ?int $dailyDoubleBeds = null,
@@ -987,6 +1000,7 @@ class Property
         if ($roomsInDeal !== null) $this->roomsInDeal = $roomsInDeal;
         if ($roomsArea !== null) $this->roomsArea = $roomsArea;
         if ($dealConditions !== null) $this->dealConditions = $dealConditions;
+        if ($paymentMethods !== null) $this->paymentMethods = $paymentMethods;
         if ($maxDailyGuests !== null) $this->maxDailyGuests = $maxDailyGuests;
         if ($dailySingleBeds !== null) $this->dailySingleBeds = $dailySingleBeds;
         if ($dailyDoubleBeds !== null) $this->dailyDoubleBeds = $dailyDoubleBeds;

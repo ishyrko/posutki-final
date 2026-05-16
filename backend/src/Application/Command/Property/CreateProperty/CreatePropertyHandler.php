@@ -9,6 +9,7 @@ use App\Domain\Property\Event\PropertySubmittedForModerationEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Validation\DailyRentDetailsValidator;
 use App\Domain\Property\Validation\DealConditionsValidator;
+use App\Domain\Property\Validation\PaymentMethodsValidator;
 use App\Domain\Property\Validation\FloorTotalFloorsValidator;
 use App\Domain\Property\Validation\PropertyDealCombinationValidator;
 use App\Domain\Property\Validation\RoomDealDetailsValidator;
@@ -32,6 +33,7 @@ final class CreatePropertyHandler
     public function __invoke(CreatePropertyCommand $command): int
     {
         DealConditionsValidator::assertValid($command->dealConditions, $command->dealType, $command->type);
+        PaymentMethodsValidator::assertValid($command->paymentMethods);
         DailyRentDetailsValidator::assertValid(
             dealType: $command->dealType,
             propertyType: $command->type,
@@ -75,6 +77,7 @@ final class CreatePropertyHandler
             livingArea: $command->livingArea,
             kitchenArea: $command->kitchenArea,
             dealConditions: $command->dealConditions,
+            paymentMethods: $command->paymentMethods,
             maxDailyGuests: $command->maxDailyGuests,
             dailySingleBeds: $command->dailySingleBeds,
             dailyDoubleBeds: $command->dailyDoubleBeds,

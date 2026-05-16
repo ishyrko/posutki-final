@@ -32,6 +32,7 @@ final class CreatePropertyCommand
         public readonly ?int $roomsInDeal = null,
         public readonly ?float $roomsArea = null,
         public readonly ?array $dealConditions = null,
+        public readonly ?array $paymentMethods = null,
         public readonly ?int $maxDailyGuests = null,
         public readonly ?int $dailySingleBeds = null,
         public readonly ?int $dailyDoubleBeds = null,
