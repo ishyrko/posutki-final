@@ -9,7 +9,6 @@ import {
   Home,
   Building2,
   MapPin,
-  Sparkles,
   Star,
   ChevronDown,
   Search,
@@ -49,23 +48,22 @@ function buildMegaMenu(regionSlug: string): Record<string, MegaMenuSection[]> {
         items: [
           { label: "Однокомнатные", desc: "Уютные студии и 1-комнатные", icon: <BedDouble className="h-4 w-4" />, href: r("/kvartiry/?rooms=1") },
           { label: "Двухкомнатные", desc: "Просторные квартиры для семей", icon: <Home className="h-4 w-4" />, href: r("/kvartiry/?rooms=2") },
-          { label: "Трёхкомнатные+", desc: "Большие апартаменты", icon: <Building2 className="h-4 w-4" />, href: r("/kvartiry/?rooms=3") },
+          { label: "Трёхкомнатные+", desc: "Большие апартаменты", icon: <Building2 className="h-4 w-4" />, href: r("/kvartiry/?rooms=3%2B") },
         ],
       },
       {
         title: "По типу",
         items: [
           { label: "Все квартиры", desc: "Комфортное жильё на сутки", icon: <Home className="h-4 w-4" />, href: r("/kvartiry/") },
-          { label: "Премиум", desc: "Элитные апартаменты", icon: <Sparkles className="h-4 w-4" />, href: r("/kvartiry/") },
-          { label: "С джакузи", desc: "Романтический отдых", icon: <Star className="h-4 w-4" />, href: r("/kvartiry/") },
+          { label: "С джакузи", desc: "Романтический отдых", icon: <Star className="h-4 w-4" />, href: r("/kvartiry/?amenity=jacuzzi") },
         ],
       },
       {
         title: "Удобства",
         items: [
-          { label: "С Wi‑Fi", desc: "Для работы и отдыха", icon: <Wifi className="h-4 w-4" />, href: r("/kvartiry/") },
-          { label: "С парковкой", desc: "Парковка у дома", icon: <Car className="h-4 w-4" />, href: r("/kvartiry/") },
-          { label: "Для компаний", desc: "От 4+ гостей", icon: <Users className="h-4 w-4" />, href: r("/kvartiry/") },
+          { label: "С Wi‑Fi", desc: "Для работы и отдыха", icon: <Wifi className="h-4 w-4" />, href: r("/kvartiry/?amenity=wifi") },
+          { label: "С парковкой", desc: "Парковка у дома", icon: <Car className="h-4 w-4" />, href: r("/kvartiry/?amenity=parking") },
+          { label: "Для компаний", desc: "От 4+ гостей", icon: <Users className="h-4 w-4" />, href: r("/kvartiry/?guests=4") },
         ],
       },
     ],

@@ -162,6 +162,23 @@ final class PropertyListFilteringTest extends ApiTestCase
         self::assertContains($five->getId()->getValue(), $ids);
     }
 
+    public function testFilterByRoomsThreePlusAlias(): void
+    {
+        $owner = $this->createUser('filter-rooms-3plus@example.com', 'Password123!');
+        $city = $this->createCity();
+        $two = $this->createProperty($owner, $city, 'published', ['rooms' => 2]);
+        $three = $this->createProperty($owner, $city, 'published', ['rooms' => 3]);
+        $five = $this->createProperty($owner, $city, 'published', ['rooms' => 5]);
+
+        $this->client->request('GET', '/api/properties?rooms=3%2B');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $ids = $this->idsFromListPayload();
+        self::assertNotContains($two->getId()->getValue(), $ids);
+        self::assertContains($three->getId()->getValue(), $ids);
+        self::assertContains($five->getId()->getValue(), $ids);
+    }
+
     public function testFilterByMinAndMaxPriceInByn(): void
     {
         $owner = $this->createUser('filter-price@example.com', 'Password123!');

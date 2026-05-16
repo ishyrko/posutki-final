@@ -50,6 +50,10 @@ import {
 } from "@/features/catalog/slugs";
 import { GuestCountControl } from "@/features/catalog/GuestCountControl";
 import {
+  AMENITY_QUERY_PARAM,
+  parseAmenitiesFromQuery,
+} from "@/features/catalog/amenities-filter";
+import {
   clampGuests,
   GUESTS_QUERY_PARAM,
   parseGuestsFromQuery,
@@ -84,6 +88,11 @@ function parseRoomsFromQuery(raw: string | null): RoomBucket[] {
   const set = new Set<RoomBucket>();
   for (const part of raw.split(",")) {
     const p = part.trim();
+    if (p === "3+") {
+      set.add("3");
+      set.add("4");
+      continue;
+    }
     if (p === "1" || p === "2" || p === "3") set.add(p);
     if (p === "4" || p === "4+") set.add("4");
   }
@@ -277,11 +286,25 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
 
   const roomsFromQuery = searchParams.get("rooms");
   const guestsFromQuery = parseGuestsFromQuery(searchParams.get(GUESTS_QUERY_PARAM));
+  const amenitiesFromQuery = searchParams.get(AMENITY_QUERY_PARAM);
 
   useEffect(() => {
     if (!roomsFilterVisible) return;
     setRoomBuckets(parseRoomsFromQuery(roomsFromQuery));
   }, [roomsFromQuery, roomsFilterVisible]);
+
+  useEffect(() => {
+    const ids = parseAmenitiesFromQuery(amenitiesFromQuery);
+    setSelectedAmenityIds(ids);
+    if (
+      ids.some((id) => {
+        const idx = CATALOG_AMENITY_OPTIONS.findIndex((o) => o.id === id);
+        return idx >= 4;
+      })
+    ) {
+      setShowAllAmenities(true);
+    }
+  }, [amenitiesFromQuery]);
 
   useEffect(() => {
     if (!roomsFilterVisible) {
@@ -474,6 +497,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     setShowAllAmenities(false);
     const params = new URLSearchParams(searchParams.toString());
     params.delete(GUESTS_QUERY_PARAM);
+    params.delete(AMENITY_QUERY_PARAM);
     params.delete("page");
     setCurrentPage(1);
     const query = params.toString();

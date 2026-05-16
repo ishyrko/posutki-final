@@ -170,7 +170,7 @@ export interface PropertyFilters {
     maxPrice?: number;
     priceType?: PriceType;
     currency?: Currency;
-    /** 1–3 точное число комнат, 4 — «четыре и более»; несколько — OR (`rooms=1,2,4` в API). */
+    /** 1–3 точное число комнат, 4 — «четыре и более»; 3+ = 3 и 4; несколько — OR (`rooms=1,2,4` в API). */
     roomValues?: readonly number[];
     metroStationId?: number;
     nearMetro?: boolean;

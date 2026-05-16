@@ -389,7 +389,7 @@ class PropertyController extends AbstractController
     }
 
     /**
-     * @return list<int>|null distinct 1–4; 4 means «four or more» rooms
+     * @return list<int>|null distinct 1–4; 3+ expands to 3 and 4; 4 means «four or more» rooms
      */
     private static function parseRoomsQueryList(mixed $raw): ?array
     {
@@ -408,6 +408,11 @@ class PropertyController extends AbstractController
         $out = [];
         foreach (preg_split('/\s*,\s*/', $raw, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $part) {
             $part = trim($part);
+            if ($part === '3+') {
+                $out[] = 3;
+                $out[] = 4;
+                continue;
+            }
             if ($part === '4+') {
                 $out[] = 4;
                 continue;
