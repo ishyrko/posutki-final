@@ -34,6 +34,10 @@ readonly class RequestPhoneVerificationHandler
         $userPhone = $this->userPhoneRepository->findByUserIdAndPhone($userId, $normalizedPhone);
 
         if ($userPhone === null) {
+            $existingPhones = $this->userPhoneRepository->findByUserId($userId);
+            if (count($existingPhones) >= 2) {
+                throw new DomainException('Можно добавить не более 2 дополнительных телефонов');
+            }
             $userPhone = new UserPhone($userId, $normalizedPhone);
         }
 

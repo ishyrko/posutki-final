@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Heart, MessageSquare, User, LogOut, Phone, ChevronRight } from 'lucide-react';
+import { Home, Heart, MessageSquare, User, LogOut, ChevronRight } from 'lucide-react';
 import { useUser, useLogout } from '@/features/auth/hooks';
 import { useUnreadCount } from '@/features/messages/hooks';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -13,7 +13,6 @@ const navigation = [
     { name: 'Мои объявления', mobileName: 'Объявления', href: '/kabinet/moi-obyavleniya/aktivnye', activePrefix: '/kabinet/moi-obyavleniya', icon: Home },
     { name: 'Избранное', href: '/kabinet/izbrannoe', icon: Heart },
     { name: 'Сообщения', href: '/kabinet/soobshcheniya', icon: MessageSquare, badgeKey: 'unread' as const },
-    { name: 'Телефоны', href: '/kabinet/telefony', icon: Phone },
 ];
 
 function normalizePath(path: string) {

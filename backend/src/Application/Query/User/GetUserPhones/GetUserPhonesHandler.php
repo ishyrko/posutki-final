@@ -23,6 +23,8 @@ final class GetUserPhonesHandler
             'id' => $phone->getId()->getValue(),
             'phone' => $phone->getPhone(),
             'isVerified' => $phone->isVerified(),
+            'hasViber' => $phone->hasViber(),
+            'hasWhatsapp' => $phone->hasWhatsapp(),
             'createdAt' => $phone->getCreatedAt()->format('c'),
         ], $phones);
     }

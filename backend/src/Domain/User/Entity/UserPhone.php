@@ -35,6 +35,12 @@ class UserPhone
     #[ORM\Column(type: 'datetime_immutable', name: 'created_at')]
     private \DateTimeImmutable $createdAt;
 
+    #[ORM\Column(type: 'boolean', name: 'has_viber')]
+    private bool $hasViber = false;
+
+    #[ORM\Column(type: 'boolean', name: 'has_whatsapp')]
+    private bool $hasWhatsapp = false;
+
     public function __construct(Id $userId, string $phone)
     {
         $this->userId = $userId;
@@ -102,5 +108,21 @@ class UserPhone
         $this->codeExpiresAt = null;
 
         return true;
+    }
+
+    public function hasViber(): bool
+    {
+        return $this->hasViber;
+    }
+
+    public function hasWhatsapp(): bool
+    {
+        return $this->hasWhatsapp;
+    }
+
+    public function setMessengerFlags(bool $hasViber, bool $hasWhatsapp): void
+    {
+        $this->hasViber = $hasViber;
+        $this->hasWhatsapp = $hasWhatsapp;
     }
 }

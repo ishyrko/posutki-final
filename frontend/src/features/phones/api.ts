@@ -17,3 +17,10 @@ export const verifyPhone = async (phone: string, code: string): Promise<void> =>
 export const deletePhone = async (id: number): Promise<void> => {
     await api.delete(`/phones/${id}`);
 };
+
+export const updatePhoneFlags = async (
+    id: number,
+    flags: { hasViber: boolean; hasWhatsapp: boolean },
+): Promise<void> => {
+    await api.patch(`/phones/${id}`, flags);
+};

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPhones, requestVerification, verifyPhone, deletePhone } from './api';
+import { getPhones, requestVerification, verifyPhone, deletePhone, updatePhoneFlags } from './api';
 import { toast } from 'sonner';
 import { isAuthenticated } from '@/lib/auth';
 
@@ -67,6 +67,21 @@ export const useDeletePhone = () => {
         },
         onError: (error: unknown) => {
             toast.error(getErrorMessage(error, 'Не удалось удалить'));
+        },
+    });
+};
+
+export const useUpdatePhoneFlags = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, hasViber, hasWhatsapp }: { id: number; hasViber: boolean; hasWhatsapp: boolean }) =>
+            updatePhoneFlags(id, { hasViber, hasWhatsapp }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['phones'] });
+        },
+        onError: (error: unknown) => {
+            toast.error(getErrorMessage(error, 'Не удалось сохранить настройки телефона'));
         },
     });
 };

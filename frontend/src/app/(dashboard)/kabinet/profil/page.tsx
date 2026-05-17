@@ -16,6 +16,7 @@ import { useState } from 'react';
 import { PhoneVerifyDialog } from '@/features/phones/components/PhoneVerifyDialog';
 import { UserAvatar } from '@/components/UserAvatar';
 import { SellerProfileSection } from '@/features/profile/components/SellerProfileSection';
+import { ProfileContactsSection } from '@/features/profile/components/ProfileContactsSection';
 
 function ProfileEmailSection({
     user,
@@ -250,6 +251,8 @@ export default function ProfilePage() {
                     </div>
                 </form>
             </div>
+
+            <ProfileContactsSection user={user} />
 
             <SellerProfileSection user={user} />
 

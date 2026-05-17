@@ -63,7 +63,7 @@ final class GetMyPropertiesHandler
         return array_map(
             function ($property) use ($cities, $streets, $ownerContacts) {
                 $ownerId = $property->getOwnerId()->getValue();
-                $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null];
+                $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
 
                 return PropertyDTO::fromEntity(
                     $property,
@@ -72,8 +72,7 @@ final class GetMyPropertiesHandler
                     [],
                     $this->favoriteRepository->countByProperty($property->getId()),
                     null,
-                    $contact['phone'],
-                    $contact['name'],
+                    $contact,
                 );
             },
             $properties

@@ -213,6 +213,9 @@ services:
     App\Application\Command\User\DeleteUserPhone\DeleteUserPhoneHandler:
         tags: [ { name: messenger.message_handler, bus: command.bus } ]
 
+    App\Application\Command\User\UpdatePhoneFlags\UpdatePhoneFlagsHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
     App\Application\Command\Auth\RequestSmsCode\RequestSmsCodeHandler:
         tags: [ { name: messenger.message_handler, bus: command.bus } ]
 

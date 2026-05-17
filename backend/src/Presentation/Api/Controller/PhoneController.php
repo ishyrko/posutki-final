@@ -8,9 +8,11 @@ use App\Application\Command\CommandBusInterface;
 use App\Application\Command\User\RequestPhoneVerification\RequestPhoneVerificationCommand;
 use App\Application\Command\User\VerifyPhone\VerifyPhoneCommand;
 use App\Application\Command\User\DeleteUserPhone\DeleteUserPhoneCommand;
+use App\Application\Command\User\UpdatePhoneFlags\UpdatePhoneFlagsCommand;
 use App\Application\Query\QueryBusInterface;
 use App\Application\Query\User\GetUserPhones\GetUserPhonesQuery;
 use App\Presentation\Api\Request\RequestPhoneVerificationRequest;
+use App\Presentation\Api\Request\UpdatePhoneFlagsRequest;
 use App\Presentation\Api\Request\VerifyPhoneRequest;
 use App\Presentation\Api\Response\ApiResponse;
 use App\Domain\User\Entity\User;
@@ -82,6 +84,28 @@ class PhoneController extends AbstractController
         $this->commandBus->dispatch($command);
 
         return $this->json(ApiResponse::success(['message' => 'Телефон успешно подтверждён']));
+    }
+
+    #[Route('/{id}', name: 'update_flags', methods: ['PATCH'])]
+    public function updateFlags(
+        string $id,
+        UpdatePhoneFlagsRequest $request,
+        #[CurrentUser] ?User $user,
+    ): JsonResponse {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $command = new UpdatePhoneFlagsCommand(
+            userId: (string) $user->getId()->getValue(),
+            phoneId: $id,
+            hasViber: $request->hasViber,
+            hasWhatsapp: $request->hasWhatsapp,
+        );
+
+        $this->commandBus->dispatch($command);
+
+        return $this->json(ApiResponse::success(['message' => 'Настройки телефона сохранены']));
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]

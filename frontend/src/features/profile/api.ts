@@ -7,6 +7,9 @@ export const updateProfileSchema = z.object({
     lastName: z.string().min(2, 'Введите фамилию'),
     phone: z.string().optional(),
     avatar: z.string().optional(),
+    telegram: z.string().max(100).optional(),
+    phoneHasViber: z.boolean().optional(),
+    phoneHasWhatsapp: z.boolean().optional(),
 });
 
 export type UpdateProfileData = z.infer<typeof updateProfileSchema>;

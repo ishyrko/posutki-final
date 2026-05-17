@@ -53,6 +53,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'boolean', name: 'is_phone_verified')]
     private bool $isPhoneVerified = false;
 
+    #[ORM\Column(type: 'boolean', name: 'phone_has_viber')]
+    private bool $phoneHasViber = false;
+
+    #[ORM\Column(type: 'boolean', name: 'phone_has_whatsapp')]
+    private bool $phoneHasWhatsapp = false;
+
+    #[ORM\Column(type: 'string', length: 100, nullable: true)]
+    private ?string $telegram = null;
+
     #[ORM\Column(type: 'json')]
     private array $roles = ['ROLE_USER'];
 
@@ -297,6 +306,40 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function markPhoneVerified(): void
     {
         $this->isPhoneVerified = true;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function isPhoneHasViber(): bool
+    {
+        return $this->phoneHasViber;
+    }
+
+    public function isPhoneHasWhatsapp(): bool
+    {
+        return $this->phoneHasWhatsapp;
+    }
+
+    public function getTelegram(): ?string
+    {
+        return $this->telegram;
+    }
+
+    public function updateContactChannels(?string $telegram, ?bool $phoneHasViber = null, ?bool $phoneHasWhatsapp = null): void
+    {
+        if ($telegram !== null) {
+            $trimmed = trim($telegram);
+            if ($trimmed === '') {
+                $this->telegram = null;
+            } else {
+                $this->telegram = ltrim($trimmed, '@');
+            }
+        }
+        if ($phoneHasViber !== null) {
+            $this->phoneHasViber = $phoneHasViber;
+        }
+        if ($phoneHasWhatsapp !== null) {
+            $this->phoneHasWhatsapp = $phoneHasWhatsapp;
+        }
         $this->updatedAt = new \DateTimeImmutable();
     }
 

@@ -67,6 +67,9 @@ final class PropertyDTO implements \JsonSerializable
         public readonly ?array $pendingRevisionData,
         public readonly ?string $contactPhone,
         public readonly ?string $contactName,
+        /** @var list<array{phone: string, hasViber: bool, hasWhatsapp: bool}> */
+        public readonly array $ownerContactPhones,
+        public readonly ?string $ownerTelegram,
         /** @var array<string, mixed>|null Owner legal profile for daily listings (public). */
         public readonly ?array $dailySellerLegalProfile,
         public readonly bool $nearMetro,
@@ -96,14 +99,20 @@ final class PropertyDTO implements \JsonSerializable
         array $nearbyMetroStations = [],
         int $favoritesCount = 0,
         ?array $dailySellerLegalProfile = null,
-        ?string $ownerContactPhone = null,
-        ?string $ownerContactName = null,
+        /** @param array{name: ?string, phone: ?string, phones: list<array{phone: string, hasViber: bool, hasWhatsapp: bool}>, telegram: ?string}|null $ownerContact */
+        ?array $ownerContact = null,
         ?float $ratingAvg = null,
         int $reviewCount = 0,
         ?array $viewerReview = null,
     ): self {
         $district = $city->getRegionDistrict();
         $region = $district?->getRegion();
+
+        $ownerContact ??= ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
+        $ownerContactPhones = $ownerContact['phones'] ?? [];
+        $contactPhone = $ownerContact['phone'] ?? ($ownerContactPhones[0]['phone'] ?? null);
+        $contactName = $ownerContact['name'] ?? null;
+        $ownerTelegram = $ownerContact['telegram'] ?? null;
 
         return new self(
             id: $property->getId()->getValue(),
@@ -157,8 +166,10 @@ final class PropertyDTO implements \JsonSerializable
             pendingRevisionStatus: $property->getPendingRevisionStatus(),
             pendingRevisionComment: $property->getPendingRevisionComment(),
             pendingRevisionData: $property->getPendingRevisionData(),
-            contactPhone: $ownerContactPhone,
-            contactName: $ownerContactName,
+            contactPhone: $contactPhone,
+            contactName: $contactName,
+            ownerContactPhones: $ownerContactPhones,
+            ownerTelegram: $ownerTelegram,
             dailySellerLegalProfile: $dailySellerLegalProfile,
             nearMetro: $property->isNearMetro(),
             nearbyMetroStations: $nearbyMetroStations,
@@ -250,6 +261,8 @@ final class PropertyDTO implements \JsonSerializable
             'contact' => [
                 'phone' => $this->contactPhone,
                 'name' => $this->contactName,
+                'phones' => $this->ownerContactPhones,
+                'telegram' => $this->ownerTelegram,
             ],
             'nearMetro' => $this->nearMetro,
             'nearbyMetroStations' => $this->nearbyMetroStations,

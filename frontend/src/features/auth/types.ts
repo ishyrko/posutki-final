@@ -23,6 +23,9 @@ export interface User {
     avatar?: string | null;
     phone?: string;
     isPhoneVerified: boolean;
+    phoneHasViber?: boolean;
+    phoneHasWhatsapp?: boolean;
+    telegram?: string | null;
     isVerified?: boolean;
     roles: string[];
     individualProfile?: UserIndividualProfile | null;

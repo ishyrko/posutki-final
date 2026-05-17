@@ -53,6 +53,8 @@ import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { ReviewList } from "@/features/reviews/components/ReviewList";
 import { ReviewSummary } from "@/features/reviews/components/ReviewSummary";
 import { useDeletePendingReview, usePropertyReviews } from "@/features/reviews/hooks";
+import { telegramHref, viberChatHref, whatsAppHref } from "@/lib/contactLinks";
+import { TelegramIcon, ViberIcon, WhatsAppIcon } from "@/components/ContactMessengerIcons";
 
 type PropertyDetailClientProps = {
   id: number;
@@ -104,6 +106,30 @@ function phoneToTelHref(phone: string): string {
     d = `375${d.slice(2)}`;
   }
   return `tel:+${d}`;
+}
+
+type ContactPhoneEntry = {
+  phone: string;
+  hasViber: boolean;
+  hasWhatsapp: boolean;
+};
+
+function getContactPhones(property: Property): ContactPhoneEntry[] {
+  const fromApi = property.contact?.phones;
+  if (fromApi && fromApi.length > 0) {
+    return fromApi
+      .map((p) => ({
+        phone: p.phone?.trim() ?? "",
+        hasViber: !!p.hasViber,
+        hasWhatsapp: !!p.hasWhatsapp,
+      }))
+      .filter((p) => p.phone !== "");
+  }
+  const legacy = property.contact?.phone?.trim();
+  if (legacy) {
+    return [{ phone: legacy, hasViber: false, hasWhatsapp: false }];
+  }
+  return [];
 }
 
 export default function PropertyDetailClient({ id, initialProperty }: PropertyDetailClientProps) {
@@ -229,7 +255,10 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   const sellerInitials = property.contact?.name?.trim()
     ? initialsFromContactName(property.contact.name)
     : "?";
-  const contactPhone = property.contact?.phone?.trim() ?? "";
+  const contactPhones = getContactPhones(property);
+  const primaryContactPhone = contactPhones[0]?.phone ?? "";
+  const hasContactPhones = contactPhones.length > 0;
+  const contactTelegram = property.contact?.telegram?.trim() ?? "";
 
   const images = property.images?.map(img => img.url) || [
     "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80",
@@ -931,31 +960,100 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                 </div>
 
                 <div className="space-y-2.5 mb-5">
-                  {contactPhone && phoneRevealed ? (
+                  {!phoneRevealed ? (
                     <Button
                       className="w-full bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 border-0 h-11"
-                      asChild
-                    >
-                      <a href={phoneToTelHref(contactPhone)}>
-                        <Phone className="w-4 h-4 mr-2" />
-                        {contactPhone}
-                      </a>
-                    </Button>
-                  ) : (
-                    <Button
-                      className="w-full bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 border-0 h-11"
-                      disabled={!contactPhone}
+                      disabled={!hasContactPhones}
                       onClick={() => {
-                        if (!contactPhone) return;
+                        if (!hasContactPhones) return;
                         void trackPhoneView(property.id);
                         setPhoneRevealed(true);
                       }}
                     >
                       <Phone className="w-4 h-4 mr-2" />
-                      {!contactPhone
+                      {!hasContactPhones
                         ? "Телефон не указан"
-                        : `${maskContactPhone(contactPhone)} · Показать`}
+                        : `${maskContactPhone(primaryContactPhone)} · Показать`}
                     </Button>
+                  ) : (
+                    <>
+                      {contactPhones.map((entry, index) => {
+                        const showTelegram = index === 0 && !!contactTelegram;
+                        const showMessengers =
+                          entry.hasViber || entry.hasWhatsapp || showTelegram;
+
+                        return (
+                          <div key={`${entry.phone}-${index}`} className="flex gap-2">
+                            <Button
+                              className="min-w-0 flex-1 basis-0 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 border-0 h-11"
+                              asChild
+                            >
+                              <a href={phoneToTelHref(entry.phone)}>
+                                <Phone className="w-4 h-4 shrink-0" />
+                                <span className="truncate">{entry.phone}</span>
+                              </a>
+                            </Button>
+                            <div className="flex w-[9.25rem] shrink-0 justify-start gap-2">
+                            {showMessengers && (
+                              <>
+                                {entry.hasViber && (
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-11 w-11 shrink-0 hover:bg-muted"
+                                    asChild
+                                  >
+                                    <a
+                                      href={viberChatHref(entry.phone)}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      aria-label="Написать в Viber"
+                                    >
+                                      <ViberIcon className="h-7 w-7" />
+                                    </a>
+                                  </Button>
+                                )}
+                                {entry.hasWhatsapp && (
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-11 w-11 shrink-0 text-[#25D366] hover:text-[#25D366] hover:bg-[#25D366]/10"
+                                    asChild
+                                  >
+                                    <a
+                                      href={whatsAppHref(entry.phone)}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      aria-label="Написать в WhatsApp"
+                                    >
+                                      <WhatsAppIcon className="!h-7 !w-7" />
+                                    </a>
+                                  </Button>
+                                )}
+                                {showTelegram && (
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-11 w-11 shrink-0 text-[#229ED9] hover:text-[#229ED9] hover:bg-[#229ED9]/10"
+                                    asChild
+                                  >
+                                    <a
+                                      href={telegramHref(contactTelegram)}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      aria-label="Написать в Telegram"
+                                    >
+                                      <TelegramIcon className="!h-7 !w-7" />
+                                    </a>
+                                  </Button>
+                                )}
+                              </>
+                            )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </>
                   )}
                   {!isOwner && loggedIn && (
                     <Button

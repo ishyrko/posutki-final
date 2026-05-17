@@ -55,7 +55,7 @@ final class GetFavoritesHandler
         return array_map(
             function (array $r) use ($ownerContacts) {
                 $ownerId = $r['property']->getOwnerId()->getValue();
-                $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null];
+                $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
 
                 return PropertyDTO::fromEntity(
                     $r['property'],
@@ -64,8 +64,7 @@ final class GetFavoritesHandler
                     [],
                     0,
                     null,
-                    $contact['phone'],
-                    $contact['name'],
+                    $contact,
                 );
             },
             $rows

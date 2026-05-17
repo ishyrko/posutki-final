@@ -132,7 +132,7 @@ final class GetPropertyHandler
 
         $ownerId = $property->getOwnerId()->getValue();
         $ownerContact = $this->ownerPublicContactResolver->resolveForOwnerIds([$ownerId])[$ownerId]
-            ?? ['phone' => null, 'name' => null];
+            ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
 
         $reviewAggregate = $this->reviewRepository->getAggregateByPropertyId($property->getId());
 
@@ -159,8 +159,7 @@ final class GetPropertyHandler
             $nearbyMetroStations,
             0,
             $dailySellerLegalProfile,
-            $ownerContact['phone'],
-            $ownerContact['name'],
+            $ownerContact,
             $reviewAggregate['avg'],
             $reviewAggregate['count'],
             $viewerReview,

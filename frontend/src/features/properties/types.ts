@@ -34,6 +34,12 @@ export interface Property {
     contact?: {
         phone?: string | null;
         name?: string | null;
+        phones?: Array<{
+            phone: string;
+            hasViber: boolean;
+            hasWhatsapp: boolean;
+        }>;
+        telegram?: string | null;
     };
     title: string;
     description: string;

@@ -21,4 +21,11 @@ class UpdateUserProfileRequest
 
     #[Assert\Url(message: 'Неверный URL аватара')]
     public ?string $avatar = null;
+
+    #[Assert\Length(max: 100)]
+    public ?string $telegram = null;
+
+    public ?bool $phoneHasViber = null;
+
+    public ?bool $phoneHasWhatsapp = null;
 }

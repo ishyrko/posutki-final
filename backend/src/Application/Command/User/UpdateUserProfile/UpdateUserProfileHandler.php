@@ -49,6 +49,14 @@ readonly class UpdateUserProfileHandler
             $command->avatar
         );
 
+        if ($command->telegram !== null || $command->phoneHasViber !== null || $command->phoneHasWhatsapp !== null) {
+            $user->updateContactChannels(
+                $command->telegram,
+                $command->phoneHasViber,
+                $command->phoneHasWhatsapp,
+            );
+        }
+
         if ($normalizedPhone !== null) {
             $userPhone = $this->userPhoneRepository->findByUserIdAndPhone($userId, $normalizedPhone);
             if ($userPhone !== null && $userPhone->isVerified()) {

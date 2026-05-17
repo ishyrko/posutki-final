@@ -174,7 +174,7 @@ final class SearchPropertiesHandler
         return array_map(
             function ($property) use ($cities, $streets, $nearbyMetroByPropertyId, $ownerContacts) {
                 $ownerId = $property->getOwnerId()->getValue();
-                $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null];
+                $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
 
                 return PropertyDTO::fromEntity(
                     $property,
@@ -183,8 +183,7 @@ final class SearchPropertiesHandler
                     $nearbyMetroByPropertyId[$property->getId()->getValue()] ?? [],
                     0,
                     null,
-                    $contact['phone'],
-                    $contact['name'],
+                    $contact,
                 );
             },
             $properties

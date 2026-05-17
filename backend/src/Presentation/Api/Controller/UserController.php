@@ -160,6 +160,9 @@ class UserController extends AbstractController
             lastName: $request->lastName,
             phone: $request->phone,
             avatar: $request->avatar,
+            telegram: $request->telegram,
+            phoneHasViber: $request->phoneHasViber,
+            phoneHasWhatsapp: $request->phoneHasWhatsapp,
         );
 
         $this->commandBus->dispatch($command);

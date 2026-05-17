@@ -30,4 +30,12 @@ interface UserPhoneRepositoryInterface
      * @return array<int, string>
      */
     public function findPrimaryVerifiedPhonesByUserIds(array $userIds): array;
+
+    /**
+     * All verified phones per user (newest first within each user).
+     *
+     * @param list<int> $userIds
+     * @return array<int, list<UserPhone>>
+     */
+    public function findVerifiedPhonesGroupedByUserIds(array $userIds): array;
 }

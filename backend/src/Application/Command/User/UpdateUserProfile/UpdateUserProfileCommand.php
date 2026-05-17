@@ -12,6 +12,9 @@ readonly class UpdateUserProfileCommand
         public string $lastName,
         public ?string $phone,
         public ?string $avatar,
+        public ?string $telegram = null,
+        public ?bool $phoneHasViber = null,
+        public ?bool $phoneHasWhatsapp = null,
     ) {
     }
 }
