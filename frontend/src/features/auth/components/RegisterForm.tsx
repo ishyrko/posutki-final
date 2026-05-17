@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { PhoneAuthPanel } from '@/features/sms-auth/components/PhoneAuthPanel';
 import { useRouter } from 'next/navigation';
 import { GoogleMark } from './GoogleMark';
+import { AuthBrandLogo } from './AuthBrandLogo';
 
 type RegisterMethod = 'email' | 'phone';
 
@@ -100,9 +101,7 @@ export function RegisterForm() {
                 <Card className="border-0 shadow-xl">
                     <CardContent className="p-8">
                         <div className="text-center mb-8">
-                            <Link href="/" className="inline-block">
-                                <span className="text-2xl font-bold font-display text-primary">posutki.by</span>
-                            </Link>
+                            <AuthBrandLogo />
                             <h1 className="text-xl font-semibold text-foreground mt-4">Создать аккаунт</h1>
                             <p className="text-muted-foreground text-sm mt-1">Присоединяйтесь к сервису посуточной аренды</p>
                         </div>

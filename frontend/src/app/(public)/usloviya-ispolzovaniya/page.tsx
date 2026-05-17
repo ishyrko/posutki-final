@@ -12,13 +12,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const page = await fetchStaticPage(SLUG);
   if (!page) {
     return {
-      title: "Условия использования | Posutki.by",
+      title: "Условия использования | Посутки.by",
       description:
         "Правила использования сайта Posutki.by: учётная запись, размещение объявлений и ответственность сторон.",
     };
   }
   return {
-    title: page.metaTitle ?? `${page.title} | Posutki.by`,
+    title: page.metaTitle ?? `${page.title} | Посутки.by`,
     description: page.metaDescription ?? undefined,
   };
 }

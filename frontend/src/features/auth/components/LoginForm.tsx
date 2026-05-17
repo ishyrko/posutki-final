@@ -16,6 +16,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { PhoneAuthPanel } from '@/features/sms-auth/components/PhoneAuthPanel';
 import { GoogleMark } from './GoogleMark';
+import { AuthBrandLogo } from './AuthBrandLogo';
 
 type LoginMethod = 'email' | 'phone';
 
@@ -58,9 +59,7 @@ export function LoginForm() {
                 <Card className="border-0 shadow-xl">
                     <CardContent className="p-8">
                         <div className="text-center mb-8">
-                            <Link href="/" className="inline-block">
-                                <span className="text-2xl font-bold font-display text-primary">posutki.by</span>
-                            </Link>
+                            <AuthBrandLogo />
                             <h1 className="text-xl font-semibold text-foreground mt-4">Вход в аккаунт</h1>
                             <p className="text-muted-foreground text-sm mt-1">
                                 Войдите, чтобы управлять объявлениями и избранным

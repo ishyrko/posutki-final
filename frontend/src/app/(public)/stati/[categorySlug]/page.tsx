@@ -41,7 +41,7 @@ export async function generateMetadata({
     };
   } catch {
     return {
-      title: "Категория статей | Posutki.by",
+      title: "Категория статей | Посутки.by",
       description: "Категория статей на Posutki.by.",
     };
   }
