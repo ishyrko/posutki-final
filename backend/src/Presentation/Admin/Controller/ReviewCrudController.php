@@ -7,6 +7,8 @@ namespace App\Presentation\Admin\Controller;
 use App\Domain\Review\Entity\Review;
 use App\Domain\Review\Repository\ReviewRepositoryInterface;
 use App\Domain\Review\ValueObject\ReviewStatus;
+use App\Domain\Shared\ValueObject\Id;
+use LogicException;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -111,10 +113,10 @@ final class ReviewCrudController extends AbstractCrudController
         yield DateTimeField::new('updatedAt', 'Обновлён')->hideOnForm();
     }
 
-    public function approveReview(AdminContext $context): RedirectResponse
+    public function approveReview(AdminContext $context, Request $request): RedirectResponse
     {
-        $entity = $context->getEntity()->getInstance();
-        if (!$entity instanceof Review) {
+        $entity = $this->resolveReviewFromContext($context, $request);
+        if ($entity === null) {
             $this->addFlash('warning', 'Не удалось определить отзыв');
 
             return $this->redirectToIndex();
@@ -135,8 +137,8 @@ final class ReviewCrudController extends AbstractCrudController
 
     public function rejectReview(AdminContext $context, Request $request): Response
     {
-        $entity = $context->getEntity()->getInstance();
-        if (!$entity instanceof Review) {
+        $entity = $this->resolveReviewFromContext($context, $request);
+        if ($entity === null) {
             $this->addFlash('warning', 'Не удалось определить отзыв');
 
             return $this->redirectToIndex();
@@ -168,5 +170,42 @@ final class ReviewCrudController extends AbstractCrudController
         return $this->redirect(
             $this->adminUrlGenerator->setController(self::class)->setAction(Action::INDEX)->generateUrl()
         );
+    }
+
+    private function resolveReviewFromContext(AdminContext $context, Request $request): ?Review
+    {
+        try {
+            if ($context->getCrud() === null) {
+                return $this->resolveReviewFromRequest($request);
+            }
+
+            $entityDto = $context->getEntity();
+            $entity = $entityDto->getInstance();
+            if ($entity instanceof Review) {
+                return $entity;
+            }
+
+            return $this->resolveReviewFromRequest($request);
+        } catch (LogicException) {
+            return $this->resolveReviewFromRequest($request);
+        }
+    }
+
+    private function resolveReviewFromRequest(Request $request): ?Review
+    {
+        $entityId = $request->query->getString('entityId');
+        if ($entityId === '') {
+            $entityId = $request->query->getString('id');
+        }
+
+        if ($entityId === '') {
+            return null;
+        }
+
+        try {
+            return $this->reviewRepository->findById(Id::fromString($entityId));
+        } catch (\InvalidArgumentException) {
+            return null;
+        }
     }
 }
