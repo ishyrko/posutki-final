@@ -10,7 +10,7 @@ export const revalidate = false;
 
 function CategoryArticlesPageFallback() {
   return (
-    <div className="min-h-screen bg-background pt-24 pb-16 flex items-center justify-center">
+    <div className="min-h-screen bg-background pt-10 pb-16 flex items-center justify-center">
       <div
         className="h-9 w-9 animate-spin rounded-full border-2 border-primary border-t-transparent"
         role="status"
@@ -72,7 +72,7 @@ export default async function CategoryPage({
 
   if (categoryResult.status !== "fulfilled") {
     return (
-      <div className="min-h-screen bg-background pt-24 pb-16">
+      <div className="min-h-screen bg-background pt-10 pb-16">
         <div className="container mx-auto px-4 text-center py-16">
           <h1 className="text-3xl font-bold text-foreground mb-4">Категория не найдена</h1>
           <p className="text-muted-foreground mb-6">Такой категории статей не существует</p>

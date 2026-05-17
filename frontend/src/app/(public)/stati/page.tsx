@@ -8,7 +8,7 @@ export const revalidate = false;
 
 function ArticlesPageFallback() {
   return (
-    <div className="min-h-screen bg-background pt-24 pb-16 flex items-center justify-center">
+    <div className="min-h-screen bg-background pt-10 pb-16 flex items-center justify-center">
       <div
         className="h-9 w-9 animate-spin rounded-full border-2 border-primary border-t-transparent"
         role="status"
