@@ -59,7 +59,6 @@ final class SeedDemoPropertiesCommand extends Command
         'https://images.unsplash.com/photo-1586023492125-27b2c045efd7',
         'https://images.unsplash.com/photo-1554995207-c18c203602cb',
         'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde',
-        'https://images.unsplash.com/photo-1600573472550-8090a5e074fe',
         'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6',
         'https://images.unsplash.com/photo-1631679706909-1844bbd07221',
         'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6',
@@ -244,11 +243,10 @@ final class SeedDemoPropertiesCommand extends Command
         $dealType = DealType::Daily->value;
         $images = $this->randomImagesForPropertyType($type);
         $suffix = sprintf(' — вариант %d', $index + 1);
-        $priceBump = ($regionId % 5) * 3_000_00 + $index * 2_500_00;
 
         return match ($type) {
-            PropertyType::Apartment->value => $this->buildApartmentSpec($index, $images, $suffix, $priceBump),
-            PropertyType::House->value => $this->buildHouseSpec($index, $images, $suffix, $priceBump),
+            PropertyType::Apartment->value => $this->buildApartmentSpec($index, $regionId, $images, $suffix),
+            PropertyType::House->value => $this->buildHouseSpec($index, $regionId, $images, $suffix),
             default => throw new \LogicException('Unsupported property type: ' . $type),
         };
     }
@@ -260,6 +258,14 @@ final class SeedDemoPropertiesCommand extends Command
     private const CHECKIN_TIMES = ['13:00', '14:00', '15:00', '16:00'];
 
     private const CHECKOUT_TIMES = ['10:00', '11:00', '12:00'];
+
+    /** @var list<list<string>> */
+    private const PAYMENT_METHOD_OPTIONS = [
+        ['cash', 'card'],
+        ['cash', 'bank_transfer'],
+        ['card', 'bank_transfer'],
+        ['cash', 'card', 'bank_transfer'],
+    ];
 
     /** @var list<string> Базовые удобства квартиры */
     private const AMENITIES_APT_BASE = [
@@ -327,15 +333,36 @@ final class SeedDemoPropertiesCommand extends Command
         'Кирпичный дом с панорамным видом. Несколько комнат, два санузла, гараж на две машины. Уютная терраса для вечерних посиделок.',
     ];
 
+    /** Посуточная цена в BYN (как в форме объявления: целые рубли за сутки). */
+    private function dailyPriceAmount(int $index, int $regionId, string $type, ?int $rooms = null): int
+    {
+        $regionOffset = ($regionId % 5) * 6;
+        $indexOffset = ($index % 7) * 5;
+
+        if ($type === PropertyType::House->value) {
+            return min(300, 105 + $regionOffset + $indexOffset + ($index % 4) * 22);
+        }
+
+        $rooms = $rooms ?? 1;
+        $baseByRooms = match ($rooms) {
+            1 => 50,
+            2 => 72,
+            3 => 98,
+            default => 125,
+        };
+
+        return min(300, $baseByRooms + $regionOffset + $indexOffset + ($index % 5) * 8);
+    }
+
     /**
      * @param list<string> $images
      * @return array<string, mixed>
      */
     private function buildApartmentSpec(
         int $index,
+        int $regionId,
         array $images,
         string $suffix,
-        int $priceBump,
     ): array {
         $rooms = 1 + ($index % 4);
         $area = 32.0 + $index * 2.5 + ($rooms * 4);
@@ -347,7 +374,6 @@ final class SeedDemoPropertiesCommand extends Command
             3 => 'Трёхкомнатная квартира' . $suffix,
             default => 'Четырёхкомнатная квартира' . $suffix,
         };
-        $base = 11_000_00 + $index * 500_00;
         $tier = $index % 3;
         $guests = 2 + ($index % 4);
         $singleBeds = $rooms > 2 ? $rooms : ($index % 2 === 0 ? $rooms : 0);
@@ -372,7 +398,7 @@ final class SeedDemoPropertiesCommand extends Command
             PropertyType::Apartment->value,
             DealType::Daily->value,
             $title,
-            $base + $priceBump,
+            $this->dailyPriceAmount($index, $regionId, PropertyType::Apartment->value, $rooms),
             $area,
             null,
             max(1, $rooms),
@@ -399,15 +425,14 @@ final class SeedDemoPropertiesCommand extends Command
      */
     private function buildHouseSpec(
         int $index,
+        int $regionId,
         array $images,
         string $suffix,
-        int $priceBump,
     ): array {
         $rooms = 3 + ($index % 4);
         $land = 7.0 + ($index % 10) * 0.45;
         $area = 95.0 + $index * 6.0;
         $title = 'Дом с участком' . $suffix;
-        $base = 25_000_00 + $index * 1_000_00;
         $tier = $index % 3;
         $guests = 5 + ($index % 4);
         $singleBeds = $rooms;
@@ -430,7 +455,7 @@ final class SeedDemoPropertiesCommand extends Command
             PropertyType::House->value,
             DealType::Daily->value,
             $title,
-            $base + $priceBump,
+            $this->dailyPriceAmount($index, $regionId, PropertyType::House->value),
             $area,
             $land,
             $rooms,
@@ -551,6 +576,7 @@ final class SeedDemoPropertiesCommand extends Command
             livingArea: $livingArea,
             kitchenArea: $kitchenArea,
             dealConditions: $spec['dealConditions'],
+            paymentMethods: self::PAYMENT_METHOD_OPTIONS[$index % count(self::PAYMENT_METHOD_OPTIONS)],
             maxDailyGuests: $spec['maxDailyGuests'],
             dailySingleBeds: $spec['dailySingleBeds'],
             dailyDoubleBeds: $spec['dailyDoubleBeds'],

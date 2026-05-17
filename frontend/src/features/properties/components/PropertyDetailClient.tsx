@@ -165,7 +165,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-16">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 animate-pulse">
           <div className="h-6 w-40 bg-muted rounded mb-8" />
           <div className="grid grid-cols-1 md:grid-cols-4 gap-2 rounded-2xl overflow-hidden max-h-[500px] mb-8">
@@ -192,7 +192,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
 
   if (isError || !property) {
     return (
-      <div className="min-h-screen bg-background pt-16">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-20 text-center">
           <MapPin className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-4">Объект не найден</h1>
@@ -451,7 +451,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="pt-16">
+      <main>
         <div className="container mx-auto px-4 py-4">
           <Link href={backToCatalogHref} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
