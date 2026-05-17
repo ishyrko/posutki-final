@@ -38,6 +38,11 @@ final readonly class FrontendUrlBuilder
         return $this->base() . '/kabinet/';
     }
 
+    public function messages(): string
+    {
+        return $this->base() . '/kabinet/soobshcheniya/';
+    }
+
     public function editProperty(int $propertyId): string
     {
         return $this->base() . '/kabinet/redaktirovat/' . $propertyId . '/';

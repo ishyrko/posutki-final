@@ -22,3 +22,4 @@ framework:
             App\Domain\Property\Event\PropertySubmittedForModerationEvent: async_notifications
             App\Domain\Property\Event\PropertyApprovedEvent: async_notifications
             App\Domain\Property\Event\PropertyRejectedEvent: async_notifications
+            App\Domain\Message\Event\MessageSentEvent: async_notifications

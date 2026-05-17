@@ -6,11 +6,13 @@ namespace App\Application\Command\Message\SendMessage;
 
 use App\Domain\Message\Entity\Conversation;
 use App\Domain\Message\Entity\Message;
+use App\Domain\Message\Event\MessageSentEvent;
 use App\Domain\Message\Repository\ConversationRepositoryInterface;
 use App\Domain\Message\Repository\MessageRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 final class SendMessageHandler
 {
@@ -18,6 +20,7 @@ final class SendMessageHandler
         private readonly ConversationRepositoryInterface $conversationRepository,
         private readonly MessageRepositoryInterface $messageRepository,
         private readonly PropertyRepositoryInterface $propertyRepository,
+        private readonly MessageBusInterface $notificationBus,
     ) {
     }
 
@@ -75,6 +78,12 @@ final class SendMessageHandler
 
         $this->conversationRepository->save($conversation);
         $this->messageRepository->save($message);
+
+        $this->notificationBus->dispatch(new MessageSentEvent(
+            conversationId: (string) $conversation->getId()->getValue(),
+            senderId: $command->senderId,
+            messageText: $command->text,
+        ));
 
         return [
             'conversationId' => $conversation->getId()->getValue(),

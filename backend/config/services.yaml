@@ -254,6 +254,8 @@ services:
 
     # Message Command Handlers
     App\Application\Command\Message\SendMessage\SendMessageHandler:
+        arguments:
+            $notificationBus: '@notification.bus'
         tags: [ { name: messenger.message_handler, bus: command.bus } ]
 
     App\Application\Command\Message\MarkRead\MarkReadHandler:
@@ -342,6 +344,9 @@ services:
     App\Application\Notification\Contact\FeedbackSubmittedHandler:
         tags: [ { name: messenger.message_handler, bus: notification.bus } ]
 
+    App\Application\Notification\Message\MessageSentHandler:
+        tags: [ { name: messenger.message_handler, bus: notification.bus } ]
+
     # Property Mailer
     App\Infrastructure\Mail\PropertyMailer:
         arguments:
@@ -352,6 +357,10 @@ services:
         arguments:
             $mailerFrom: '%app.mailer_from%'
             $adminEmails: '%app.admin_emails%'
+
+    App\Infrastructure\Mail\MessageMailer:
+        arguments:
+            $mailerFrom: '%app.mailer_from%'
 
     # Command handlers that dispatch property notification events
     App\Application\Command\Property\CreateProperty\CreatePropertyHandler:
