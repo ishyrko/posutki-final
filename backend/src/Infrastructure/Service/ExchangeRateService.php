@@ -16,7 +16,7 @@ final class ExchangeRateService
 
     private const NBRB_CURRENCY_IDS = [
         'USD' => 431,
-        'RUB' => 298,
+        'RUB' => 456,
     ];
 
     public function __construct(
