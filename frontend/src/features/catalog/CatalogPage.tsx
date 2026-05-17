@@ -106,7 +106,6 @@ const sortOptions = [
   { value: "default", label: "По умолчанию" },
   { value: "price-asc", label: "Цена: по возрастанию" },
   { value: "price-desc", label: "Цена: по убыванию" },
-  { value: "area-desc", label: "Площадь: больше" },
 ];
 
 const viewModes: { value: ViewMode; icon: typeof LayoutGrid; title: string }[] = [
@@ -406,7 +405,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     if (hasPriceFilter) f.currency = selectedCurrency;
     if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
-    else if (sort === "area-desc") { f.sortBy = "area"; f.sortOrder = "DESC"; }
     return f;
   }, [currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, priceType, selectedCurrency, hasPriceFilter, isSaleDeal, sort]);
 
