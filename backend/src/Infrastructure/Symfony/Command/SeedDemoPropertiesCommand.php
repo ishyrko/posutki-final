@@ -71,7 +71,6 @@ final class SeedDemoPropertiesCommand extends Command
         'https://images.unsplash.com/photo-1600585154340-be6161a56a0c',
         'https://images.unsplash.com/photo-1512917774080-9991f1c4c750',
         'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6',
-        'https://images.unsplash.com/photo-1600585154363-67ebadee2f09',
         'https://images.unsplash.com/photo-1600607687644-c7171b42498f',
         'https://images.unsplash.com/photo-1600566752355-35792bedcfea',
         'https://images.unsplash.com/photo-1600607688969-a5bfcd646154',
