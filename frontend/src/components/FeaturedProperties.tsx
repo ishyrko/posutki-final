@@ -5,7 +5,8 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import PropertyCard from "./PropertyCard";
-import { PriceInByn } from "@/components/BynCurrency";
+import { PriceDisplay } from "@/components/BynCurrency";
+import { useCurrency } from "@/context/CurrencyContext";
 import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { formatAddress } from "@/features/properties/types";
 import { buildCatalogUrl, propertyUrlRegionSlug, REGION_SLUGS } from "@/features/catalog/slugs";
@@ -47,6 +48,7 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
     featuredFilters,
     featuredInitial ? { initialData: featuredInitial } : undefined,
   );
+  const { selectedCurrency } = useCurrency();
   const { data: rates } = useExchangeRates();
   const exchangeRates: ExchangeRates = useMemo(
     () => rates ?? DEFAULT_EXCHANGE_RATES_FALLBACK,
@@ -84,13 +86,17 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
         ) : properties.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {properties.map((property, i) => {
-              const { primaryAmount, secondary } = formatPropertyPrices(property, exchangeRates);
+              const { primaryAmount, primaryCurrency, secondary } = formatPropertyPrices(
+                property,
+                exchangeRates,
+                selectedCurrency,
+              );
               return (
               <PropertyCard
                 key={property.id}
                 id={property.id}
                 image={property.images?.[0]?.thumbnailUrl || property.images?.[0]?.url || "https://placehold.co/600x450?text=No+Image"}
-                price={<PriceInByn amount={primaryAmount} />}
+                price={<PriceDisplay amount={primaryAmount} currency={primaryCurrency} />}
                 primaryBynAmount={primaryAmount}
                 secondaryPrice={secondary}
                 title={property.title}
