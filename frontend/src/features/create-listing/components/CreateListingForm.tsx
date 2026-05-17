@@ -32,7 +32,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { BynCurrencyMark } from '@/components/BynCurrency';
 import { cn } from '@/lib/utils';
 import AddressMapPicker from '@/components/AddressMapPicker';
-import { loadYmaps } from '@/lib/ymaps';
+import { geocodeAddress as yandexGeocode } from '@/lib/yandex-geocoder';
 import { useSearchCities, useSearchStreets, useCreateProperty } from '../hooks';
 import { uploadFile, FileTooLargeError } from '../api';
 import type { ListingFormData, UploadedPhoto, CreatePropertyPayload, CitySearchResult, AdditionalService } from '../types';
@@ -692,12 +692,9 @@ export function CreateListingForm() {
 
         setGeocoding(true);
         try {
-            const ymaps = await loadYmaps();
-            const result = await ymaps.geocode(query, { results: 1 });
-            const first = result.geoObjects.get(0);
-            if (first) {
-                const coords = first.geometry.getCoordinates();
-                setForm((prev) => ({ ...prev, latitude: coords[0], longitude: coords[1] }));
+            const coords = await yandexGeocode(query);
+            if (coords) {
+                setForm((prev) => ({ ...prev, latitude: coords.latitude, longitude: coords.longitude }));
             } else {
                 toast.error('Не удалось определить координаты по адресу');
             }

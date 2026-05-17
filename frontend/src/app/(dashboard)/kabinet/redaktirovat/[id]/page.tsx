@@ -37,7 +37,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import AddressMapPicker from '@/components/AddressMapPicker';
-import { loadYmaps } from '@/lib/ymaps';
+import { geocodeAddress as yandexGeocode } from '@/lib/yandex-geocoder';
 import { useProperty, useUpdateProperty } from '@/features/properties/hooks';
 import type { UpdatePropertyPayload } from '@/features/properties/api';
 import type { Property as PropertyItem } from '@/features/properties/types';
@@ -426,12 +426,9 @@ export default function EditPropertyPage() {
 
         setGeocoding(true);
         try {
-            const ymaps = await loadYmaps();
-            const result = await ymaps.geocode(query, { results: 1 });
-            const first = result.geoObjects.get(0);
-            if (first) {
-                const coords = first.geometry.getCoordinates();
-                setForm((prev) => (prev ? { ...prev, latitude: coords[0], longitude: coords[1] } : prev));
+            const coords = await yandexGeocode(query);
+            if (coords) {
+                setForm((prev) => (prev ? { ...prev, latitude: coords.latitude, longitude: coords.longitude } : prev));
             } else {
                 toast.error('Не удалось определить координаты по адресу');
             }

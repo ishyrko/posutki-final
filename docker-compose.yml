@@ -130,6 +130,8 @@ services:
       # Pass-through only when set (project `.env` or shell). Do not use `:-` default — an empty
       # value would override `frontend/.env.local` inside the container (Next prefers process.env).
       - NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+      - NEXT_PUBLIC_YANDEX_MAPS_API_KEY
+      - NEXT_PUBLIC_YANDEX_GEOCODER_API_KEY
       - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-986114625381-ng3peent2ffo7ci9hmltjvcqu1sqngkb.apps.googleusercontent.com}
       - BACKEND_INTERNAL_URL=http://nginx
       - REVALIDATION_SECRET=${NEXTJS_REVALIDATION_SECRET:-dev-revalidate-secret}
