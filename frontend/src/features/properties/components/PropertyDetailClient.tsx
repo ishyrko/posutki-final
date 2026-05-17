@@ -565,7 +565,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
         <div className="container mx-auto px-4 pb-16">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div>
                     <span className="inline-block px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-3">
@@ -647,6 +647,11 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                     <span className="text-sm text-muted-foreground">/ сутки</span>
                   )}
                 </div>
+                {property.dealType === "daily" && property.weekendPriceNegotiable && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    В выходные и праздничные дни цена договорная
+                  </p>
+                )}
               </motion.div>
 
               {/* Key specs — 4 compact squares */}
