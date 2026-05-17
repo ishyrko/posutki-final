@@ -15,7 +15,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { PhoneAuthPanel } from '@/features/sms-auth/components/PhoneAuthPanel';
-import { useRouter } from 'next/navigation';
 import { GoogleMark } from './GoogleMark';
 import { AuthBrandLogo } from './AuthBrandLogo';
 
@@ -30,7 +29,6 @@ const registerUiSchema = z.object({
 type RegisterUiFormValues = z.infer<typeof registerUiSchema>;
 
 export function RegisterForm() {
-    const router = useRouter();
     const { mutate: registerUser, isPending } = useRegister();
     const { trigger: triggerGoogleLogin } = useGoogleLogin();
     const [showPassword, setShowPassword] = useState(false);
@@ -81,10 +79,6 @@ export function RegisterForm() {
             return;
         }
         registerUser(parsed.data);
-    };
-
-    const afterPhoneAuth = () => {
-        router.push('/kabinet/');
     };
 
     return (
@@ -232,7 +226,7 @@ export function RegisterForm() {
                         ) : (
                             <PhoneAuthPanel
                                 key="register-phone"
-                                onAuthenticated={afterPhoneAuth}
+                                redirectAfter="/kabinet/"
                                 consentAccepted={agreed}
                                 consentSlot={
                                     <div className="flex items-start gap-2">

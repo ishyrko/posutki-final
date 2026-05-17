@@ -16,7 +16,10 @@ import { useRequestSmsCode, useVerifySmsCode } from '../hooks';
 const RESEND_COOLDOWN = 60;
 
 export interface PhoneAuthPanelProps {
-    onAuthenticated: () => void;
+    /** Редирект после входа (страница логина/регистрации). */
+    redirectAfter?: string;
+    /** Без редиректа: закрыть модалку, продолжить сценарий на текущей странице. */
+    onAuthenticated?: () => void;
     initialPhone?: string;
     /** Для регистрации по SMS: чекбокс «согласен» должен быть включён */
     consentAccepted?: boolean;
@@ -26,6 +29,7 @@ export interface PhoneAuthPanelProps {
 }
 
 export function PhoneAuthPanel({
+    redirectAfter,
     onAuthenticated,
     initialPhone = '',
     consentAccepted = true,
@@ -45,7 +49,10 @@ export function PhoneAuthPanel({
     const [resendWidgetId, setResendWidgetId] = useState(0);
 
     const { mutateAsync: requestCode, isPending: requesting } = useRequestSmsCode();
-    const { mutateAsync: verifyCode, isPending: verifying } = useVerifySmsCode();
+    const { mutateAsync: verifyCode, isPending: verifying } = useVerifySmsCode({
+        redirectAfter,
+        onAuthenticated,
+    });
 
     useEffect(() => {
         if (countdown <= 0) return;
@@ -75,8 +82,7 @@ export function PhoneAuthPanel({
         if (code.length !== 6) return;
 
         await verifyCode({ phone: phone.trim(), code });
-        onAuthenticated();
-    }, [code, onAuthenticated, phone, verifyCode]);
+    }, [code, phone, verifyCode]);
 
     const handleResend = useCallback(async () => {
         if (!phone.trim()) return;

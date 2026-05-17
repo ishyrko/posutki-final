@@ -7,7 +7,7 @@ import { loginSchema, LoginCredentials } from '../api';
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Phone, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { resolveAuthRedirectPath } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,6 @@ import { AuthBrandLogo } from './AuthBrandLogo';
 type LoginMethod = 'email' | 'phone';
 
 export function LoginForm() {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const redirectAfter = resolveAuthRedirectPath(searchParams.get('next'));
     const { mutate: login, isPending } = useLogin(redirectAfter);
@@ -39,10 +38,6 @@ export function LoginForm() {
 
     const onSubmit = (data: LoginCredentials) => {
         login(data);
-    };
-
-    const afterPhoneAuth = () => {
-        router.push(redirectAfter ?? '/kabinet/');
     };
 
     return (
@@ -154,7 +149,10 @@ export function LoginForm() {
                                 </Button>
                             </form>
                         ) : (
-                            <PhoneAuthPanel key="login-phone" onAuthenticated={afterPhoneAuth} />
+                            <PhoneAuthPanel
+                                key="login-phone"
+                                redirectAfter={redirectAfter ?? '/kabinet/'}
+                            />
                         )}
 
                         <p className="text-center text-sm text-muted-foreground mt-6">

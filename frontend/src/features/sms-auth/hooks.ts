@@ -1,9 +1,17 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { setToken } from '@/lib/auth';
 import { requestSmsCode, verifySmsCode } from './api';
+
+type UseVerifySmsCodeOptions = {
+    /** Куда перейти после успешной проверки кода (например `/kabinet/`). */
+    redirectAfter?: string;
+    /** Доп. действие без редиректа (закрыть модалку, отправить форму). */
+    onAuthenticated?: () => void;
+};
 
 function getErrorMessage(error: unknown, fallback: string): string {
     if (typeof error !== 'object' || error === null || !('response' in error)) {
@@ -38,7 +46,8 @@ export const useRequestSmsCode = () => {
     });
 };
 
-export const useVerifySmsCode = () => {
+export const useVerifySmsCode = (options?: UseVerifySmsCodeOptions) => {
+    const router = useRouter();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -48,6 +57,10 @@ export const useVerifySmsCode = () => {
             queryClient.invalidateQueries({ queryKey: ['me'] });
             queryClient.invalidateQueries({ queryKey: ['phones'] });
             toast.success('Вход выполнен');
+            options?.onAuthenticated?.();
+            if (options?.redirectAfter !== undefined) {
+                router.push(options.redirectAfter);
+            }
         },
         onError: (error: unknown) => {
             toast.error(getErrorMessage(error, 'Неверный код'));

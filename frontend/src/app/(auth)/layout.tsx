@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { isAuthenticated } from '@/lib/auth';
+import { useHasAuthToken } from '@/hooks/useHasAuthToken';
 
 export default function AuthLayout({
     children,
@@ -11,11 +11,11 @@ export default function AuthLayout({
     children: React.ReactNode;
 }) {
     const router = useRouter();
-    const shouldRedirect = isAuthenticated();
+    const shouldRedirect = useHasAuthToken();
 
     useEffect(() => {
         if (shouldRedirect) {
-            router.replace('/kabinet');
+            router.replace('/kabinet/');
         }
     }, [router, shouldRedirect]);
 
