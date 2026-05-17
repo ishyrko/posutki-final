@@ -45,7 +45,7 @@ class DashboardController extends AbstractDashboardController
         return $this->render('@EasyAdmin/page/login.html.twig', [
             'error' => $error,
             'last_username' => $lastUsername,
-            'page_title' => 'RNB.by — Админ',
+            'page_title' => 'Posutki.by — Админ',
             'csrf_token_intention' => 'authenticate',
             'username_label' => 'Email',
             'password_label' => 'Пароль',
@@ -63,7 +63,7 @@ class DashboardController extends AbstractDashboardController
     public function configureDashboard(): Dashboard
     {
         return Dashboard::new()
-            ->setTitle('RNB.by — Админ')
+            ->setTitle('Posutki.by — Админ')
             ->setFaviconPath('favicon.ico')
             ->setLocales(['ru']);
     }
