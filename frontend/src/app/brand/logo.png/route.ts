@@ -3,11 +3,8 @@ import path from "node:path";
 
 export async function GET() {
   const candidates = [
-    // Preferred: tracked app asset location (if you later move it here)
+    path.join(process.cwd(), "public", "brand", "logo.png"),
     path.join(process.cwd(), "public", "brand", "logo-transparent.png"),
-    // Fallback: existing tracked logo in repo (works in Docker too)
-    path.join(process.cwd(), "public", "rnb-logo-transparent.png"),
-    // Fallback: local design prototype asset (typically gitignored)
     path.join(process.cwd(), "..", "_design", "posutki-logo-transparent.png"),
   ];
 

@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { verifyEmail } from '@/features/auth/api';
-import NextImage from 'next/image';
 import { Loader2 } from 'lucide-react';
+import { AuthBrandLogo } from '@/features/auth/components/AuthBrandLogo';
 import { toast } from 'sonner';
 
 function VerifyEmailContent() {
@@ -55,15 +55,7 @@ function VerifyEmailContent() {
     if (status === 'loading') {
         return (
             <div className="min-h-screen bg-dark-bg flex flex-col items-center justify-center gap-4">
-                <Link href="/" className="mb-4">
-                    <NextImage
-                        src="/rnb-logo-transparent.png"
-                        alt="Posutki.by"
-                        width={600}
-                        height={207}
-                        className="h-10 w-auto object-contain"
-                    />
-                </Link>
+                <AuthBrandLogo variant="transparent" className="mb-4" />
                 <Loader2 className="w-10 h-10 animate-spin text-primary" />
                 <p className="text-dark-muted text-sm">Подтверждаем email…</p>
             </div>

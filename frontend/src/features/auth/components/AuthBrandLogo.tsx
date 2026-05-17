@@ -1,11 +1,19 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-export function AuthBrandLogo() {
+type AuthBrandLogoProps = {
+    /** На тёмном фоне — прозрачный вариант логотипа */
+    variant?: 'default' | 'transparent';
+    className?: string;
+};
+
+export function AuthBrandLogo({ variant = 'default', className }: AuthBrandLogoProps) {
+    const src = variant === 'transparent' ? '/brand/logo-transparent.png' : '/brand/logo.png';
+
     return (
-        <Link href="/" className="inline-block">
+        <Link href="/" className={className ?? 'inline-block'}>
             <Image
-                src="/brand/logo.png"
+                src={src}
                 alt="posutki.by"
                 width={180}
                 height={40}

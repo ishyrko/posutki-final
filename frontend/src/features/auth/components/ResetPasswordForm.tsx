@@ -6,8 +6,8 @@ import { useResetPassword } from '../hooks';
 import { resetPasswordSchema, ResetPasswordData } from '../api';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import NextImage from 'next/image';
 import { Mail, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
+import { AuthBrandLogo } from './AuthBrandLogo';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,16 +37,7 @@ export function ResetPasswordForm() {
                 transition={{ duration: 0.5 }}
                 className="w-full max-w-md"
             >
-                <Link href="/" className="inline-flex items-center mb-10">
-                    <NextImage
-                        src="/rnb-logo-transparent.png"
-                        alt="Posutki.by"
-                        width={600}
-                        height={207}
-                        className="h-10 w-auto object-contain"
-                        priority
-                    />
-                </Link>
+                <AuthBrandLogo variant="transparent" className="inline-flex items-center mb-10" />
 
                 {!isSuccess ? (
                     <>

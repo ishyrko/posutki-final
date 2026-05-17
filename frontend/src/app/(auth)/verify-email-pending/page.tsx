@@ -5,8 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { resendVerification } from '@/features/auth/api';
 import { motion } from 'framer-motion';
-import NextImage from 'next/image';
 import { Mail, ArrowRight } from 'lucide-react';
+import { AuthBrandLogo } from '@/features/auth/components/AuthBrandLogo';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -38,16 +38,7 @@ function VerifyEmailPendingContent() {
                 animate={{ opacity: 1, y: 0 }}
                 className="w-full max-w-md text-center"
             >
-                <Link href="/" className="inline-flex items-center justify-center mb-10">
-                    <NextImage
-                        src="/rnb-logo-transparent.png"
-                        alt="Posutki.by"
-                        width={600}
-                        height={207}
-                        className="h-10 w-auto object-contain"
-                        priority
-                    />
-                </Link>
+                <AuthBrandLogo variant="transparent" className="inline-flex items-center justify-center mb-10" />
                 <div className="rounded-xl border border-dark-card bg-dark-card/40 p-8">
                     <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
                         <Mail className="h-7 w-7" />

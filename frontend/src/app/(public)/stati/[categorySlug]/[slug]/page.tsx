@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { Article } from "@/features/articles/types";
+import { ARTICLE_FALLBACK_IMAGE } from "@/features/articles/articleCardDisplay";
 import { resolveArticleThumbnailUrl } from "@/features/articles/image";
 import { fetchPublicApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { sanitizeArticleHtml } from "@/features/articles/sanitizeArticleHtml";
@@ -17,8 +18,6 @@ type ArticlePageParams = {
   categorySlug: string;
   slug: string;
 };
-
-const FALLBACK_IMAGE = "/rnb-logo.png";
 
 const getArticleBySlug = cache(async (slug: string): Promise<Article | null> => {
   return fetchPublicApiNullable<Article>(`/articles/${encodeURIComponent(slug)}`, {
@@ -79,7 +78,7 @@ export async function generateMetadata({
     openGraph: {
       title: article.title,
       description: article.excerpt || `Статья о недвижимости: ${article.title}`,
-      images: [{ url: resolveArticleThumbnailUrl(article.coverImage) || FALLBACK_IMAGE }],
+      images: [{ url: resolveArticleThumbnailUrl(article.coverImage) || ARTICLE_FALLBACK_IMAGE }],
       type: "article",
     },
   };

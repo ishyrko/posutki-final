@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Article, ArticleCategory } from "@/features/articles/types";
 import { estimateArticleReadMinutes } from "@/features/articles/articleHtmlUtils";
+import { ARTICLE_FALLBACK_IMAGE } from "@/features/articles/articleCardDisplay";
 import { resolveArticleThumbnailUrl } from "@/features/articles/image";
 
 const ARTICLES_PER_PAGE = 6;
-const FALLBACK_IMAGE = "/rnb-logo.png";
 
 type DisplayArticle = {
   slug: string;
@@ -34,7 +34,7 @@ function formatDate(dateStr: string): string {
 function toDisplayArticle(article: Article): DisplayArticle {
   return {
     slug: article.slug,
-    image: resolveArticleThumbnailUrl(article.coverImage) || FALLBACK_IMAGE,
+    image: resolveArticleThumbnailUrl(article.coverImage) || ARTICLE_FALLBACK_IMAGE,
     categoryName: article.categoryName || "Без категории",
     categorySlug: article.categorySlug || "",
     title: article.title,

@@ -6,8 +6,8 @@ import { useConfirmResetPassword } from '../hooks';
 import { confirmResetPasswordSchema, ConfirmResetPasswordData } from '../api';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import NextImage from 'next/image';
 import { Lock, ArrowLeft, ArrowRight, AlertTriangle } from 'lucide-react';
+import { AuthBrandLogo } from './AuthBrandLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -74,16 +74,7 @@ export function ConfirmResetPasswordForm({ email, token }: Props) {
                 transition={{ duration: 0.5 }}
                 className="w-full max-w-md"
             >
-                <Link href="/" className="inline-flex items-center mb-10">
-                    <NextImage
-                        src="/rnb-logo-transparent.png"
-                        alt="Posutki.by"
-                        width={600}
-                        height={207}
-                        className="h-10 w-auto object-contain"
-                        priority
-                    />
-                </Link>
+                <AuthBrandLogo variant="transparent" className="inline-flex items-center mb-10" />
 
                 <h2 className="text-3xl font-display font-bold text-dark-fg mb-2">
                     Новый пароль
