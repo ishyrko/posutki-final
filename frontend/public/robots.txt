@@ -1,0 +1,38 @@
+User-agent: *
+Allow: /
+
+Disallow: /kabinet
+Disallow: /kabinet/
+Disallow: /reset-password
+Disallow: /reset-password/
+Disallow: /verify-email
+Disallow: /verify-email/
+Disallow: /verify-email-pending
+Disallow: /verify-email-pending/
+Disallow: /confirm-email-change
+Disallow: /confirm-email-change/
+
+Disallow: /api/
+Disallow: /revalidate
+Disallow: /revalidate/
+Disallow: /_next/
+Disallow: /404
+Disallow: /500
+
+Allow: /_next/static/
+Allow: /_next/image
+Allow: /*.css$
+Allow: /*.js$
+Allow: /*.svg$
+Allow: /*.png$
+Allow: /*.ico$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.webp$
+Allow: /*.woff2$
+
+Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content
+Clean-param: fbclid&gclid&yclid&_openstat&ref&from
+
+Host: https://posutki.by
+Sitemap: https://posutki.by/sitemap.xml
