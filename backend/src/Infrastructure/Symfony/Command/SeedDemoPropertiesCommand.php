@@ -12,8 +12,8 @@ use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\ValueObject\Id;
 use App\Infrastructure\Service\ExchangeRateService;
+use App\Infrastructure\Service\MarketplaceDataPurger;
 use App\Infrastructure\Service\MetroProximityCalculator;
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -84,6 +84,7 @@ final class SeedDemoPropertiesCommand extends Command
 
     public function __construct(
         private readonly EntityManagerInterface $em,
+        private readonly MarketplaceDataPurger $marketplaceDataPurger,
         private readonly ExchangeRateService $exchangeRateService,
         private readonly MetroProximityCalculator $metroProximityCalculator,
     ) {
@@ -103,7 +104,8 @@ final class SeedDemoPropertiesCommand extends Command
         }
 
         $io->section('Clearing existing listings and related rows');
-        $this->truncatePropertyRelated($conn);
+        $this->marketplaceDataPurger->purgeProperties($conn);
+        $this->em->clear();
 
         $regions = $conn->fetchAllAssociative(
             'SELECT id FROM regions ORDER BY id ASC'
@@ -185,19 +187,6 @@ final class SeedDemoPropertiesCommand extends Command
         ));
 
         return Command::SUCCESS;
-    }
-
-    private function truncatePropertyRelated(Connection $conn): void
-    {
-        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
-        $conn->executeStatement('DELETE FROM messages');
-        $conn->executeStatement('DELETE FROM conversations');
-        $conn->executeStatement('DELETE FROM favorites');
-        $conn->executeStatement('DELETE FROM property_daily_stats');
-        $conn->executeStatement('DELETE FROM property_metro_stations');
-        $conn->executeStatement('DELETE FROM property_revisions');
-        $conn->executeStatement('DELETE FROM properties');
-        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
     }
 
     /**
