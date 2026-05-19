@@ -156,8 +156,7 @@ class UserController extends AbstractController
 
         $command = new UpdateUserProfileCommand(
             userId: (string) $user->getId()->getValue(),
-            firstName: $request->firstName,
-            lastName: $request->lastName,
+            name: $request->name,
             phone: $request->phone,
             avatar: $request->avatar,
             telegram: $request->telegram,

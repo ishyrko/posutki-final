@@ -1,10 +1,11 @@
 import api from '@/lib/api';
+import { isAxiosError } from 'axios';
 import { z } from 'zod';
 import { User } from '@/features/auth/types';
+import { FileTooLargeError } from '@/features/create-listing/api';
 
 export const updateProfileSchema = z.object({
-    firstName: z.string().min(2, 'Введите имя'),
-    lastName: z.string().min(2, 'Введите фамилию'),
+    name: z.string().min(2, 'Введите имя').max(100, 'Имя не длиннее 100 символов'),
     phone: z.string().optional(),
     avatar: z.string().optional(),
     telegram: z.string().max(100).optional(),
@@ -59,8 +60,32 @@ export const updateBusinessProfile = async (data: BusinessProfileFormData): Prom
     await api.put('/users/profile/business', data);
 };
 
+type UploadResponse = { url: string; thumbnailUrl?: string | null };
+
+export const uploadAvatar = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('scope', 'avatars');
+
+    try {
+        const response = await api.postForm<{ data: UploadResponse }>('/upload', formData);
+        return response.data.data.url;
+    } catch (error: unknown) {
+        if (isAxiosError(error) && error.response?.status === 413) {
+            throw new FileTooLargeError(file.name);
+        }
+        throw error;
+    }
+};
+
 export const updateProfile = async (data: UpdateProfileData): Promise<User> => {
-    const response = await api.put<User>('/users/profile', data);
+    const { avatar, ...rest } = data;
+    const payload: Record<string, unknown> = { ...rest };
+    const trimmedAvatar = avatar?.trim();
+    if (trimmedAvatar) {
+        payload.avatar = trimmedAvatar;
+    }
+    const response = await api.put<User>('/users/profile', payload);
     return response.data;
 };
 

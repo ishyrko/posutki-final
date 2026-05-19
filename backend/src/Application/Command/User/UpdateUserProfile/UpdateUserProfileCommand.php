@@ -8,8 +8,7 @@ readonly class UpdateUserProfileCommand
 {
     public function __construct(
         public string $userId,
-        public string $firstName,
-        public string $lastName,
+        public string $name,
         public ?string $phone,
         public ?string $avatar,
         public ?string $telegram = null,

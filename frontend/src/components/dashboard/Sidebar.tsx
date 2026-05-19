@@ -7,6 +7,7 @@ import { Home, Heart, MessageSquare, User, LogOut, ChevronRight } from 'lucide-r
 import { useUser, useLogout } from '@/features/auth/hooks';
 import { useUnreadCount } from '@/features/messages/hooks';
 import { UserAvatar } from '@/components/UserAvatar';
+import { formatUserDisplayName } from '@/features/profile/displayName';
 
 const navigation = [
     { name: 'Профиль', href: '/kabinet/profil', icon: User },
@@ -46,9 +47,7 @@ export function Sidebar() {
                         <UserAvatar user={user} className="h-10 w-10 text-sm border-0 shrink-0" />
                         <div className="min-w-0">
                             <div className="font-display font-semibold text-foreground text-sm truncate">
-                                {user?.firstName || user?.lastName
-                                    ? [user?.firstName, user?.lastName].filter(Boolean).join(' ')
-                                    : 'Профиль'}
+                                {formatUserDisplayName(user) || 'Профиль'}
                             </div>
                             <div className="text-xs text-muted-foreground truncate">{user?.email ?? '—'}</div>
                         </div>

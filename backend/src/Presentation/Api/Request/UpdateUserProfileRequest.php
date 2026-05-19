@@ -10,16 +10,16 @@ class UpdateUserProfileRequest
 {
     #[Assert\NotBlank(message: 'Укажите имя')]
     #[Assert\Length(min: 2, max: 100, minMessage: 'Имя не короче {{ limit }} символов', maxMessage: 'Имя не длиннее {{ limit }} символов')]
-    public string $firstName;
-
-    #[Assert\NotBlank(message: 'Укажите фамилию')]
-    #[Assert\Length(min: 2, max: 100, minMessage: 'Фамилия не короче {{ limit }} символов', maxMessage: 'Фамилия не длиннее {{ limit }} символов')]
-    public string $lastName;
+    public string $name;
 
     #[Assert\Length(max: 20)]
     public ?string $phone = null;
 
-    #[Assert\Url(message: 'Неверный URL аватара')]
+    #[Assert\Length(max: 255)]
+    #[Assert\Regex(
+        pattern: '#^(https?://|//).+|^/uploads/.+#',
+        message: 'Некорректный адрес аватара',
+    )]
     public ?string $avatar = null;
 
     #[Assert\Length(max: 100)]

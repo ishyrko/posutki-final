@@ -4,6 +4,7 @@ import { useUser } from '@/features/auth/hooks';
 import { Button } from '@/components/ui/button';
 import { Search, Bell } from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
+import { formatUserDisplayName } from '@/features/profile/displayName';
 
 export function Header() {
     const { data: user } = useUser();
@@ -32,7 +33,7 @@ export function Header() {
                 <div className="flex items-center gap-3 pl-2">
                     <div className="text-right hidden sm:block">
                         <div className="text-sm font-bold text-foreground leading-none mb-1">
-                            {user?.firstName} {user?.lastName}
+                            {formatUserDisplayName(user) || 'Профиль'}
                         </div>
                         <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
                             {user?.email}

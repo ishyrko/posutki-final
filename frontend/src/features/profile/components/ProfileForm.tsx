@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useUser } from '@/features/auth/hooks';
 import { useUpdateProfile } from '../hooks';
 import { updateProfileSchema, UpdateProfileData } from '../api';
+import { formatUserDisplayName } from '../displayName';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,21 +26,16 @@ export function ProfileForm() {
     const form = useForm<UpdateProfileData>({
         resolver: zodResolver(updateProfileSchema),
         defaultValues: {
-            firstName: '',
-            lastName: '',
+            name: '',
             phone: '',
-            avatar: '',
         },
     });
 
-    // Reset form with user data when available
     useEffect(() => {
         if (user) {
             form.reset({
-                firstName: user.firstName || '',
-                lastName: user.lastName || '',
+                name: formatUserDisplayName(user),
                 phone: user.phone || '',
-                avatar: '', // TODO: Handle avatar
             });
         }
     }, [user, form]);
@@ -53,46 +49,31 @@ export function ProfileForm() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
+                <CardTitle>Личные данные</CardTitle>
             </CardHeader>
             <CardContent>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="firstName"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>First Name</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Например: John" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="lastName"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Last Name</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Например: Doe" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Имя</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Как к вам обращаться" autoComplete="name" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <FormField
                             control={form.control}
                             name="phone"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Phone Number</FormLabel>
+                                    <FormLabel>Телефон</FormLabel>
                                     <FormControl>
                                         <Input placeholder="Например: +375…" {...field} />
                                     </FormControl>
@@ -102,7 +83,7 @@ export function ProfileForm() {
                         />
 
                         <Button type="submit" disabled={isPending}>
-                            {isPending ? 'Saving...' : 'Save Changes'}
+                            {isPending ? 'Сохранение...' : 'Сохранить'}
                         </Button>
                     </form>
                 </Form>

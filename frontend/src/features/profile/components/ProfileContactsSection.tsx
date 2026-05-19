@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { User } from '@/features/auth/types';
 import { useUpdateProfile } from '@/features/profile/hooks';
+import { formatUserDisplayName } from '@/features/profile/displayName';
 import { usePhones, useDeletePhone, useUpdatePhoneFlags } from '@/features/phones/hooks';
 import { PhoneVerifyDialog } from '@/features/phones/components/PhoneVerifyDialog';
 
@@ -69,8 +70,7 @@ export function ProfileContactsSection({ user }: { user: User | undefined }) {
     }) => {
         if (!user) return;
         updateProfile({
-            firstName: user.firstName,
-            lastName: user.lastName,
+            name: formatUserDisplayName(user),
             phone: user.phone,
             telegram: overrides?.telegram ?? telegram,
             phoneHasViber: overrides?.phoneHasViber ?? user.phoneHasViber ?? false,

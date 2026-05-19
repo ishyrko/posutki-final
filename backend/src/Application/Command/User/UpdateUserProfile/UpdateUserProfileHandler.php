@@ -42,9 +42,10 @@ readonly class UpdateUserProfileHandler
             }
         }
 
+        $displayName = trim($command->name);
         $user->updateProfile(
-            $command->firstName,
-            $command->lastName,
+            $displayName,
+            '',
             $normalizedPhone,
             $command->avatar
         );

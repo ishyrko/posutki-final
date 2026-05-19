@@ -18,9 +18,15 @@ export function resolveUserAvatarUrl(avatar: string | null | undefined): string 
     if (s.startsWith('//')) {
         return s;
     }
-    if (s.startsWith('/')) {
-        return s;
+    let path = s.startsWith('/') ? s : `/uploads/${s.replace(/^uploads\//, '')}`;
+
+    if (path.startsWith('/uploads/avatars/') && !path.includes('/thumbs/')) {
+        const segments = path.split('/');
+        const fileName = segments.pop();
+        if (fileName) {
+            path = [...segments, 'thumbs', fileName].join('/');
+        }
     }
-    const withoutDuplicateUploads = s.replace(/^uploads\//, '');
-    return `/uploads/${withoutDuplicateUploads}`;
+
+    return path;
 }

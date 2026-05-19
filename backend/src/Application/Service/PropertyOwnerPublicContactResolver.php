@@ -100,7 +100,7 @@ readonly class PropertyOwnerPublicContactResolver
             throw new DomainException('Подтвердите телефон в профиле');
         }
         if ($resolved['name'] === null) {
-            throw new DomainException('Укажите имя и фамилию в профиле');
+            throw new DomainException('Укажите имя в профиле');
         }
     }
 

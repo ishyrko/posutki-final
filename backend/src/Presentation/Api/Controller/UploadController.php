@@ -47,20 +47,22 @@ class UploadController extends AbstractController
             );
         }
 
-        // Validate file size (max 10MB)
-        if ($file->getSize() > 10 * 1024 * 1024) {
-            return $this->json(
-                ApiResponse::error('Файл слишком большой. Максимум 10 МБ', 413),
-                413
-            );
-        }
-
         try {
             $scope = (string) $request->request->get('scope', 'properties');
-            if ($scope === 'articles' && !$user) {
+            if (in_array($scope, ['articles', 'avatars'], true) && !$user) {
                 return $this->json(
                     ApiResponse::error('Требуется авторизация', 401),
                     401
+                );
+            }
+
+            $maxBytes = $scope === 'avatars' ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+            if ($file->getSize() > $maxBytes) {
+                $maxMb = (int) ($maxBytes / (1024 * 1024));
+
+                return $this->json(
+                    ApiResponse::error(sprintf('Файл слишком большой. Максимум %d МБ', $maxMb), 413),
+                    413
                 );
             }
 
@@ -74,7 +76,7 @@ class UploadController extends AbstractController
             ]));
         } catch (\InvalidArgumentException $e) {
             return $this->json(
-                ApiResponse::error('Недопустимая область загрузки. Допустимы: properties, articles', 400),
+                ApiResponse::error('Недопустимая область загрузки. Допустимы: properties, articles, avatars', 400),
                 400
             );
         } catch (\Exception $e) {

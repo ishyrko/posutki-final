@@ -11,9 +11,12 @@ class FileUploader
 {
     private const THUMB_SUBDIRECTORY = 'thumbs';
     private const SCOPE_ARTICLES = 'articles';
+    private const SCOPE_AVATARS = 'avatars';
     private const SCOPE_PROPERTIES = 'properties';
     private const MAX_DIMENSION = 1920;
     private const THUMB_MAX_DIMENSION = 640;
+    private const AVATAR_MAX_DIMENSION = 256;
+    private const AVATAR_THUMB_MAX_DIMENSION = 96;
     private const JPEG_QUALITY = 84;
     private const WEBP_QUALITY = 82;
     private const THUMB_WEBP_QUALITY = 78;
@@ -39,8 +42,10 @@ class FileUploader
 
         try {
             $file->move($targetDirectory, $fileName);
-            $this->optimizeImage($targetPath, $mimeType, $outputFormat);
-            $this->createThumbnail($targetPath, $outputFormat);
+            $maxDimension = $this->getMaxDimensionForScope($normalizedScope);
+            $thumbMaxDimension = $this->getThumbMaxDimensionForScope($normalizedScope);
+            $this->optimizeImage($targetPath, $mimeType, $outputFormat, $maxDimension);
+            $this->createThumbnail($targetPath, $outputFormat, $thumbMaxDimension);
         } catch (FileException $e) {
             throw new \RuntimeException('Failed to upload file: ' . $e->getMessage());
         }
@@ -144,16 +149,25 @@ class FileUploader
         return function_exists('imagewebp') ? 'webp' : 'jpg';
     }
 
-    private function optimizeImage(string $path, string $originalMimeType, string $outputFormat): void
-    {
-        $this->transformImage($path, $originalMimeType, $path, $outputFormat);
+    private function optimizeImage(
+        string $path,
+        string $originalMimeType,
+        string $outputFormat,
+        int $maxDimension = self::MAX_DIMENSION,
+    ): void {
+        $this->transformImage($path, $originalMimeType, $path, $outputFormat, $maxDimension);
     }
 
     /**
      * Load, optionally downscale, and encode to WebP or JPEG at $destinationPath.
      */
-    private function transformImage(string $sourcePath, string $originalMimeType, string $destinationPath, string $outputFormat): bool
-    {
+    private function transformImage(
+        string $sourcePath,
+        string $originalMimeType,
+        string $destinationPath,
+        string $outputFormat,
+        int $maxDimension = self::MAX_DIMENSION,
+    ): bool {
         $image = $this->loadImageResource($sourcePath, $originalMimeType);
         if ($image === false) {
             return false;
@@ -162,8 +176,8 @@ class FileUploader
         $width = imagesx($image);
         $height = imagesy($image);
 
-        if ($width > self::MAX_DIMENSION || $height > self::MAX_DIMENSION) {
-            $ratio = min(self::MAX_DIMENSION / $width, self::MAX_DIMENSION / $height);
+        if ($width > $maxDimension || $height > $maxDimension) {
+            $ratio = min($maxDimension / $width, $maxDimension / $height);
             $newWidth = (int) round($width * $ratio);
             $newHeight = (int) round($height * $ratio);
 
@@ -209,8 +223,11 @@ class FileUploader
         imagedestroy($image);
     }
 
-    private function createThumbnail(string $originalPath, string $originalFormat): void
-    {
+    private function createThumbnail(
+        string $originalPath,
+        string $originalFormat,
+        int $thumbMaxDimension = self::THUMB_MAX_DIMENSION,
+    ): void {
         $source = match ($originalFormat) {
             'webp' => @imagecreatefromwebp($originalPath),
             default => @imagecreatefromjpeg($originalPath),
@@ -227,7 +244,7 @@ class FileUploader
             return;
         }
 
-        $ratio = min(self::THUMB_MAX_DIMENSION / $width, self::THUMB_MAX_DIMENSION / $height, 1);
+        $ratio = min($thumbMaxDimension / $width, $thumbMaxDimension / $height, 1);
         $thumbWidth = max(1, (int) round($width * $ratio));
         $thumbHeight = max(1, (int) round($height * $ratio));
 
@@ -305,8 +322,19 @@ class FileUploader
 
         return match ($normalized) {
             self::SCOPE_ARTICLES => self::SCOPE_ARTICLES,
+            self::SCOPE_AVATARS => self::SCOPE_AVATARS,
             self::SCOPE_PROPERTIES => self::SCOPE_PROPERTIES,
             default => throw new \InvalidArgumentException('Недопустимая область загрузки'),
         };
+    }
+
+    private function getMaxDimensionForScope(string $scope): int
+    {
+        return $scope === self::SCOPE_AVATARS ? self::AVATAR_MAX_DIMENSION : self::MAX_DIMENSION;
+    }
+
+    private function getThumbMaxDimensionForScope(string $scope): int
+    {
+        return $scope === self::SCOPE_AVATARS ? self::AVATAR_THUMB_MAX_DIMENSION : self::THUMB_MAX_DIMENSION;
     }
 }

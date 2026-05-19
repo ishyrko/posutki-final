@@ -7,16 +7,17 @@ import type { User } from '@/features/auth/types';
 import { useUpdateProfile, useChangePassword, useUpdateEmail } from '@/features/profile/hooks';
 import { updateProfileSchema, UpdateProfileData, changePasswordSchema, ChangePasswordData } from '@/features/profile/api';
 import { motion } from 'framer-motion';
-import { Camera, Phone, Mail, Lock, Bell, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Phone, Mail, Lock, Bell, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { PhoneVerifyDialog } from '@/features/phones/components/PhoneVerifyDialog';
-import { UserAvatar } from '@/components/UserAvatar';
+import { ProfileAvatarEditor } from '@/features/profile/components/ProfileAvatarEditor';
 import { SellerProfileSection } from '@/features/profile/components/SellerProfileSection';
 import { ProfileContactsSection } from '@/features/profile/components/ProfileContactsSection';
+import { formatUserDisplayName } from '@/features/profile/displayName';
 
 function ProfileEmailSection({
     user,
@@ -118,17 +119,13 @@ export default function ProfilePage() {
     const profileForm = useForm<UpdateProfileData>({
         resolver: zodResolver(updateProfileSchema),
         defaultValues: {
-            firstName: '',
-            lastName: '',
+            name: '',
             phone: '',
-            avatar: '',
         },
         values: user
             ? {
-                  firstName: user.firstName || '',
-                  lastName: user.lastName || '',
+                  name: formatUserDisplayName(user),
                   phone: user.phone || '',
-                  avatar: '',
               }
             : undefined,
     });
@@ -166,19 +163,10 @@ export default function ProfilePage() {
             {/* Avatar & personal info */}
             <div className="bg-card rounded-2xl p-6 shadow-card mb-6">
                 <div className="flex items-center gap-4 mb-6">
-                    <div className="relative">
-                        <UserAvatar
-                            user={user}
-                            className="h-20 w-20 border border-border text-2xl font-bold"
-                            fallbackClassName="text-2xl font-bold"
-                        />
-                        <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-primary">
-                            <Camera className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
+                    <ProfileAvatarEditor user={user} />
                     <div>
                         <h3 className="font-semibold text-foreground text-lg">
-                            {user?.firstName} {user?.lastName}
+                            {formatUserDisplayName(user) || '—'}
                         </h3>
                         <p className="text-sm text-muted-foreground">{user?.email}</p>
                     </div>
@@ -186,18 +174,11 @@ export default function ProfilePage() {
 
                 <form onSubmit={profileForm.handleSubmit(onProfileSubmit)}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
+                        <div className="sm:col-span-2">
                             <label className="text-sm text-muted-foreground mb-1.5 block">Имя</label>
-                            <Input {...profileForm.register('firstName')} />
-                            {profileForm.formState.errors.firstName && (
-                                <p className="text-destructive text-xs mt-1">{profileForm.formState.errors.firstName.message}</p>
-                            )}
-                        </div>
-                        <div>
-                            <label className="text-sm text-muted-foreground mb-1.5 block">Фамилия</label>
-                            <Input {...profileForm.register('lastName')} />
-                            {profileForm.formState.errors.lastName && (
-                                <p className="text-destructive text-xs mt-1">{profileForm.formState.errors.lastName.message}</p>
+                            <Input {...profileForm.register('name')} autoComplete="name" placeholder="Как к вам обращаться" />
+                            {profileForm.formState.errors.name && (
+                                <p className="text-destructive text-xs mt-1">{profileForm.formState.errors.name.message}</p>
                             )}
                         </div>
                         <div>

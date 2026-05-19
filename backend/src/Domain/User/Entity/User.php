@@ -167,7 +167,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getFullName(): string
     {
-        return $this->firstName . ' ' . $this->lastName;
+        $parts = array_values(array_filter(
+            [trim($this->firstName), trim($this->lastName)],
+            static fn(string $part): bool => $part !== '',
+        ));
+
+        return implode(' ', $parts);
     }
 
     public function getRoles(): array
@@ -263,7 +268,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             $this->isPhoneVerified = false;
         }
         $this->phone = $phone;
-        if ($avatar !== null) {
+        if ($avatar !== null && trim($avatar) !== '') {
             $this->avatar = $avatar;
         }
         $this->updatedAt = new \DateTimeImmutable();
