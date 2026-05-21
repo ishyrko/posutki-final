@@ -17,11 +17,11 @@ final class PriceTest extends TestCase
         self::assertSame('USD', $price->getCurrency());
     }
 
-    public function testGetFormattedUsesTwoDecimalPlaces(): void
+    public function testGetFormattedUsesWholeCurrencyUnits(): void
     {
         $price = Price::fromAmount(123456, 'BYN');
 
-        self::assertSame('1 234.56 BYN', $price->getFormatted());
+        self::assertSame('123 456 BYN', $price->getFormatted());
     }
 
     public function testCalculatePricePerMeterReturnsNewPrice(): void

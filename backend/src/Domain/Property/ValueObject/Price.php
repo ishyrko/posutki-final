@@ -7,7 +7,7 @@ namespace App\Domain\Property\ValueObject;
 final readonly class Price
 {
     private function __construct(
-        private int $amount,      // в копейках для точности
+        private int $amount,      // целые единицы валюты (BYN, USD, RUB)
         private string $currency = 'BYN'
     ) {
         if ($amount < 0) {
@@ -32,8 +32,7 @@ final readonly class Price
 
     public function getFormatted(): string
     {
-        $value = $this->amount / 100;
-        return number_format($value, 2, '.', ' ') . ' ' . $this->currency;
+        return number_format($this->amount, 0, '.', ' ') . ' ' . $this->currency;
     }
 
     public function calculatePricePerMeter(float $area): self
