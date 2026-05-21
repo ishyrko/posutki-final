@@ -11,9 +11,11 @@ import {
   buildPropertyUrlFromRegionName,
   buildSegmentsCanonicalPath,
   isPropertyId,
-  REGION_SLUGS,
-  PROPERTY_TYPE_SLUG_TO_VALUE,
 } from "@/features/catalog/slugs";
+import {
+  resolveMetroStationName,
+  validatePublicSegments,
+} from "@/features/catalog/validate-segments-server";
 import { formatAddress, Property } from "@/features/properties/types";
 import CatalogPage from "@/features/catalog/CatalogPage";
 import HomePage from "@/features/home/HomePage";
@@ -32,10 +34,6 @@ interface PageProps {
   params: Promise<{ segments?: string[] }>;
 }
 
-interface MetroStationsResponse {
-  data?: Array<{ slug: string; name: string }>;
-}
-
 /** Anonymous GET first (avoids 401 from invalid cookie JWT on SSR); then auth for unpublished owner views. */
 const getPropertyById = cache(async (id: number): Promise<Property | null> => {
   try {
@@ -47,69 +45,13 @@ const getPropertyById = cache(async (id: number): Promise<Property | null> => {
   }
 });
 
-async function resolveMetroStationName(slug?: string): Promise<string | undefined> {
-  if (!slug) return undefined;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!apiUrl) return undefined;
-
-  try {
-    const response = await fetch(`${apiUrl}/metro/stations?cityId=1`, {
-      next: { revalidate: 3600 },
-    });
-    if (!response.ok) return undefined;
-
-    const payload = (await response.json()) as MetroStationsResponse;
-    return payload.data?.find((station) => station.slug === slug)?.name;
-  } catch {
-    return undefined;
-  }
-}
-
-function validateCatalogSegments(segments: string[] = []): boolean {
-  if (segments.length === 0) {
-    return true;
-  }
-
-  let i = 0;
-
-  if (REGION_SLUGS.has(segments[i] ?? "")) i++;
-
-  if (segments[i] != null && segments[i]! in PROPERTY_TYPE_SLUG_TO_VALUE) {
-    i++;
-  }
-
-  if (i < segments.length) {
-    if (segments[i] === "vozle-metro") {
-      i++;
-    } else if (segments[i] === "metro") {
-      i++;
-      if (segments[i]) i++;
-      else return false;
-    } else {
-      i++;
-    }
-  }
-
-  return i === segments.length;
-}
-
-function validateSegments(segments: string[] = []): boolean {
-  if (segments.length === 0) return true;
-
-  const lastSegment = segments[segments.length - 1];
-  if (isPropertyId(lastSegment)) {
-    const catalogSegments = segments.slice(0, -1);
-    if (!validateCatalogSegments(catalogSegments)) return false;
-
-    const parsed = parseSegments(catalogSegments);
-    return parsed.propertyType !== undefined;
-  }
-
-  return validateCatalogSegments(segments);
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { segments } = await params;
+
+  if (!(await validatePublicSegments(segments))) {
+    notFound();
+  }
+
   const propertyId = isPropertyId(segments?.[segments.length - 1])
     ? segments?.[segments.length - 1]
     : undefined;
@@ -157,10 +99,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const parsed = parseSegments(segments);
 
   if (!isCatalogRoute(parsed)) {
-    if (parsed.regionSlug) {
-      notFound();
-    }
-
     return {
       title:
         "Квартиры и дома на сутки в Беларуси - посуточная аренда в Минске и других городах",
@@ -188,7 +126,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function SegmentsPage({ params }: PageProps) {
   const { segments } = await params;
 
-  if (!validateSegments(segments)) {
+  if (!(await validatePublicSegments(segments))) {
     notFound();
   }
 
@@ -220,10 +158,6 @@ export default async function SegmentsPage({ params }: PageProps) {
   const parsed = parseSegments(segments);
 
   if (!isCatalogRoute(parsed)) {
-    if (parsed.regionSlug) {
-      notFound();
-    }
-
     const featuredRegionSlug = HEADER_REGION_MINSK_SLUG;
     const [featuredInitial, articles] = await Promise.all([
       fetchFeaturedPropertiesForHome(featuredRegionSlug),

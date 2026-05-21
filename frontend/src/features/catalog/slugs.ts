@@ -115,6 +115,56 @@ export function isCatalogRoute(parsed: ParsedSegments): boolean {
   return parsed.propertyType !== undefined || parsed.nearMetro === true;
 }
 
+/** Структура URL каталога: регион → тип → город / метро (без проверки slug в API). */
+export function validateCatalogSegmentsStructure(segments: string[] = []): boolean {
+  if (segments.length === 0) {
+    return true;
+  }
+
+  let i = 0;
+
+  if (REGION_SLUGS.has(segments[i] ?? '')) i++;
+
+  if (segments[i] != null && segments[i]! in PROPERTY_TYPE_SLUG_TO_VALUE) {
+    i++;
+  }
+
+  if (i < segments.length) {
+    if (segments[i] === 'vozle-metro') {
+      i++;
+    } else if (segments[i] === 'metro') {
+      i++;
+      if (segments[i]) i++;
+      else return false;
+    } else {
+      i++;
+    }
+  }
+
+  return i === segments.length;
+}
+
+/**
+ * Допустимый путь catch-all: главная, каталог или карточка объявления.
+ * Любой другой путь (в т.ч. `/preload/`) — ложь.
+ */
+export function validatePublicSegmentsStructure(segments: string[] = []): boolean {
+  if (segments.length === 0) return true;
+
+  const lastSegment = segments[segments.length - 1];
+  if (isPropertyId(lastSegment)) {
+    const catalogSegments = segments.slice(0, -1);
+    if (!validateCatalogSegmentsStructure(catalogSegments)) return false;
+
+    const parsed = parseSegments(catalogSegments);
+    return parsed.propertyType !== undefined;
+  }
+
+  if (!validateCatalogSegmentsStructure(segments)) return false;
+
+  return isCatalogRoute(parseSegments(segments));
+}
+
 /** Фильтр метро — только квартиры в Минске (не дома, не другие области/города). */
 export function isMetroCatalogContext(parsed: ParsedSegments): boolean {
   if (parsed.propertyType === 'house') {
