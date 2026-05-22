@@ -16,6 +16,7 @@ use App\Domain\Property\Validation\RoomDealDetailsValidator;
 use App\Domain\Property\ValueObject\{Price, Address, Coordinates};
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -24,6 +25,7 @@ final class CreatePropertyHandler
 {
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
+        private readonly UserRepositoryInterface $userRepository,
         private readonly ExchangeRateService $exchangeRateService,
         private readonly MetroProximityCalculator $metroProximityCalculator,
         private readonly MessageBusInterface $notificationBus,
@@ -54,6 +56,11 @@ final class CreatePropertyHandler
         $this->assertAreaConstraints($command->type, $command->area, $command->landArea);
 
         $ownerId = Id::fromString($command->ownerId);
+        $user = $this->userRepository->findById($ownerId);
+        if ($user === null || !$user->isPhoneVerified()) {
+            throw new DomainException('Для подачи объявления необходимо подтвердить телефон в профиле');
+        }
+
         $price = Price::fromAmount($command->priceAmount, $command->priceCurrency);
         $address = Address::create($command->building, $command->block);
         $coordinates = Coordinates::create($command->latitude, $command->longitude);

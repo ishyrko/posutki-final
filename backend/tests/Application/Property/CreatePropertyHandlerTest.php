@@ -13,6 +13,9 @@ use App\Domain\Property\Repository\MetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Entity\User;
+use App\Domain\User\Repository\UserRepositoryInterface;
+use App\Domain\User\ValueObject\Email;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -54,6 +57,7 @@ final class CreatePropertyHandlerTest extends TestCase
 
         $handler = new CreatePropertyHandler(
             $propertyRepository,
+            $this->createUserRepository(),
             $exchangeRateService,
             $metroCalculator,
             $notificationBus,
@@ -73,6 +77,7 @@ final class CreatePropertyHandlerTest extends TestCase
 
         $handler = new CreatePropertyHandler(
             $propertyRepository,
+            $this->createUserRepository(),
             $exchangeRateService,
             $metroCalculator,
             $notificationBus,
@@ -82,6 +87,45 @@ final class CreatePropertyHandlerTest extends TestCase
         $this->expectExceptionMessage('Укажите максимальное число гостей для посуточной аренды');
 
         $handler($this->createValidCommand(dealType: 'daily', maxDailyGuests: null, dailySingleBeds: null, dailyDoubleBeds: null));
+    }
+
+    public function testCreateWithoutVerifiedPhoneThrowsDomainException(): void
+    {
+        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
+        $metroCalculator = $this->createMetroCalculator();
+        $notificationBus = $this->createStub(MessageBusInterface::class);
+        $exchangeRateService = $this->createExchangeRateService();
+
+        $handler = new CreatePropertyHandler(
+            $propertyRepository,
+            $this->createUserRepository(verified: false),
+            $exchangeRateService,
+            $metroCalculator,
+            $notificationBus,
+        );
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Для подачи объявления необходимо подтвердить телефон в профиле');
+
+        $handler($this->createValidCommand());
+    }
+
+    private function createUserRepository(bool $verified = true): UserRepositoryInterface
+    {
+        $userRepository = $this->createStub(UserRepositoryInterface::class);
+        $user = $verified
+            ? User::registerViaPhone('+375291112233')
+            : User::register(
+                Email::fromString('creator@example.com'),
+                'hashed-password',
+                'First',
+                'Last',
+            );
+        $userRepository
+            ->method('findById')
+            ->willReturn($user);
+
+        return $userRepository;
     }
 
     private function createValidCommand(

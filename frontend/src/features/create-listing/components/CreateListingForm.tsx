@@ -228,6 +228,7 @@ export function CreateListingForm() {
     const [isMounted, setIsMounted] = useState(false);
     const { data: user, isLoading: userLoading } = useUser();
     const hasDailySellerProfile = isMounted && Boolean(user?.individualProfile || user?.businessProfile);
+    const hasVerifiedPhone = isMounted && Boolean(user?.isPhoneVerified);
 
     useEffect(() => {
         setIsMounted(true);
@@ -360,6 +361,8 @@ export function CreateListingForm() {
             case 1:
                 if (isAuthenticated() && !userLoading && !hasDailySellerProfile) {
                     profileGateError = 'Заполните данные для посуточных объявлений в профиле';
+                } else if (isAuthenticated() && !userLoading && !hasVerifiedPhone) {
+                    profileGateError = 'Подтвердите телефон в профиле для подачи объявлений';
                 }
                 if (!form.propertyType) {
                     errs.propertyType = 'Выберите тип объекта';
@@ -519,7 +522,7 @@ export function CreateListingForm() {
         setErrors(errs);
         setDailyProfileGateError(profileGateError);
         return Object.keys(errs).length === 0 && !profileGateError;
-    }, [form, hasDailySellerProfile, userLoading]);
+    }, [form, hasDailySellerProfile, hasVerifiedPhone, userLoading]);
 
     const canProceed = useCallback((): boolean => {
         switch (step) {
@@ -529,6 +532,7 @@ export function CreateListingForm() {
                     && isAllowedDailyPropertyType(form.propertyType)
                     && !userLoading
                     && hasDailySellerProfile
+                    && hasVerifiedPhone
                 );
             case 2:
                 return !!(
@@ -586,7 +590,7 @@ export function CreateListingForm() {
                 );
             default: return false;
         }
-    }, [step, form, hasDailySellerProfile, userLoading]);
+    }, [step, form, hasDailySellerProfile, hasVerifiedPhone, userLoading]);
 
     const next = () => { if (validateStep(step)) setStep((s) => Math.min(s + 1, TOTAL_STEPS)); };
     const prev = () => setStep((s) => Math.max(s - 1, 1));
@@ -999,6 +1003,26 @@ export function CreateListingForm() {
 
                                         <p className="text-sm text-amber-700 dark:text-amber-400">
                                             {dailyProfileGateError ?? 'Заполните данные в профиле, чтобы продолжить.'}{' '}
+                                            <Link href="/kabinet/profil" className="font-medium underline underline-offset-2">
+                                                Открыть профиль
+                                            </Link>
+                                        </p>
+                                    </div>
+                                )}
+
+                                {isMounted && !userLoading && hasDailySellerProfile && !hasVerifiedPhone && (
+                                    <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+                                        <div className="space-y-1">
+                                            <h3 className="font-semibold text-foreground">
+                                                Подтверждение телефона
+                                            </h3>
+                                            <p className="text-sm text-muted-foreground max-w-xl">
+                                                Для подачи объявлений необходимо подтвердить хотя бы один телефон в профиле.
+                                            </p>
+                                        </div>
+
+                                        <p className="text-sm text-amber-700 dark:text-amber-400">
+                                            {dailyProfileGateError ?? 'Подтвердите телефон в профиле, чтобы продолжить.'}{' '}
                                             <Link href="/kabinet/profil" className="font-medium underline underline-offset-2">
                                                 Открыть профиль
                                             </Link>
