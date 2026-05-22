@@ -15,7 +15,6 @@ import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { PhoneVerifyDialog } from '@/features/phones/components/PhoneVerifyDialog';
 import { ProfileAvatarEditor } from '@/features/profile/components/ProfileAvatarEditor';
-import { SellerProfileSection } from '@/features/profile/components/SellerProfileSection';
 import { ProfileContactsSection } from '@/features/profile/components/ProfileContactsSection';
 import { formatUserDisplayName } from '@/features/profile/displayName';
 
@@ -234,8 +233,6 @@ export default function ProfilePage() {
             </div>
 
             <ProfileContactsSection user={user} />
-
-            <SellerProfileSection user={user} />
 
             {/* Password */}
             <div className="bg-card rounded-xl p-6 shadow-card mb-6">

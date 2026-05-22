@@ -228,7 +228,6 @@ export function CreateListingForm() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isMounted, setIsMounted] = useState(false);
     const { data: user, isLoading: userLoading } = useUser();
-    const hasDailySellerProfile = isMounted && Boolean(user?.individualProfile || user?.businessProfile);
     const hasVerifiedPhone = isMounted && Boolean(user?.isPhoneVerified);
 
     useEffect(() => {
@@ -238,7 +237,7 @@ export function CreateListingForm() {
     const [step, setStep] = useState(1);
     const [form, setForm] = useState<ListingFormData>(INITIAL_FORM);
     const [errors, setErrors] = useState<FormErrors>({});
-    const [dailyProfileGateError, setDailyProfileGateError] = useState<string | null>(null);
+    const [profileGateError, setProfileGateError] = useState<string | null>(null);
     const [dragOver, setDragOver] = useState(false);
     const [geocoding, setGeocoding] = useState(false);
 
@@ -360,9 +359,7 @@ export function CreateListingForm() {
 
         switch (s) {
             case 1:
-                if (isAuthenticated() && !userLoading && !hasDailySellerProfile) {
-                    profileGateError = 'Заполните данные для посуточных объявлений в профиле';
-                } else if (isAuthenticated() && !userLoading && !hasVerifiedPhone) {
+                if (isAuthenticated() && !userLoading && !hasVerifiedPhone) {
                     profileGateError = 'Подтвердите телефон в профиле для подачи объявлений';
                 }
                 if (!form.propertyType) {
@@ -521,9 +518,9 @@ export function CreateListingForm() {
         }
 
         setErrors(errs);
-        setDailyProfileGateError(profileGateError);
+        setProfileGateError(profileGateError);
         return Object.keys(errs).length === 0 && !profileGateError;
-    }, [form, hasDailySellerProfile, hasVerifiedPhone, userLoading]);
+    }, [form, hasVerifiedPhone, userLoading]);
 
     const canProceed = useCallback((): boolean => {
         switch (step) {
@@ -532,7 +529,6 @@ export function CreateListingForm() {
                     form.propertyType
                     && isAllowedDailyPropertyType(form.propertyType)
                     && !userLoading
-                    && hasDailySellerProfile
                     && hasVerifiedPhone
                 );
             case 2:
@@ -591,7 +587,7 @@ export function CreateListingForm() {
                 );
             default: return false;
         }
-    }, [step, form, hasDailySellerProfile, hasVerifiedPhone, userLoading]);
+    }, [step, form, hasVerifiedPhone, userLoading]);
 
     const next = () => { if (validateStep(step)) setStep((s) => Math.min(s + 1, TOTAL_STEPS)); };
     const prev = () => setStep((s) => Math.max(s - 1, 1));
@@ -994,27 +990,7 @@ export function CreateListingForm() {
                                     </p>
                                 </div>
 
-                                {isMounted && !userLoading && !hasDailySellerProfile && (
-                                    <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
-                                        <div className="space-y-1">
-                                            <h3 className="font-semibold text-foreground">
-                                                Данные для посуточных объявлений
-                                            </h3>
-                                            <p className="text-sm text-muted-foreground max-w-xl">
-                                                Для подачи посуточных объявлений заполните реквизиты в профиле (физлицо или организация), они не будут отображаться.
-                                            </p>
-                                        </div>
-
-                                        <p className="text-sm text-amber-700 dark:text-amber-400">
-                                            {dailyProfileGateError ?? 'Заполните данные в профиле, чтобы продолжить.'}{' '}
-                                            <Link href="/kabinet/profil" className="font-medium underline underline-offset-2">
-                                                Открыть профиль
-                                            </Link>
-                                        </p>
-                                    </div>
-                                )}
-
-                                {isMounted && !userLoading && hasDailySellerProfile && !hasVerifiedPhone && (
+                                {isMounted && !userLoading && !hasVerifiedPhone && (
                                     <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
                                         <div className="space-y-1">
                                             <h3 className="font-semibold text-foreground">
@@ -1026,7 +1002,7 @@ export function CreateListingForm() {
                                         </div>
 
                                         <p className="text-sm text-amber-700 dark:text-amber-400">
-                                            {dailyProfileGateError ?? 'Подтвердите телефон в профиле, чтобы продолжить.'}{' '}
+                                            {profileGateError ?? 'Подтвердите телефон в профиле, чтобы продолжить.'}{' '}
                                             <Link href="/kabinet/profil" className="font-medium underline underline-offset-2">
                                                 Открыть профиль
                                             </Link>

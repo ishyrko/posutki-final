@@ -6,10 +6,6 @@ import {
     changePassword,
     UpdateProfileData,
     ChangePasswordData,
-    updateIndividualProfile,
-    updateBusinessProfile,
-    IndividualProfileFormData,
-    BusinessProfileFormData,
 } from './api';
 import { updateEmail } from '@/features/auth/api';
 import { toast } from 'sonner';
@@ -73,35 +69,5 @@ export const useChangePassword = () => {
         onError: (error: unknown) => {
             toast.error(getErrorMessage(error, 'Не удалось изменить пароль'));
         }
-    });
-};
-
-export const useUpdateIndividualProfile = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: (data: IndividualProfileFormData) => updateIndividualProfile(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['me'] });
-            toast.success('Данные физлица для посуточных объявлений сохранены');
-        },
-        onError: (error: unknown) => {
-            toast.error(getErrorMessage(error, 'Не удалось сохранить данные физлица'));
-        },
-    });
-};
-
-export const useUpdateBusinessProfile = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: (data: BusinessProfileFormData) => updateBusinessProfile(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['me'] });
-            toast.success('Данные организации для посуточных объявлений сохранены');
-        },
-        onError: (error: unknown) => {
-            toast.error(getErrorMessage(error, 'Не удалось сохранить данные организации'));
-        },
     });
 };
