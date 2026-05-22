@@ -85,6 +85,7 @@ final class PropertyDTO implements \JsonSerializable
         public readonly ?array $additionalServices = null,
         public readonly ?string $instagramUrl = null,
         public readonly ?string $websiteUrl = null,
+        public readonly ?array $externalCalendarUrls = null,
         public readonly ?float $ratingAvg = null,
         public readonly int $reviewCount = 0,
         /** @var array{id:int,status:string}|null Отзыв текущего пользователя (если передан viewer id). */
@@ -182,6 +183,7 @@ final class PropertyDTO implements \JsonSerializable
             additionalServices: $property->getAdditionalServices(),
             instagramUrl: $property->getInstagramUrl(),
             websiteUrl: $property->getWebsiteUrl(),
+            externalCalendarUrls: $property->getExternalCalendarUrls(),
             ratingAvg: $ratingAvg,
             reviewCount: $reviewCount,
             viewerReview: $viewerReview,
@@ -275,6 +277,7 @@ final class PropertyDTO implements \JsonSerializable
             'additionalServices' => $this->additionalServices ?? [],
             'instagramUrl' => $this->instagramUrl,
             'websiteUrl' => $this->websiteUrl,
+            'externalCalendarUrls' => $this->externalCalendarUrls ?? [],
             'ratingAvg' => $this->ratingAvg,
             'reviewCount' => $this->reviewCount,
         ];

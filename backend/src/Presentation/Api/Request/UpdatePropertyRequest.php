@@ -167,4 +167,13 @@ class UpdatePropertyRequest
 
     #[Assert\Length(max: 500)]
     public ?string $websiteUrl = null;
+
+    #[Assert\Type('array')]
+    #[Assert\All([
+        new Assert\Type('string'),
+        new Assert\NotBlank(message: 'URL календаря не может быть пустым'),
+        new Assert\Url(message: 'Некорректный URL календаря'),
+        new Assert\Length(max: 2000),
+    ])]
+    public ?array $externalCalendarUrls = null;
 }

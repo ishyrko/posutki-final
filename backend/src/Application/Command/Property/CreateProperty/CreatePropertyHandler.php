@@ -111,6 +111,9 @@ final class CreatePropertyHandler
         if ($command->websiteUrl !== null) {
             $property->setWebsiteUrl($command->websiteUrl);
         }
+        if ($command->externalCalendarUrls !== null) {
+            $property->setExternalCalendarUrls($command->externalCalendarUrls);
+        }
 
         $property->setPriceByn(
             $this->exchangeRateService->calculatePriceByn($command->priceAmount, $command->priceCurrency)

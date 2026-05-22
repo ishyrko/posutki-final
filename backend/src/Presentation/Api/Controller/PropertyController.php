@@ -13,6 +13,7 @@ use App\Application\Query\Property\GetProperty\GetPropertyQuery;
 use App\Application\Query\Property\SearchProperties\SearchPropertiesQuery;
 use App\Application\Command\CommandBusInterface;
 use App\Application\Query\QueryBusInterface;
+use App\Application\Service\IcsCalendarService;
 use App\Domain\Favorite\Repository\FavoriteRepositoryInterface;
 use App\Domain\Property\Repository\PropertyDailyStatRepositoryInterface;
 use App\Domain\Property\Enum\PropertyType;
@@ -39,6 +40,7 @@ class PropertyController extends AbstractController
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyDailyStatRepositoryInterface $propertyDailyStatRepository,
         private readonly FavoriteRepositoryInterface $favoriteRepository,
+        private readonly IcsCalendarService $icsCalendarService,
     ) {
     }
 
@@ -167,6 +169,7 @@ class PropertyController extends AbstractController
             additionalServices: $request->additionalServices,
             instagramUrl: $request->instagramUrl,
             websiteUrl: $request->websiteUrl,
+            externalCalendarUrls: $request->externalCalendarUrls,
         );
 
         $propertyId = $this->commandBus->dispatch($command);
@@ -254,6 +257,7 @@ class PropertyController extends AbstractController
             additionalServices: $request->additionalServices,
             instagramUrl: $request->instagramUrl,
             websiteUrl: $request->websiteUrl,
+            externalCalendarUrls: $request->externalCalendarUrls,
         );
 
         $this->commandBus->dispatch($command);
@@ -303,6 +307,35 @@ class PropertyController extends AbstractController
 
         return $this->json(
             ApiResponse::success(['boostedAt' => $boostedAt])
+        );
+    }
+
+    #[Route('/{id}/calendar', name: 'calendar', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function calendar(string $id): JsonResponse
+    {
+        $property = $this->propertyRepository->findById(Id::fromString($id));
+        if ($property === null) {
+            throw new DomainException('Объявление не найдено');
+        }
+
+        $urls = $property->getExternalCalendarUrls() ?? [];
+        if ($urls === []) {
+            return $this->json(
+                ApiResponse::success([
+                    'blockedRanges' => [],
+                    'lastUpdatedAt' => null,
+                ]),
+                Response::HTTP_OK,
+                ['Cache-Control' => 'public, max-age=1800'],
+            );
+        }
+
+        $calendarData = $this->icsCalendarService->fetchCalendarData($urls);
+
+        return $this->json(
+            ApiResponse::success($calendarData),
+            Response::HTTP_OK,
+            ['Cache-Control' => 'public, max-age=1800'],
         );
     }
 

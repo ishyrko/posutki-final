@@ -61,6 +61,7 @@ export interface CreatePropertyPayload {
     additionalServices?: Array<{ name: string; price: number }>;
     instagramUrl?: string;
     websiteUrl?: string;
+    externalCalendarUrls?: string[];
 }
 
 export interface CreatePropertyResponse {
@@ -127,4 +128,5 @@ export interface ListingFormData {
     additionalServices: AdditionalService[];
     instagramUrl: string;
     websiteUrl: string;
+    externalCalendarUrls: string[];
 }

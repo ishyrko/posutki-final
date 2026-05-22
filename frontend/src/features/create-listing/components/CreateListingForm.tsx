@@ -220,6 +220,7 @@ const INITIAL_FORM: ListingFormData = {
     additionalServices: [{ name: '', price: '' }],
     instagramUrl: '',
     websiteUrl: '',
+    externalCalendarUrls: [''],
 };
 
 export function CreateListingForm() {
@@ -811,6 +812,9 @@ export function CreateListingForm() {
             websiteUrl: form.propertyType === 'house' && form.websiteUrl.trim()
                 ? form.websiteUrl.trim()
                 : undefined,
+            externalCalendarUrls: form.dealType === 'daily'
+                ? form.externalCalendarUrls.map((url) => url.trim()).filter(Boolean)
+                : undefined,
         };
 
         try {
@@ -997,7 +1001,7 @@ export function CreateListingForm() {
                                                 Данные для посуточных объявлений
                                             </h3>
                                             <p className="text-sm text-muted-foreground max-w-xl">
-                                                Для подачи посуточных объявлений заполните реквизиты в профиле (физлицо или организация).
+                                                Для подачи посуточных объявлений заполните реквизиты в профиле (физлицо или организация), они не будут отображаться.
                                             </p>
                                         </div>
 
@@ -1833,6 +1837,54 @@ export function CreateListingForm() {
                                         ))}
                                     </div>
                                 </div>
+
+                                {form.dealType === 'daily' && (
+                                    <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
+                                        <div>
+                                            <h2 className="font-display text-lg font-semibold text-foreground">Синхронизация календарей</h2>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                Добавьте ссылки на ICS-календари с Куфара, Суточно и других площадок
+                                            </p>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {form.externalCalendarUrls.map((url, idx) => (
+                                                <div key={idx} className="flex items-center gap-2">
+                                                    <LinkIcon className="w-4 h-4 shrink-0 text-muted-foreground" />
+                                                    <input
+                                                        value={url}
+                                                        onChange={(e) => {
+                                                            const next = form.externalCalendarUrls.map((item, i) =>
+                                                                i === idx ? e.target.value : item
+                                                            );
+                                                            update('externalCalendarUrls', next);
+                                                        }}
+                                                        placeholder="https://kufar.by/ical/..."
+                                                        className={cn(inputClass, 'flex-1')}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const next = form.externalCalendarUrls.filter((_, i) => i !== idx);
+                                                            update('externalCalendarUrls', next.length > 0 ? next : ['']);
+                                                        }}
+                                                        className="shrink-0 cursor-pointer text-destructive transition-colors hover:text-destructive/80"
+                                                        aria-label="Удалить календарь"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => update('externalCalendarUrls', [...form.externalCalendarUrls, ''])}
+                                            className="flex cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            Добавить календарь
+                                        </button>
+                                    </div>
+                                )}
 
                                 <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                     <h2 className="font-display text-lg font-semibold text-foreground">Стоимость</h2>

@@ -88,6 +88,7 @@ export interface Property {
         additionalServices?: Array<{ name: string; price: number }>;
         instagramUrl?: string;
         websiteUrl?: string;
+        externalCalendarUrls?: string[];
     } | null;
     price: Price;
     /** BYN equivalent from backend (authoritative for display when set). */
@@ -96,6 +97,7 @@ export interface Property {
     additionalServices?: Array<{ name: string; price: number }>;
     instagramUrl?: string | null;
     websiteUrl?: string | null;
+    externalCalendarUrls?: string[];
     address: Address;
     coordinates?: Coordinates;
     specifications: {

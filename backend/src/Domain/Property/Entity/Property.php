@@ -174,6 +174,10 @@ class Property
     #[ORM\Column(type: 'string', length: 500, nullable: true, name: 'website_url')]
     private ?string $websiteUrl = null;
 
+    /** @var list<string>|null */
+    #[ORM\Column(type: 'json', nullable: true, name: 'external_calendar_urls')]
+    private ?array $externalCalendarUrls = null;
+
     /**
      * @var Collection<int, PropertyRevision>
      */
@@ -411,6 +415,28 @@ class Property
     public function setWebsiteUrl(?string $websiteUrl): void
     {
         $this->websiteUrl = $websiteUrl !== '' ? $websiteUrl : null;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    /** @return list<string>|null */
+    public function getExternalCalendarUrls(): ?array
+    {
+        return $this->externalCalendarUrls;
+    }
+
+    /** @param list<string>|null $externalCalendarUrls */
+    public function setExternalCalendarUrls(?array $externalCalendarUrls): void
+    {
+        if ($externalCalendarUrls === null) {
+            $this->externalCalendarUrls = null;
+        } else {
+            $filtered = array_values(array_filter(
+                array_map(static fn(mixed $url): string => is_string($url) ? trim($url) : '', $externalCalendarUrls),
+                static fn(string $url): bool => $url !== '',
+            ));
+            $this->externalCalendarUrls = $filtered === [] ? null : $filtered;
+        }
+
         $this->updatedAt = new \DateTimeImmutable();
     }
 
@@ -980,6 +1006,7 @@ class Property
         ?array $additionalServices = null,
         ?string $instagramUrl = null,
         ?string $websiteUrl = null,
+        ?array $externalCalendarUrls = null,
     ): void {
         if ($type !== null) $this->type = $type;
         if ($dealType !== null) $this->dealType = $dealType;
@@ -1040,6 +1067,9 @@ class Property
         }
         if ($websiteUrl !== null) {
             $this->websiteUrl = $websiteUrl !== '' ? $websiteUrl : null;
+        }
+        if ($externalCalendarUrls !== null) {
+            $this->setExternalCalendarUrls($externalCalendarUrls);
         }
 
         $this->roomsInDeal = null;

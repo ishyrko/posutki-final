@@ -48,7 +48,7 @@ import {
   showTotalFloors,
   showYearBuilt,
 } from "@/features/create-listing/property-field-rules";
-import { formatPropertyDealHeading } from "@/features/properties/property-deal-heading";
+import { PropertyAvailabilityCalendar } from "@/features/properties/components/PropertyAvailabilityCalendar";
 import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { ReviewList } from "@/features/reviews/components/ReviewList";
 import { ReviewSummary } from "@/features/reviews/components/ReviewSummary";
@@ -762,6 +762,17 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                       </div>
                     )}
                   </div>
+                </motion.div>
+              )}
+
+              {(property.externalCalendarUrls?.length ?? 0) > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.21, duration: 0.5 }}
+                >
+                  <h2 className="text-xl font-bold text-foreground mb-3">Календарь занятости</h2>
+                  <PropertyAvailabilityCalendar propertyId={property.id} />
                 </motion.div>
               )}
 

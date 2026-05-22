@@ -163,6 +163,7 @@ interface EditFormData {
     additionalServices: AdditionalService[];
     instagramUrl: string;
     websiteUrl: string;
+    externalCalendarUrls: string[];
 }
 
 type EditTitleDescriptionErrors = Partial<Pick<EditFormData, 'title' | 'description'>>;
@@ -271,6 +272,11 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
         )?.map((s) => ({ name: s.name, price: String(s.price) })) ?? [{ name: '', price: '' }],
         instagramUrl: (revisionData?.instagramUrl ?? property.instagramUrl) as string ?? '',
         websiteUrl: (revisionData?.websiteUrl ?? property.websiteUrl) as string ?? '',
+        externalCalendarUrls: (
+            (revisionData?.externalCalendarUrls ?? property.externalCalendarUrls) as string[] | undefined
+        )?.length
+            ? [...((revisionData?.externalCalendarUrls ?? property.externalCalendarUrls) as string[])]
+            : [''],
     };
 }
 
@@ -747,6 +753,9 @@ export default function EditPropertyPage() {
                     : undefined,
                 websiteUrl: form.type === 'house' && form.websiteUrl.trim()
                     ? form.websiteUrl.trim()
+                    : undefined,
+                externalCalendarUrls: form.dealType === 'daily'
+                    ? form.externalCalendarUrls.map((url) => url.trim()).filter(Boolean)
                     : undefined,
             };
             await updateProperty({ id: propertyId, data: payload });
@@ -1574,6 +1583,54 @@ export default function EditPropertyPage() {
                                 />
                             </div>
                         </div>
+                    </section>
+                )}
+
+                {form.dealType === 'daily' && (
+                    <section className="bg-card rounded-2xl shadow-card border border-border p-6 space-y-5">
+                        <div>
+                            <h2 className="text-lg font-semibold text-foreground mb-1">Синхронизация календарей</h2>
+                            <p className="text-xs text-muted-foreground">
+                                Добавьте ссылки на ICS-календари с Куфара, Суточно и других площадок
+                            </p>
+                        </div>
+                        <div className="space-y-3">
+                            {form.externalCalendarUrls.map((url, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                    <LinkIcon className="w-4 h-4 shrink-0 text-muted-foreground" />
+                                    <Input
+                                        value={url}
+                                        onChange={(e) => {
+                                            const next = form.externalCalendarUrls.map((item, i) =>
+                                                i === idx ? e.target.value : item
+                                            );
+                                            update('externalCalendarUrls', next);
+                                        }}
+                                        placeholder="https://kufar.by/ical/..."
+                                        className="flex-1"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const next = form.externalCalendarUrls.filter((_, i) => i !== idx);
+                                            update('externalCalendarUrls', next.length > 0 ? next : ['']);
+                                        }}
+                                        className="text-destructive hover:text-destructive/80 transition-colors shrink-0"
+                                        aria-label="Удалить календарь"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={() => update('externalCalendarUrls', [...form.externalCalendarUrls, ''])}
+                            className="gap-2"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Добавить календарь
+                        </Button>
                     </section>
                 )}
 

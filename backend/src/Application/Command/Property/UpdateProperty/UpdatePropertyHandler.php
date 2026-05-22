@@ -149,6 +149,7 @@ readonly class UpdatePropertyHandler
             additionalServices: $command->additionalServices,
             instagramUrl: $command->instagramUrl,
             websiteUrl: $command->websiteUrl,
+            externalCalendarUrls: $command->externalCalendarUrls,
         );
 
         if ($price !== null) {
@@ -210,6 +211,7 @@ readonly class UpdatePropertyHandler
             'additionalServices' => $command->additionalServices,
             'instagramUrl' => $command->instagramUrl,
             'websiteUrl' => $command->websiteUrl,
+            'externalCalendarUrls' => $command->externalCalendarUrls,
         ], static fn(mixed $value): bool => $value !== null);
     }
 

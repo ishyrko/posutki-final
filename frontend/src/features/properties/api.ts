@@ -104,6 +104,7 @@ export interface UpdatePropertyPayload {
     additionalServices?: Array<{ name: string; price: number }>;
     instagramUrl?: string;
     websiteUrl?: string;
+    externalCalendarUrls?: string[];
 }
 
 export const updateProperty = async (id: number, data: UpdatePropertyPayload): Promise<void> => {
@@ -160,5 +161,20 @@ export const getPropertyStats = async (id: number, period: 7 | 30 | 90): Promise
 
 export const boostProperty = async (id: number): Promise<{ boostedAt: string }> => {
     const response = await api.post<{ data: { boostedAt: string } }>(`/properties/${id}/boost`);
+    return response.data.data;
+};
+
+export type BlockedDateRange = {
+    start: string;
+    end: string;
+};
+
+export type PropertyCalendarData = {
+    blockedRanges: BlockedDateRange[];
+    lastUpdatedAt: string | null;
+};
+
+export const getPropertyCalendar = async (id: number): Promise<PropertyCalendarData> => {
+    const response = await api.get<{ data: PropertyCalendarData }>(`/properties/${id}/calendar`);
     return response.data.data;
 };

@@ -48,6 +48,7 @@ readonly class UpdatePropertyCommand
         public ?array $additionalServices = null,
         public ?string $instagramUrl = null,
         public ?string $websiteUrl = null,
+        public ?array $externalCalendarUrls = null,
     ) {
     }
 }
