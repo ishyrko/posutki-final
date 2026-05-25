@@ -22,6 +22,7 @@ import { trackPhoneView } from "@/features/properties/api";
 import { useSendMessage } from "@/features/messages/hooks";
 import { useUser } from "@/features/auth/hooks";
 import { formatAddress, Property } from "@/features/properties/types";
+import { formatPropertyDealHeading } from "@/features/properties/property-deal-heading";
 import type { ExchangeRates } from "@/features/properties/api";
 import { PriceDisplay } from "@/components/BynCurrency";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";
