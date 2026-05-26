@@ -16,7 +16,6 @@ export const REGION_SLUGS: ReadonlySet<string> = new Set([
 /** Города с префиксом в URL (только квартиры): /pinsk/kvartiry/, /pinsk/kvartiry/62/ */
 export const CITY_PREFIX_SLUGS: ReadonlySet<string> = new Set([
   'orsha',
-  'svetlogorsk',
   'smorgon',
   'molodechno',
   'baranovichi',
@@ -51,7 +50,6 @@ const CATALOG_APARTMENT_LOCATION: Record<string, string> = {
   mogilev: 'в Могилёве',
   'minsk-region': 'в Минской области',
   orsha: 'в Орше',
-  svetlogorsk: 'в Светлогорске',
   smorgon: 'в Сморгони',
   molodechno: 'в Молодечно',
   baranovichi: 'в Барановичах',

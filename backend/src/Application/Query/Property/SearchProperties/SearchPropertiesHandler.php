@@ -27,7 +27,6 @@ final class SearchPropertiesHandler
     /** @var list<string> */
     private const APARTMENT_CITY_PREFIX_SLUGS = [
         'orsha',
-        'svetlogorsk',
         'smorgon',
         'molodechno',
         'baranovichi',
