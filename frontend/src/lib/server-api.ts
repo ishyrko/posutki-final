@@ -2,6 +2,17 @@ type ApiResponse<T> = {
   data: T;
 };
 
+export type ApiPagination = {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+};
+
+type PaginatedApiResponse<T> = ApiResponse<T> & {
+  pagination?: ApiPagination;
+};
+
 import { cookies } from "next/headers";
 import { AUTH_TOKEN_KEY } from "@/lib/auth-constants";
 
@@ -54,6 +65,33 @@ export async function fetchPublicApi<T>(
   options: FetchApiOptions = {},
 ): Promise<T> {
   return fetchFromApi<T>(path, options, undefined);
+}
+
+/** Public GET with pagination metadata (e.g. property list totals). */
+export async function fetchPublicApiPaginated<T>(
+  path: string,
+  options: FetchApiOptions = {},
+): Promise<{ data: T; pagination: ApiPagination }> {
+  const baseUrl = resolveApiBaseUrl();
+
+  const response = await fetch(`${baseUrl}${path}`, {
+    cache: options.cache ?? "no-store",
+    next: options.next,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${path}: ${response.status}`);
+  }
+
+  const payload = (await response.json()) as PaginatedApiResponse<T>;
+  const pagination = payload.pagination ?? {
+    total: Array.isArray(payload.data) ? payload.data.length : 0,
+    page: 1,
+    limit: Array.isArray(payload.data) ? payload.data.length : 0,
+    pages: 1,
+  };
+
+  return { data: payload.data, pagination };
 }
 
 /**

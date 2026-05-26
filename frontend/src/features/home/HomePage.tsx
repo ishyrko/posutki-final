@@ -11,14 +11,15 @@ import type { PropertyListResponse } from "@/features/properties/types";
 interface HomePageProps {
     featuredInitial?: PropertyListResponse;
     articles?: Article[];
+    cityApartmentCounts?: Record<string, number>;
 }
 
-export default function HomePage({ featuredInitial, articles }: HomePageProps) {
+export default function HomePage({ featuredInitial, articles, cityApartmentCounts }: HomePageProps) {
     return (
         <div className="min-h-screen">
             <main>
                 <HeroSection />
-                <CitySection />
+                <CitySection apartmentCountsBySlug={cityApartmentCounts} />
                 <FeaturedProperties featuredInitial={featuredInitial} />
                 {articles && articles.length > 0 ? <ArticlesSection articles={articles} /> : null}
                 <FeaturesSection />

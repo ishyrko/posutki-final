@@ -41,6 +41,12 @@ const cities = [
     href: buildCatalogUrl({ region: "grodno", propertyType: "apartment" }),
   },
   {
+    name: "Гомель",
+    slug: "gomel",
+    icon: Factory,
+    href: buildCatalogUrl({ region: "gomel", propertyType: "apartment" }),
+  },
+  {
     name: "Могилёв",
     slug: "mogilev",
     icon: TreePine,
@@ -96,7 +102,23 @@ const cities = [
   },
 ];
 
-const CitySection = () => {
+function formatApartmentCount(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) {
+    return `${count} квартира`;
+  }
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+    return `${count} квартиры`;
+  }
+  return `${count} квартир`;
+}
+
+interface CitySectionProps {
+  apartmentCountsBySlug?: Record<string, number>;
+}
+
+const CitySection = ({ apartmentCountsBySlug }: CitySectionProps) => {
   return (
     <section className="bg-surface pt-12 pb-10 md:pt-14 md:pb-6 lg:pt-16 lg:pb-8">
       <div className="container mx-auto px-4">
@@ -107,7 +129,7 @@ const CitySection = () => {
           Посуточная аренда по всей Беларуси
         </p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {cities.map((city) => {
             const Icon = city.icon;
             return (
@@ -119,7 +141,14 @@ const CitySection = () => {
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-150">
                   <Icon className="h-6 w-6 text-primary" />
                 </div>
-                <p className="font-display font-semibold text-foreground text-center">{city.name}</p>
+                <div className="text-center">
+                  <p className="font-display font-semibold text-foreground">{city.name}</p>
+                  {apartmentCountsBySlug?.[city.slug] != null ? (
+                    <p className="text-sm text-muted-foreground">
+                      {formatApartmentCount(apartmentCountsBySlug[city.slug])}
+                    </p>
+                  ) : null}
+                </div>
               </Link>
             );
           })}

@@ -21,6 +21,7 @@ import CatalogPage from "@/features/catalog/CatalogPage";
 import HomePage from "@/features/home/HomePage";
 import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { fetchFeaturedPropertiesForHome } from "@/lib/featured-properties-server";
+import { fetchCityApartmentCountsForHome } from "@/lib/city-apartment-counts-server";
 import { fetchRecentArticlesForHome } from "@/lib/articles-server";
 import { HEADER_REGION_MINSK_SLUG } from "@/lib/region-header";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";
@@ -159,13 +160,18 @@ export default async function SegmentsPage({ params }: PageProps) {
 
   if (!isCatalogRoute(parsed)) {
     const featuredRegionSlug = HEADER_REGION_MINSK_SLUG;
-    const [featuredInitial, articles] = await Promise.all([
+    const [featuredInitial, articles, cityApartmentCounts] = await Promise.all([
       fetchFeaturedPropertiesForHome(featuredRegionSlug),
       fetchRecentArticlesForHome(),
+      fetchCityApartmentCountsForHome(),
     ]);
 
     return (
-      <HomePage featuredInitial={featuredInitial ?? undefined} articles={articles} />
+      <HomePage
+        featuredInitial={featuredInitial ?? undefined}
+        articles={articles}
+        cityApartmentCounts={cityApartmentCounts}
+      />
     );
   }
 
