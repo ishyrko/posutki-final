@@ -93,6 +93,8 @@ final class SearchPropertiesHandler
         $filters['sortBy'] = $query->sortBy;
         $filters['sortOrder'] = strtoupper($query->sortOrder) === 'ASC' ? 'ASC' : 'DESC';
 
+        $total = $this->propertyRepository->count($filters);
+
         $properties = $this->propertyRepository->findPublished(
             $filters,
             $query->page,
@@ -171,7 +173,7 @@ final class SearchPropertiesHandler
         )));
         $ownerContacts = $this->ownerPublicContactResolver->resolveForOwnerIds($ownerIds);
 
-        return array_map(
+        $items = array_map(
             function ($property) use ($cities, $streets, $nearbyMetroByPropertyId, $ownerContacts) {
                 $ownerId = $property->getOwnerId()->getValue();
                 $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
@@ -188,6 +190,13 @@ final class SearchPropertiesHandler
             },
             $properties
         );
+
+        return [
+            'items' => $items,
+            'total' => $total,
+            'page' => $query->page,
+            'limit' => $query->limit,
+        ];
     }
 
     private function shouldApplyMetroFilters(SearchPropertiesQuery $query): bool

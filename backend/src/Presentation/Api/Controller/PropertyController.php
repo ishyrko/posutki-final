@@ -88,9 +88,14 @@ class PropertyController extends AbstractController
             limit: $request->query->getInt('limit', 20),
         );
 
-        $properties = $this->queryBus->ask($query);
+        $result = $this->queryBus->ask($query);
 
-        return $this->json(ApiResponse::success($properties));
+        return $this->json(ApiResponse::paginated(
+            $result['items'],
+            $result['total'],
+            $result['page'],
+            $result['limit'],
+        ));
     }
 
     #[Route('/my', name: 'my', methods: ['GET'])]

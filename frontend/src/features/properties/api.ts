@@ -42,11 +42,19 @@ export const getProperties = async (filters: PropertyFilters = {}): Promise<Prop
         if (filters.sortBy) params.append('sortBy', filters.sortBy);
         if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-        const response = await api.get<{ data: Property[] }>(`/properties?${params.toString()}`);
+        const response = await api.get<{
+            data: Property[];
+            pagination?: { total: number; page: number; limit: number; pages: number };
+        }>(`/properties?${params.toString()}`);
         const properties = response.data.data;
+        const pagination = response.data.pagination;
         return {
             data: properties,
-            meta: { total: properties.length, page: filters.page || 1, limit: filters.limit || 20 },
+            meta: {
+                total: pagination?.total ?? properties.length,
+                page: pagination?.page ?? (filters.page || 1),
+                limit: pagination?.limit ?? (filters.limit || 20),
+            },
         };
     } catch {
         return getMockPropertiesResponse(filters);

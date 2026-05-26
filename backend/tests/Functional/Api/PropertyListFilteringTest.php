@@ -288,6 +288,26 @@ final class PropertyListFilteringTest extends ApiTestCase
         self::assertContains($far->getId()->getValue(), $ids);
     }
 
+    public function testPaginationReturnsTotalCount(): void
+    {
+        $owner = $this->createUser('filter-pagination@example.com', 'Password123!');
+        $city = $this->createCity();
+        for ($i = 0; $i < 8; $i++) {
+            $this->createProperty($owner, $city, 'published', ['dealType' => 'daily']);
+        }
+
+        $this->client->request('GET', '/api/properties?dealType=daily&limit=3&page=1');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertTrue($payload['success']);
+        self::assertCount(3, $payload['data']);
+        self::assertSame(8, $payload['pagination']['total']);
+        self::assertSame(1, $payload['pagination']['page']);
+        self::assertSame(3, $payload['pagination']['limit']);
+        self::assertSame(3, $payload['pagination']['pages']);
+    }
+
     /**
      * @return list<int>
      */

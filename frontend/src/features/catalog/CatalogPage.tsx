@@ -274,7 +274,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const pageFromQuery = Number(searchParams.get("page") ?? "1");
   const validPageFromQuery = Number.isFinite(pageFromQuery) && pageFromQuery > 0 ? Math.floor(pageFromQuery) : 1;
   const [currentPage, setCurrentPage] = useState(validPageFromQuery);
-  const itemsPerPage = 6;
+  const itemsPerPage = 12;
   const metroFilterVisible = isMetroCatalogContext(parsed);
   const { data: metroStations = [] } = useMetroStations(1, metroFilterVisible);
   const roomsFilterVisible = showRoomsCatalogFilter(parsed.propertyType);
@@ -934,7 +934,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
               <>
                 {isLoading ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {[...Array(6)].map((_, i) => (
+                    {[...Array(itemsPerPage)].map((_, i) => (
                       <div key={i} className="h-[360px] bg-muted/50 animate-pulse rounded-xl" />
                     ))}
                   </div>
