@@ -132,6 +132,33 @@ function getContactPhones(property: Property): ContactPhoneEntry[] {
   return [];
 }
 
+/** Sharp centered photo over a blurred fill for portrait/landscape letterboxing. */
+function GalleryLetterboxPhoto({
+  src,
+  alt,
+  className = "",
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+}) {
+  return (
+    <div className={`relative overflow-hidden ${className}`.trim()}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover blur-md"
+      />
+      <div className="relative z-[1] flex h-full w-full items-center justify-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={alt} className="max-h-full max-w-full object-contain" />
+      </div>
+    </div>
+  );
+}
+
 export default function PropertyDetailClient({ id, initialProperty }: PropertyDetailClientProps) {
   const { data: property, isLoading, isError } = useProperty(id, { initialData: initialProperty });
   const { selectedCurrency } = useCurrency();
@@ -514,50 +541,28 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
               onTouchEnd={handleGalleryTouchEnd}
               whileHover={{ scale: 1.005 }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={images[0]} alt="Главное фото" className="hidden md:block w-full h-full object-cover min-h-[300px]" />
-              {/* Mobile: sharp center + blur only in side columns (portrait letterbox) */}
-              <div className="md:hidden absolute inset-0 flex min-h-0 min-w-0">
-                <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={images[currentImage]}
-                    alt=""
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 h-full w-full object-cover object-left blur-sm"
-                  />
-                </div>
-                <div className="relative z-[1] flex h-full shrink-0 items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={images[currentImage]}
-                    alt={`Фото ${currentImage + 1}`}
-                    className="max-h-full w-auto max-w-full object-contain"
-                  />
-                </div>
-                <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={images[currentImage]}
-                    alt=""
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 h-full w-full object-cover object-right blur-sm"
-                  />
-                </div>
-              </div>
+              <GalleryLetterboxPhoto
+                src={images[0]}
+                alt="Главное фото"
+                className="absolute inset-0 hidden md:block"
+              />
+              <GalleryLetterboxPhoto
+                src={images[currentImage]}
+                alt={`Фото ${currentImage + 1}`}
+                className="absolute inset-0 md:hidden"
+              />
               <div className="absolute inset-0 z-[2] bg-foreground/0 group-hover:bg-foreground/10 transition-colors" />
             </motion.div>
             {images.slice(1, 5).map((img, i) => (
               <div
                 key={i}
-                className="relative cursor-pointer group hidden md:block"
+                className="group relative hidden aspect-[4/3] min-h-0 cursor-pointer overflow-hidden md:block"
                 onClick={() => { setCurrentImage(i + 1); setLightboxOpen(true); }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img} alt={`Фото ${i + 2}`} className="w-full h-full object-cover aspect-[4/3]" />
-                <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors" />
+                <GalleryLetterboxPhoto src={img} alt={`Фото ${i + 2}`} className="absolute inset-0" />
+                <div className="absolute inset-0 z-[2] bg-foreground/0 transition-colors group-hover:bg-foreground/10" />
                 {i === 3 && images.length > 5 && (
-                  <div className="absolute inset-0 bg-foreground/50 flex items-center justify-center">
+                  <div className="absolute inset-0 z-[3] flex items-center justify-center bg-foreground/50">
                     <span className="text-primary-foreground font-medium text-sm">+{images.length - 4} фото</span>
                   </div>
                 )}

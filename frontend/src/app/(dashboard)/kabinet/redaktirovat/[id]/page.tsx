@@ -310,9 +310,10 @@ export default function EditPropertyPage() {
 
     useEffect(() => {
         if (!property || form) return;
-        setForm(mapPropertyToForm(property));
+        const initialForm = mapPropertyToForm(property);
+        setForm(initialForm);
         setCityQuery(property.address.cityName || '');
-        setStreetQuery(property.address.streetName || '');
+        setStreetQuery(initialForm.streetName);
     }, [property, form]);
 
     useEffect(() => {
