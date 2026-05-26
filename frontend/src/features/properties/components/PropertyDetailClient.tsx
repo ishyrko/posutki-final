@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Heart, Share2, MapPin, BedDouble, Bath, Maximize,
@@ -132,50 +132,80 @@ function getContactPhones(property: Property): ContactPhoneEntry[] {
   return [];
 }
 
-/** Portrait: sharp center + blurred fill. Landscape: cover (original grid behavior). */
-function PropertyGalleryImage({
+/** Side-column letterbox with blurred edges. Parent must be `relative` with explicit size. */
+function GalleryPortraitFrame({
   src,
   alt,
-  className = "",
+  className = "absolute inset-0 flex min-h-0 min-w-0",
 }: {
   src: string;
   alt: string;
   className?: string;
 }) {
-  const [portrait, setPortrait] = useState<boolean | null>(null);
-
-  const onLoad = (e: SyntheticEvent<HTMLImageElement>) => {
-    if (portrait !== null) return;
-    const { naturalWidth, naturalHeight } = e.currentTarget;
-    setPortrait(naturalHeight > naturalWidth);
-  };
-
-  if (portrait === true) {
-    return (
-      <div className={`relative overflow-hidden ${className}`.trim()}>
+  return (
+    <div className={className}>
+      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
           alt=""
           aria-hidden
-          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover blur-md"
+          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover object-left blur-md"
         />
-        <div className="relative z-[1] flex h-full w-full items-center justify-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt={alt} className="max-h-full max-w-full object-contain" />
-        </div>
       </div>
-    );
-  }
+      <div className="relative z-[1] flex h-full shrink-0 items-center justify-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={alt} className="max-h-full w-auto max-w-full object-contain" />
+      </div>
+      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover object-right blur-md"
+        />
+      </div>
+    </div>
+  );
+}
+
+/** True only when image is clearly wider than tall. */
+function useImageClearlyLandscape(src: string): boolean | null {
+  const [clearlyLandscape, setClearlyLandscape] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setClearlyLandscape(null);
+    const img = new Image();
+    const finish = () => {
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        setClearlyLandscape(img.naturalWidth > img.naturalHeight * 1.02);
+      }
+    };
+    img.addEventListener("load", finish);
+    img.addEventListener("error", () => setClearlyLandscape(false));
+    img.src = src;
+    if (img.complete) finish();
+    return () => {
+      img.removeEventListener("load", finish);
+    };
+  }, [src]);
+
+  return clearlyLandscape;
+}
+
+function GalleryGridThumb({ src, alt }: { src: string; alt: string }) {
+  const clearlyLandscape = useImageClearlyLandscape(src);
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt={alt}
-      onLoad={onLoad}
-      className={`h-full w-full object-cover ${className}`.trim()}
-    />
+    <div className="relative aspect-[4/3] w-full overflow-hidden">
+      {clearlyLandscape === true ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        <GalleryPortraitFrame src={src} alt={alt} />
+      )}
+    </div>
   );
 }
 
@@ -213,6 +243,12 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   const [messageText, setMessageText] = useState("");
   const [messageSent, setMessageSent] = useState(false);
   const sendMessageMutation = useSendMessage();
+
+  const mainImageSrc =
+    property?.images?.[0]?.url ??
+    initialProperty.images?.[0]?.url ??
+    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80";
+  const mainImageClearlyLandscape = useImageClearlyLandscape(mainImageSrc);
 
   useEffect(() => {
     if (!property) return;
@@ -547,9 +583,9 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
         </div>
 
         <section className="container mx-auto px-4 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 rounded-2xl overflow-hidden max-h-[500px]">
+          <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 rounded-2xl overflow-hidden max-h-[500px]">
             <motion.div
-              className="md:col-span-2 md:row-span-2 relative cursor-pointer group aspect-[4/3] w-full min-h-0 overflow-hidden md:aspect-auto md:h-full"
+              className="md:col-span-2 md:row-span-2 relative cursor-pointer group aspect-[4/3] w-full min-h-0 overflow-hidden md:min-h-0"
               onClick={() => {
                 if (swipeHandled.current) {
                   swipeHandled.current = false;
@@ -561,36 +597,25 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
               onTouchEnd={handleGalleryTouchEnd}
               whileHover={{ scale: 1.005 }}
             >
-              <div className="hidden md:block h-full min-h-[300px] w-full">
-                <PropertyGalleryImage src={images[0]} alt="Главное фото" className="h-full w-full" />
-              </div>
-              <div className="md:hidden absolute inset-0 flex min-h-0 min-w-0">
-                <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={images[currentImage]}
-                    alt=""
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 h-full w-full object-cover object-left blur-sm"
-                  />
-                </div>
-                <div className="relative z-[1] flex h-full shrink-0 items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={images[currentImage]}
-                    alt={`Фото ${currentImage + 1}`}
-                    className="max-h-full w-auto max-w-full object-contain"
-                  />
-                </div>
-                <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={images[currentImage]}
-                    alt=""
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 h-full w-full object-cover object-right blur-sm"
-                  />
-                </div>
+              {mainImageClearlyLandscape === true ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={images[0]}
+                  alt="Главное фото"
+                  className="hidden md:block absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <GalleryPortraitFrame
+                  src={images[0]}
+                  alt="Главное фото"
+                  className="absolute inset-0 hidden md:flex"
+                />
+              )}
+              <div className="md:hidden absolute inset-0 overflow-hidden">
+                <GalleryPortraitFrame
+                  src={images[currentImage]}
+                  alt={`Фото ${currentImage + 1}`}
+                />
               </div>
               <div className="absolute inset-0 z-[2] bg-foreground/0 group-hover:bg-foreground/10 transition-colors" />
             </motion.div>
@@ -600,7 +625,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                 className="relative cursor-pointer group hidden md:block overflow-hidden"
                 onClick={() => { setCurrentImage(i + 1); setLightboxOpen(true); }}
               >
-                <PropertyGalleryImage src={img} alt={`Фото ${i + 2}`} className="aspect-[4/3] w-full" />
+                <GalleryGridThumb src={img} alt={`Фото ${i + 2}`} />
                 <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors" />
                 {i === 3 && images.length > 5 && (
                   <div className="absolute inset-0 bg-foreground/50 flex items-center justify-center">
