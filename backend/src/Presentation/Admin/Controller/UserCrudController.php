@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Presentation\Admin\Controller;
 
 use App\Domain\User\Entity\User;
+use App\Domain\User\Service\PhoneNumberNormalizer;
+use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -38,6 +40,18 @@ class UserCrudController extends AbstractCrudController
             ->disable(Action::NEW, Action::DELETE);
     }
 
+    public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+        if ($entityInstance instanceof User) {
+            $phone = $entityInstance->getPhone();
+            if ($phone !== null) {
+                $entityInstance->setPhone(PhoneNumberNormalizer::normalize($phone));
+            }
+        }
+
+        parent::updateEntity($entityManager, $entityInstance);
+    }
+
     public function configureFields(string $pageName): iterable
     {
         yield TextField::new('id', 'ID')
@@ -48,8 +62,11 @@ class UserCrudController extends AbstractCrudController
             ->formatValue(fn ($value, $entity) => $entity->getEmail()?->getValue() ?? '—')
             ->hideOnForm();
 
-        yield TextField::new('firstName', 'Имя');
-        yield TextField::new('lastName', 'Фамилия');
+        yield TextField::new('firstName', 'Имя')
+            ->setFormTypeOption('required', false);
+
+        yield TextField::new('lastName', 'Фамилия')
+            ->setFormTypeOption('required', false);
         yield TextField::new('phone', 'Телефон');
 
         yield BooleanField::new('isVerified', 'Верифицирован')

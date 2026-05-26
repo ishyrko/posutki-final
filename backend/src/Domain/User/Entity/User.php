@@ -160,9 +160,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->firstName;
     }
 
+    public function setFirstName(string $firstName): void
+    {
+        $this->firstName = $firstName;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
     public function getLastName(): string
     {
         return $this->lastName;
+    }
+
+    public function setLastName(string $lastName): void
+    {
+        $this->lastName = $lastName;
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getFullName(): string
@@ -180,9 +192,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->roles;
     }
 
+    /**
+     * @param list<string> $roles
+     */
+    public function setRoles(array $roles): void
+    {
+        $this->roles = array_values(array_unique($roles));
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
     public function isVerified(): bool
     {
         return $this->isVerified;
+    }
+
+    public function setIsVerified(bool $isVerified): void
+    {
+        $this->isVerified = $isVerified;
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     // Domain Methods
@@ -308,6 +335,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->isPhoneVerified;
     }
 
+    public function setIsPhoneVerified(bool $isPhoneVerified): void
+    {
+        $this->isPhoneVerified = $isPhoneVerified;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
     public function markPhoneVerified(): void
     {
         $this->isPhoneVerified = true;
@@ -361,6 +394,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getPhone(): ?string
     {
         return $this->phone;
+    }
+
+    public function setPhone(?string $phone): void
+    {
+        $phone = $phone !== null && trim($phone) === '' ? null : $phone;
+        if ($this->phone !== $phone) {
+            $this->isPhoneVerified = false;
+        }
+        $this->phone = $phone;
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getAvatar(): ?string
