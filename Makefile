@@ -8,7 +8,7 @@ test-unit:
 
 test-functional:
 	docker compose exec php sh -lc "cd /var/www/backend && composer test:functional"
-.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo admin-user frontend-install frontend-dev frontend-build clean exchange-rates prod prod-up prod-down prod-restart prod-logs prod-migrate prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
+.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo admin-user frontend-install frontend-dev frontend-build clean exchange-rates prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
 
 PROD_ENV_FILE = .env.prod
 PROD_COMPOSE  = docker compose -f docker-compose.prod.yml --env-file $(PROD_ENV_FILE)
@@ -240,6 +240,10 @@ prod-migrate: ## Run DB migrations on production
 	@make prod-fix-perms
 	@make prod-fix-uploads
 	$(PROD_COMPOSE) exec php php bin/console doctrine:migrations:migrate --no-interaction
+
+prod-exchange-rates: ## Fetch NBRB rates and recalculate prices (production)
+	@echo "${GREEN}Updating exchange rates...${RESET}"
+	$(PROD_COMPOSE) exec php php bin/console app:update-exchange-rates --no-interaction
 
 prod-admin-user: ## Create or promote admin on production (EMAIL=... PASSWORD=... optional FIRST= LAST=)
 	@make prod-check-env

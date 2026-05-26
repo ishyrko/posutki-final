@@ -109,7 +109,10 @@ services:
       dockerfile: Dockerfile
     container_name: posutki_cron
     command: >
-      sh -c "echo '0 2 * * * cd /var/www/backend && php bin/console app:deactivate-expired-properties --no-interaction' | crontab - && crond -f -l 8"
+      sh -c "printf '%s\n' \
+        '0 2 * * * cd /var/www/backend && php bin/console app:deactivate-expired-properties --no-interaction' \
+        '0 7 * * * cd /var/www/backend && php bin/console app:update-exchange-rates --no-interaction' \
+        | crontab - && crond -f -l 8"
     volumes:
       - ./backend:/var/www/backend
     extra_hosts:
