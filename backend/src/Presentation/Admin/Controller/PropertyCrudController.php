@@ -8,12 +8,19 @@ use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\SellerType;
+use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
+use App\Domain\Property\Repository\PropertyRepositoryInterface;
+use App\Domain\Shared\ValueObject\Id;
+use App\Infrastructure\Service\MetroProximityCalculator;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
+use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
+use LogicException;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
@@ -24,9 +31,20 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class PropertyCrudController extends AbstractCrudController
 {
+    public function __construct(
+        protected readonly MetroProximityCalculator $metroProximityCalculator,
+        protected readonly PropertyRepositoryInterface $propertyRepository,
+        protected readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
+        protected readonly AdminUrlGenerator $adminUrlGenerator,
+    ) {
+    }
+
     public static function getEntityFqcn(): string
     {
         return Property::class;
@@ -43,8 +61,46 @@ class PropertyCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
+        $syncMetroProximity = Action::new('syncMetroProximity', 'Пересчитать метро')
+            ->linkToCrudAction('syncMetroProximity')
+            ->setIcon('fa fa-train-subway')
+            ->addCssClass('btn btn-secondary');
+
         return $actions
-            ->disable(Action::NEW);
+            ->disable(Action::NEW)
+            ->add(Crud::PAGE_INDEX, $syncMetroProximity)
+            ->add(Crud::PAGE_EDIT, $syncMetroProximity);
+    }
+
+    public function syncMetroProximity(AdminContext $context, Request $request): Response
+    {
+        $property = $this->resolvePropertyFromContext($context, $request);
+        if ($property === null) {
+            $this->addFlash('warning', 'Не удалось определить объявление');
+
+            return $this->redirectToPropertyIndex($this->resolveControllerFqcn($context));
+        }
+
+        if ($property->getLatitude() === 0.0 && $property->getLongitude() === 0.0) {
+            $this->addFlash('warning', 'У объявления не заданы координаты — пересчёт метро невозможен');
+
+            return $this->redirectToPropertyEdit($property, $this->resolveControllerFqcn($context));
+        }
+
+        $this->metroProximityCalculator->syncForProperty($property);
+        $this->propertyRepository->save($property);
+
+        $nearbyStations = $this->propertyMetroStationRepository->findByPropertyId($property->getId()->getValue());
+        if ($nearbyStations === []) {
+            $this->addFlash('success', 'Близость к метро пересчитана: станций в радиусе 1 км не найдено');
+        } else {
+            $this->addFlash('success', sprintf(
+                'Близость к метро пересчитана: найдено %d станций в радиусе 1 км',
+                count($nearbyStations),
+            ));
+        }
+
+        return $this->redirectToPropertyEdit($property, $this->resolveControllerFqcn($context));
     }
 
     public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
@@ -319,5 +375,72 @@ class PropertyCrudController extends AbstractCrudController
             ->add(ChoiceFilter::new('type')->setChoices(PropertyType::choices()))
             ->add(ChoiceFilter::new('dealType')->setChoices(DealType::choices()))
             ->add('createdAt');
+    }
+
+    private function redirectToPropertyIndex(?string $controllerClass = null): RedirectResponse
+    {
+        return $this->redirect(
+            $this->adminUrlGenerator
+                ->setController($controllerClass ?? self::class)
+                ->setAction(Action::INDEX)
+                ->generateUrl()
+        );
+    }
+
+    private function redirectToPropertyEdit(Property $property, ?string $controllerClass = null): RedirectResponse
+    {
+        return $this->redirect(
+            $this->adminUrlGenerator
+                ->setController($controllerClass ?? self::class)
+                ->setAction(Action::EDIT)
+                ->setEntityId($property->getId()->getValue())
+                ->generateUrl()
+        );
+    }
+
+    private function resolveControllerFqcn(AdminContext $context): string
+    {
+        return $context->getCrud()?->getControllerFqcn() ?? self::class;
+    }
+
+    private function resolvePropertyFromContext(AdminContext $context, Request $request): ?Property
+    {
+        try {
+            if ($context->getCrud() === null) {
+                return $this->resolvePropertyFromRequest($request);
+            }
+
+            $entityDto = $context->getEntity();
+            if ($entityDto === null) {
+                return $this->resolvePropertyFromRequest($request);
+            }
+
+            $entity = $entityDto->getInstance();
+            if ($entity instanceof Property) {
+                return $entity;
+            }
+
+            return $this->resolvePropertyFromRequest($request);
+        } catch (LogicException) {
+            return $this->resolvePropertyFromRequest($request);
+        }
+    }
+
+    private function resolvePropertyFromRequest(Request $request): ?Property
+    {
+        $entityId = $request->query->getString('entityId');
+        if ($entityId === '') {
+            $entityId = $request->query->getString('id');
+        }
+
+        if ($entityId === '') {
+            return null;
+        }
+
+        try {
+            return $this->propertyRepository->findById(Id::fromString($entityId));
+        } catch (\InvalidArgumentException) {
+            return null;
+        }
     }
 }

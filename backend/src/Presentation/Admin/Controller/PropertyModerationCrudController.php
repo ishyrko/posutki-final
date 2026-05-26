@@ -10,8 +10,10 @@ use App\Application\Command\Property\RejectRevision\RejectRevisionCommand;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Event\PropertyApprovedEvent;
 use App\Domain\Property\Event\PropertyRejectedEvent;
+use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
+use App\Infrastructure\Service\MetroProximityCalculator;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -33,11 +35,19 @@ use Symfony\Component\Messenger\MessageBusInterface;
 final class PropertyModerationCrudController extends PropertyCrudController
 {
     public function __construct(
+        MetroProximityCalculator $metroProximityCalculator,
+        PropertyRepositoryInterface $propertyRepository,
+        PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
+        AdminUrlGenerator $adminUrlGenerator,
         private readonly CommandBusInterface $commandBus,
-        private readonly AdminUrlGenerator $adminUrlGenerator,
-        private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly MessageBusInterface $notificationBus,
     ) {
+        parent::__construct(
+            $metroProximityCalculator,
+            $propertyRepository,
+            $propertyMetroStationRepository,
+            $adminUrlGenerator,
+        );
     }
 
     public function configureCrud(Crud $crud): Crud
