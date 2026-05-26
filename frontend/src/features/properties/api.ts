@@ -97,6 +97,7 @@ export interface UpdatePropertyPayload {
     block?: string;
     cityId?: number;
     streetId?: number | null;
+    streetName?: string;
     coordinates?: { latitude: number; longitude: number };
     images?: string[];
     amenities?: string[];

@@ -94,6 +94,7 @@ final class CreatePropertyHandler
             cityId: $command->cityId,
             coordinates: $coordinates,
             streetId: $command->streetId,
+            streetName: $command->streetName,
             images: $command->images,
             amenities: $command->amenities,
             contactPhone: null,

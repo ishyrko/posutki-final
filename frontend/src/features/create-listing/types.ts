@@ -54,6 +54,7 @@ export interface CreatePropertyPayload {
     block?: string;
     cityId: number;
     streetId?: number | null;
+    streetName?: string;
     coordinates: { latitude: number; longitude: number };
     images: string[];
     amenities: string[];

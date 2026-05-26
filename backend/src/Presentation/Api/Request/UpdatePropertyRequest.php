@@ -133,6 +133,9 @@ class UpdatePropertyRequest
     #[Assert\Positive(message: 'ID улицы должен быть положительным')]
     public ?int $streetId = null;
 
+    #[Assert\Length(max: 255)]
+    public ?string $streetName = null;
+
     #[Assert\Type('array')]
     public ?array $coordinates = null;
 

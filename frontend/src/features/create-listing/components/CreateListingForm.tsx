@@ -793,6 +793,7 @@ export function CreateListingForm() {
             block: form.block.trim() || undefined,
             cityId: form.cityId,
             streetId: form.streetId ?? undefined,
+            streetName: form.streetId ? undefined : form.streetName.trim() || undefined,
             coordinates: { latitude: lat, longitude: lng },
             images: form.photos.filter((p) => !p.uploading).map((p) => p.url),
             amenities: form.amenities,

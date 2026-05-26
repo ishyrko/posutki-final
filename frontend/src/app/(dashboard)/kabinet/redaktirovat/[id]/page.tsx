@@ -256,7 +256,7 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
         currency: 'BYN',
         cityId: revisionData?.cityId ?? property.address.cityId,
         cityName: property.address.cityName || '',
-        streetName: property.address.streetName || '',
+        streetName: revisionData?.streetName ?? property.address.streetName || '',
         streetId: revisionData?.streetId ?? property.address.streetId ?? null,
         building: revisionData?.building ?? property.address.building ?? '',
         block: revisionData?.block ?? property.address.block ?? '',
@@ -736,6 +736,7 @@ export default function EditPropertyPage() {
                 block: form.block.trim() || undefined,
                 cityId: form.cityId ?? undefined,
                 streetId: form.streetId,
+                streetName: form.streetId ? undefined : form.streetName.trim() || undefined,
                 coordinates:
                     form.latitude !== null && form.longitude !== null
                         ? { latitude: form.latitude, longitude: form.longitude }

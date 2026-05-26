@@ -39,6 +39,7 @@ final class CreatePropertyCommand
         public readonly ?string $checkInTime = null,
         public readonly ?string $checkOutTime = null,
         public readonly ?int $streetId = null,
+        public readonly ?string $streetName = null,
         public readonly ?string $block = null,
         public readonly array $images = [],
         public readonly array $amenities = [],

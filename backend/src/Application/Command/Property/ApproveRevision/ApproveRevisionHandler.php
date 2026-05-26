@@ -122,6 +122,7 @@ readonly class ApproveRevisionHandler
             address: $address,
             cityId: isset($data['cityId']) ? (int) $data['cityId'] : null,
             streetId: array_key_exists('streetId', $data) && $data['streetId'] !== null ? (int) $data['streetId'] : null,
+            streetName: array_key_exists('streetName', $data) ? ($data['streetName'] !== null ? (string) $data['streetName'] : null) : null,
             coordinates: $coordinates,
             images: isset($data['images']) && is_array($data['images']) ? $data['images'] : null,
             amenities: isset($data['amenities']) && is_array($data['amenities']) ? $data['amenities'] : null,

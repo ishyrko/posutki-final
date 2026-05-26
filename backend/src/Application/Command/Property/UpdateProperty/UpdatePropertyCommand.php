@@ -39,6 +39,7 @@ readonly class UpdatePropertyCommand
         public ?string $block = null,
         public ?int $cityId = null,
         public ?int $streetId = null,
+        public ?string $streetName = null,
         public ?float $latitude = null,
         public ?float $longitude = null,
         public ?array $images = null,

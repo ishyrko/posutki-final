@@ -13,6 +13,10 @@ use Symfony\Component\Validator\Constraints as Assert;
     expression: 'this.floor === null || this.totalFloors === null || this.floor <= this.totalFloors',
     message: 'Этаж не может быть больше чем этажей в доме'
 )]
+#[Assert\Expression(
+    expression: 'this.streetId !== null || (this.streetName !== null && this.streetName !== "")',
+    message: 'Укажите улицу'
+)]
 class CreatePropertyRequest
 {
     #[Assert\NotBlank(message: 'Укажите тип объекта')]
@@ -142,6 +146,9 @@ class CreatePropertyRequest
 
     #[Assert\Positive]
     public ?int $streetId = null;
+
+    #[Assert\Length(max: 255)]
+    public ?string $streetName = null;
 
     #[Assert\NotBlank(message: 'Укажите координаты')]
     #[Assert\Type('array')]

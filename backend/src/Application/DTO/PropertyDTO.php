@@ -155,7 +155,11 @@ final class PropertyDTO implements \JsonSerializable
             cityName: $city->getName(),
             citySlug: $city->getSlug(),
             streetId: $property->getStreetId(),
-            streetName: $street?->getName(),
+            streetName: $street !== null
+                ? ($street->getType() !== null && $street->getType() !== ''
+                    ? $street->getType() . ' ' . $street->getName()
+                    : $street->getName())
+                : $property->getStreetName(),
             districtName: $district?->getName(),
             regionName: $region?->getName(),
             latitude: $property->getCoordinates()->getLatitude(),

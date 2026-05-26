@@ -113,6 +113,9 @@ class Property
     #[ORM\Column(type: 'integer', nullable: true, name: 'street_id')]
     private ?int $streetId = null;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true, name: 'street_name')]
+    private ?string $streetName = null;
+
     #[ORM\Column(type: 'coordinates')]
     private Coordinates $coordinates;
 
@@ -213,6 +216,7 @@ class Property
         Coordinates $coordinates,
         ?float $landArea = null,
         ?int $streetId = null,
+        ?string $streetName = null,
         array $images = [],
         array $amenities = [],
         string $status = 'draft',
@@ -254,7 +258,7 @@ class Property
         $this->checkOutTime = $checkOutTime;
         $this->address = $address;
         $this->cityId = $cityId;
-        $this->streetId = $streetId;
+        $this->applyStreet($streetId, $streetName);
         $this->coordinates = $coordinates;
         $this->images = $images;
         $this->amenities = $amenities;
@@ -588,7 +592,8 @@ class Property
             'building' => 'Дом',
             'block' => 'Корпус',
             'cityId' => 'Город',
-            'streetId' => 'Улица',
+            'streetId' => 'Улица (справочник)',
+            'streetName' => 'Улица',
             'latitude' => 'Широта',
             'longitude' => 'Долгота',
             'images' => 'Фото',
@@ -656,6 +661,7 @@ class Property
             'block' => $this->address->getBlock(),
             'cityId' => $this->cityId,
             'streetId' => $this->streetId,
+            'streetName' => $this->streetName,
             'latitude' => $this->coordinates->getLatitude(),
             'longitude' => $this->coordinates->getLongitude(),
             'images' => $this->images,
@@ -846,6 +852,25 @@ class Property
         return $this->streetId;
     }
 
+    public function getStreetName(): ?string
+    {
+        return $this->streetName;
+    }
+
+    public function applyStreet(?int $streetId, ?string $streetName): void
+    {
+        if ($streetId !== null) {
+            $this->streetId = $streetId;
+            $this->streetName = null;
+
+            return;
+        }
+
+        $this->streetId = null;
+        $trimmed = trim($streetName ?? '');
+        $this->streetName = $trimmed !== '' ? $trimmed : null;
+    }
+
     public function getCoordinates(): Coordinates
     {
         return $this->coordinates;
@@ -996,6 +1021,7 @@ class Property
         ?Address $address = null,
         ?int $cityId = null,
         ?int $streetId = null,
+        ?string $streetName = null,
         ?Coordinates $coordinates = null,
         ?array $images = null,
         ?array $amenities = null,
@@ -1035,7 +1061,9 @@ class Property
         if ($checkOutTime !== null) $this->checkOutTime = $checkOutTime;
         if ($address !== null) $this->address = $address;
         if ($cityId !== null) $this->cityId = $cityId;
-        if ($streetId !== null) $this->streetId = $streetId;
+        if ($streetId !== null || $streetName !== null) {
+            $this->applyStreet($streetId, $streetName);
+        }
         if ($coordinates !== null) $this->coordinates = $coordinates;
         if ($contactPhone !== null) $this->contactPhone = $contactPhone;
         if ($contactName !== null) $this->contactName = $contactName;
