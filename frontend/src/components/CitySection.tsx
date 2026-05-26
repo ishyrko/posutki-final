@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
   TreePine,
@@ -13,6 +14,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { buildCatalogUrl } from "@/features/catalog/slugs";
+import {
+  fetchHomeCityApartmentCounts,
+  formatApartmentCount,
+} from "@/features/home/city-apartment-counts";
 
 const cities = [
   /** Минск — без префикса региона в URL, как в каталоге. */
@@ -102,23 +107,39 @@ const cities = [
   },
 ];
 
-function formatApartmentCount(count: number): string {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  if (mod10 === 1 && mod100 !== 11) {
-    return `${count} квартира`;
-  }
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
-    return `${count} квартиры`;
-  }
-  return `${count} квартир`;
-}
-
 interface CitySectionProps {
   apartmentCountsBySlug?: Record<string, number>;
 }
 
 const CitySection = ({ apartmentCountsBySlug }: CitySectionProps) => {
+  const [clientCounts, setClientCounts] = useState<Record<string, number> | null>(null);
+
+  const counts = useMemo(
+    () => ({ ...apartmentCountsBySlug, ...clientCounts }),
+    [apartmentCountsBySlug, clientCounts],
+  );
+
+  const needsClientFetch = useMemo(
+    () => cities.some((city) => counts[city.slug] == null),
+    [counts],
+  );
+
+  useEffect(() => {
+    if (!needsClientFetch) return;
+
+    let cancelled = false;
+
+    fetchHomeCityApartmentCounts().then((fetched) => {
+      if (!cancelled && Object.keys(fetched).length > 0) {
+        setClientCounts(fetched);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [needsClientFetch]);
+
   return (
     <section className="bg-surface pt-12 pb-10 md:pt-14 md:pb-6 lg:pt-16 lg:pb-8">
       <div className="container mx-auto px-4">
@@ -143,9 +164,9 @@ const CitySection = ({ apartmentCountsBySlug }: CitySectionProps) => {
                 </div>
                 <div className="text-center">
                   <p className="font-display font-semibold text-foreground">{city.name}</p>
-                  {apartmentCountsBySlug?.[city.slug] != null ? (
+                  {counts[city.slug] != null ? (
                     <p className="text-sm text-muted-foreground">
-                      {formatApartmentCount(apartmentCountsBySlug[city.slug])}
+                      {formatApartmentCount(counts[city.slug])}
                     </p>
                   ) : null}
                 </div>

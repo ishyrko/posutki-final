@@ -9,6 +9,7 @@ use App\Application\Command\Property\CreateProperty\CreatePropertyCommand;
 use App\Application\Command\Property\PublishProperty\PublishPropertyCommand;
 use App\Application\Command\Property\UpdateProperty\UpdatePropertyCommand;
 use App\Application\Command\Property\DeleteProperty\DeletePropertyCommand;
+use App\Application\Query\Property\GetHomeCityApartmentCounts\GetHomeCityApartmentCountsQuery;
 use App\Application\Query\Property\GetProperty\GetPropertyQuery;
 use App\Application\Query\Property\SearchProperties\SearchPropertiesQuery;
 use App\Application\Command\CommandBusInterface;
@@ -96,6 +97,14 @@ class PropertyController extends AbstractController
             $result['page'],
             $result['limit'],
         ));
+    }
+
+    #[Route('/home-city-apartment-counts', name: 'home_city_apartment_counts', methods: ['GET'])]
+    public function homeCityApartmentCounts(): JsonResponse
+    {
+        $counts = $this->queryBus->ask(new GetHomeCityApartmentCountsQuery());
+
+        return $this->json(ApiResponse::success($counts));
     }
 
     #[Route('/my', name: 'my', methods: ['GET'])]
