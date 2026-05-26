@@ -350,6 +350,11 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   const DEAL_CONDITION_LABELS: Record<string, string> = {
     contactless_checkin: "Бесконтактное заселение",
     "24h_checkin": "Круглосуточное заселение",
+    pets_allowed: "Можно с животными",
+    parties_allowed: "Сдаётся для вечеринок",
+    accounting_docs: "Отчётные документы",
+    no_smoking: "Курение запрещено",
+    children_allowed: "Можно с детьми",
   };
 
   // Квадратики: тип/комнаты, площадь, этаж
@@ -407,7 +412,13 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
       ? [{ icon: Maximize, label: "Площадь комнат в сделке", value: `${property.specifications.roomsArea} м²` }]
       : []),
     ...(showDealConditions(property.dealType) && (property.specifications.dealConditions?.length ?? 0) > 0
-      ? [{ icon: CheckCircle, label: "Условия сделки", value: property.specifications.dealConditions!.join(", ") }]
+      ? [{
+          icon: CheckCircle,
+          label: "Условия сделки",
+          value: property.specifications.dealConditions!
+            .map((cond) => DEAL_CONDITION_LABELS[cond] ?? cond)
+            .join(", "),
+        }]
       : []),
   ].filter((spec) => spec.value !== "-");
 
