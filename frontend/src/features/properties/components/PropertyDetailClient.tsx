@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Heart, Share2, MapPin, BedDouble, Bath, Maximize,
@@ -132,8 +132,8 @@ function getContactPhones(property: Property): ContactPhoneEntry[] {
   return [];
 }
 
-/** Sharp centered photo over a blurred fill for portrait/landscape letterboxing. */
-function GalleryLetterboxPhoto({
+/** Portrait: sharp center + blurred fill. Landscape: cover (original grid behavior). */
+function PropertyGalleryImage({
   src,
   alt,
   className = "",
@@ -142,20 +142,40 @@ function GalleryLetterboxPhoto({
   alt: string;
   className?: string;
 }) {
-  return (
-    <div className={`relative overflow-hidden ${className}`.trim()}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt=""
-        aria-hidden
-        className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover blur-md"
-      />
-      <div className="relative z-[1] flex h-full w-full items-center justify-center">
+  const [portrait, setPortrait] = useState<boolean | null>(null);
+
+  const onLoad = (e: SyntheticEvent<HTMLImageElement>) => {
+    if (portrait !== null) return;
+    const { naturalWidth, naturalHeight } = e.currentTarget;
+    setPortrait(naturalHeight > naturalWidth);
+  };
+
+  if (portrait === true) {
+    return (
+      <div className={`relative overflow-hidden ${className}`.trim()}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className="max-h-full max-w-full object-contain" />
+        <img
+          src={src}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover blur-md"
+        />
+        <div className="relative z-[1] flex h-full w-full items-center justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt={alt} className="max-h-full max-w-full object-contain" />
+        </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      onLoad={onLoad}
+      className={`h-full w-full object-cover ${className}`.trim()}
+    />
   );
 }
 
@@ -541,28 +561,49 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
               onTouchEnd={handleGalleryTouchEnd}
               whileHover={{ scale: 1.005 }}
             >
-              <GalleryLetterboxPhoto
-                src={images[0]}
-                alt="Главное фото"
-                className="absolute inset-0 hidden md:block"
-              />
-              <GalleryLetterboxPhoto
-                src={images[currentImage]}
-                alt={`Фото ${currentImage + 1}`}
-                className="absolute inset-0 md:hidden"
-              />
+              <div className="hidden md:block h-full min-h-[300px] w-full">
+                <PropertyGalleryImage src={images[0]} alt="Главное фото" className="h-full w-full" />
+              </div>
+              <div className="md:hidden absolute inset-0 flex min-h-0 min-w-0">
+                <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={images[currentImage]}
+                    alt=""
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 h-full w-full object-cover object-left blur-sm"
+                  />
+                </div>
+                <div className="relative z-[1] flex h-full shrink-0 items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={images[currentImage]}
+                    alt={`Фото ${currentImage + 1}`}
+                    className="max-h-full w-auto max-w-full object-contain"
+                  />
+                </div>
+                <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={images[currentImage]}
+                    alt=""
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 h-full w-full object-cover object-right blur-sm"
+                  />
+                </div>
+              </div>
               <div className="absolute inset-0 z-[2] bg-foreground/0 group-hover:bg-foreground/10 transition-colors" />
             </motion.div>
             {images.slice(1, 5).map((img, i) => (
               <div
                 key={i}
-                className="group relative hidden aspect-[4/3] min-h-0 cursor-pointer overflow-hidden md:block"
+                className="relative cursor-pointer group hidden md:block overflow-hidden"
                 onClick={() => { setCurrentImage(i + 1); setLightboxOpen(true); }}
               >
-                <GalleryLetterboxPhoto src={img} alt={`Фото ${i + 2}`} className="absolute inset-0" />
-                <div className="absolute inset-0 z-[2] bg-foreground/0 transition-colors group-hover:bg-foreground/10" />
+                <PropertyGalleryImage src={img} alt={`Фото ${i + 2}`} className="aspect-[4/3] w-full" />
+                <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors" />
                 {i === 3 && images.length > 5 && (
-                  <div className="absolute inset-0 z-[3] flex items-center justify-center bg-foreground/50">
+                  <div className="absolute inset-0 bg-foreground/50 flex items-center justify-center">
                     <span className="text-primary-foreground font-medium text-sm">+{images.length - 4} фото</span>
                   </div>
                 )}
