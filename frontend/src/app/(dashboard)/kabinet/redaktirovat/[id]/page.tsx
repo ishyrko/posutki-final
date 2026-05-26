@@ -256,7 +256,7 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
         currency: 'BYN',
         cityId: revisionData?.cityId ?? property.address.cityId,
         cityName: property.address.cityName || '',
-        streetName: revisionData?.streetName ?? property.address.streetName || '',
+        streetName: (revisionData?.streetName ?? property.address.streetName) || '',
         streetId: revisionData?.streetId ?? property.address.streetId ?? null,
         building: revisionData?.building ?? property.address.building ?? '',
         block: revisionData?.block ?? property.address.block ?? '',
