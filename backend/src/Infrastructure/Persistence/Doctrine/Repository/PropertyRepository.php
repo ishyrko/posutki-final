@@ -130,6 +130,15 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
                 ->setParameter('regionSlug', $filters['regionSlug']);
         }
 
+        if (
+            isset($filters['excludeCitySlugs'])
+            && \is_array($filters['excludeCitySlugs'])
+            && $filters['excludeCitySlugs'] !== []
+        ) {
+            $qb->andWhere('c.slug NOT IN (:excludeCitySlugs)')
+                ->setParameter('excludeCitySlugs', array_values($filters['excludeCitySlugs']), ArrayParameterType::STRING);
+        }
+
         $priceType = $filters['priceType'] ?? 'total';
         $priceField = $priceType === 'perMeter' ? 'p.pricePerMeterByn' : 'p.priceByn';
 

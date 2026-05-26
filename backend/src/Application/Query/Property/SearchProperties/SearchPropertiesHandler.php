@@ -23,6 +23,19 @@ final class SearchPropertiesHandler
     /** @var list<string> */
     private const METRO_EXCLUDED_REGION_SLUGS = ['brest', 'vitebsk', 'gomel', 'grodno', 'mogilev'];
 
+    /** Города с отдельным URL-каталогом квартир — не показываются в региональном каталоге. */
+    /** @var list<string> */
+    private const APARTMENT_CITY_PREFIX_SLUGS = [
+        'orsha',
+        'svetlogorsk',
+        'smorgon',
+        'molodechno',
+        'baranovichi',
+        'pinsk',
+        'novopolotsk',
+        'bobruysk',
+    ];
+
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly CityRepositoryInterface $cityRepository,
@@ -88,6 +101,10 @@ final class SearchPropertiesHandler
         }
         if ($query->guests !== null && $query->guests > 0) {
             $filters['minGuests'] = $query->guests;
+        }
+
+        if ($this->shouldExcludeCityPrefixFromRegionSearch($query)) {
+            $filters['excludeCitySlugs'] = self::APARTMENT_CITY_PREFIX_SLUGS;
         }
 
         $filters['sortBy'] = $query->sortBy;
@@ -231,5 +248,25 @@ final class SearchPropertiesHandler
         }
 
         return $query->nearMetro || $query->metroStationId !== null;
+    }
+
+    private function shouldExcludeCityPrefixFromRegionSearch(SearchPropertiesQuery $query): bool
+    {
+        return $query->regionSlug !== null
+            && $query->citySlug === null
+            && $this->isApartmentOnlySearch($query);
+    }
+
+    private function isApartmentOnlySearch(SearchPropertiesQuery $query): bool
+    {
+        if ($query->types !== null && $query->types !== []) {
+            return $query->types === ['apartment'];
+        }
+
+        if ($query->type !== null) {
+            return $query->type === 'apartment';
+        }
+
+        return false;
     }
 }

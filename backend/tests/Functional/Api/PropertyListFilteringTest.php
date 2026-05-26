@@ -326,4 +326,30 @@ final class PropertyListFilteringTest extends ApiTestCase
 
         return $ids;
     }
+
+    public function testRegionApartmentSearchExcludesCityPrefixSlugs(): void
+    {
+        $owner = $this->createUser('filter-city-prefix@example.com', 'Password123!');
+        $region = $this->createRegion('minsk', 'Минская область');
+        $district = $this->createRegionDistrict($region, 'minsk-district', 'Минский район');
+        $minsk = $this->createCity('Minsk', 'minsk', 'г. Минск', $district);
+        $molodechno = $this->createCity('Molodechno', 'molodechno', 'Молодечно г.', $district);
+
+        $inMinsk = $this->createProperty($owner, $minsk, 'published', ['type' => 'apartment']);
+        $inMolodechno = $this->createProperty($owner, $molodechno, 'published', ['type' => 'apartment']);
+
+        $this->client->request('GET', '/api/properties?regionSlug=minsk&type=apartment');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $ids = $this->idsFromListPayload();
+        self::assertContains($inMinsk->getId()->getValue(), $ids);
+        self::assertNotContains($inMolodechno->getId()->getValue(), $ids);
+
+        $this->client->request('GET', '/api/properties?citySlug=molodechno&type=apartment');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $ids = $this->idsFromListPayload();
+        self::assertContains($inMolodechno->getId()->getValue(), $ids);
+        self::assertNotContains($inMinsk->getId()->getValue(), $ids);
+    }
 }
