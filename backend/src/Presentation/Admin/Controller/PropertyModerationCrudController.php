@@ -21,6 +21,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
+use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use LogicException;
@@ -110,6 +111,8 @@ final class PropertyModerationCrudController extends PropertyCrudController
     public function configureFields(string $pageName): iterable
     {
         if ($pageName === Crud::PAGE_EDIT) {
+            yield FormField::addTab('Ревизия на модерации');
+
             yield TextareaField::new('pendingRevisionDataPretty', 'Новые данные ревизии')
                 ->setFormTypeOption('disabled', true)
                 ->setNumOfRows(16)

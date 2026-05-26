@@ -896,6 +896,322 @@ class Property
         return $this->contactName;
     }
 
+    public function setTitle(?string $title): void
+    {
+        if ($title === null) {
+            return;
+        }
+
+        $this->title = $title;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setDescription(?string $description): void
+    {
+        if ($description === null) {
+            return;
+        }
+
+        $this->description = $description;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setType(?string $type): void
+    {
+        if ($type === null) {
+            return;
+        }
+
+        $this->type = $type;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setDealType(?string $dealType): void
+    {
+        if ($dealType === null) {
+            return;
+        }
+
+        $this->dealType = $dealType;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setSellerType(?string $sellerType): void
+    {
+        $this->sellerType = $this->dealType === 'daily' ? $sellerType : null;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setArea(?float $area): void
+    {
+        if ($area === null) {
+            return;
+        }
+
+        $this->area = $area;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setLandArea(?float $landArea): void
+    {
+        $this->landArea = $landArea;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setRooms(?int $rooms): void
+    {
+        $this->rooms = $rooms;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setFloor(?int $floor): void
+    {
+        $this->floor = $floor;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setTotalFloors(?int $totalFloors): void
+    {
+        $this->totalFloors = $totalFloors;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setBathrooms(?int $bathrooms): void
+    {
+        $this->bathrooms = $bathrooms;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setYearBuilt(?int $yearBuilt): void
+    {
+        $this->yearBuilt = $yearBuilt;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setRenovation(?string $renovation): void
+    {
+        $this->renovation = $renovation;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setBalcony(?string $balcony): void
+    {
+        $this->balcony = $balcony;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setLivingArea(?float $livingArea): void
+    {
+        $this->livingArea = $livingArea;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setKitchenArea(?float $kitchenArea): void
+    {
+        $this->kitchenArea = $kitchenArea;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setRoomsInDeal(?int $roomsInDeal): void
+    {
+        $this->roomsInDeal = $roomsInDeal;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setRoomsArea(?float $roomsArea): void
+    {
+        $this->roomsArea = $roomsArea;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    /** @param array<string>|null $dealConditions */
+    public function setDealConditions(?array $dealConditions): void
+    {
+        $this->dealConditions = $dealConditions;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    /** @param array<string>|null $paymentMethods */
+    public function setPaymentMethods(?array $paymentMethods): void
+    {
+        $this->paymentMethods = $paymentMethods;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setMaxDailyGuests(?int $maxDailyGuests): void
+    {
+        $this->maxDailyGuests = $maxDailyGuests;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setDailySingleBeds(?int $dailySingleBeds): void
+    {
+        $this->dailySingleBeds = $dailySingleBeds;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setDailyDoubleBeds(?int $dailyDoubleBeds): void
+    {
+        $this->dailyDoubleBeds = $dailyDoubleBeds;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setCheckInTime(?string $checkInTime): void
+    {
+        $this->checkInTime = $checkInTime;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setCheckOutTime(?string $checkOutTime): void
+    {
+        $this->checkOutTime = $checkOutTime;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setCityId(?int $cityId): void
+    {
+        if ($cityId === null) {
+            return;
+        }
+
+        $this->cityId = $cityId;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setStreetId(?int $streetId): void
+    {
+        $this->applyStreet($streetId, null);
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setStreetName(?string $streetName): void
+    {
+        $this->applyStreet(null, $streetName);
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setContactPhone(?string $contactPhone): void
+    {
+        $this->contactPhone = $contactPhone;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setContactName(?string $contactName): void
+    {
+        $this->contactName = $contactName;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    /** @param array<int, string>|null $images */
+    public function setImages(?array $images): void
+    {
+        $this->images = $images ?? [];
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    /** @param array<int, string>|null $amenities */
+    public function setAmenities(?array $amenities): void
+    {
+        $this->amenities = $amenities ?? [];
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getPriceAmount(): int
+    {
+        return $this->price->getAmount();
+    }
+
+    public function setPriceAmount(?int $amount): void
+    {
+        if ($amount === null) {
+            return;
+        }
+
+        $this->price = Price::fromAmount($amount, $this->price->getCurrency());
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getPriceCurrency(): string
+    {
+        return $this->price->getCurrency();
+    }
+
+    public function setPriceCurrency(?string $currency): void
+    {
+        if ($currency === null || $currency === '') {
+            return;
+        }
+
+        $this->price = Price::fromAmount($this->price->getAmount(), $currency);
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getAddressBuilding(): string
+    {
+        return $this->address->getBuilding();
+    }
+
+    public function setAddressBuilding(?string $building): void
+    {
+        $this->address = Address::create(trim($building ?? ''), $this->address->getBlock());
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getAddressBlock(): ?string
+    {
+        return $this->address->getBlock();
+    }
+
+    public function setAddressBlock(?string $block): void
+    {
+        $trimmed = $block !== null ? trim($block) : null;
+        $this->address = Address::create(
+            $this->address->getBuilding(),
+            $trimmed !== '' ? $trimmed : null,
+        );
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getLatitude(): float
+    {
+        return $this->coordinates->getLatitude();
+    }
+
+    public function setLatitude(?float $latitude): void
+    {
+        if ($latitude === null) {
+            return;
+        }
+
+        $this->coordinates = Coordinates::create($latitude, $this->coordinates->getLongitude());
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getLongitude(): float
+    {
+        return $this->coordinates->getLongitude();
+    }
+
+    public function setLongitude(?float $longitude): void
+    {
+        if ($longitude === null) {
+            return;
+        }
+
+        $this->coordinates = Coordinates::create($this->coordinates->getLatitude(), $longitude);
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getImagesDisplay(): string
+    {
+        return implode("\n", $this->images);
+    }
+
+    public function getAmenitiesDisplay(): string
+    {
+        return implode(', ', $this->amenities);
+    }
+
     public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
