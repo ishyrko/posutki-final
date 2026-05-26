@@ -1,17 +1,99 @@
 "use client";
 
-import { Building2, TreePine, Waves, Castle, Factory, Landmark } from "lucide-react";
+import {
+  Building2,
+  TreePine,
+  Waves,
+  Castle,
+  Factory,
+  Landmark,
+  MapPin,
+  Home,
+  Mountain,
+} from "lucide-react";
 import Link from "next/link";
 import { buildCatalogUrl } from "@/features/catalog/slugs";
 
 const cities = [
-  /** Минск и область — без префикса региона в URL, как в каталоге. */
-  { name: "Минск", slug: "minsk", icon: Building2, href: buildCatalogUrl({ propertyType: "apartment" }) },
-  { name: "Гродно", slug: "grodno", icon: Castle, href: "/grodno/kvartiry/" },
-  { name: "Брест", slug: "brest", icon: Landmark, href: "/brest/kvartiry/" },
-  { name: "Витебск", slug: "vitebsk", icon: Waves, href: "/vitebsk/kvartiry/" },
-  { name: "Гомель", slug: "gomel", icon: Factory, href: "/gomel/kvartiry/" },
-  { name: "Могилёв", slug: "mogilev", icon: TreePine, href: "/mogilev/kvartiry/" },
+  /** Минск — без префикса региона в URL, как в каталоге. */
+  {
+    name: "Минск",
+    slug: "minsk",
+    icon: Building2,
+    href: buildCatalogUrl({ propertyType: "apartment" }),
+  },
+  {
+    name: "Брест",
+    slug: "brest",
+    icon: Landmark,
+    href: buildCatalogUrl({ region: "brest", propertyType: "apartment" }),
+  },
+  {
+    name: "Витебск",
+    slug: "vitebsk",
+    icon: Waves,
+    href: buildCatalogUrl({ region: "vitebsk", propertyType: "apartment" }),
+  },
+  {
+    name: "Гродно",
+    slug: "grodno",
+    icon: Castle,
+    href: buildCatalogUrl({ region: "grodno", propertyType: "apartment" }),
+  },
+  {
+    name: "Могилёв",
+    slug: "mogilev",
+    icon: TreePine,
+    href: buildCatalogUrl({ region: "mogilev", propertyType: "apartment" }),
+  },
+  {
+    name: "Барановичи",
+    slug: "baranovichi",
+    icon: MapPin,
+    href: buildCatalogUrl({ city: "baranovichi", propertyType: "apartment" }),
+  },
+  {
+    name: "Пинск",
+    slug: "pinsk",
+    icon: Home,
+    href: buildCatalogUrl({ city: "pinsk", propertyType: "apartment" }),
+  },
+  {
+    name: "Бобруйск",
+    slug: "bobruysk",
+    icon: Factory,
+    href: buildCatalogUrl({ city: "bobruysk", propertyType: "apartment" }),
+  },
+  {
+    name: "Молодечно",
+    slug: "molodechno",
+    icon: Building2,
+    href: buildCatalogUrl({ city: "molodechno", propertyType: "apartment" }),
+  },
+  {
+    name: "Орша",
+    slug: "orsha",
+    icon: MapPin,
+    href: buildCatalogUrl({ city: "orsha", propertyType: "apartment" }),
+  },
+  {
+    name: "Новополоцк",
+    slug: "novopolotsk",
+    icon: Factory,
+    href: buildCatalogUrl({ city: "novopolotsk", propertyType: "apartment" }),
+  },
+  {
+    name: "Светлогорск",
+    slug: "svetlogorsk",
+    icon: Mountain,
+    href: buildCatalogUrl({ city: "svetlogorsk", propertyType: "apartment" }),
+  },
+  {
+    name: "Сморгонь",
+    slug: "smorgon",
+    icon: Castle,
+    href: buildCatalogUrl({ city: "smorgon", propertyType: "apartment" }),
+  },
 ];
 
 const CitySection = () => {
@@ -25,7 +107,7 @@ const CitySection = () => {
           Посуточная аренда по всей Беларуси
         </p>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {cities.map((city) => {
             const Icon = city.icon;
             return (

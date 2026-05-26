@@ -4,6 +4,7 @@ import {
   isPropertyId,
   parseSegments,
   validatePublicSegmentsStructure,
+  CITY_PREFIX_SLUGS,
   type ParsedSegments,
 } from "@/features/catalog/slugs";
 
@@ -34,7 +35,7 @@ const getMetroStationName = cache(async (slug: string): Promise<string | undefin
 });
 
 async function validateParsedCatalogLocation(parsed: ParsedSegments): Promise<boolean> {
-  if (parsed.citySlug) {
+  if (parsed.citySlug && !CITY_PREFIX_SLUGS.has(parsed.citySlug)) {
     const city = await getCityBySlug(parsed.citySlug);
     if (!city) return false;
   }

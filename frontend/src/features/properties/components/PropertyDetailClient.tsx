@@ -28,7 +28,7 @@ import { PriceDisplay } from "@/components/BynCurrency";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";
 import { useCurrency } from "@/context/CurrencyContext";
 import PropertyMap from "@/components/PropertyMap";
-import { buildCatalogUrl } from "@/features/catalog/slugs";
+import { buildCatalogUrl, buildCatalogUrlFromAddress } from "@/features/catalog/slugs";
 import { toast } from "sonner";
 import {
   HEADER_CITY_SLUG_SET,
@@ -310,10 +310,11 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
           </p>
           <Button asChild>
             <Link
-              href={buildCatalogUrl({
-                region: regionNameToHeaderSlug(initialProperty.address.regionName),
-                propertyType: initialProperty.type,
-              }) || "/kvartiry/"}
+              href={buildCatalogUrlFromAddress(
+                initialProperty.address.regionName,
+                initialProperty.address.citySlug,
+                initialProperty.type,
+              )}
             >
               Вернуться в каталог
             </Link>
@@ -357,10 +358,11 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
     return `${day}.${month}.${year}`;
   };
   const addressStr = formatAddress(property.address);
-  const backToCatalogHref = buildCatalogUrl({
-    region: regionNameToHeaderSlug(property.address.regionName),
-    propertyType: property.type,
-  }) || "/kvartiry/";
+  const backToCatalogHref = buildCatalogUrlFromAddress(
+    property.address.regionName,
+    property.address.citySlug,
+    property.type,
+  );
   const coords = property.coordinates;
   const nearbyMetroStations = property.nearbyMetroStations ?? [];
 

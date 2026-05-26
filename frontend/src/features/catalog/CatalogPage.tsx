@@ -220,7 +220,7 @@ function propertyToListCard(p: Property, rates: ExchangeRates, metroFilterStatio
       : undefined,
     id: p.id,
     propertyType: p.type,
-    regionSlug: propertyUrlRegionSlug(p.address.regionName, p.address.citySlug),
+    regionSlug: propertyUrlRegionSlug(p.address.regionName, p.address.citySlug, p.type),
     nearbyMetroStations: pickMetroStationsForCatalog(p.nearbyMetroStations ?? [], metroFilterStationId),
   };
 }
@@ -238,7 +238,7 @@ function propertyToMapItem(p: Property, rates: ExchangeRates, displayCurrency: C
     image: p.images?.[0]?.thumbnailUrl || p.images?.[0]?.url || "",
     dealType: p.dealType,
     propertyType: p.type,
-    regionSlug: propertyUrlRegionSlug(p.address.regionName, p.address.citySlug),
+    regionSlug: propertyUrlRegionSlug(p.address.regionName, p.address.citySlug, p.type),
   };
 }
 
@@ -959,7 +959,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                             maxGuests={property.specifications.maxDailyGuests}
                             dealType={property.dealType}
                             propertyType={property.type}
-                            regionSlug={propertyUrlRegionSlug(property.address.regionName, property.address.citySlug)}
+                            regionSlug={propertyUrlRegionSlug(property.address.regionName, property.address.citySlug, property.type)}
                             typeLabel={property.typeLabel}
                             index={i}
                             animateEntrance={false}

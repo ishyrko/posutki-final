@@ -13,6 +13,18 @@ export const REGION_SLUGS: ReadonlySet<string> = new Set([
   'mogilev',
 ] as const);
 
+/** Города с префиксом в URL (только квартиры): /pinsk/kvartiry/, /pinsk/kvartiry/62/ */
+export const CITY_PREFIX_SLUGS: ReadonlySet<string> = new Set([
+  'orsha',
+  'svetlogorsk',
+  'smorgon',
+  'molodechno',
+  'baranovichi',
+  'pinsk',
+  'novopolotsk',
+  'bobruysk',
+] as const);
+
 /** Только посуточная аренда — в URL сделка не кодируется, всегда daily. */
 export const IMPLICIT_DEAL_TYPE = 'daily' as const;
 
@@ -38,6 +50,14 @@ const CATALOG_APARTMENT_LOCATION: Record<string, string> = {
   grodno: 'в Гродно',
   mogilev: 'в Могилёве',
   'minsk-region': 'в Минской области',
+  orsha: 'в Орше',
+  svetlogorsk: 'в Светлогорске',
+  smorgon: 'в Сморгони',
+  molodechno: 'в Молодечно',
+  baranovichi: 'в Барановичах',
+  pinsk: 'в Пинске',
+  novopolotsk: 'в Новополоцке',
+  bobruysk: 'в Бобруйске',
 };
 
 const CATALOG_HOUSE_LOCATION: Record<string, string> = {
@@ -74,6 +94,11 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
   let i = 0;
   const regionSlug = REGION_SLUGS.has(segments[i] ?? '') ? segments[i++] : undefined;
 
+  let prefixCitySlug: string | undefined;
+  if (!regionSlug && CITY_PREFIX_SLUGS.has(segments[i] ?? '')) {
+    prefixCitySlug = segments[i++];
+  }
+
   let propertyType: string | undefined;
   if (segments[i] != null && segments[i]! in PROPERTY_TYPE_SLUG_TO_VALUE) {
     propertyType = PROPERTY_TYPE_SLUG_TO_VALUE[segments[i]!];
@@ -101,6 +126,10 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
     }
   }
 
+  if (!citySlug && prefixCitySlug) {
+    citySlug = prefixCitySlug;
+  }
+
   return {
     regionSlug,
     dealType: IMPLICIT_DEAL_TYPE,
@@ -123,7 +152,11 @@ export function validateCatalogSegmentsStructure(segments: string[] = []): boole
 
   let i = 0;
 
-  if (REGION_SLUGS.has(segments[i] ?? '')) i++;
+  if (REGION_SLUGS.has(segments[i] ?? '')) {
+    i++;
+  } else if (CITY_PREFIX_SLUGS.has(segments[i] ?? '')) {
+    i++;
+  }
 
   if (segments[i] != null && segments[i]! in PROPERTY_TYPE_SLUG_TO_VALUE) {
     i++;
@@ -204,8 +237,12 @@ export function buildSegmentsCanonicalPath(segments: string[]): string {
 
 export function buildCatalogUrl(params: BuildCatalogUrlParams = {}): string {
   const parts: string[] = [];
+  const isCityPrefix =
+    params.city != null && CITY_PREFIX_SLUGS.has(params.city) && params.region == null;
 
-  if (params.region && REGION_SLUGS.has(params.region)) {
+  if (isCityPrefix) {
+    parts.push(params.city!);
+  } else if (params.region && REGION_SLUGS.has(params.region)) {
     parts.push(params.region);
   }
 
@@ -220,7 +257,7 @@ export function buildCatalogUrl(params: BuildCatalogUrlParams = {}): string {
     } else {
       parts.push('vozle-metro');
     }
-  } else if (params.city) {
+  } else if (params.city && !isCityPrefix) {
     parts.push(params.city);
   }
 
@@ -232,8 +269,16 @@ export function isPropertyId(segment?: string): boolean {
   return /^\d+$/.test(segment);
 }
 
-/** Slug региона для URL объявления из адреса API. */
-export function propertyUrlRegionSlug(regionName?: string, citySlug?: string): string | undefined {
+/** Slug региона или города-префикса для URL объявления из адреса API. */
+export function propertyUrlRegionSlug(
+  regionName?: string,
+  citySlug?: string,
+  propertyType?: string,
+): string | undefined {
+  if (propertyType === 'apartment' && citySlug && CITY_PREFIX_SLUGS.has(citySlug)) {
+    return citySlug;
+  }
+
   const fromRegion = regionNameToHeaderSlug(regionName);
   if (fromRegion === HEADER_REGION_MINSK_SLUG) {
     return undefined;
@@ -245,6 +290,22 @@ export function propertyUrlRegionSlug(regionName?: string, citySlug?: string): s
     return citySlug;
   }
   return undefined;
+}
+
+/** Каталог по адресу объявления: /pinsk/kvartiry/, /vitebsk/kvartiry/, /kvartiry/ */
+export function buildCatalogUrlFromAddress(
+  regionName?: string,
+  citySlug?: string,
+  propertyType?: string,
+): string {
+  const slug = propertyUrlRegionSlug(regionName, citySlug, propertyType);
+  if (slug && CITY_PREFIX_SLUGS.has(slug)) {
+    return buildCatalogUrl({ city: slug, propertyType });
+  }
+  if (slug && REGION_SLUGS.has(slug)) {
+    return buildCatalogUrl({ region: slug, propertyType });
+  }
+  return buildCatalogUrl({ propertyType });
 }
 
 /** Страница объявления: …/kvartiry/123 или …/vitebsk/kvartiry/123 */
@@ -277,7 +338,7 @@ export function buildPropertyUrlFromRegionName(
   regionName?: string,
   citySlug?: string,
 ): string {
-  return buildPropertyUrl(propertyType, id, propertyUrlRegionSlug(regionName, citySlug));
+  return buildPropertyUrl(propertyType, id, propertyUrlRegionSlug(regionName, citySlug, propertyType));
 }
 
 function catalogLocationKey(parsed: ParsedSegments): string {
