@@ -1142,6 +1142,16 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                       })}
                     </>
                   )}
+                  {!isOwner && canBookInquiry && (
+                    <Button
+                      variant="outline"
+                      className="w-full h-11"
+                      onClick={() => setBookingOpen(true)}
+                    >
+                      <CalendarCheck className="w-4 h-4 mr-2" />
+                      Заявка на бронирование
+                    </Button>
+                  )}
                   {!isOwner && loggedIn && (
                     <Button
                       variant="outline"
@@ -1158,16 +1168,6 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                         <MessageCircle className="w-4 h-4 mr-2" />
                         Войти, чтобы написать
                       </Link>
-                    </Button>
-                  )}
-                  {!isOwner && canBookInquiry && (
-                    <Button
-                      variant="outline"
-                      className="w-full h-11"
-                      onClick={() => setBookingOpen(true)}
-                    >
-                      <CalendarCheck className="w-4 h-4 mr-2" />
-                      Забронировать
                     </Button>
                   )}
                 </div>

@@ -119,7 +119,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                 <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0">
                     <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
                         <DialogTitle className="text-center text-xl font-display">
-                            Забронировать квартиру
+                            Заявка на бронирование
                         </DialogTitle>
                     </DialogHeader>
 
@@ -323,10 +323,10 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                             name="notes"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Дополнительно</FormLabel>
+                                                    <FormLabel>Комментарий</FormLabel>
                                                     <FormControl>
                                                         <Textarea
-                                                            placeholder="Дополнительно"
+                                                            placeholder="Комментарий"
                                                             className="min-h-[90px] resize-none"
                                                             maxLength={1000}
                                                             {...field}
@@ -369,11 +369,17 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                 )}
                                 <div className="space-y-2">
                                     <p className="text-sm text-foreground leading-snug">{addressStr}</p>
-                                    <div className="inline-flex items-center rounded-md bg-emerald-100 px-2.5 py-1 text-sm font-semibold text-emerald-800">
+                                    <div className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2.5 py-1 text-sm font-semibold text-emerald-800">
+                                        {property.dealType === 'daily' && (
+                                            <span className="font-normal">от</span>
+                                        )}
                                         <PriceDisplay
                                             amount={priceDisplay.primaryAmount}
                                             currency={priceDisplay.primaryCurrency}
                                         />
+                                        {property.dealType === 'daily' && (
+                                            <span className="font-normal">/ сутки</span>
+                                        )}
                                     </div>
                                 </div>
                             </aside>
