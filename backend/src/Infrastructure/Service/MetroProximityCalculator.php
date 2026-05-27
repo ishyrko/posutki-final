@@ -27,6 +27,12 @@ final readonly class MetroProximityCalculator
 
         $this->propertyMetroStationRepository->deleteByPropertyId($propertyId);
 
+        if (!$property->hasStreet()) {
+            $property->setNearMetro(false);
+
+            return;
+        }
+
         $nearbyCount = 0;
         foreach ($this->metroStationRepository->findAll() as $station) {
             $latitude = $station->getLatitude();

@@ -8,14 +8,11 @@ use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\SellerType;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[Assert\Expression(
     expression: 'this.floor === null || this.totalFloors === null || this.floor <= this.totalFloors',
     message: 'Этаж не может быть больше чем этажей в доме'
-)]
-#[Assert\Expression(
-    expression: 'this.streetId !== null || (this.streetName !== null && this.streetName !== "")',
-    message: 'Укажите улицу'
 )]
 class CreatePropertyRequest
 {
@@ -189,4 +186,24 @@ class CreatePropertyRequest
         new Assert\Length(max: 2000),
     ])]
     public ?array $externalCalendarUrls = null;
+
+    #[Assert\Callback]
+    public function validateApartmentAddress(ExecutionContextInterface $context): void
+    {
+        if ($this->type !== PropertyType::Apartment->value) {
+            return;
+        }
+
+        if ($this->streetId === null && trim($this->streetName ?? '') === '') {
+            $context->buildViolation('Укажите улицу')
+                ->atPath('streetName')
+                ->addViolation();
+        }
+
+        if (trim($this->building) === '') {
+            $context->buildViolation('Укажите номер дома')
+                ->atPath('building')
+                ->addViolation();
+        }
+    }
 }

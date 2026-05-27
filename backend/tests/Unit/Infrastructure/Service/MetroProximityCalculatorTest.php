@@ -23,6 +23,7 @@ final class MetroProximityCalculatorTest extends TestCase
         $propertyMetroStationRepository = $this->createMock(PropertyMetroStationRepositoryInterface::class);
 
         $property = $this->createPropertyWithId(100);
+        $property->setStreetName('Немига');
 
         $stationRepository
             ->method('findAll')
@@ -51,6 +52,7 @@ final class MetroProximityCalculatorTest extends TestCase
         $propertyMetroStationRepository = $this->createMock(PropertyMetroStationRepositoryInterface::class);
 
         $property = $this->createPropertyWithId(101);
+        $property->setStreetName('Дальняя');
 
         $stationRepository
             ->method('findAll')
@@ -68,12 +70,42 @@ final class MetroProximityCalculatorTest extends TestCase
         self::assertFalse($property->isNearMetro());
     }
 
+    public function testSkipsMetroWhenPropertyHasNoStreet(): void
+    {
+        $stationRepository = $this->createStub(MetroStationRepositoryInterface::class);
+        $propertyMetroStationRepository = $this->createMock(PropertyMetroStationRepositoryInterface::class);
+
+        $property = $this->createPropertyWithId(103);
+        $property->setNearMetro(true);
+
+        $stationRepository
+            ->method('findAll')
+            ->willReturn([
+                new MetroStation(1, 1, 'Near station', 'near-station', 1, 2, 53.9042, 27.5608),
+            ]);
+
+        $propertyMetroStationRepository
+            ->expects(self::once())
+            ->method('deleteByPropertyId')
+            ->with(103);
+
+        $propertyMetroStationRepository
+            ->expects(self::never())
+            ->method('save');
+
+        $service = new MetroProximityCalculator($stationRepository, $propertyMetroStationRepository);
+        $service->syncForProperty($property);
+
+        self::assertFalse($property->isNearMetro());
+    }
+
     public function testSetsNearMetroTrueWhenAtLeastOneNearbyStationExists(): void
     {
         $stationRepository = $this->createStub(MetroStationRepositoryInterface::class);
         $propertyMetroStationRepository = $this->createMock(PropertyMetroStationRepositoryInterface::class);
 
         $property = $this->createPropertyWithId(102);
+        $property->setStreetName('Центральная');
 
         $stationRepository
             ->method('findAll')

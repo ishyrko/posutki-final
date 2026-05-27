@@ -857,6 +857,15 @@ class Property
         return $this->streetName;
     }
 
+    public function hasStreet(): bool
+    {
+        if ($this->streetId !== null) {
+            return true;
+        }
+
+        return $this->streetName !== null && trim($this->streetName) !== '';
+    }
+
     public function applyStreet(?int $streetId, ?string $streetName): void
     {
         if ($streetId !== null) {
