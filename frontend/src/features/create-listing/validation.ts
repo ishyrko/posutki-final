@@ -61,3 +61,32 @@ export const getDescriptionFieldError = (value: string): string | undefined => {
     if (t.length > DESCRIPTION_MAX_LENGTH) return `Максимум ${DESCRIPTION_MAX_LENGTH} символов`;
     return undefined;
 };
+
+export const requiresApartmentAddress = (propertyType: string): boolean => propertyType === 'apartment';
+
+export const getApartmentStreetFieldError = (
+    propertyType: string,
+    streetName: string,
+    streetId: number | null,
+): string | undefined => {
+    if (!requiresApartmentAddress(propertyType)) {
+        return undefined;
+    }
+    if (streetId !== null || streetName.trim() !== '') {
+        return undefined;
+    }
+    return 'Укажите улицу';
+};
+
+export const getApartmentBuildingFieldError = (
+    propertyType: string,
+    building: string,
+): string | undefined => {
+    if (!requiresApartmentAddress(propertyType)) {
+        return undefined;
+    }
+    if (building.trim() !== '') {
+        return undefined;
+    }
+    return 'Укажите номер дома';
+};

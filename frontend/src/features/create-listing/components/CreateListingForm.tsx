@@ -92,10 +92,13 @@ import {
     YEAR_BUILT_MIN,
     getDescriptionFieldError,
     getTitleFieldError,
+    getApartmentStreetFieldError,
+    getApartmentBuildingFieldError,
     isFloorNotAboveTotalFloors,
 } from '../validation';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { isAuthenticated } from '@/lib/auth';
+import { getApiErrorMessage, getApiValidationErrors } from '@/lib/api-error';
 import { PhoneAuthModal } from '@/features/sms-auth/components/PhoneAuthModal';
 import { useUser } from '@/features/auth/hooks';
 import {
@@ -163,20 +166,7 @@ const DEFAULT_CENTER: [number, number] = [53.9045, 27.5615];
 
 type FormErrors = Partial<Record<keyof ListingFormData, string>>;
 
-function getErrorMessage(error: unknown, fallback: string): string {
-    if (typeof error !== 'object' || error === null || !('response' in error)) {
-        return fallback;
-    }
-
-    const response = (error as { response?: { data?: unknown } }).response;
-    const data = response?.data;
-    if (typeof data !== 'object' || data === null) {
-        return fallback;
-    }
-
-    const message = (data as { message?: unknown }).message;
-    return typeof message === 'string' && message.length > 0 ? message : fallback;
-}
+const ADDRESS_VIOLATION_FIELDS = new Set(['cityId', 'citySlug', 'streetName', 'streetId', 'building', 'block']);
 
 const INITIAL_FORM: ListingFormData = {
     dealType: 'daily',
@@ -479,6 +469,16 @@ export function CreateListingForm() {
             }
             case 5:
                 if (!form.cityId) errs.citySlug = 'Выберите город';
+                {
+                    const streetErr = getApartmentStreetFieldError(
+                        form.propertyType,
+                        form.streetName,
+                        form.streetId,
+                    );
+                    if (streetErr) errs.streetName = streetErr;
+                    const buildingErr = getApartmentBuildingFieldError(form.propertyType, form.building);
+                    if (buildingErr) errs.building = buildingErr;
+                }
                 break;
             case 6:
                 if (form.dealType === 'daily') {
@@ -572,7 +572,12 @@ export function CreateListingForm() {
                 if (form.photos.some((p) => p.uploading)) return false;
                 return form.photos.filter((p) => !p.uploading).length >= MIN_PHOTOS;
             }
-            case 5: return !!form.cityId;
+            case 5:
+                if (!form.cityId) return false;
+                if (form.propertyType === 'apartment') {
+                    return !!(form.streetId || form.streetName.trim()) && !!form.building.trim();
+                }
+                return true;
             case 6:
                 return !!(
                     form.price
@@ -710,7 +715,7 @@ export function CreateListingForm() {
     // --- Submit ---
 
     const handleSubmit = async () => {
-        if (!validateStep(2) || !validateStep(4) || !validateStep(6)) return;
+        if (!validateStep(2) || !validateStep(4) || !validateStep(5) || !validateStep(6)) return;
 
         if (!isAuthenticated()) {
             setSmsAuthOpen(true);
@@ -828,9 +833,26 @@ export function CreateListingForm() {
                 toast.error('Для публикации необходимо войти в аккаунт', {
                     action: { label: 'Войти', onClick: () => router.push('/login') },
                 });
-            } else {
-                toast.error(getErrorMessage(err, 'Не удалось создать объявление'));
+                return;
             }
+
+            const validationErrors = getApiValidationErrors(err);
+            if (validationErrors) {
+                const nextErrors: FormErrors = {};
+                for (const [field, message] of Object.entries(validationErrors)) {
+                    if (field in INITIAL_FORM) {
+                        nextErrors[field as keyof ListingFormData] = message;
+                    }
+                }
+                if (Object.keys(nextErrors).length > 0) {
+                    setErrors((prev) => ({ ...prev, ...nextErrors }));
+                }
+                if (Object.keys(validationErrors).some((field) => ADDRESS_VIOLATION_FIELDS.has(field))) {
+                    setStep(5);
+                }
+            }
+
+            toast.error(getApiErrorMessage(err, 'Не удалось создать объявление'));
         }
     };
 
@@ -897,7 +919,7 @@ export function CreateListingForm() {
                     onOpenChange={setSmsAuthOpen}
                     initialPhone=""
                     onSuccess={() => {
-                        void submitProperty();
+                        void handleSubmit();
                     }}
                 />
             </div>
@@ -1587,7 +1609,9 @@ export function CreateListingForm() {
                                     </div>
 
                                     <div ref={streetContainerRef} className="relative">
-                                        <label className={labelClass}>Улица</label>
+                                        <label className={labelClass}>
+                                            Улица{form.propertyType === 'apartment' ? ' *' : ''}
+                                        </label>
                                         <div className="relative">
                                             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                                             <input
@@ -1606,7 +1630,12 @@ export function CreateListingForm() {
                                                 }}
                                                 placeholder={form.cityId ? 'Начните вводить название улицы...' : 'Сначала выберите город'}
                                                 disabled={!form.cityId}
-                                                className={cn(inputClass, 'pl-10', !form.cityId && 'opacity-60 cursor-not-allowed')}
+                                                className={cn(
+                                                    inputClass,
+                                                    'pl-10',
+                                                    !form.cityId && 'opacity-60 cursor-not-allowed',
+                                                    errors.streetName ? 'border-destructive' : '',
+                                                )}
                                             />
                                             {streetSearching && (
                                                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
@@ -1641,15 +1670,22 @@ export function CreateListingForm() {
                                                 ))}
                                             </div>
                                         )}
+                                        <FieldError field="streetName" />
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         <div>
-                                            <label className={labelClass}>Номер дома</label>
+                                            <label className={labelClass}>
+                                                Номер дома{form.propertyType === 'apartment' ? ' *' : ''}
+                                            </label>
                                             <input
                                                 value={form.building}
                                                 onChange={(e) => update('building', e.target.value)}
-                                                placeholder="Например: 58 (необязательно)"
+                                                placeholder={
+                                                    form.propertyType === 'apartment'
+                                                        ? 'Например: 58'
+                                                        : 'Например: 58 (необязательно)'
+                                                }
                                                 className={cn(inputClass, errors.building ? 'border-destructive' : '')}
                                             />
                                             <FieldError field="building" />
@@ -2041,7 +2077,7 @@ export function CreateListingForm() {
                     onOpenChange={setSmsAuthOpen}
                     initialPhone=""
                     onSuccess={() => {
-                        void submitProperty();
+                        void handleSubmit();
                     }}
                 />
             </div>

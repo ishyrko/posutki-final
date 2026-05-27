@@ -88,10 +88,13 @@ import {
     YEAR_BUILT_MIN,
     getDescriptionFieldError,
     getTitleFieldError,
+    getApartmentStreetFieldError,
+    getApartmentBuildingFieldError,
     isNumberInRange,
 } from '@/features/create-listing/validation';
 import type { CitySearchResult, AdditionalService } from '@/features/create-listing/types';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
+import { getApiErrorMessage } from '@/lib/api-error';
 import {
     applyBathroomTypeSelection,
     bathroomTypeFromForm,
@@ -168,21 +171,6 @@ interface EditFormData {
 }
 
 type EditTitleDescriptionErrors = Partial<Pick<EditFormData, 'title' | 'description'>>;
-
-function getErrorMessage(error: unknown, fallback: string): string {
-    if (typeof error !== 'object' || error === null || !('response' in error)) {
-        return fallback;
-    }
-
-    const response = (error as { response?: { data?: unknown } }).response;
-    const data = response?.data;
-    if (typeof data !== 'object' || data === null) {
-        return fallback;
-    }
-
-    const message = (data as { message?: unknown }).message;
-    return typeof message === 'string' && message.length > 0 ? message : fallback;
-}
 
 function mapPropertyToForm(property: PropertyItem): EditFormData {
     const revisionData = property.pendingRevisionStatus ? property.pendingRevisionData : null;
@@ -695,6 +683,17 @@ export default function EditPropertyPage() {
             return;
         }
 
+        const streetErr = getApartmentStreetFieldError(form.type, form.streetName, form.streetId);
+        if (streetErr) {
+            toast.error(streetErr);
+            return;
+        }
+        const buildingErr = getApartmentBuildingFieldError(form.type, form.building);
+        if (buildingErr) {
+            toast.error(buildingErr);
+            return;
+        }
+
         try {
             const payload: UpdatePropertyPayload = {
                 type: form.type,
@@ -769,7 +768,7 @@ export default function EditPropertyPage() {
             );
             router.push('/kabinet/moi-obyavleniya/aktivnye');
         } catch (err: unknown) {
-            toast.error(getErrorMessage(err, 'Не удалось сохранить изменения'));
+            toast.error(getApiErrorMessage(err, 'Не удалось сохранить изменения'));
         }
     };
 
@@ -1401,7 +1400,9 @@ export default function EditPropertyPage() {
                         </div>
 
                         <div ref={streetContainerRef} className="relative">
-                            <Label className="text-foreground">Улица</Label>
+                            <Label className="text-foreground">
+                                Улица{form.type === 'apartment' ? ' *' : ''}
+                            </Label>
                             <div className="relative mt-1.5">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                                 <Input
@@ -1455,11 +1456,17 @@ export default function EditPropertyPage() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
-                                <Label className="text-foreground">Номер дома</Label>
+                                <Label className="text-foreground">
+                                    Номер дома{form.type === 'apartment' ? ' *' : ''}
+                                </Label>
                                 <Input
                                     value={form.building}
                                     onChange={(e) => update('building', e.target.value)}
-                                    placeholder="Например: 58 (необязательно)"
+                                    placeholder={
+                                        form.type === 'apartment'
+                                            ? 'Например: 58'
+                                            : 'Например: 58 (необязательно)'
+                                    }
                                     className="mt-1.5"
                                 />
                             </div>
