@@ -1,4 +1,10 @@
-import { AUTH_COOKIE_MAX_AGE_SECONDS, AUTH_TOKEN_KEY } from '@/lib/auth-constants';
+import {
+    AUTH_COOKIE_MAX_AGE_SECONDS,
+    AUTH_TOKEN_KEY,
+    resolveAuthRedirectPath,
+} from '@/lib/auth-constants';
+
+export { resolveAuthRedirectPath };
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -84,13 +90,22 @@ export const removeToken = () => {
 
 export const isAuthenticated = () => !!getToken();
 
-/** Safe in-app path from `?next=` (open redirects excluded). */
-export function resolveAuthRedirectPath(next: string | null | undefined): string | undefined {
-    if (!next || !next.startsWith('/')) {
-        return undefined;
+/** Синхронизирует JWT из localStorage в cookie для middleware (например /razmestit/). */
+export const syncAuthCookie = (): void => {
+    if (!isBrowser) {
+        return;
     }
-    if (next.startsWith('//')) {
-        return undefined;
+    const fromStorage = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (fromStorage && !hasAuthCookie()) {
+        setAuthCookie(fromStorage);
     }
-    return next;
-}
+};
+
+/** Полный переход после входа: cookie точно уходит в следующий запрос, сбрасывается кэш роутера. */
+export const navigateAfterAuth = (target: string): void => {
+    if (!isBrowser) {
+        return;
+    }
+    syncAuthCookie();
+    window.location.assign(target);
+};

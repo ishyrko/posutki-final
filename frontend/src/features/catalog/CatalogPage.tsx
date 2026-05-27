@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { ListingSubmitLink } from "@/components/ListingSubmitLink";
 import {
   SlidersHorizontal,
   X,
@@ -1019,10 +1020,10 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                       <Button size="default" asChild className="bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity border-0">
-                        <Link href="/razmestit/">
+                        <ListingSubmitLink>
                           <Plus className="w-4 h-4 mr-1.5" />
                           Подать объявление
-                        </Link>
+                        </ListingSubmitLink>
                       </Button>
                       <Button variant="outline" onClick={clearFilters}>Сбросить фильтры</Button>
                     </div>
@@ -1106,10 +1107,10 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                       <Button size="default" asChild className="bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity border-0">
-                        <Link href="/razmestit/">
+                        <ListingSubmitLink>
                           <Plus className="w-4 h-4 mr-1.5" />
                           Подать объявление
-                        </Link>
+                        </ListingSubmitLink>
                       </Button>
                       <Button variant="outline" onClick={clearFilters}>Сбросить фильтры</Button>
                     </div>

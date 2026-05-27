@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState, ReactNode } from 'react';
+import { syncAuthCookie } from '@/lib/auth';
 
 const PERFORMANCE_MEASURE_ERROR_PATTERN = /(negative time stamp|does not exist)/i;
 
@@ -20,6 +21,10 @@ export default function QueryProvider({ children }: { children: ReactNode }) {
                 },
             })
     );
+
+    useEffect(() => {
+        syncAuthCookie();
+    }, []);
 
     useEffect(() => {
         if (process.env.NODE_ENV !== 'development') {

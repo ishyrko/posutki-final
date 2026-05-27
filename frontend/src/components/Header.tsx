@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import Link from "next/link";
+import { ListingSubmitLink } from "@/components/ListingSubmitLink";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -257,7 +258,7 @@ const Header = () => {
             </Button>
           )}
           <Button size="sm" className="font-semibold" asChild>
-            <Link href="/razmestit/">Сдать жилье</Link>
+            <ListingSubmitLink>Сдать жилье</ListingSubmitLink>
           </Button>
         </div>
 
@@ -266,7 +267,7 @@ const Header = () => {
             <HeaderCurrencyStrip variant="mobileToolbar" />
           </div>
           <Button size="sm" className="font-semibold" asChild>
-            <Link href="/razmestit/">Сдать жилье</Link>
+            <ListingSubmitLink>Сдать жилье</ListingSubmitLink>
           </Button>
 
           <Button
@@ -404,11 +405,11 @@ const Header = () => {
                 </Button>
               </Link>
             )}
-            <Link href="/razmestit/" onClick={() => setMobileOpen(false)}>
+            <ListingSubmitLink onClick={() => setMobileOpen(false)}>
               <Button size="sm" className="w-full justify-center">
                 Сдать жилье
               </Button>
-            </Link>
+            </ListingSubmitLink>
           </div>
         </div>
       )}

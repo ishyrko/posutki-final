@@ -5,6 +5,7 @@ import type { ExchangeRates } from '@/features/properties/api';
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from '@/features/properties/price-display';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { ListingSubmitLink } from '@/components/ListingSubmitLink';
 import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, Rocket } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -271,10 +272,10 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
                     <h1 className="font-display text-2xl font-bold text-foreground">Мои объявления</h1>
                 </div>
                 <Button asChild className="gap-2 w-full sm:w-auto">
-                    <Link href="/razmestit/">
+                    <ListingSubmitLink>
                         <Plus className="w-4 h-4" />
                         Новое объявление
-                    </Link>
+                    </ListingSubmitLink>
                 </Button>
             </div>
 
@@ -307,10 +308,10 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
                         <>
                             <p className="text-muted-foreground mb-4">У вас пока нет объявлений</p>
                             <Button asChild className="gap-2">
-                                <Link href="/razmestit/">
+                                <ListingSubmitLink>
                                     <Plus className="w-4 h-4" />
                                     Создать первое объявление
-                                </Link>
+                                </ListingSubmitLink>
                             </Button>
                         </>
                     ) : (

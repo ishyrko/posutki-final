@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
+import { ListingSubmitLink } from "@/components/ListingSubmitLink";
 import { parseBynPrice, formatBynWithUsd } from "@/lib/currency";
 import { PriceInByn } from "@/components/BynCurrency";
 
@@ -48,7 +49,7 @@ const AgentProperties = () => {
           <p className="text-sm text-muted-foreground mt-1">{filtered.length} из {properties.length} объектов</p>
         </div>
         <Button asChild className="bg-gradient-primary text-primary-foreground border-0">
-          <Link href="/razmestit/"><Plus className="w-4 h-4 mr-2" />Добавить объект</Link>
+          <ListingSubmitLink><Plus className="w-4 h-4 mr-2" />Добавить объект</ListingSubmitLink>
         </Button>
       </div>
 

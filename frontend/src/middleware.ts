@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AUTH_TOKEN_KEY } from '@/lib/auth-constants';
+import { AUTH_TOKEN_KEY, resolveAuthRedirectPath } from '@/lib/auth-constants';
 
 export function middleware(request: NextRequest) {
     const token = request.cookies.get(AUTH_TOKEN_KEY)?.value;
@@ -21,7 +21,9 @@ export function middleware(request: NextRequest) {
     }
 
     if (isAuthPage && token) {
-        return NextResponse.redirect(new URL('/kabinet', request.url));
+        const next = resolveAuthRedirectPath(request.nextUrl.searchParams.get('next'));
+        const destination = next ?? '/kabinet/';
+        return NextResponse.redirect(new URL(destination, request.url));
     }
 
     return NextResponse.next();

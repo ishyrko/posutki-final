@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ListingSubmitLink } from "@/components/ListingSubmitLink";
 import {
   HEADER_REGION_MINSK_SLUG,
   withRegionalCatalogHref,
@@ -63,16 +64,22 @@ const Footer = () => {
             <h4 className="font-display font-semibold text-primary-foreground mb-4 text-sm">Владельцам</h4>
             <ul className="space-y-2.5">
               {[
-                { label: "Разместить жильё", href: "/razmestit/" },
+                { label: "Разместить жильё", link: "listing" as const },
                 { label: "Личный кабинет", href: "/kabinet/" },
               ].map((item) => (
                 <li key={item.label}>
-                  <Link
-                    href={item.href}
-                    className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors duration-150"
-                  >
-                    {item.label}
-                  </Link>
+                  {item.link === "listing" ? (
+                    <ListingSubmitLink className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors duration-150">
+                      {item.label}
+                    </ListingSubmitLink>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors duration-150"
+                    >
+                      {item.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

@@ -1,7 +1,7 @@
 import { Property } from '../types';
 import { MyPropertyCard } from './MyPropertyCard';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { ListingSubmitLink } from '@/components/ListingSubmitLink';
 import { Plus } from 'lucide-react';
 
 interface MyPropertyListProps {
@@ -26,10 +26,10 @@ export function MyPropertyList({ properties, isLoading }: MyPropertyListProps) {
                 <h3 className="text-lg font-semibold mb-2">No properties found</h3>
                 <p className="text-muted-foreground mb-6">You haven&apos;t posted any properties yet.</p>
                 <Button asChild>
-                    <Link href="/razmestit/">
+                    <ListingSubmitLink>
                         <Plus className="h-4 w-4 mr-2" />
                         Create New Property
-                    </Link>
+                    </ListingSubmitLink>
                 </Button>
             </div>
         );

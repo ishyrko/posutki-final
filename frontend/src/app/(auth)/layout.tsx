@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useHasAuthToken } from '@/hooks/useHasAuthToken';
+import { resolveAuthRedirectPath } from '@/lib/auth-constants';
 
 export default function AuthLayout({
     children,
@@ -14,9 +15,11 @@ export default function AuthLayout({
     const shouldRedirect = useHasAuthToken();
 
     useEffect(() => {
-        if (shouldRedirect) {
-            router.replace('/kabinet/');
+        if (!shouldRedirect) {
+            return;
         }
+        const next = resolveAuthRedirectPath(new URLSearchParams(window.location.search).get('next'));
+        router.replace(next ?? '/kabinet/');
     }, [router, shouldRedirect]);
 
     if (shouldRedirect) {

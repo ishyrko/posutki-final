@@ -1,9 +1,8 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { setToken } from '@/lib/auth';
+import { setToken, navigateAfterAuth } from '@/lib/auth';
 import { requestSmsCode, verifySmsCode } from './api';
 
 type UseVerifySmsCodeOptions = {
@@ -47,7 +46,6 @@ export const useRequestSmsCode = () => {
 };
 
 export const useVerifySmsCode = (options?: UseVerifySmsCodeOptions) => {
-    const router = useRouter();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -59,7 +57,7 @@ export const useVerifySmsCode = (options?: UseVerifySmsCodeOptions) => {
             toast.success('Вход выполнен');
             options?.onAuthenticated?.();
             if (options?.redirectAfter !== undefined) {
-                router.push(options.redirectAfter);
+                navigateAfterAuth(options.redirectAfter);
             }
         },
         onError: (error: unknown) => {

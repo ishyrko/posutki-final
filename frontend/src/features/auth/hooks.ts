@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { login, register, googleLogin, getMe, resetPassword, confirmResetPassword, LoginCredentials, RegisterCredentials, ResetPasswordData } from './api';
-import { setToken, removeToken, isAuthenticated } from '@/lib/auth';
+import { setToken, removeToken, isAuthenticated, navigateAfterAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -32,7 +32,6 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 export const useLogin = (redirectAfter?: string) => {
-    const router = useRouter();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -41,7 +40,7 @@ export const useLogin = (redirectAfter?: string) => {
             setToken(data.token);
             queryClient.invalidateQueries({ queryKey: ['me'] });
             toast.success('Вы успешно вошли');
-            router.push(redirectAfter ?? '/kabinet/');
+            navigateAfterAuth(redirectAfter ?? '/kabinet/');
         },
         onError: (error: unknown, variables: LoginCredentials) => {
             const msg = getErrorMessage(error, 'Не удалось войти');
@@ -102,7 +101,6 @@ export const useConfirmResetPassword = () => {
 };
 
 export const useGoogleLogin = (redirectAfter?: string) => {
-    const router = useRouter();
     const queryClient = useQueryClient();
     const hiddenBtnRef = useRef<HTMLDivElement | null>(null);
     const initializedRef = useRef(false);
@@ -114,7 +112,7 @@ export const useGoogleLogin = (redirectAfter?: string) => {
             setToken(data.token);
             queryClient.invalidateQueries({ queryKey: ['me'] });
             toast.success('Вход через Google выполнен');
-            router.push(redirectAfter ?? '/kabinet/');
+            navigateAfterAuth(redirectAfter ?? '/kabinet/');
         },
         onError: (error: unknown) => {
             toast.error(getErrorMessage(error, 'Не удалось войти через Google'));

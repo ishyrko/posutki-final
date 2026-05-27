@@ -3,6 +3,7 @@ import type { PropertyListResponse } from "@/features/properties/types";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { ListingSubmitLink } from "@/components/ListingSubmitLink";
 import { Button } from "@/components/ui/button";
 import PropertyCard from "./PropertyCard";
 import { PriceDisplay } from "@/components/BynCurrency";
@@ -124,7 +125,7 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
               size="lg"
               className="max-w-full whitespace-normal h-auto min-h-11 py-3 px-5 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 transition-opacity border-0"
             >
-              <Link href="/razmestit/">Разместить квартиру на сутки бесплатно</Link>
+              <ListingSubmitLink>Разместить квартиру на сутки бесплатно</ListingSubmitLink>
             </Button>
           </div>
         )}
