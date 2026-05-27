@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
@@ -21,6 +22,7 @@ import { useConversations, useMessages, useSendMessage, useMarkRead } from '@/fe
 import { useUser } from '@/features/auth/hooks';
 import { Conversation } from '@/features/messages/types';
 import { useMyBookingInquiries, useUnreadBookingInquiryCount, useMarkBookingInquiriesRead, BookingInquiryItem } from '@/features/properties/booking-inquiry';
+import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { cn } from '@/lib/utils';
 
 type MessagesTab = 'conversations' | 'bookings';
@@ -40,6 +42,19 @@ function formatDateLabel(value?: string | null): string | null {
     const date = new Date(`${value}T00:00:00`);
     if (Number.isNaN(date.getTime())) return null;
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function formatSubmissionDate(dateStr?: string | null): string | null {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
 }
 
 function ConversationList({
@@ -109,6 +124,16 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
     const checkIn = formatDateLabel(inquiry.checkIn);
     const checkOut = formatDateLabel(inquiry.checkOut);
     const isUnread = !inquiry.isRead;
+    const submittedAt = formatSubmissionDate(inquiry.createdAt);
+    const propertyId = Number(inquiry.propertyId);
+    const propertyHref = Number.isFinite(propertyId) && propertyId > 0
+        ? buildPropertyUrlFromRegionName(
+            inquiry.propertyType ?? undefined,
+            propertyId,
+            inquiry.propertyRegionName ?? undefined,
+            inquiry.propertyCitySlug ?? undefined,
+        )
+        : null;
 
     return (
         <div
@@ -118,7 +143,20 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
             )}
         >
             <div className="flex items-start gap-3">
-                {inquiry.propertyImage ? (
+                {propertyHref ? (
+                    <Link href={propertyHref} className="shrink-0">
+                        {inquiry.propertyImage ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                                src={inquiry.propertyImage}
+                                alt={inquiry.propertyTitle ?? 'Объявление'}
+                                className="w-16 h-16 rounded-lg object-cover"
+                            />
+                        ) : (
+                            <div className="w-16 h-16 rounded-lg bg-muted" />
+                        )}
+                    </Link>
+                ) : inquiry.propertyImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                         src={inquiry.propertyImage}
@@ -130,15 +168,27 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                 )}
                 <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <p className={cn(
-                                    'text-sm text-foreground',
-                                    isUnread ? 'font-semibold' : 'font-medium',
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {propertyHref ? (
+                                    <Link
+                                        href={propertyHref}
+                                        className={cn(
+                                            'text-sm text-foreground hover:text-primary hover:underline',
+                                            isUnread ? 'font-semibold' : 'font-medium',
+                                        )}
+                                    >
+                                        {inquiry.propertyTitle || 'Объявление'}
+                                    </Link>
+                                ) : (
+                                    <p className={cn(
+                                        'text-sm text-foreground',
+                                        isUnread ? 'font-semibold' : 'font-medium',
+                                    )}
+                                    >
+                                        {inquiry.propertyTitle || 'Объявление'}
+                                    </p>
                                 )}
-                                >
-                                    {inquiry.propertyTitle || 'Объявление'}
-                                </p>
                                 {isUnread && (
                                     <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
                                         Новая
@@ -148,15 +198,31 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                             {inquiry.propertyAddress && (
                                 <p className="text-xs text-muted-foreground mt-0.5">{inquiry.propertyAddress}</p>
                             )}
+                            {propertyHref && (
+                                <Link
+                                    href={propertyHref}
+                                    className="inline-block text-xs text-primary hover:underline mt-1"
+                                >
+                                    Перейти к объявлению
+                                </Link>
+                            )}
                         </div>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {formatTime(inquiry.createdAt)}
-                        </span>
+                        {submittedAt && (
+                            <span className="hidden sm:inline text-xs text-muted-foreground whitespace-nowrap shrink-0 text-right">
+                                {submittedAt}
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
 
             <div className="rounded-lg bg-muted/50 p-3 space-y-2 text-sm">
+                {submittedAt && (
+                    <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                        <CalendarCheck className="w-3.5 h-3.5 shrink-0" />
+                        <span>Отправлено: {submittedAt}</span>
+                    </div>
+                )}
                 <p className="font-medium text-foreground">{inquiry.name}</p>
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Phone className="w-3.5 h-3.5" />

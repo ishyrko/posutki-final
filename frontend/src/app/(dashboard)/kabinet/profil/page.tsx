@@ -2,12 +2,12 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useUser } from '@/features/auth/hooks';
+import { useUser, useLogout } from '@/features/auth/hooks';
 import type { User } from '@/features/auth/types';
 import { useUpdateProfile, useChangePassword, useUpdateEmail } from '@/features/profile/hooks';
 import { updateProfileSchema, UpdateProfileData, changePasswordSchema, ChangePasswordData } from '@/features/profile/api';
 import { motion } from 'framer-motion';
-import { Phone, Mail, Lock, Bell, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Phone, Mail, Lock, Bell, CheckCircle2, AlertCircle, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -110,6 +110,7 @@ function ProfileEmailSection({
 
 export default function ProfilePage() {
     const { data: user } = useUser();
+    const logout = useLogout();
     const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
     const { mutate: changePassword, isPending: isChangingPassword } = useChangePassword();
     const { mutate: saveEmail, isPending: isSavingEmail } = useUpdateEmail();
@@ -292,6 +293,18 @@ export default function ProfilePage() {
                         </div>
                     ))}
                 </div>
+            </div>
+
+            <div className="lg:hidden mt-6">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={logout}
+                    className="w-full h-11 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Выйти
+                </Button>
             </div>
 
             <PhoneVerifyDialog

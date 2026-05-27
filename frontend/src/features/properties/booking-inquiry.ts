@@ -27,6 +27,9 @@ export interface BookingInquiryItem {
     id: string;
     propertyId: string;
     propertyTitle?: string | null;
+    propertyType?: string | null;
+    propertyCitySlug?: string | null;
+    propertyRegionName?: string | null;
     propertyImage?: string | null;
     propertyAddress?: string | null;
     propertyPriceAmount?: number | null;

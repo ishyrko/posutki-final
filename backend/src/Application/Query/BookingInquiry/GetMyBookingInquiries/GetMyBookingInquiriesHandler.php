@@ -51,10 +51,15 @@ final class GetMyBookingInquiriesHandler
                 $city?->getName(),
             ]);
 
+            $region = $city?->getRegionDistrict()?->getRegion();
+
             $items[] = [
                 'id' => (string) $inquiry->getId()->getValue(),
                 'propertyId' => (string) $inquiry->getPropertyId()->getValue(),
                 'propertyTitle' => $property?->getTitle(),
+                'propertyType' => $property?->getType(),
+                'propertyCitySlug' => $city?->getSlug(),
+                'propertyRegionName' => $region?->getName(),
                 'propertyImage' => $propertyImage,
                 'propertyAddress' => $addressParts !== [] ? implode(', ', $addressParts) : null,
                 'propertyPriceAmount' => $property?->getPrice()->getAmount(),
