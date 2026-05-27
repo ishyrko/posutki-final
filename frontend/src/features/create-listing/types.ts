@@ -76,6 +76,7 @@ export interface UploadResponse {
 }
 
 export interface UploadedPhoto {
+    id: string;
     url: string;
     file?: File;
     uploading?: boolean;

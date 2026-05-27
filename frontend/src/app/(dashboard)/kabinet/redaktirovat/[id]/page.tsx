@@ -14,7 +14,6 @@ import {
     Calendar,
     Search,
     MapPin,
-    Upload,
     X,
     Info,
     Plus,
@@ -44,7 +43,9 @@ import type { Property as PropertyItem } from '@/features/properties/types';
 import { useSearchCities, useSearchStreets } from '@/features/create-listing/hooks';
 import { LISTING_AMENITY_GROUPS } from '@/features/create-listing/listing-amenity-groups';
 import { PAYMENT_METHOD_OPTIONS } from '@/features/properties/payment-methods';
-import { uploadFile, FileTooLargeError } from '@/features/create-listing/api';
+import { PropertyPhotoGrid } from '@/features/create-listing/components/PropertyPhotoGrid';
+import { createUploadedPhotoFromUrl } from '@/features/create-listing/photo-utils';
+import type { UploadedPhoto } from '@/features/create-listing/types';
 import {
     balconyOptions,
     dealConditionOptions,
@@ -63,7 +64,6 @@ import {
     showYearBuilt,
 } from '@/features/create-listing/property-field-rules';
 import {
-    ACCEPTED_IMAGE_TYPES,
     AREA_MAX,
     AREA_MIN,
     BATHROOMS_MAX,
@@ -72,8 +72,6 @@ import {
     DESCRIPTION_MIN_LENGTH,
     FLOOR_MAX,
     FLOOR_MIN,
-    MAX_FILE_SIZE,
-    MAX_FILE_SIZE_MB,
     MAX_PHOTOS,
     MIN_PHOTOS,
     ROOMS_MAX,
@@ -161,7 +159,7 @@ interface EditFormData {
     block: string;
     latitude: number | null;
     longitude: number | null;
-    images: { url: string; uploading?: boolean; file?: File }[];
+    images: UploadedPhoto[];
     amenities: string[];
     weekendPriceNegotiable: boolean;
     additionalServices: AdditionalService[];
@@ -252,8 +250,8 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
         latitude: revisionData?.latitude ?? property.coordinates?.latitude ?? null,
         longitude: revisionData?.longitude ?? property.coordinates?.longitude ?? null,
         images: revisionData?.images
-            ? revisionData.images.map((url) => ({ url }))
-            : property.images.map((img) => ({ url: img.url })),
+            ? revisionData.images.map((url) => createUploadedPhotoFromUrl(url))
+            : property.images.map((img) => createUploadedPhotoFromUrl(img.url)),
         amenities: [...(revisionData?.amenities ?? property.amenities ?? [])],
         weekendPriceNegotiable: property.weekendPriceNegotiable ?? false,
         additionalServices: (
@@ -279,8 +277,6 @@ export default function EditPropertyPage() {
     const [form, setForm] = useState<EditFormData | null>(null);
     const [fieldErrors, setFieldErrors] = useState<EditTitleDescriptionErrors>({});
     const [geocoding, setGeocoding] = useState(false);
-    const [dragOver, setDragOver] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [cityQuery, setCityQuery] = useState('');
     const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
@@ -433,68 +429,6 @@ export default function EditPropertyPage() {
         } finally {
             setGeocoding(false);
         }
-    };
-
-    const handleFiles = async (files: FileList | File[]) => {
-        if (!form) return;
-        const arr = Array.from(files);
-        const remaining = MAX_PHOTOS - form.images.length;
-        if (arr.length > remaining) {
-            toast.error(`Можно добавить ещё ${remaining} фото`);
-        }
-        const batch = arr.slice(0, remaining);
-        const validFiles = batch.filter((f) => {
-            if (!ACCEPTED_IMAGE_TYPES.includes(f.type as (typeof ACCEPTED_IMAGE_TYPES)[number])) {
-                toast.error(`${f.name}: допустимы только JPEG, PNG и WebP`);
-                return false;
-            }
-            if (f.size > MAX_FILE_SIZE) {
-                toast.error(`${f.name}: максимум ${MAX_FILE_SIZE_MB} МБ`);
-                return false;
-            }
-            return true;
-        });
-        if (!validFiles.length) return;
-
-        const placeholders = validFiles.map((f) => ({
-            url: URL.createObjectURL(f),
-            file: f,
-            uploading: true,
-        }));
-
-        setForm((prev) => (prev ? { ...prev, images: [...prev.images, ...placeholders] } : prev));
-
-        for (let i = 0; i < validFiles.length; i++) {
-            try {
-                const serverUrl = await uploadFile(validFiles[i]);
-                setForm((prev) => {
-                    if (!prev) return prev;
-                    const images = [...prev.images];
-                    const idx = prev.images.length - validFiles.length + i;
-                    if (images[idx]) {
-                        images[idx] = { ...images[idx], url: serverUrl, uploading: false };
-                    }
-                    return { ...prev, images };
-                });
-            } catch (err) {
-                const message =
-                    err instanceof FileTooLargeError
-                        ? `${validFiles[i].name}: файл слишком большой (макс. ${MAX_FILE_SIZE_MB} МБ)`
-                        : `Не удалось загрузить фото ${validFiles[i].name}`;
-                toast.error(message);
-                setForm((prev) => {
-                    if (!prev) return prev;
-                    const images = [...prev.images];
-                    const idx = prev.images.length - validFiles.length + i;
-                    if (images[idx]?.uploading) images.splice(idx, 1);
-                    return { ...prev, images };
-                });
-            }
-        }
-    };
-
-    const removePhoto = (index: number) => {
-        setForm((prev) => (prev ? { ...prev, images: prev.images.filter((_, i) => i !== index) } : prev));
     };
 
     const handleSubmit = async () => {
@@ -1278,70 +1212,20 @@ export default function EditPropertyPage() {
                 <section className="bg-card rounded-2xl shadow-card border border-border p-6">
                     <h2 className="text-lg font-semibold text-foreground mb-1">Фотографии</h2>
                     <p className="text-sm text-muted-foreground mb-4">
-                        Не менее {MIN_PHOTOS} и не более {MAX_PHOTOS} фото. Первое фото — обложка объявления.
+                        Не менее {MIN_PHOTOS} и не более {MAX_PHOTOS} фото. Перетаскивайте фото, чтобы изменить порядок (на телефоне — удерживайте и перетащите), первое станет обложкой.
                     </p>
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        multiple
-                        onChange={(e) => {
-                            if (e.target.files?.length) {
-                                handleFiles(e.target.files);
-                                e.target.value = '';
-                            }
-                        }}
-                        className="hidden"
-                    />
-                    <div
-                        className={`grid grid-cols-2 sm:grid-cols-3 gap-3 ${dragOver ? 'ring-2 ring-primary ring-offset-2 rounded-xl' : ''}`}
-                        onDragOver={(e) => {
-                            e.preventDefault();
-                            setDragOver(true);
-                        }}
-                        onDragLeave={() => setDragOver(false)}
-                        onDrop={(e) => {
-                            e.preventDefault();
-                            setDragOver(false);
-                            if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
-                        }}
-                    >
-                        {form.images.map((photo, i) => (
-                            <div key={i} className="relative aspect-[4/3] rounded-xl overflow-hidden group">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={photo.url} alt={`Фото ${i + 1}`} className="w-full h-full object-cover" />
-                                {photo.uploading && (
-                                    <div className="absolute inset-0 bg-foreground/30 flex items-center justify-center">
-                                        <Loader2 className="w-6 h-6 text-white animate-spin" />
-                                    </div>
-                                )}
-                                {i === 0 && !photo.uploading && (
-                                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-xs font-medium">
-                                        Обложка
-                                    </span>
-                                )}
-                                <button
-                                    onClick={() => removePhoto(i)}
-                                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-foreground/60 text-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
+                    <PropertyPhotoGrid
+                        photos={form.images}
+                        onChange={(images) => setForm((prev) => (
+                            prev
+                                ? {
+                                    ...prev,
+                                    images: typeof images === 'function' ? images(prev.images) : images,
+                                }
+                                : prev
                         ))}
-                        {form.images.length < MAX_PHOTOS && (
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className={`aspect-[4/3] rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors ${
-                                    dragOver
-                                        ? 'border-primary bg-primary/5 text-primary'
-                                        : 'border-border hover:border-primary/40 text-muted-foreground hover:text-primary'
-                                }`}
-                            >
-                                <Upload className="w-6 h-6" />
-                                <span className="text-xs font-medium">Добавить</span>
-                            </button>
-                        )}
-                    </div>
+                        addLabel="Добавить"
+                    />
                 </section>
 
                 {/* Address */}

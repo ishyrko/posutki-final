@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import {
     ArrowLeft,
     Check,
-    Upload,
     X,
     Home,
     MapPin,
@@ -34,8 +33,8 @@ import { cn } from '@/lib/utils';
 import AddressMapPicker from '@/components/AddressMapPicker';
 import { geocodeAddress as yandexGeocode } from '@/lib/yandex-geocoder';
 import { useSearchCities, useSearchStreets, useCreateProperty } from '../hooks';
-import { uploadFile, FileTooLargeError } from '../api';
-import type { ListingFormData, UploadedPhoto, CreatePropertyPayload, CitySearchResult, AdditionalService } from '../types';
+import type { ListingFormData, CreatePropertyPayload, CitySearchResult, AdditionalService } from '../types';
+import { PropertyPhotoGrid } from './PropertyPhotoGrid';
 import { LISTING_AMENITY_GROUPS } from '../listing-amenity-groups';
 import { PAYMENT_METHOD_OPTIONS } from '@/features/properties/payment-methods';
 
@@ -67,7 +66,6 @@ import {
     showYearBuilt,
 } from '../property-field-rules';
 import {
-    ACCEPTED_IMAGE_TYPES,
     AREA_MAX,
     AREA_MIN,
     BATHROOMS_MAX,
@@ -76,7 +74,6 @@ import {
     DESCRIPTION_MIN_LENGTH,
     FLOOR_MAX,
     FLOOR_MIN,
-    MAX_FILE_SIZE,
     MAX_FILE_SIZE_MB,
     MAX_PHOTOS,
     MIN_PHOTOS,
@@ -216,7 +213,6 @@ const INITIAL_FORM: ListingFormData = {
 
 export function CreateListingForm() {
     const router = useRouter();
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [isMounted, setIsMounted] = useState(false);
     const { data: user, isLoading: userLoading } = useUser();
     const hasVerifiedPhone = isMounted && Boolean(user?.isPhoneVerified);
@@ -229,7 +225,6 @@ export function CreateListingForm() {
     const [form, setForm] = useState<ListingFormData>(INITIAL_FORM);
     const [errors, setErrors] = useState<FormErrors>({});
     const [profileGateError, setProfileGateError] = useState<string | null>(null);
-    const [dragOver, setDragOver] = useState(false);
     const [geocoding, setGeocoding] = useState(false);
 
     // City autocomplete state
@@ -609,86 +604,6 @@ export function CreateListingForm() {
         setStreetDropdownOpen(false);
         setSubmitted(false);
     }, []);
-
-    // --- File upload ---
-
-    const handleFiles = async (files: FileList | File[]) => {
-        const arr = Array.from(files);
-        const remaining = MAX_PHOTOS - form.photos.length;
-        if (arr.length > remaining) {
-            toast.error(`Можно добавить ещё ${remaining} фото`);
-        }
-        const batch = arr.slice(0, remaining);
-
-        const validFiles = batch.filter((f) => {
-            if (!(ACCEPTED_IMAGE_TYPES as readonly string[]).includes(f.type)) {
-                toast.error(`${f.name}: допустимы только JPEG, PNG и WebP`);
-                return false;
-            }
-            if (f.size > MAX_FILE_SIZE) {
-                toast.error(`${f.name}: максимум ${MAX_FILE_SIZE_MB} МБ`);
-                return false;
-            }
-            return true;
-        });
-
-        if (!validFiles.length) return;
-
-        const placeholders: UploadedPhoto[] = validFiles.map((f) => ({
-            url: URL.createObjectURL(f),
-            file: f,
-            uploading: true,
-        }));
-
-        setForm((prev) => ({
-            ...prev,
-            photos: [...prev.photos, ...placeholders],
-        }));
-
-        for (let i = 0; i < validFiles.length; i++) {
-            try {
-                const serverUrl = await uploadFile(validFiles[i]);
-                setForm((prev) => {
-                    const photos = [...prev.photos];
-                    const idx = prev.photos.length - validFiles.length + i;
-                    if (photos[idx]) {
-                        photos[idx] = { ...photos[idx], url: serverUrl, uploading: false };
-                    }
-                    return { ...prev, photos };
-                });
-            } catch (err) {
-                const message = err instanceof FileTooLargeError
-                    ? `${validFiles[i].name}: файл слишком большой (макс. ${MAX_FILE_SIZE_MB} МБ)`
-                    : `Не удалось загрузить фото ${validFiles[i].name}`;
-                toast.error(message);
-                setForm((prev) => {
-                    const photos = [...prev.photos];
-                    const idx = prev.photos.length - validFiles.length + i;
-                    if (photos[idx] && photos[idx].uploading) {
-                        photos.splice(idx, 1);
-                    }
-                    return { ...prev, photos };
-                });
-            }
-        }
-    };
-
-    const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files?.length) {
-            handleFiles(e.target.files);
-            e.target.value = '';
-        }
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setDragOver(false);
-        if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
-    };
-
-    const removePhoto = (index: number) => {
-        setForm((prev) => ({ ...prev, photos: prev.photos.filter((_, i) => i !== index) }));
-    };
 
     // --- Geocoding ---
 
@@ -1458,77 +1373,18 @@ export function CreateListingForm() {
                                 <div>
                                     <h2 className="font-display text-lg font-semibold text-foreground">Фотографии</h2>
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        Не менее {MIN_PHOTOS} и не более {MAX_PHOTOS} фото. Первое фото станет обложкой.
+                                        Не менее {MIN_PHOTOS} и не более {MAX_PHOTOS} фото. Перетаскивайте фото, чтобы изменить порядок (на телефоне — удерживайте и перетащите), первое станет обложкой.
                                     </p>
                                     <FieldError field="photos" />
                                 </div>
 
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/webp"
-                                    multiple
-                                    onChange={handleFileInput}
-                                    className="hidden"
+                                <PropertyPhotoGrid
+                                    photos={form.photos}
+                                    onChange={(photos) => setForm((prev) => ({
+                                        ...prev,
+                                        photos: typeof photos === 'function' ? photos(prev.photos) : photos,
+                                    }))}
                                 />
-
-                                <div
-                                    className={cn(
-                                        'grid grid-cols-2 sm:grid-cols-3 gap-3',
-                                        dragOver && 'ring-2 ring-primary ring-offset-2 rounded-xl',
-                                    )}
-                                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                                    onDragLeave={() => setDragOver(false)}
-                                    onDrop={handleDrop}
-                                >
-                                    {form.photos.map((photo, i) => (
-                                        <div key={i} className="relative aspect-[4/3] rounded-xl overflow-hidden group">
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img
-                                                src={photo.url}
-                                                alt={`Фото ${i + 1}`}
-                                                className="w-full h-full object-cover"
-                                            />
-                                            {photo.uploading && (
-                                                <div className="absolute inset-0 bg-foreground/30 flex items-center justify-center">
-                                                    <Loader2 className="w-6 h-6 text-white animate-spin" />
-                                                </div>
-                                            )}
-                                            {i === 0 && !photo.uploading && (
-                                                <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold">
-                                                    Обложка
-                                                </span>
-                                            )}
-                                            <button
-                                                type="button"
-                                                onClick={() => removePhoto(i)}
-                                                className="absolute top-2 right-2 cursor-pointer rounded-full bg-card/80 p-1.5 text-destructive opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                    ))}
-
-                                    {form.photos.length < MAX_PHOTOS && (
-                                        <button
-                                            type="button"
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className={cn(
-                                                'group flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors',
-                                                dragOver
-                                                    ? 'border-primary bg-primary/5 text-primary'
-                                                    : 'border-border hover:border-primary/40 bg-surface text-muted-foreground hover:text-primary',
-                                            )}
-                                        >
-                                            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                                                <Upload className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                                            </div>
-                                            <span className="text-xs font-medium text-muted-foreground">
-                                                {dragOver ? 'Отпустите файлы' : 'Загрузить фото'}
-                                            </span>
-                                        </button>
-                                    )}
-                                </div>
 
                                 <div className="bg-muted/50 rounded-xl p-4 flex items-start gap-3">
                                     <ImageIcon className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
@@ -1538,6 +1394,7 @@ export function CreateListingForm() {
                                             <li>Используйте горизонтальные фото высокого качества</li>
                                             <li>Сфотографируйте все комнаты, кухню и ванную</li>
                                             <li>Обеспечьте хорошее освещение</li>
+                                            <li>Перетаскивайте фото для изменения порядка и нажимайте «поворот», если снимок нужно развернуть</li>
                                             <li>Допустимые форматы: JPEG, PNG, WebP (до {MAX_FILE_SIZE_MB} МБ)</li>
                                         </ul>
                                     </div>
