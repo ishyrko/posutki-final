@@ -590,23 +590,6 @@ export function CreateListingForm() {
         }
     }, [step, form, hasVerifiedPhone, userLoading]);
 
-    const next = () => { if (validateStep(step)) setStep((s) => Math.min(s + 1, TOTAL_STEPS)); };
-    const prev = () => setStep((s) => Math.max(s - 1, 1));
-    const goToStep = (target: number) => { if (target < step) setStep(target); };
-
-    const resetListing = useCallback(() => {
-        setForm({ ...INITIAL_FORM });
-        setStep(1);
-        setErrors({});
-        setCityQuery('');
-        setStreetQuery('');
-        setCityDropdownOpen(false);
-        setStreetDropdownOpen(false);
-        setSubmitted(false);
-    }, []);
-
-    // --- Geocoding ---
-
     const geocodeAddress = useCallback(async () => {
         const parts = [form.cityName, form.streetName, form.building, form.block].filter(Boolean);
         const query = parts.join(', ');
@@ -626,6 +609,29 @@ export function CreateListingForm() {
             setGeocoding(false);
         }
     }, [form.cityName, form.streetName, form.building, form.block]);
+
+    const next = async () => {
+        if (!validateStep(step)) return;
+
+        if (step === 5) {
+            await geocodeAddress();
+        }
+
+        setStep((s) => Math.min(s + 1, TOTAL_STEPS));
+    };
+    const prev = () => setStep((s) => Math.max(s - 1, 1));
+    const goToStep = (target: number) => { if (target < step) setStep(target); };
+
+    const resetListing = useCallback(() => {
+        setForm({ ...INITIAL_FORM });
+        setStep(1);
+        setErrors({});
+        setCityQuery('');
+        setStreetQuery('');
+        setCityDropdownOpen(false);
+        setStreetDropdownOpen(false);
+        setSubmitted(false);
+    }, []);
 
     // --- Submit ---
 
@@ -1904,8 +1910,15 @@ export function CreateListingForm() {
                     </Button>
 
                     {step < TOTAL_STEPS ? (
-                        <Button type="button" onClick={next} disabled={!canProceed()}>
-                            Далее
+                        <Button type="button" onClick={() => void next()} disabled={!canProceed() || geocoding}>
+                            {geocoding ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Определяем адрес…
+                                </>
+                            ) : (
+                                'Далее'
+                            )}
                         </Button>
                     ) : (
                         <Button
