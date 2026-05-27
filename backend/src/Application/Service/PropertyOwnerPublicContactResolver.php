@@ -24,7 +24,8 @@ readonly class PropertyOwnerPublicContactResolver
      *   phone: ?string,
      *   name: ?string,
      *   phones: list<array{phone: string, hasViber: bool, hasWhatsapp: bool}>,
-     *   telegram: ?string
+     *   telegram: ?string,
+     *   hasEmail: bool
      * }>
      */
     public function resolveForOwnerIds(array $ownerIds): array
@@ -46,7 +47,7 @@ readonly class PropertyOwnerPublicContactResolver
         foreach ($intIds as $oid) {
             $user = $usersById[$oid] ?? null;
             if ($user === null) {
-                $out[$oid] = ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
+                $out[$oid] = ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null, 'hasEmail' => false];
                 continue;
             }
 
@@ -85,6 +86,7 @@ readonly class PropertyOwnerPublicContactResolver
                 'name' => $name !== '' ? $name : null,
                 'phones' => $phones,
                 'telegram' => $telegram,
+                'hasEmail' => $user->getEmail() !== null && $user->isVerified(),
             ];
         }
 
@@ -94,7 +96,7 @@ readonly class PropertyOwnerPublicContactResolver
     public function assertOwnerHasPublicContact(string $ownerIdString): void
     {
         $id = Id::fromString($ownerIdString)->getValue();
-        $resolved = $this->resolveForOwnerIds([$id])[$id] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
+        $resolved = $this->resolveForOwnerIds([$id])[$id] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null, 'hasEmail' => false];
 
         if ($resolved['phone'] === null) {
             throw new DomainException('Подтвердите телефон в профиле');

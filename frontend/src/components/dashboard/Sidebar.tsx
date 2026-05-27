@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Home, Heart, MessageSquare, User, LogOut, ChevronRight } from 'lucide-react';
 import { useUser, useLogout } from '@/features/auth/hooks';
 import { useUnreadCount } from '@/features/messages/hooks';
+import { useUnreadBookingInquiryCount } from '@/features/properties/booking-inquiry';
 import { UserAvatar } from '@/components/UserAvatar';
 import { formatUserDisplayName } from '@/features/profile/displayName';
 
@@ -37,6 +38,8 @@ export function Sidebar() {
     const { data: user } = useUser();
     const logout = useLogout();
     const { data: unreadCount } = useUnreadCount();
+    const { data: unreadBookingInquiryCount } = useUnreadBookingInquiryCount();
+    const totalUnreadCount = (unreadCount ?? 0) + (unreadBookingInquiryCount ?? 0);
 
     return (
         <>
@@ -69,16 +72,16 @@ export function Sidebar() {
                                 <item.icon className="h-4 w-4 shrink-0" />
                                 <span className="truncate">{item.name}</span>
                                 {isActive &&
-                                    (item.badgeKey === 'unread' && !!unreadCount && unreadCount > 0 ? (
+                                    (item.badgeKey === 'unread' && totalUnreadCount > 0 ? (
                                         <span className="ml-auto min-w-[1.25rem] h-5 px-1 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center shrink-0">
-                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                            {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
                                         </span>
                                     ) : (
                                         <ChevronRight className="h-4 w-4 ml-auto shrink-0" />
                                     ))}
-                                {!isActive && item.badgeKey === 'unread' && !!unreadCount && unreadCount > 0 && (
+                                {!isActive && item.badgeKey === 'unread' && totalUnreadCount > 0 && (
                                     <span className="ml-auto min-w-[1.25rem] h-5 px-1 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center shrink-0">
-                                        {unreadCount > 99 ? '99+' : unreadCount}
+                                        {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
                                     </span>
                                 )}
                             </Link>
@@ -116,9 +119,9 @@ export function Sidebar() {
                             )}
                             <item.icon className="w-5 h-5" />
                             {item.mobileName ?? item.name}
-                            {item.badgeKey === 'unread' && !!unreadCount && unreadCount > 0 && (
+                            {item.badgeKey === 'unread' && totalUnreadCount > 0 && (
                                 <span className="absolute top-1.5 right-[calc(50%-1.25rem)] min-w-[1rem] h-4 px-0.5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center leading-none">
-                                    {unreadCount > 99 ? '99+' : unreadCount}
+                                    {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
                                 </span>
                             )}
                         </Link>

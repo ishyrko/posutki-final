@@ -40,6 +40,7 @@ export interface Property {
             hasWhatsapp: boolean;
         }>;
         telegram?: string | null;
+        hasEmail?: boolean;
     };
     title: string;
     description: string;
