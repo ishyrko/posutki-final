@@ -1,13 +1,29 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { MessageSquare, Send, ArrowLeft, Check, CheckCheck, Loader2 } from 'lucide-react';
+import {
+    MessageSquare,
+    Send,
+    ArrowLeft,
+    Check,
+    CheckCheck,
+    Loader2,
+    CalendarCheck,
+    Phone,
+    Users,
+    Mail,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useConversations, useMessages, useSendMessage, useMarkRead } from '@/features/messages/hooks';
 import { useUser } from '@/features/auth/hooks';
 import { Conversation } from '@/features/messages/types';
+import { useMyBookingInquiries, useUnreadBookingInquiryCount, useMarkBookingInquiriesRead, BookingInquiryItem } from '@/features/properties/booking-inquiry';
+import { cn } from '@/lib/utils';
+
+type MessagesTab = 'conversations' | 'bookings';
 
 function formatTime(dateStr: string): string {
     const date = new Date(dateStr);
@@ -17,6 +33,13 @@ function formatTime(dateStr: string): string {
         return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     }
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+}
+
+function formatDateLabel(value?: string | null): string | null {
+    if (!value) return null;
+    const date = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function ConversationList({
@@ -82,6 +105,124 @@ function ConversationList({
     );
 }
 
+function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
+    const checkIn = formatDateLabel(inquiry.checkIn);
+    const checkOut = formatDateLabel(inquiry.checkOut);
+    const isUnread = !inquiry.isRead;
+
+    return (
+        <div
+            className={cn(
+                'rounded-xl border bg-card p-4 space-y-3',
+                isUnread ? 'border-primary/40 bg-primary/[0.03]' : 'border-border',
+            )}
+        >
+            <div className="flex items-start gap-3">
+                {inquiry.propertyImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                        src={inquiry.propertyImage}
+                        alt={inquiry.propertyTitle ?? 'Объявление'}
+                        className="w-16 h-16 rounded-lg object-cover shrink-0"
+                    />
+                ) : (
+                    <div className="w-16 h-16 rounded-lg bg-muted shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <p className={cn(
+                                    'text-sm text-foreground',
+                                    isUnread ? 'font-semibold' : 'font-medium',
+                                )}
+                                >
+                                    {inquiry.propertyTitle || 'Объявление'}
+                                </p>
+                                {isUnread && (
+                                    <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
+                                        Новая
+                                    </span>
+                                )}
+                            </div>
+                            {inquiry.propertyAddress && (
+                                <p className="text-xs text-muted-foreground mt-0.5">{inquiry.propertyAddress}</p>
+                            )}
+                        </div>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {formatTime(inquiry.createdAt)}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="rounded-lg bg-muted/50 p-3 space-y-2 text-sm">
+                <p className="font-medium text-foreground">{inquiry.name}</p>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Phone className="w-3.5 h-3.5" />
+                    <a href={`tel:${inquiry.phone}`} className="hover:text-primary">{inquiry.phone}</a>
+                </div>
+                {inquiry.email && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <Mail className="w-3.5 h-3.5" />
+                        <a href={`mailto:${inquiry.email}`} className="hover:text-primary">{inquiry.email}</a>
+                    </div>
+                )}
+                {(checkIn || checkOut || inquiry.guests) && (
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
+                        {checkIn && <span>Заезд: {checkIn}</span>}
+                        {checkOut && <span>Выезд: {checkOut}</span>}
+                        {inquiry.guests != null && (
+                            <span className="inline-flex items-center gap-1">
+                                <Users className="w-3.5 h-3.5" />
+                                {inquiry.guests}
+                            </span>
+                        )}
+                    </div>
+                )}
+                {inquiry.notes && (
+                    <p className="text-muted-foreground whitespace-pre-wrap">{inquiry.notes}</p>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function BookingInquiriesPanel() {
+    const { data, isLoading } = useMyBookingInquiries();
+    const inquiries = data?.data ?? [];
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
+
+    if (inquiries.length === 0) {
+        return (
+            <div className="flex items-center justify-center h-full p-6">
+                <div className="text-center">
+                    <CalendarCheck className="w-10 h-10 text-muted-foreground/40 mx-auto mb-4" />
+                    <p className="text-muted-foreground">Заявок на бронирование пока нет</p>
+                    <p className="text-sm text-muted-foreground/60 mt-1">
+                        Новые заявки по вашим объявлениям появятся здесь
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="h-full overflow-y-auto p-4 space-y-3">
+            {inquiries.map((inquiry) => (
+                <BookingInquiryCard key={inquiry.id} inquiry={inquiry} />
+            ))}
+        </div>
+    );
+}
+
 function ChatView({
     conversationId,
     conversation,
@@ -126,7 +267,6 @@ function ChatView({
 
     return (
         <div className="flex flex-col h-full">
-            {/* Header */}
             <div className="p-4 border-b border-border flex items-center gap-3">
                 <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-muted">
                     <ArrowLeft className="w-5 h-5" />
@@ -144,7 +284,6 @@ function ChatView({
                 </div>
             </div>
 
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {isLoading && (
                     <div className="flex justify-center py-8">
@@ -180,7 +319,6 @@ function ChatView({
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
             <div className="p-4 border-t border-border">
                 <form
                     onSubmit={(e) => { e.preventDefault(); handleSend(); }}
@@ -208,12 +346,29 @@ function ChatView({
 }
 
 export default function MessagesPage() {
+    const queryClient = useQueryClient();
     const { data: user } = useUser();
     const { data: conversationsData, isLoading } = useConversations();
+    const { data: unreadBookingInquiryCount } = useUnreadBookingInquiryCount();
+    const markBookingInquiriesRead = useMarkBookingInquiriesRead();
     const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [activeTab, setActiveTab] = useState<MessagesTab>('conversations');
 
     const conversations = conversationsData?.data || [];
     const selectedConversation = conversations.find((c) => c.id === selectedId);
+
+    const handleTabChange = (tab: MessagesTab) => {
+        if (tab === 'bookings' && (unreadBookingInquiryCount ?? 0) > 0) {
+            markBookingInquiriesRead.mutate();
+        }
+        if (activeTab === 'bookings' && tab !== 'bookings') {
+            queryClient.invalidateQueries({ queryKey: ['booking-inquiries'] });
+        }
+        setActiveTab(tab);
+        if (tab !== 'conversations') {
+            setSelectedId(null);
+        }
+    };
 
     if (!user) {
         return (
@@ -229,10 +384,48 @@ export default function MessagesPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <h1 className="font-display text-2xl font-bold text-foreground mb-6">Сообщения</h1>
+            <h1 className="font-display text-2xl font-bold text-foreground mb-4">Сообщения</h1>
 
-            <div className="bg-card rounded-xl overflow-hidden shadow-card h-[calc(100vh-14rem)]">
-                {isLoading ? (
+            <div className="flex gap-2 mb-4">
+                <Button
+                    type="button"
+                    variant={activeTab === 'conversations' ? 'default' : 'outline'}
+                    className={cn(
+                        activeTab === 'conversations' && 'bg-gradient-primary text-primary-foreground border-0',
+                    )}
+                    onClick={() => handleTabChange('conversations')}
+                >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Диалоги
+                </Button>
+                <Button
+                    type="button"
+                    variant={activeTab === 'bookings' ? 'default' : 'outline'}
+                    className={cn(
+                        activeTab === 'bookings' && 'bg-gradient-primary text-primary-foreground border-0',
+                    )}
+                    onClick={() => handleTabChange('bookings')}
+                >
+                    <CalendarCheck className="w-4 h-4 mr-2" />
+                    Заявки на бронирование
+                    {(unreadBookingInquiryCount ?? 0) > 0 && activeTab !== 'bookings' && (
+                        <span className={cn(
+                            'ml-2 min-w-[20px] h-5 px-1.5 rounded-full text-xs flex items-center justify-center font-medium',
+                            activeTab === 'bookings'
+                                ? 'bg-primary-foreground/20 text-primary-foreground'
+                                : 'bg-primary text-primary-foreground',
+                        )}
+                        >
+                            {(unreadBookingInquiryCount ?? 0) > 99 ? '99+' : unreadBookingInquiryCount}
+                        </span>
+                    )}
+                </Button>
+            </div>
+
+            <div className="bg-card rounded-xl overflow-hidden shadow-card h-[calc(100vh-16rem)]">
+                {activeTab === 'bookings' ? (
+                    <BookingInquiriesPanel />
+                ) : isLoading ? (
                     <div className="flex items-center justify-center h-full">
                         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                     </div>
@@ -248,7 +441,6 @@ export default function MessagesPage() {
                     </div>
                 ) : (
                     <div className="flex h-full">
-                        {/* Conversation list */}
                         <div className={`w-full lg:w-80 xl:w-96 border-r border-border overflow-y-auto p-2 ${
                             selectedId ? 'hidden lg:block' : ''
                         }`}>
@@ -260,7 +452,6 @@ export default function MessagesPage() {
                             />
                         </div>
 
-                        {/* Chat area */}
                         <div className={`flex-1 ${!selectedId ? 'hidden lg:flex' : 'flex'}`}>
                             {selectedConversation ? (
                                 <div className="flex-1 flex flex-col">

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Heart, Share2, MapPin, BedDouble, Bath, Maximize,
-  Building2, Calendar, Layers, Phone, MessageCircle, Mail, TrainFront,
+  Building2, Calendar, CalendarCheck, Layers, Phone, MessageCircle, TrainFront,
   ChevronLeft, ChevronRight, X, Shield, Eye, Clock, Send, CheckCircle,
   Users, Utensils, Wifi, Tv, Sofa, Car, Waves, Wind,
   ShowerHead, Flame, Coffee, Snowflake, Baby, WashingMachine,
@@ -28,6 +28,7 @@ import { PriceDisplay } from "@/components/BynCurrency";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";
 import { useCurrency } from "@/context/CurrencyContext";
 import PropertyMap from "@/components/PropertyMap";
+import { BookingInquiryModal } from "@/features/properties/components/BookingInquiryModal";
 import { buildCatalogUrl, buildCatalogUrlFromAddress } from "@/features/catalog/slugs";
 import { toast } from "sonner";
 import {
@@ -242,6 +243,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   const [messageOpen, setMessageOpen] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [messageSent, setMessageSent] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
   const sendMessageMutation = useSendMessage();
 
   const mainImageSrc =
@@ -343,6 +345,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   const primaryContactPhone = contactPhones[0]?.phone ?? "";
   const hasContactPhones = contactPhones.length > 0;
   const contactTelegram = property.contact?.telegram?.trim() ?? "";
+  const canBookInquiry = property.contact?.hasEmail === true;
 
   const images = property.images?.map(img => img.url) || [
     "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80",
@@ -1157,16 +1160,14 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                       </Link>
                     </Button>
                   )}
-                  {!isOwner && (
+                  {!isOwner && canBookInquiry && (
                     <Button
                       variant="outline"
                       className="w-full h-11"
-                      asChild
+                      onClick={() => setBookingOpen(true)}
                     >
-                      <a href={`mailto:example@mail.ru?subject=Запрос по объявлению: ${property.title}&body=Здравствуйте! Меня интересует ваш объект: ${property.title} (ID: ${property.id}). Прошу связаться со мной для уточнения деталей.`}>
-                        <Mail className="w-4 h-4 mr-2" />
-                        Отправить на почту
-                      </a>
+                      <CalendarCheck className="w-4 h-4 mr-2" />
+                      Забронировать
                     </Button>
                   )}
                 </div>
@@ -1300,6 +1301,15 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
           </motion.div>
         )}
       </AnimatePresence>
+
+      {canBookInquiry && (
+        <BookingInquiryModal
+          key={bookingOpen ? `booking-${property.id}` : 'booking-closed'}
+          open={bookingOpen}
+          onOpenChange={setBookingOpen}
+          property={property}
+        />
+      )}
     </div>
   );
 }

@@ -104,6 +104,9 @@ services:
     App\Domain\ContactFeedback\Repository\ContactFeedbackRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\ContactFeedbackRepository
 
+    App\Domain\BookingInquiry\Repository\BookingInquiryRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\BookingInquiryRepository
+
     App\Domain\Review\Repository\ReviewRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\ReviewRepository
 
@@ -270,11 +273,22 @@ services:
             $notificationBus: '@notification.bus'
         tags: [ { name: messenger.message_handler, bus: command.bus } ]
 
+    App\Application\Command\BookingInquiry\Submit\SubmitBookingInquiryHandler:
+        arguments:
+            $notificationBus: '@notification.bus'
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\BookingInquiry\MarkRead\MarkBookingInquiriesReadHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
     # Message Query Handlers
     App\Application\Query\Message\GetConversations\GetConversationsHandler:
         tags: [ { name: messenger.message_handler, bus: query.bus } ]
 
     App\Application\Query\Message\GetMessages\GetMessagesHandler:
+        tags: [ { name: messenger.message_handler, bus: query.bus } ]
+
+    App\Application\Query\BookingInquiry\GetMyBookingInquiries\GetMyBookingInquiriesHandler:
         tags: [ { name: messenger.message_handler, bus: query.bus } ]
 
     # Favorite Command Handlers
@@ -351,6 +365,9 @@ services:
     App\Application\Notification\Message\MessageSentHandler:
         tags: [ { name: messenger.message_handler, bus: notification.bus } ]
 
+    App\Application\Notification\BookingInquiry\BookingInquirySubmittedHandler:
+        tags: [ { name: messenger.message_handler, bus: notification.bus } ]
+
     # Property Mailer
     App\Infrastructure\Mail\PropertyMailer:
         arguments:
@@ -363,6 +380,10 @@ services:
             $adminEmails: '%app.admin_emails%'
 
     App\Infrastructure\Mail\MessageMailer:
+        arguments:
+            $mailerFrom: '%app.mailer_from%'
+
+    App\Infrastructure\Mail\BookingInquiryMailer:
         arguments:
             $mailerFrom: '%app.mailer_from%'
 
