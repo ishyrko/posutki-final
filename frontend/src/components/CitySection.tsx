@@ -10,6 +10,7 @@ import {
   Landmark,
   MapPin,
   Home,
+  Mountain,
 } from "lucide-react";
 import Link from "next/link";
 import { buildCatalogUrl } from "@/features/catalog/slugs";
@@ -91,6 +92,12 @@ const cities = [
     slug: "novopolotsk",
     icon: Factory,
     href: buildCatalogUrl({ city: "novopolotsk", propertyType: "apartment" }),
+  },
+  {
+    name: "Светлогорск",
+    slug: "svetlogorsk",
+    icon: Mountain,
+    href: buildCatalogUrl({ city: "svetlogorsk", propertyType: "apartment" }),
   },
   {
     name: "Сморгонь",

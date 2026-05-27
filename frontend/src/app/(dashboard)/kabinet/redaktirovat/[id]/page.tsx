@@ -73,6 +73,7 @@ import {
     FLOOR_MAX,
     FLOOR_MIN,
     MAX_FILE_SIZE,
+    MAX_FILE_SIZE_MB,
     MAX_PHOTOS,
     MIN_PHOTOS,
     ROOMS_MAX,
@@ -460,7 +461,7 @@ export default function EditPropertyPage() {
                 return false;
             }
             if (f.size > MAX_FILE_SIZE) {
-                toast.error(`${f.name}: максимум 10 МБ`);
+                toast.error(`${f.name}: максимум ${MAX_FILE_SIZE_MB} МБ`);
                 return false;
             }
             return true;
@@ -490,7 +491,7 @@ export default function EditPropertyPage() {
             } catch (err) {
                 const message =
                     err instanceof FileTooLargeError
-                        ? `${validFiles[i].name}: файл слишком большой (макс. 10 МБ)`
+                        ? `${validFiles[i].name}: файл слишком большой (макс. ${MAX_FILE_SIZE_MB} МБ)`
                         : `Не удалось загрузить фото ${validFiles[i].name}`;
                 toast.error(message);
                 setForm((prev) => {

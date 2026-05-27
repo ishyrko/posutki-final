@@ -56,7 +56,10 @@ class UploadController extends AbstractController
                 );
             }
 
-            $maxBytes = $scope === 'avatars' ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+            $maxBytes = match ($scope) {
+                'avatars' => 5 * 1024 * 1024,
+                default => 20 * 1024 * 1024,
+            };
             if ($file->getSize() > $maxBytes) {
                 $maxMb = (int) ($maxBytes / (1024 * 1024));
 

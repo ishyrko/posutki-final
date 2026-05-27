@@ -14,6 +14,7 @@ final class GetHomeCityApartmentCountsHandler
     /** @var list<string> */
     private const APARTMENT_CITY_PREFIX_SLUGS = [
         'orsha',
+        'svetlogorsk',
         'smorgon',
         'molodechno',
         'baranovichi',
@@ -36,6 +37,7 @@ final class GetHomeCityApartmentCountsHandler
         ['slug' => 'molodechno', 'citySlug' => 'molodechno'],
         ['slug' => 'orsha', 'citySlug' => 'orsha'],
         ['slug' => 'novopolotsk', 'citySlug' => 'novopolotsk'],
+        ['slug' => 'svetlogorsk', 'citySlug' => 'svetlogorsk'],
         ['slug' => 'smorgon', 'citySlug' => 'smorgon'],
     ];
 

@@ -21,7 +21,8 @@ export const YEAR_BUILT_MAX = 2050;
 export const MIN_PHOTOS = 3;
 export const MAX_PHOTOS = 20;
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
-export const MAX_FILE_SIZE = 10 * 1024 * 1024;
+export const MAX_FILE_SIZE_MB = 20;
+export const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
 export const E164_PHONE_REGEX = /^\+?[1-9]\d{1,14}$/;
 
 export const normalizePhoneForApi = (value: string): string => {
