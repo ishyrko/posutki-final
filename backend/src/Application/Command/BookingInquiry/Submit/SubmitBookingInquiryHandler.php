@@ -7,6 +7,7 @@ namespace App\Application\Command\BookingInquiry\Submit;
 use App\Domain\BookingInquiry\Entity\BookingInquiry;
 use App\Domain\BookingInquiry\Event\BookingInquirySubmittedEvent;
 use App\Domain\BookingInquiry\Repository\BookingInquiryRepositoryInterface;
+use App\Application\Service\IcsCalendarService;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
@@ -20,6 +21,7 @@ final class SubmitBookingInquiryHandler
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly UserRepositoryInterface $userRepository,
         private readonly MessageBusInterface $notificationBus,
+        private readonly IcsCalendarService $icsCalendarService,
     ) {
     }
 
@@ -47,6 +49,8 @@ final class SubmitBookingInquiryHandler
         if ($checkIn !== null && $checkOut !== null && $checkOut < $checkIn) {
             throw new DomainException('Дата выезда не может быть раньше даты заезда');
         }
+
+        $this->assertDatesNotBlocked($property->getExternalCalendarUrls(), $checkIn, $checkOut);
 
         $inquiry = new BookingInquiry(
             propertyId: Id::fromString($command->propertyId),
@@ -84,5 +88,69 @@ final class SubmitBookingInquiryHandler
         }
 
         return $date;
+    }
+
+    /**
+     * @param list<string>|null $externalCalendarUrls
+     */
+    private function assertDatesNotBlocked(
+        ?array $externalCalendarUrls,
+        ?\DateTimeImmutable $checkIn,
+        ?\DateTimeImmutable $checkOut,
+    ): void {
+        if ($externalCalendarUrls === null || $externalCalendarUrls === []) {
+            return;
+        }
+
+        if ($checkIn === null && $checkOut === null) {
+            return;
+        }
+
+        $calendarData = $this->icsCalendarService->fetchCalendarData($externalCalendarUrls);
+        $blockedKeys = $this->blockedDateKeys($calendarData['blockedRanges']);
+
+        if ($checkIn !== null && isset($blockedKeys[$checkIn->format('Y-m-d')])) {
+            throw new DomainException('Дата заезда занята');
+        }
+
+        if ($checkIn === null || $checkOut === null) {
+            return;
+        }
+
+        $cursor = $checkIn;
+        while ($cursor < $checkOut) {
+            if (isset($blockedKeys[$cursor->format('Y-m-d')])) {
+                throw new DomainException('Выбранный период включает занятые даты');
+            }
+
+            $cursor = $cursor->modify('+1 day');
+        }
+    }
+
+    /**
+     * @param list<array{start: string, end: string}> $blockedRanges
+     *
+     * @return array<string, true>
+     */
+    private function blockedDateKeys(array $blockedRanges): array
+    {
+        $keys = [];
+
+        foreach ($blockedRanges as $range) {
+            $start = \DateTimeImmutable::createFromFormat('Y-m-d', $range['start']);
+            $end = \DateTimeImmutable::createFromFormat('Y-m-d', $range['end']);
+
+            if ($start === false || $end === false) {
+                continue;
+            }
+
+            $cursor = $start;
+            while ($cursor <= $end) {
+                $keys[$cursor->format('Y-m-d')] = true;
+                $cursor = $cursor->modify('+1 day');
+            }
+        }
+
+        return $keys;
     }
 }

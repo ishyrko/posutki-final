@@ -5,34 +5,13 @@ import { ChevronDown, Loader2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { usePropertyCalendar } from '@/features/properties/hooks';
-import type { BlockedDateRange } from '@/features/properties/api';
+import { expandBlockedRanges } from '@/features/properties/property-calendar-utils';
 import { cn } from '@/lib/utils';
 
 type PropertyAvailabilityCalendarProps = {
     propertyId: number;
     className?: string;
 };
-
-function expandBlockedRanges(ranges: BlockedDateRange[]): Date[] {
-    const dates: Date[] = [];
-
-    for (const range of ranges) {
-        const start = new Date(`${range.start}T00:00:00`);
-        const end = new Date(`${range.end}T00:00:00`);
-
-        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-            continue;
-        }
-
-        const cursor = new Date(start);
-        while (cursor <= end) {
-            dates.push(new Date(cursor));
-            cursor.setDate(cursor.getDate() + 1);
-        }
-    }
-
-    return dates;
-}
 
 function formatLastUpdatedAt(value: string): string {
     const date = new Date(value);
@@ -48,6 +27,10 @@ function formatLastUpdatedAt(value: string): string {
         minute: '2-digit',
     }).format(date);
 }
+
+const bookedModifiersClassNames = {
+    booked: 'bg-muted text-muted-foreground line-through opacity-70',
+};
 
 export function PropertyAvailabilityCalendar({ propertyId, className }: PropertyAvailabilityCalendarProps) {
     const [open, setOpen] = useState(false);
@@ -101,9 +84,7 @@ export function PropertyAvailabilityCalendar({ propertyId, className }: Property
                             mode="single"
                             disabled={bookedDates}
                             modifiers={{ booked: bookedDates }}
-                            modifiersClassNames={{
-                                booked: 'bg-muted text-muted-foreground line-through opacity-70',
-                            }}
+                            modifiersClassNames={bookedModifiersClassNames}
                             className="mx-auto"
                         />
                         {data?.lastUpdatedAt && (

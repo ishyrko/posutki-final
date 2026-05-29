@@ -37,7 +37,13 @@ import { useUser } from '@/features/auth/hooks';
 import { formatAddress, Property } from '@/features/properties/types';
 import { PriceDisplay } from '@/components/BynCurrency';
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from '@/features/properties/price-display';
-import { useExchangeRates } from '@/features/properties/hooks';
+import { useExchangeRates, usePropertyCalendar } from '@/features/properties/hooks';
+import {
+    blockedDateKeySet,
+    hasBookedNightInStay,
+    isBookedDate,
+    startOfToday,
+} from '@/features/properties/property-calendar-utils';
 import { useCurrency } from '@/context/CurrencyContext';
 import {
     bookingInquirySchema,
@@ -77,6 +83,16 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
 
     const previewImage = property.images[0]?.thumbnailUrl || property.images[0]?.url || null;
     const addressStr = formatAddress(property.address);
+    const hasExternalCalendar = (property.externalCalendarUrls?.length ?? 0) > 0;
+    const { data: calendarData } = usePropertyCalendar(property.id, open && hasExternalCalendar);
+    const bookedDateKeys = useMemo(
+        () => blockedDateKeySet(calendarData?.blockedRanges ?? []),
+        [calendarData?.blockedRanges],
+    );
+    const bookedDatesForPicker = useMemo(
+        () => (hasExternalCalendar && bookedDateKeys.size > 0 ? Array.from(bookedDateKeys).map((d) => new Date(`${d}T00:00:00`)) : []),
+        [hasExternalCalendar, bookedDateKeys],
+    );
 
     const defaultValues = useMemo<BookingInquiryFormData>(() => ({
         propertyId: property.id,
@@ -97,6 +113,21 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
     const onSubmit = (data: BookingInquiryFormData) => {
         if (siteKey && !recaptchaToken) {
             toast.error('Подтвердите, что вы не робот');
+            return;
+        }
+
+        if (
+            hasExternalCalendar
+            && data.checkIn?.trim()
+            && data.checkOut?.trim()
+            && hasBookedNightInStay(data.checkIn, data.checkOut, bookedDateKeys)
+        ) {
+            toast.error('Выбранный период включает занятые даты');
+            return;
+        }
+
+        if (data.checkIn?.trim() && isBookedDate(new Date(`${data.checkIn}T00:00:00`), bookedDateKeys)) {
+            toast.error('Дата заезда занята');
             return;
         }
 
@@ -232,6 +263,12 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                 )}
                                             />
 
+                                            {hasExternalCalendar && bookedDateKeys.size > 0 && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    Занятые даты синхронизированы с календарём объявления
+                                                </p>
+                                            )}
+
                                             <div className="grid gap-4 sm:grid-cols-2">
                                                 <FormField
                                                     control={form.control}
@@ -260,8 +297,32 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                         mode="single"
                                                                         locale={ru}
                                                                         selected={field.value ? new Date(`${field.value}T00:00:00`) : undefined}
-                                                                        onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
-                                                                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                                                        onSelect={(date) => {
+                                                                            const next = date ? format(date, 'yyyy-MM-dd') : '';
+                                                                            field.onChange(next);
+                                                                            const checkOut = form.getValues('checkOut');
+                                                                            if (
+                                                                                next
+                                                                                && checkOut
+                                                                                && hasBookedNightInStay(next, checkOut, bookedDateKeys)
+                                                                            ) {
+                                                                                form.setValue('checkOut', '');
+                                                                            }
+                                                                        }}
+                                                                        disabled={(date) => {
+                                                                            if (date < startOfToday()) {
+                                                                                return true;
+                                                                            }
+                                                                            return isBookedDate(date, bookedDateKeys);
+                                                                        }}
+                                                                        modifiers={
+                                                                            bookedDatesForPicker.length > 0
+                                                                                ? { booked: bookedDatesForPicker }
+                                                                                : undefined
+                                                                        }
+                                                                        modifiersClassNames={{
+                                                                            booked: 'bg-muted text-muted-foreground line-through opacity-70',
+                                                                        }}
                                                                         initialFocus
                                                                     />
                                                                 </PopoverContent>
@@ -300,12 +361,22 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                         selected={field.value ? new Date(`${field.value}T00:00:00`) : undefined}
                                                                         onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
                                                                         disabled={(date) => {
-                                                                            const today = new Date(new Date().setHours(0, 0, 0, 0));
                                                                             const checkIn = form.getValues('checkIn');
                                                                             const minDate = checkIn
                                                                                 ? new Date(`${checkIn}T00:00:00`)
-                                                                                : today;
-                                                                            return date < minDate;
+                                                                                : startOfToday();
+                                                                            if (date < minDate) {
+                                                                                return true;
+                                                                            }
+                                                                            return isBookedDate(date, bookedDateKeys);
+                                                                        }}
+                                                                        modifiers={
+                                                                            bookedDatesForPicker.length > 0
+                                                                                ? { booked: bookedDatesForPicker }
+                                                                                : undefined
+                                                                        }
+                                                                        modifiersClassNames={{
+                                                                            booked: 'bg-muted text-muted-foreground line-through opacity-70',
                                                                         }}
                                                                         initialFocus
                                                                     />
