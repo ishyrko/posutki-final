@@ -28,6 +28,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { isAuthenticated } from "@/lib/auth";
 import { withRegionalCatalogHref } from "@/lib/region-header";
 import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
+import { useHeaderCatalogPropertyType } from "@/hooks/useHeaderCatalogPropertyType";
+import { buildCatalogUrl } from "@/features/catalog/slugs";
 import { useSyncExternalStore } from "react";
 import { useCurrency } from "@/context/CurrencyContext";
 import { BynCurrencyMark } from "@/components/BynCurrency";
@@ -40,8 +42,13 @@ interface MegaMenuSection {
   items: { label: string; desc: string; icon: React.ReactNode; href: string }[];
 }
 
-function buildMegaMenu(regionSlug: string): Record<string, MegaMenuSection[]> {
+function buildMegaMenu(
+  regionSlug: string,
+  catalogPropertyType: "apartment" | "house",
+): Record<string, MegaMenuSection[]> {
   const r = (path: string) => withRegionalCatalogHref(path, regionSlug);
+  const cityHref = (region?: string) =>
+    buildCatalogUrl({ region, propertyType: catalogPropertyType });
 
   return {
     Квартиры: [
@@ -94,16 +101,16 @@ function buildMegaMenu(regionSlug: string): Record<string, MegaMenuSection[]> {
       {
         title: "Областные центры",
         items: [
-          { label: "Минск", desc: "Столица", icon: <MapPin className="h-4 w-4" />, href: "/" },
-          { label: "Гродно", desc: "Город-музей", icon: <MapPin className="h-4 w-4" />, href: "/grodno/kvartiry/" },
-          { label: "Брест", desc: "Запад страны", icon: <MapPin className="h-4 w-4" />, href: "/brest/kvartiry/" },
+          { label: "Минск", desc: "Столица", icon: <MapPin className="h-4 w-4" />, href: cityHref() },
+          { label: "Гродно", desc: "Город-музей", icon: <MapPin className="h-4 w-4" />, href: cityHref("grodno") },
+          { label: "Брест", desc: "Юго-запад", icon: <MapPin className="h-4 w-4" />, href: cityHref("brest") },
         ],
       },
       {
         items: [
-          { label: "Витебск", desc: "Север", icon: <MapPin className="h-4 w-4" />, href: "/vitebsk/kvartiry/" },
-          { label: "Гомель", desc: "Юг Беларуси", icon: <MapPin className="h-4 w-4" />, href: "/gomel/kvartiry/" },
-          { label: "Могилёв", desc: "Восток", icon: <MapPin className="h-4 w-4" />, href: "/mogilev/kvartiry/" },
+          { label: "Витебск", desc: "Север", icon: <MapPin className="h-4 w-4" />, href: cityHref("vitebsk") },
+          { label: "Гомель", desc: "Юго-восток", icon: <MapPin className="h-4 w-4" />, href: cityHref("gomel") },
+          { label: "Могилёв", desc: "Восток", icon: <MapPin className="h-4 w-4" />, href: cityHref("mogilev") },
         ],
       },
     ],
@@ -173,7 +180,8 @@ const Header = () => {
   );
   const loggedIn = isMounted ? isAuthenticated() : false;
   const regionSlug = useHeaderRegionSlug();
-  const megaMenuData = buildMegaMenu(regionSlug);
+  const catalogPropertyType = useHeaderCatalogPropertyType();
+  const megaMenuData = buildMegaMenu(regionSlug, catalogPropertyType);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
