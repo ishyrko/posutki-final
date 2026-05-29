@@ -141,14 +141,14 @@ const CitySection = ({ apartmentCountsBySlug }: CitySectionProps) => {
   }, [needsClientFetch]);
 
   return (
-    <section className="bg-surface pt-12 pb-10 md:pt-14 md:pb-6 lg:pt-16 lg:pb-8">
+    <section className="bg-surface pt-12 pb-6 md:pt-14 md:pb-5 lg:pt-16 lg:pb-6">
       <div className="container mx-auto px-4">
-        <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2 text-center">
-          Выберите город
-        </h2>
-        <p className="text-muted-foreground text-center mb-6 md:mb-8">
-          Посуточная аренда по всей Беларуси
-        </p>
+        <div className="mb-6 md:mb-8">
+          <h2 className="text-3xl font-bold text-foreground font-display mb-2">
+            Квартиры на сутки в Беларуси
+          </h2>
+          <p className="text-muted-foreground">Посуточная аренда по всей Беларуси</p>
+        </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {cities.map((city) => {

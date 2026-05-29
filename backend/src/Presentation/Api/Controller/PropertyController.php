@@ -10,6 +10,7 @@ use App\Application\Command\Property\PublishProperty\PublishPropertyCommand;
 use App\Application\Command\Property\UpdateProperty\UpdatePropertyCommand;
 use App\Application\Command\Property\DeleteProperty\DeletePropertyCommand;
 use App\Application\Query\Property\GetHomeCityApartmentCounts\GetHomeCityApartmentCountsQuery;
+use App\Application\Query\Property\GetHomeRegionHouseCounts\GetHomeRegionHouseCountsQuery;
 use App\Application\Query\Property\GetProperty\GetPropertyQuery;
 use App\Application\Query\Property\SearchProperties\SearchPropertiesQuery;
 use App\Application\Command\CommandBusInterface;
@@ -103,6 +104,14 @@ class PropertyController extends AbstractController
     public function homeCityApartmentCounts(): JsonResponse
     {
         $counts = $this->queryBus->ask(new GetHomeCityApartmentCountsQuery());
+
+        return $this->json(ApiResponse::success($counts));
+    }
+
+    #[Route('/home-region-house-counts', name: 'home_region_house_counts', methods: ['GET'])]
+    public function homeRegionHouseCounts(): JsonResponse
+    {
+        $counts = $this->queryBus->ask(new GetHomeRegionHouseCountsQuery());
 
         return $this->json(ApiResponse::success($counts));
     }

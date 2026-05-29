@@ -3,6 +3,7 @@
 import HeroSection from "@/components/HeroSection";
 import FeaturedProperties from "@/components/FeaturedProperties";
 import CitySection from "@/components/CitySection";
+import RegionHouseSection from "@/components/RegionHouseSection";
 import ArticlesSection from "@/components/ArticlesSection";
 import FeaturesSection from "@/components/FeaturesSection";
 import type { Article } from "@/features/articles/types";
@@ -12,14 +13,21 @@ interface HomePageProps {
     featuredInitial?: PropertyListResponse;
     articles?: Article[];
     cityApartmentCounts?: Record<string, number>;
+    regionHouseCounts?: Record<string, number>;
 }
 
-export default function HomePage({ featuredInitial, articles, cityApartmentCounts }: HomePageProps) {
+export default function HomePage({
+    featuredInitial,
+    articles,
+    cityApartmentCounts,
+    regionHouseCounts,
+}: HomePageProps) {
     return (
         <div className="min-h-screen">
             <main>
                 <HeroSection />
                 <CitySection apartmentCountsBySlug={cityApartmentCounts} />
+                <RegionHouseSection houseCountsBySlug={regionHouseCounts} />
                 <FeaturedProperties featuredInitial={featuredInitial} />
                 {articles && articles.length > 0 ? <ArticlesSection articles={articles} /> : null}
                 <FeaturesSection />

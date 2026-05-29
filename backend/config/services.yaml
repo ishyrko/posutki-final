@@ -179,6 +179,10 @@ services:
         tags:
             - { name: messenger.message_handler, bus: query.bus }
 
+    App\Application\Query\Property\GetHomeRegionHouseCounts\GetHomeRegionHouseCountsHandler:
+        tags:
+            - { name: messenger.message_handler, bus: query.bus }
+
     App\Application\Query\Property\GetMyProperties\GetMyPropertiesHandler:
         tags:
             - { name: messenger.message_handler, bus: query.bus }
