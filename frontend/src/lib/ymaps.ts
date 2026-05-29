@@ -22,6 +22,10 @@ export interface YPlacemark {
   events: { add: (event: string, handler: (e: YMapEvent) => void) => void };
   options: { set: (key: string, value: string | boolean) => void };
   geometry: { getCoordinates: () => number[] };
+  balloon: {
+    open: () => void;
+    close: () => void;
+  };
 }
 
 export interface YMapEvent {
