@@ -50,6 +50,7 @@ import {
   showTotalFloors,
   showYearBuilt,
 } from "@/features/create-listing/property-field-rules";
+import { PropertyAvailabilityCalendar } from "@/features/properties/components/PropertyAvailabilityCalendar";
 import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { ReviewList } from "@/features/reviews/components/ReviewList";
 import { ReviewSummary } from "@/features/reviews/components/ReviewSummary";
@@ -1031,6 +1032,16 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
             </div>
 
             <div className="space-y-4">
+              {(property.externalCalendarUrls?.length ?? 0) > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.15, duration: 0.5 }}
+                >
+                  <PropertyAvailabilityCalendar propertyId={property.id} className="w-full max-w-none" />
+                </motion.div>
+              )}
+
               <motion.div
                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
