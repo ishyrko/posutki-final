@@ -193,3 +193,10 @@ export const getPropertyCalendar = async (id: number): Promise<PropertyCalendarD
     const response = await api.get<{ data: PropertyCalendarData }>(`/properties/${id}/calendar`);
     return response.data.data;
 };
+
+export const getOwnerListings = async (propertyId: number, limit = 10): Promise<Property[]> => {
+    const response = await api.get<{ data: Property[] }>(
+        `/properties/${propertyId}/owner-listings?limit=${limit}`,
+    );
+    return response.data.data;
+};

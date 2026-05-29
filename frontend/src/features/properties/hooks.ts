@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, getFavorites, getExchangeRates, getPropertyStats, boostProperty, getPropertyCalendar } from './api';
+import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, getFavorites, getExchangeRates, getPropertyStats, boostProperty, getPropertyCalendar, getOwnerListings } from './api';
 import { Property, PropertyFilters, PropertyListResponse } from './types';
 import { isAuthenticated } from '@/lib/auth';
 
@@ -142,5 +142,14 @@ export const usePropertyCalendar = (id: number, enabled = true) => {
         queryFn: () => getPropertyCalendar(id),
         enabled: id > 0 && enabled,
         staleTime: 15 * 60 * 1000,
+    });
+};
+
+export const useOwnerListings = (propertyId: number, limit = 10) => {
+    return useQuery({
+        queryKey: ['owner-listings', propertyId, limit],
+        queryFn: () => getOwnerListings(propertyId, limit),
+        enabled: propertyId > 0,
+        staleTime: 5 * 60 * 1000,
     });
 };

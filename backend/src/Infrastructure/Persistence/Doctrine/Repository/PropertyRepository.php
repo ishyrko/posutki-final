@@ -341,6 +341,39 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
             ->getResult();
     }
 
+    public function findPublishedByOwner(
+        string $ownerId,
+        int $limit = 10,
+        ?int $excludePropertyId = null,
+        ?string $type = null,
+    ): array {
+        $qb = $this->createQueryBuilder('p')
+            ->where('p.status = :status')
+            ->andWhere('p.ownerId = :ownerId')
+            ->setParameter('status', 'published')
+            ->setParameter('ownerId', $ownerId);
+
+        if ($excludePropertyId !== null) {
+            $qb->andWhere('p.id != :excludePropertyId')
+                ->setParameter('excludePropertyId', $excludePropertyId);
+        }
+
+        if ($type !== null) {
+            $qb->andWhere('p.type = :type')
+                ->setParameter('type', $type);
+        }
+
+        $todayStart = new \DateTimeImmutable('today');
+        $qb->addSelect('(CASE WHEN p.boostedAt >= :boostTodayStart THEN 1 ELSE 0 END) AS HIDDEN boostScore')
+            ->setParameter('boostTodayStart', $todayStart)
+            ->orderBy('boostScore', 'DESC')
+            ->addOrderBy('p.boostedAt', 'DESC')
+            ->addOrderBy('p.createdAt', 'DESC')
+            ->setMaxResults($limit);
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function countByOwner(string $ownerId): int
     {
         return (int) $this->createQueryBuilder('p')

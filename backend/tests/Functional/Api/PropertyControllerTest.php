@@ -93,6 +93,40 @@ final class PropertyControllerTest extends ApiTestCase
         self::assertSame(404, $this->client->getResponse()->getStatusCode());
     }
 
+    public function testOwnerListingsReturnsOtherPublishedApartmentsFromSameOwner(): void
+    {
+        $owner = $this->createUser('owner-siblings@example.com', 'Password123!');
+        $city = $this->createCity('Minsk Siblings', 'minsk-siblings', 'г. Минск');
+        $current = $this->createProperty($owner, $city, 'published');
+        $other = $this->createProperty($owner, $city, 'published');
+        $otherOwner = $this->createUser('other-owner@example.com', 'Password123!');
+        $this->createProperty($otherOwner, $city, 'published');
+
+        $this->client->request('GET', '/api/properties/' . $current->getId()->getValue() . '/owner-listings');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+
+        $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertTrue($payload['success']);
+        self::assertCount(1, $payload['data']);
+        self::assertSame($other->getId()->getValue(), $payload['data'][0]['id']);
+    }
+
+    public function testOwnerListingsForHouseReturnsEmptyList(): void
+    {
+        $owner = $this->createUser('owner-house@example.com', 'Password123!');
+        $city = $this->createCity('Minsk House', 'minsk-house', 'г. Минск');
+        $house = $this->createProperty($owner, $city, 'published', ['type' => 'house', 'landArea' => 10.0]);
+
+        $this->client->request('GET', '/api/properties/' . $house->getId()->getValue() . '/owner-listings');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+
+        $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertTrue($payload['success']);
+        self::assertSame([], $payload['data']);
+    }
+
     public function testCreateWithAuthReturnsCreatedAndPropertyId(): void
     {
         $email = 'creator@example.com';

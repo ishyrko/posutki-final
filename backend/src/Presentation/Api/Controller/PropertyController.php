@@ -11,6 +11,7 @@ use App\Application\Command\Property\UpdateProperty\UpdatePropertyCommand;
 use App\Application\Command\Property\DeleteProperty\DeletePropertyCommand;
 use App\Application\Query\Property\GetHomeCityApartmentCounts\GetHomeCityApartmentCountsQuery;
 use App\Application\Query\Property\GetHomeRegionHouseCounts\GetHomeRegionHouseCountsQuery;
+use App\Application\Query\Property\GetOwnerListings\GetOwnerListingsQuery;
 use App\Application\Query\Property\GetProperty\GetPropertyQuery;
 use App\Application\Query\Property\SearchProperties\SearchPropertiesQuery;
 use App\Application\Command\CommandBusInterface;
@@ -142,6 +143,25 @@ class PropertyController extends AbstractController
         $property = $this->queryBus->ask($query);
 
         return $this->json(ApiResponse::success($property));
+    }
+
+    #[Route('/{id}/owner-listings', name: 'owner_listings', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function ownerListings(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        $viewerUserId = $user !== null ? (string) $user->getId()->getValue() : null;
+        $limit = min(max($request->query->getInt('limit', 10), 1), 10);
+        $query = new GetOwnerListingsQuery(
+            propertyId: $id,
+            viewerUserId: $viewerUserId,
+            limit: $limit,
+        );
+        $properties = $this->queryBus->ask($query);
+
+        return $this->json(
+            ApiResponse::success($properties),
+            Response::HTTP_OK,
+            ['Cache-Control' => 'public, max-age=300'],
+        );
     }
 
     #[Route('', name: 'create', methods: ['POST'])]

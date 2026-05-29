@@ -27,4 +27,14 @@ interface PropertyRepositoryInterface
     public function findByOwner(string $ownerId, int $page = 1, int $limit = 20): array;
 
     public function countByOwner(string $ownerId): int;
+
+    /**
+     * @return Property[]
+     */
+    public function findPublishedByOwner(
+        string $ownerId,
+        int $limit = 10,
+        ?int $excludePropertyId = null,
+        ?string $type = null,
+    ): array;
 }

@@ -29,6 +29,7 @@ import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/feature
 import { useCurrency } from "@/context/CurrencyContext";
 import PropertyMap from "@/components/PropertyMap";
 import { BookingInquiryModal } from "@/features/properties/components/BookingInquiryModal";
+import { OwnerOtherListings } from "@/features/properties/components/OwnerOtherListings";
 import { buildCatalogUrl, buildCatalogUrlFromAddress } from "@/features/catalog/slugs";
 import { toast } from "sonner";
 import {
@@ -1258,6 +1259,10 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
           </div>
         </div>
       </main>
+
+      {property.type === "apartment" && (
+        <OwnerOtherListings propertyId={property.id} ownerName={sellerName} />
+      )}
 
       <AnimatePresence>
         {lightboxOpen && (
