@@ -116,8 +116,14 @@ export interface UpdatePropertyPayload {
     externalCalendarUrls?: string[];
 }
 
-export const updateProperty = async (id: number, data: UpdatePropertyPayload): Promise<void> => {
-    await api.patch(`/properties/${id}`, data);
+export interface UpdatePropertyResult {
+    message: string;
+    requiresModeration: boolean;
+}
+
+export const updateProperty = async (id: number, data: UpdatePropertyPayload): Promise<UpdatePropertyResult> => {
+    const response = await api.patch<{ data: UpdatePropertyResult }>(`/properties/${id}`, data);
+    return response.data.data;
 };
 
 export const getFavoriteIds = async (): Promise<number[]> => {

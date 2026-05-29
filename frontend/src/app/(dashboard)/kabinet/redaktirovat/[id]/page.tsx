@@ -694,12 +694,8 @@ export default function EditPropertyPage() {
                     ? form.externalCalendarUrls.map((url) => url.trim()).filter(Boolean)
                     : undefined,
             };
-            await updateProperty({ id: propertyId, data: payload });
-            toast.success(
-                property?.status === 'published' || property?.status === 'rejected'
-                    ? 'Изменения отправлены на модерацию'
-                    : 'Объявление обновлено'
-            );
+            const result = await updateProperty({ id: propertyId, data: payload });
+            toast.success(result.message);
             router.push('/kabinet/moi-obyavleniya/aktivnye');
         } catch (err: unknown) {
             toast.error(getApiErrorMessage(err, 'Не удалось сохранить изменения'));

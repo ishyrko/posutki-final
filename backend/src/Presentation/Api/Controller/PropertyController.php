@@ -276,10 +276,15 @@ class PropertyController extends AbstractController
             externalCalendarUrls: $request->externalCalendarUrls,
         );
 
-        $this->commandBus->dispatch($command);
+        $requiresModeration = $this->commandBus->dispatch($command) === true;
 
         return $this->json(
-            ApiResponse::success(['message' => 'Объявление успешно обновлено'])
+            ApiResponse::success([
+                'message' => $requiresModeration
+                    ? 'Изменения отправлены на модерацию'
+                    : 'Объявление успешно обновлено',
+                'requiresModeration' => $requiresModeration,
+            ])
         );
     }
 

@@ -64,14 +64,76 @@ final class UpdatePropertyHandlerTest extends TestCase
             $metroCalculator,
         );
 
-        $handler(new UpdatePropertyCommand(
+        $requiresModeration = $handler(new UpdatePropertyCommand(
             propertyId: '200',
             userId: '1',
             title: 'Updated title',
             description: 'Updated description that should go to revision data'
         ));
 
+        self::assertTrue($requiresModeration);
         self::assertSame($originalTitle, $property->getTitle());
+    }
+
+    public function testPublishedPropertyPriceOnlyUpdateAppliesDirectlyWithoutRevision(): void
+    {
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $revisionRepository = $this->createMock(PropertyRevisionRepositoryInterface::class);
+        $propertyMetroStationRepository = $this->createMock(PropertyMetroStationRepositoryInterface::class);
+        $metroCalculator = $this->createMetroCalculator($propertyMetroStationRepository);
+        $exchangeRateService = $this->createExchangeRateService(['USD' => 3.2]);
+
+        $property = $this->createProperty(ownerId: 1, propertyId: 202);
+        $property->setStatus('published');
+        $originalTitle = $property->getTitle();
+
+        $propertyRepository
+            ->method('findById')
+            ->willReturn($property);
+
+        $propertyRepository
+            ->expects(self::once())
+            ->method('save')
+            ->with($property);
+
+        $revisionRepository->expects(self::never())->method('save');
+
+        $handler = new UpdatePropertyHandler(
+            $propertyRepository,
+            $revisionRepository,
+            $exchangeRateService,
+            $metroCalculator,
+        );
+
+        $requiresModeration = $handler(new UpdatePropertyCommand(
+            propertyId: '202',
+            userId: '1',
+            title: $property->getTitle(),
+            description: $property->getDescription(),
+            type: $property->getType(),
+            dealType: $property->getDealType(),
+            priceAmount: 10_000_000,
+            priceCurrency: 'BYN',
+            area: $property->getArea(),
+            rooms: $property->getRooms(),
+            floor: $property->getFloor(),
+            totalFloors: $property->getTotalFloors(),
+            bathrooms: $property->getBathrooms(),
+            yearBuilt: $property->getYearBuilt(),
+            building: $property->getAddress()->getBuilding(),
+            cityId: $property->getCityId(),
+            latitude: $property->getCoordinates()->getLatitude(),
+            longitude: $property->getCoordinates()->getLongitude(),
+            images: $property->getImages(),
+            amenities: $property->getAmenities(),
+            maxDailyGuests: $property->getMaxDailyGuests(),
+            dailySingleBeds: $property->getDailySingleBeds(),
+            dailyDoubleBeds: $property->getDailyDoubleBeds(),
+        ));
+
+        self::assertFalse($requiresModeration);
+        self::assertSame($originalTitle, $property->getTitle());
+        self::assertSame(10_000_000, $property->getPrice()->getAmount());
     }
 
     public function testDraftPropertyUpdateMutatesEntityAndSavesDirectly(): void
@@ -136,9 +198,9 @@ final class UpdatePropertyHandlerTest extends TestCase
             kitchenArea: null,
             dealConditions: null,
             paymentMethods: null,
-            maxDailyGuests: null,
-            dailySingleBeds: null,
-            dailyDoubleBeds: null,
+            maxDailyGuests: 4,
+            dailySingleBeds: 1,
+            dailyDoubleBeds: 1,
             checkInTime: null,
             checkOutTime: null,
             address: Address::create('15', null),

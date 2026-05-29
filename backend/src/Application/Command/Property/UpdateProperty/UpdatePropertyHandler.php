@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Command\Property\UpdateProperty;
 
+use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Entity\PropertyRevision;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
@@ -31,7 +32,7 @@ readonly class UpdatePropertyHandler
     ) {
     }
 
-    public function __invoke(UpdatePropertyCommand $command): void
+    public function __invoke(UpdatePropertyCommand $command): bool
     {
         $property = $this->propertyRepository->findById(Id::fromString($command->propertyId));
 
@@ -95,6 +96,21 @@ readonly class UpdatePropertyHandler
         }
 
         if (in_array($property->getStatus(), ['published', 'rejected'], true)) {
+            if ($this->isOnlyPriceChange($command, $property)) {
+                if ($price !== null) {
+                    $property->update(price: $price);
+                    $property->setPriceByn(
+                        $this->exchangeRateService->calculatePriceByn(
+                            $command->priceAmount,
+                            $command->priceCurrency ?? $property->getPrice()->getCurrency()
+                        )
+                    );
+                    $this->propertyRepository->save($property);
+                }
+
+                return false;
+            }
+
             $revisionData = $this->buildRevisionData($command);
             $pendingRevision = $this->revisionRepository->findLatestByPropertyAndStatus(
                 $property->getId()->getValue(),
@@ -109,7 +125,7 @@ readonly class UpdatePropertyHandler
                 $this->revisionRepository->save($revision);
             }
 
-            return;
+            return true;
         }
 
         $property->update(
@@ -165,6 +181,143 @@ readonly class UpdatePropertyHandler
         $this->propertyRepository->save($property);
         $this->metroProximityCalculator->syncForProperty($property);
         $this->propertyRepository->save($property);
+
+        return false;
+    }
+
+    private function isOnlyPriceChange(UpdatePropertyCommand $command, Property $property): bool
+    {
+        $current = $this->buildPropertySnapshot($property);
+        $proposed = $this->buildProposedSnapshot($command, $property);
+
+        $changedFields = [];
+        foreach ($current as $key => $oldValue) {
+            $newValue = $proposed[$key] ?? null;
+            if ($this->formatDiffValue($oldValue) !== $this->formatDiffValue($newValue)) {
+                $changedFields[] = $key;
+            }
+        }
+
+        if ($changedFields === []) {
+            return false;
+        }
+
+        $priceFields = ['priceAmount', 'priceCurrency'];
+        foreach ($changedFields as $field) {
+            if (!in_array($field, $priceFields, true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildPropertySnapshot(Property $property): array
+    {
+        return [
+            'title' => $property->getTitle(),
+            'description' => $property->getDescription(),
+            'type' => $property->getType(),
+            'dealType' => $property->getDealType(),
+            'priceAmount' => $property->getPrice()->getAmount(),
+            'priceCurrency' => $property->getPrice()->getCurrency(),
+            'area' => $property->getArea(),
+            'landArea' => $property->getLandArea(),
+            'rooms' => $property->getRooms(),
+            'bathrooms' => $property->getBathrooms(),
+            'floor' => $property->getFloor(),
+            'totalFloors' => $property->getTotalFloors(),
+            'yearBuilt' => $property->getYearBuilt(),
+            'renovation' => $property->getRenovation(),
+            'balcony' => $property->getBalcony(),
+            'livingArea' => $property->getLivingArea(),
+            'kitchenArea' => $property->getKitchenArea(),
+            'roomsInDeal' => $property->getRoomsInDeal(),
+            'roomsArea' => $property->getRoomsArea(),
+            'dealConditions' => $property->getDealConditions(),
+            'paymentMethods' => $property->getPaymentMethods(),
+            'maxDailyGuests' => $property->getMaxDailyGuests(),
+            'dailySingleBeds' => $property->getDailySingleBeds(),
+            'dailyDoubleBeds' => $property->getDailyDoubleBeds(),
+            'checkInTime' => $property->getCheckInTime(),
+            'checkOutTime' => $property->getCheckOutTime(),
+            'building' => $property->getAddress()->getBuilding(),
+            'block' => $property->getAddress()->getBlock(),
+            'cityId' => $property->getCityId(),
+            'streetId' => $property->getStreetId(),
+            'streetName' => $property->getStreetName(),
+            'latitude' => $property->getCoordinates()->getLatitude(),
+            'longitude' => $property->getCoordinates()->getLongitude(),
+            'images' => $property->getImages(),
+            'amenities' => $property->getAmenities(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildProposedSnapshot(UpdatePropertyCommand $command, Property $property): array
+    {
+        return [
+            'title' => $command->title ?? $property->getTitle(),
+            'description' => $command->description ?? $property->getDescription(),
+            'type' => $command->type ?? $property->getType(),
+            'dealType' => $command->dealType ?? $property->getDealType(),
+            'priceAmount' => $command->priceAmount ?? $property->getPrice()->getAmount(),
+            'priceCurrency' => $command->priceCurrency ?? $property->getPrice()->getCurrency(),
+            'area' => $command->area ?? $property->getArea(),
+            'landArea' => $command->landArea ?? $property->getLandArea(),
+            'rooms' => $command->rooms ?? $property->getRooms(),
+            'bathrooms' => $command->bathrooms ?? $property->getBathrooms(),
+            'floor' => $command->floor ?? $property->getFloor(),
+            'totalFloors' => $command->totalFloors ?? $property->getTotalFloors(),
+            'yearBuilt' => $command->yearBuilt ?? $property->getYearBuilt(),
+            'renovation' => $command->renovation ?? $property->getRenovation(),
+            'balcony' => $command->balcony ?? $property->getBalcony(),
+            'livingArea' => $command->livingArea ?? $property->getLivingArea(),
+            'kitchenArea' => $command->kitchenArea ?? $property->getKitchenArea(),
+            'roomsInDeal' => $command->roomsInDeal ?? $property->getRoomsInDeal(),
+            'roomsArea' => $command->roomsArea ?? $property->getRoomsArea(),
+            'dealConditions' => $command->dealConditions ?? $property->getDealConditions(),
+            'paymentMethods' => $command->paymentMethods ?? $property->getPaymentMethods(),
+            'maxDailyGuests' => $command->maxDailyGuests ?? $property->getMaxDailyGuests(),
+            'dailySingleBeds' => $command->dailySingleBeds ?? $property->getDailySingleBeds(),
+            'dailyDoubleBeds' => $command->dailyDoubleBeds ?? $property->getDailyDoubleBeds(),
+            'checkInTime' => $command->checkInTime ?? $property->getCheckInTime(),
+            'checkOutTime' => $command->checkOutTime ?? $property->getCheckOutTime(),
+            'building' => $command->building ?? $property->getAddress()->getBuilding(),
+            'block' => $command->block ?? $property->getAddress()->getBlock(),
+            'cityId' => $command->cityId ?? $property->getCityId(),
+            'streetId' => $command->streetId ?? $property->getStreetId(),
+            'streetName' => $command->streetName ?? $property->getStreetName(),
+            'latitude' => $command->latitude ?? $property->getCoordinates()->getLatitude(),
+            'longitude' => $command->longitude ?? $property->getCoordinates()->getLongitude(),
+            'images' => $command->images ?? $property->getImages(),
+            'amenities' => $command->amenities ?? $property->getAmenities(),
+        ];
+    }
+
+    private function formatDiffValue(mixed $value): string
+    {
+        if (is_array($value)) {
+            return json_encode(
+                $value,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            ) ?: '[]';
+        }
+
+        if ($value === null) {
+            return 'null';
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        return (string) $value;
     }
 
     /**
