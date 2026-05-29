@@ -1057,6 +1057,11 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                   </div>
                 </div>
 
+                <p className="text-xs text-muted-foreground leading-relaxed mb-5">
+                  Для уточнения деталей свяжитесь с владельцем и сообщите, что вы нашли объявление на{" "}
+                  <span className="font-medium text-foreground">Посутки.by</span>.
+                </p>
+
                 <div className="space-y-2.5 mb-5">
                   {!phoneRevealed ? (
                     <Button
@@ -1249,18 +1254,6 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                   </div>
                 </div>
               </motion.div>
-
-              <div className="bg-accent rounded-2xl p-4">
-                <div className="flex items-start gap-2">
-                  <Shield className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-accent-foreground">Совет безопасности</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Никогда не переводите предоплату без осмотра объекта и проверки документов. Встречайтесь в общественных местах.
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
