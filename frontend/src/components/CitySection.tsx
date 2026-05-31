@@ -100,6 +100,12 @@ const cities = [
     href: buildCatalogUrl({ city: "svetlogorsk", propertyType: "apartment" }),
   },
   {
+    name: "Жлобин",
+    slug: "zhlobin",
+    icon: MapPin,
+    href: buildCatalogUrl({ city: "zhlobin", propertyType: "apartment" }),
+  },
+  {
     name: "Сморгонь",
     slug: "smorgon",
     icon: Castle,
