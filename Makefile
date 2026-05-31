@@ -8,7 +8,7 @@ test-unit:
 
 test-functional:
 	docker compose exec php sh -lc "cd /var/www/backend && composer test:functional"
-.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo admin-user frontend-install frontend-dev frontend-build clean exchange-rates prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
+.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo admin-user frontend-install frontend-dev frontend-build clean exchange-rates sync-metro-proximity prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
 
 PROD_ENV_FILE = .env.prod
 PROD_COMPOSE  = docker compose -f docker-compose.prod.yml --env-file $(PROD_ENV_FILE)
@@ -82,6 +82,10 @@ admin-user: ## Create or promote admin (EMAIL=... PASSWORD=... optional FIRST= L
 exchange-rates: ## Fetch exchange rates from NBRB and recalculate prices
 	@echo "${GREEN}Updating exchange rates...${RESET}"
 	docker-compose exec php php bin/console app:update-exchange-rates
+
+sync-metro-proximity: ## Recalculate metro proximity for all properties
+	@echo "${GREEN}Recalculating metro proximity...${RESET}"
+	docker-compose exec php php bin/console app:sync-metro-proximity --no-interaction
 
 backend-cache-clear: ## Clear backend cache
 	docker-compose exec php php bin/console cache:clear
@@ -246,6 +250,10 @@ prod-migrate: ## Run DB migrations on production
 prod-exchange-rates: ## Fetch NBRB rates and recalculate prices (production)
 	@echo "${GREEN}Updating exchange rates...${RESET}"
 	$(PROD_COMPOSE) exec php php bin/console app:update-exchange-rates --no-interaction
+
+prod-sync-metro-proximity: ## Recalculate metro proximity for all properties (production)
+	@echo "${GREEN}Recalculating metro proximity...${RESET}"
+	$(PROD_COMPOSE) exec php php bin/console app:sync-metro-proximity --no-interaction
 
 prod-admin-user: ## Create or promote admin on production (EMAIL=... PASSWORD=... optional FIRST= LAST=)
 	@make prod-check-env
