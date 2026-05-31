@@ -166,8 +166,9 @@ prod: ## Fast production update (cached frontend build + restart + migrate)
 	@make prod-check-env
 	@echo "${GREEN}Building frontend image (with Docker cache)...${RESET}"
 	$(PROD_COMPOSE) build frontend
-	@echo "${GREEN}Restarting frontend and app nginx...${RESET}"
+	@echo "${GREEN}Restarting frontend, app nginx and cron...${RESET}"
 	$(PROD_COMPOSE) up -d --no-deps frontend nginx
+	$(PROD_COMPOSE) up -d --no-deps --force-recreate cron
 	@make prod-fix-assets-perms
 	@echo "${GREEN}Installing Symfony assets...${RESET}"
 	$(PROD_COMPOSE) exec php php bin/console assets:install public -n
@@ -185,6 +186,7 @@ prod-full: ## Full production deployment (all images + composer install)
 	$(PROD_COMPOSE) build
 	@echo "${GREEN}Starting production containers...${RESET}"
 	$(PROD_COMPOSE) $(PROD_EDGE_ARGS) up -d
+	$(PROD_COMPOSE) up -d --no-deps --force-recreate cron
 	@echo "${GREEN}Installing backend dependencies...${RESET}"
 	$(PROD_COMPOSE) exec -u $(HOST_UID):$(HOST_GID) php composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 	@make prod-fix-assets-perms

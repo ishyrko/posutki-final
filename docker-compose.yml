@@ -69,10 +69,11 @@ services:
       context: ./docker/php
       dockerfile: Dockerfile
     container_name: posutki_cron
-    command: >
-      sh -c "echo '0 2 * * * cd /var/www/backend && php bin/console app:deactivate-expired-properties --no-interaction' | crontab - && crond -f -l 8"
+    entrypoint: []
+    command: ["/bin/sh", "/opt/cron/start-crond.sh"]
     volumes:
       - ./backend:/var/www/backend
+      - ./docker/cron:/opt/cron:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:

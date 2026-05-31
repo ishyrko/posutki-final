@@ -1,0 +1,2 @@
+#0 2 * * * cd /var/www/backend && php bin/console app:deactivate-expired-properties --no-interaction
+0 7 * * * cd /var/www/backend && php bin/console app:update-exchange-rates --no-interaction
