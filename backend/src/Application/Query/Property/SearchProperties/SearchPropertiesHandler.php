@@ -35,6 +35,7 @@ final class SearchPropertiesHandler
         'novopolotsk',
         'bobruysk',
         'zhlobin',
+        'volkovysk',
     ];
 
     public function __construct(

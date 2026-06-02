@@ -24,6 +24,7 @@ export const CITY_PREFIX_SLUGS: ReadonlySet<string> = new Set([
   'novopolotsk',
   'bobruysk',
   'zhlobin',
+  'volkovysk',
 ] as const);
 
 /** Только посуточная аренда — в URL сделка не кодируется, всегда daily. */
@@ -60,6 +61,7 @@ const CATALOG_APARTMENT_LOCATION: Record<string, string> = {
   novopolotsk: 'в Новополоцке',
   bobruysk: 'в Бобруйске',
   zhlobin: 'в Жлобине',
+  volkovysk: 'в Волковыске',
 };
 
 const CATALOG_HOUSE_LOCATION: Record<string, string> = {

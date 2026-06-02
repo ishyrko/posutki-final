@@ -111,6 +111,12 @@ const cities = [
     icon: Castle,
     href: buildCatalogUrl({ city: "smorgon", propertyType: "apartment" }),
   },
+  {
+    name: "Волковыск",
+    slug: "volkovysk",
+    icon: MapPin,
+    href: buildCatalogUrl({ city: "volkovysk", propertyType: "apartment" }),
+  },
 ];
 
 interface CitySectionProps {
