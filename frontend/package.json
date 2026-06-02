@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
+    "build:low-memory": "NEXT_LOW_MEMORY_BUILD=1 next build --webpack",
     "start": "next start",
     "lint": "eslint"
   },
@@ -15,6 +16,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.19",
+    "@types/node": "^20",
     "@tanstack/react-query": "^5.90.21",
     "@types/react-google-recaptcha": "^2.1.9",
     "axios": "^1.13.5",
@@ -47,7 +49,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

@@ -3,10 +3,20 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const radixReactIdShim = path.resolve(__dirname, "src/lib/shims/radix-react-id.ts");
+const lowMemoryBuild = process.env.NEXT_LOW_MEMORY_BUILD === "1";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   trailingSlash: true,
+  /** Shared hosting (cPanel): one worker to avoid spawn ENOMEM during page-data collection. */
+  ...(lowMemoryBuild
+    ? {
+        experimental: {
+          workerThreads: false,
+          cpus: 1,
+        },
+      }
+    : {}),
   /** CJS sanitizer: load from node_modules at runtime (avoids bundler edge cases). */
   serverExternalPackages: ["sanitize-html"],
   webpack: (config) => {
