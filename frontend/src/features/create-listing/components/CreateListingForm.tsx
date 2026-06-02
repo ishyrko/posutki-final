@@ -226,6 +226,8 @@ export function CreateListingForm() {
     const [errors, setErrors] = useState<FormErrors>({});
     const [profileGateError, setProfileGateError] = useState<string | null>(null);
     const [geocoding, setGeocoding] = useState(false);
+    /** Координаты, выставленные кликом или перетаскиванием маркера на карте. */
+    const [coordsManuallySet, setCoordsManuallySet] = useState(false);
 
     // City autocomplete state
     const [cityQuery, setCityQuery] = useState('');
@@ -329,6 +331,7 @@ export function CreateListingForm() {
             latitude: city.latitude ? Number(city.latitude) : null,
             longitude: city.longitude ? Number(city.longitude) : null,
         }));
+        setCoordsManuallySet(false);
         setCityQuery(city.name);
         setCityDropdownOpen(false);
         setStreetQuery('');
@@ -599,6 +602,7 @@ export function CreateListingForm() {
         try {
             const coords = await yandexGeocode(query);
             if (coords) {
+                setCoordsManuallySet(false);
                 setForm((prev) => ({ ...prev, latitude: coords.latitude, longitude: coords.longitude }));
             } else {
                 toast.error('Не удалось определить координаты по адресу');
@@ -613,7 +617,7 @@ export function CreateListingForm() {
     const next = async () => {
         if (!validateStep(step)) return;
 
-        if (step === 5) {
+        if (step === 5 && !coordsManuallySet) {
             await geocodeAddress();
         }
 
@@ -631,6 +635,7 @@ export function CreateListingForm() {
         setCityDropdownOpen(false);
         setStreetDropdownOpen(false);
         setSubmitted(false);
+        setCoordsManuallySet(false);
     }, []);
 
     // --- Submit ---
@@ -1585,9 +1590,10 @@ export function CreateListingForm() {
                                     center={mapCenter}
                                     latitude={form.latitude}
                                     longitude={form.longitude}
-                                    onCoordsChange={(lat, lng) =>
-                                        setForm((prev) => ({ ...prev, latitude: lat, longitude: lng }))
-                                    }
+                                    onCoordsChange={(lat, lng) => {
+                                        setCoordsManuallySet(true);
+                                        setForm((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+                                    }}
                                 />
                             </>
                         )}
