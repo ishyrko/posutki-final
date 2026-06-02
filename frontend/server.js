@@ -14,6 +14,18 @@ const hostname = process.env.HOSTNAME || "0.0.0.0";
 const app = next({ dev: false });
 const handle = app.getRequestHandler();
 
+/** Hop-by-hop headers must not be forwarded (Node/http will break the response). */
+const HOP_BY_HOP = new Set([
+  "connection",
+  "keep-alive",
+  "proxy-authenticate",
+  "proxy-authorization",
+  "te",
+  "trailers",
+  "transfer-encoding",
+  "upgrade",
+]);
+
 function getBackendOrigin() {
   const raw = process.env.BACKEND_INTERNAL_URL?.trim();
   if (!raw) {
@@ -24,6 +36,18 @@ function getBackendOrigin() {
 
 function isUploadsRequest(pathname) {
   return pathname === "/uploads" || pathname.startsWith("/uploads/");
+}
+
+function forwardResponseHeaders(proxyRes, res) {
+  for (const [key, value] of Object.entries(proxyRes.headers)) {
+    if (!key || HOP_BY_HOP.has(key.toLowerCase())) {
+      continue;
+    }
+    if (value === undefined) {
+      continue;
+    }
+    res.setHeader(key, value);
+  }
 }
 
 function proxyToBackend(req, res, backendOrigin) {
@@ -40,7 +64,17 @@ function proxyToBackend(req, res, backendOrigin) {
       },
     },
     (proxyRes) => {
-      res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
+      forwardResponseHeaders(proxyRes, res);
+      res.statusCode = proxyRes.statusCode || 502;
+      proxyRes.on("error", (err) => {
+        console.error("Backend proxy response error:", err.message, target.href);
+        if (!res.headersSent) {
+          res.statusCode = 502;
+          res.end("Bad Gateway");
+        } else {
+          res.destroy();
+        }
+      });
       proxyRes.pipe(res);
     },
   );
@@ -53,7 +87,11 @@ function proxyToBackend(req, res, backendOrigin) {
     }
   });
 
-  req.pipe(proxyReq);
+  if (req.method === "GET" || req.method === "HEAD") {
+    proxyReq.end();
+  } else {
+    req.pipe(proxyReq);
+  }
 }
 
 app
@@ -70,7 +108,12 @@ app
 
     createServer((req, res) => {
       const pathname = new URL(req.url || "/", "http://localhost").pathname;
-      if (backendOrigin && isUploadsRequest(pathname)) {
+      if (isUploadsRequest(pathname)) {
+        if (!backendOrigin) {
+          res.statusCode = 404;
+          res.end("Not Found");
+          return;
+        }
         proxyToBackend(req, res, backendOrigin);
         return;
       }
