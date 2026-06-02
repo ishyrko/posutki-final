@@ -10,7 +10,8 @@ const { URL } = require("url");
 const next = require("next");
 
 const port = parseInt(process.env.PORT || "3000", 10);
-const hostname = process.env.HOSTNAME || "0.0.0.0";
+// Do not use process.env.HOSTNAME — on Linux/cPanel it is the machine name (e.g. vh117), not a bind address.
+const listenHost = process.env.LISTEN_HOST || "0.0.0.0";
 const app = next({ dev: false });
 const handle = app.getRequestHandler();
 
@@ -118,8 +119,8 @@ app
         return;
       }
       handle(req, res);
-    }).listen(port, hostname, () => {
-      console.log(`Next.js ready on http://${hostname}:${port}`);
+    }).listen(port, listenHost, () => {
+      console.log(`Next.js ready on http://${listenHost}:${port}`);
     });
   })
   .catch((err) => {
