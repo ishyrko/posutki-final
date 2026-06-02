@@ -18,6 +18,7 @@ const nextConfig = {
     config.resolve = config.resolve ?? {};
     config.resolve.alias = {
       ...existing,
+      "@": path.resolve(__dirname, "src"),
       "@radix-ui/react-id": radixReactIdShim,
     };
     return config;
@@ -80,6 +81,7 @@ const nextConfig = {
     root: path.resolve(__dirname),
     /** Relative to `root` — absolute paths break Turbopack resolution (see next build). */
     resolveAlias: {
+      "@": "./src",
       "@radix-ui/react-id": "./src/lib/shims/radix-react-id.ts",
     },
   },
