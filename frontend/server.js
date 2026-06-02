@@ -107,7 +107,7 @@ app
       );
     }
 
-    createServer((req, res) => {
+    http.createServer((req, res) => {
       const pathname = new URL(req.url || "/", "http://localhost").pathname;
       if (isUploadsRequest(pathname)) {
         if (!backendOrigin) {
