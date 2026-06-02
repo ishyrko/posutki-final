@@ -1,6 +1,7 @@
 
 ###> symfony/framework-bundle ###
 /config/reference.php
+/config/.htpasswd
 /.env.local
 /.env.local.php
 /.env.*.local

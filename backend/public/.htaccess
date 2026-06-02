@@ -1,5 +1,17 @@
 DirectoryIndex index.php
 
+# EasyAdmin (/admin): HTTP Basic before Symfony login. File: backend/config/.htpasswd (see .htpasswd.example).
+<IfModule mod_authn_file.c>
+    <IfModule mod_authz_core.c>
+        <If "%{REQUEST_URI} =~ m#^/admin#">
+            AuthType Basic
+            AuthName "Restricted"
+            AuthUserFile ../config/.htpasswd
+            Require valid-user
+        </If>
+    </IfModule>
+</IfModule>
+
 <IfModule mod_negotiation.c>
     Options -MultiViews
 </IfModule>
