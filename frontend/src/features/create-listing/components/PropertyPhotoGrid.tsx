@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { uploadFile, FileTooLargeError } from '../api';
 import {
     createUploadedPhoto,
+    normalizeImageFile,
     revokePhotoPreviewUrl,
     resolvePhotoFile,
     rotateImageFile,
@@ -215,7 +216,17 @@ export function PropertyPhotoGrid({
                 return;
             }
 
-            const placeholders = validFiles.map((file) => createUploadedPhoto(file));
+            const processedFiles = await Promise.all(
+                validFiles.map(async (file) => {
+                    try {
+                        return await normalizeImageFile(file);
+                    } catch {
+                        return file;
+                    }
+                }),
+            );
+
+            const placeholders = processedFiles.map((file) => createUploadedPhoto(file));
             onChange((current) => [...current, ...placeholders]);
 
             for (const placeholder of placeholders) {
