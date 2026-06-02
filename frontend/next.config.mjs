@@ -1,9 +1,11 @@
-import type { NextConfig } from "next";
 import path from "path";
+import { fileURLToPath } from "url";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const radixReactIdShim = path.resolve(__dirname, "src/lib/shims/radix-react-id.ts");
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   trailingSlash: true,
   /** CJS sanitizer: load from node_modules at runtime (avoids bundler edge cases). */
   serverExternalPackages: ["sanitize-html"],
@@ -11,7 +13,7 @@ const nextConfig: NextConfig = {
     const alias = config.resolve?.alias;
     const existing =
       alias && typeof alias === "object" && !Array.isArray(alias)
-        ? { ...(alias as Record<string, string | string[] | false>) }
+        ? { ...alias }
         : {};
     config.resolve = config.resolve ?? {};
     config.resolve.alias = {
@@ -66,10 +68,10 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    const backendInternal = process.env.BACKEND_INTERNAL_URL || 'http://localhost';
+    const backendInternal = process.env.BACKEND_INTERNAL_URL || "http://localhost";
     return [
       {
-        source: '/uploads/:path*',
+        source: "/uploads/:path*",
         destination: `${backendInternal}/uploads/:path*`,
       },
     ];
