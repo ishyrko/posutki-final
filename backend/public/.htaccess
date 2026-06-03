@@ -1,14 +1,19 @@
 DirectoryIndex index.php
 
 # EasyAdmin (/admin): HTTP Basic before Symfony login. File: backend/config/.htpasswd (see .htpasswd.example).
+# Do not use <If> here — it causes 500 on many cPanel/Apache setups.
 <IfModule mod_authn_file.c>
     <IfModule mod_authz_core.c>
-        <If "%{REQUEST_URI} =~ m#^/admin#">
-            AuthType Basic
-            AuthName "Restricted"
-            AuthUserFile ../config/.htpasswd
+        <IfModule mod_setenvif.c>
+            SetEnvIf Request_URI "!^/admin" ADMIN_SKIP_BASIC_AUTH
+        </IfModule>
+        AuthType Basic
+        AuthName "Restricted"
+        AuthUserFile ../config/.htpasswd
+        <RequireAny>
+            Require env ADMIN_SKIP_BASIC_AUTH
             Require valid-user
-        </If>
+        </RequireAny>
     </IfModule>
 </IfModule>
 
