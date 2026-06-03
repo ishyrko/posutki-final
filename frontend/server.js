@@ -39,7 +39,35 @@ function isUploadsRequest(pathname) {
   return pathname === "/uploads" || pathname.startsWith("/uploads/");
 }
 
-/** www.posutki.by → posutki.by (cPanel; same behaviour as docker/nginx reverse-proxy). */
+function getRequestProto(req) {
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  if (typeof forwardedProto === "string") {
+    return forwardedProto.split(",")[0].trim().toLowerCase();
+  }
+  return "http";
+}
+
+function shouldForceHttps() {
+  return process.env.NODE_ENV === "production" && process.env.FORCE_HTTPS !== "0";
+}
+
+/** http:// → https:// (cPanel / reverse-proxy must send X-Forwarded-Proto on HTTPS requests). */
+function redirectHttpToHttps(req, res) {
+  if (!shouldForceHttps() || getRequestProto(req) === "https") {
+    return false;
+  }
+  const host = req.headers.host;
+  if (!host) {
+    return false;
+  }
+  const location = `https://${host}${req.url || "/"}`;
+  res.statusCode = 301;
+  res.setHeader("Location", location);
+  res.end();
+  return true;
+}
+
+/** www.posutki.by → https://posutki.by */
 function redirectWwwToCanonical(req, res) {
   const hostHeader = req.headers.host;
   if (!hostHeader) {
@@ -50,11 +78,7 @@ function redirectWwwToCanonical(req, res) {
     return false;
   }
   const bareHost = host.slice(4);
-  const forwardedProto = req.headers["x-forwarded-proto"];
-  const proto =
-    typeof forwardedProto === "string" && forwardedProto.split(",")[0].trim() === "https"
-      ? "https"
-      : "http";
+  const proto = shouldForceHttps() ? "https" : getRequestProto(req) === "https" ? "https" : "http";
   const location = `${proto}://${bareHost}${req.url || "/"}`;
   res.statusCode = 301;
   res.setHeader("Location", location);
@@ -131,6 +155,9 @@ app
     }
 
     http.createServer((req, res) => {
+      if (redirectHttpToHttps(req, res)) {
+        return;
+      }
       if (redirectWwwToCanonical(req, res)) {
         return;
       }
