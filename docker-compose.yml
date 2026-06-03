@@ -37,33 +37,6 @@ services:
     networks:
       - posutki_network
 
-  worker:
-    build:
-      context: ./docker/php
-      dockerfile: Dockerfile
-    container_name: posutki_worker
-    command: sh -c "php bin/console messenger:consume async_notifications --time-limit=3600 --memory-limit=256M -vv"
-    volumes:
-      - ./backend:/var/www/backend
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    environment:
-      - DATABASE_URL=mysql://root:12345@host.docker.internal:3306/posutki_db?serverVersion=8.0&charset=utf8mb4
-      - APP_ENV=dev
-      - APP_SECRET=change_this_secret_in_production
-      # Single-quoted: final `$` in regex must not be eaten by Compose variable substitution.
-      - 'CORS_ALLOW_ORIGIN=^https?://[^/]+(:[0-9]+)?$'
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-986114625381-ng3peent2ffo7ci9hmltjvcqu1sqngkb.apps.googleusercontent.com}
-      - FRONTEND_URL=http://localhost:3000
-      - MAILER_DSN=smtp://mailpit:1025
-      - MAILER_FROM=noreply@rnb.by
-      - ADMIN_EMAILS=["admin@rnb.by"]
-    depends_on:
-      - php
-    restart: unless-stopped
-    networks:
-      - posutki_network
-
   cron:
     build:
       context: ./docker/php

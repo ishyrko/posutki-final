@@ -13,13 +13,6 @@ framework:
         default_bus: command.bus
         transports:
             sync: 'sync://'
-            async_notifications:
-                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
-                options:
-                    queue_name: notifications
 
-        routing:
-            App\Domain\Property\Event\PropertySubmittedForModerationEvent: async_notifications
-            App\Domain\Property\Event\PropertyApprovedEvent: async_notifications
-            App\Domain\Property\Event\PropertyRejectedEvent: async_notifications
-            App\Domain\Message\Event\MessageSentEvent: async_notifications
+        # Notification events (property moderation, messages, contact feedback) are
+        # handled synchronously on notification.bus — no worker or queue required.

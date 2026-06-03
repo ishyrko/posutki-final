@@ -65,40 +65,10 @@ services:
       - MAILER_DSN=${MAILER_DSN}
       - MAILER_FROM=${MAILER_FROM}
       - ADMIN_EMAILS=${ADMIN_EMAILS}
-      # Async notification queue (doctrine transport; symfony/doctrine-messenger). Not the same as MAILER_DSN.
-      - MESSENGER_TRANSPORT_DSN=${MESSENGER_TRANSPORT_DSN:-doctrine://default?auto_setup=0}
       - NEXTJS_REVALIDATE_URL=${NEXTJS_REVALIDATE_URL:-http://frontend:3000/revalidate}
       - NEXTJS_REVALIDATION_SECRET=${NEXTJS_REVALIDATION_SECRET}
       - RECAPTCHA_ENABLED=${RECAPTCHA_ENABLED:-true}
       - RECAPTCHA_SECRET=${RECAPTCHA_SECRET}
-    networks:
-      - posutki_network
-    restart: unless-stopped
-
-  worker:
-    build:
-      context: ./docker/php
-      dockerfile: Dockerfile
-    container_name: posutki_worker
-    command: sh -c "php bin/console messenger:consume async_notifications --time-limit=3600 --memory-limit=256M --no-interaction"
-    volumes:
-      - ./backend:/var/www/backend
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    environment:
-      - APP_ENV=prod
-      - APP_SECRET=${APP_SECRET}
-      - DATABASE_URL=${DATABASE_URL}
-      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-127.0.0.1,REMOTE_ADDR}
-      - CORS_ALLOW_ORIGIN=${CORS_ALLOW_ORIGIN}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - FRONTEND_URL=${FRONTEND_URL}
-      - MAILER_DSN=${MAILER_DSN}
-      - MAILER_FROM=${MAILER_FROM}
-      - ADMIN_EMAILS=${ADMIN_EMAILS}
-      - MESSENGER_TRANSPORT_DSN=${MESSENGER_TRANSPORT_DSN:-doctrine://default?auto_setup=0}
-    depends_on:
-      - php
     networks:
       - posutki_network
     restart: unless-stopped
@@ -126,7 +96,6 @@ services:
       - MAILER_DSN=${MAILER_DSN}
       - MAILER_FROM=${MAILER_FROM}
       - ADMIN_EMAILS=${ADMIN_EMAILS}
-      - MESSENGER_TRANSPORT_DSN=${MESSENGER_TRANSPORT_DSN:-doctrine://default?auto_setup=0}
     depends_on:
       - php
     networks:

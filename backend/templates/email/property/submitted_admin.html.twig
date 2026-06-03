@@ -51,7 +51,10 @@
       </tr>
       <tr>
         <td>Владелец</td>
-        <td>{{ owner.fullName }} ({{ owner.email.value }})</td>
+        <td>
+          {{ owner.fullName }}
+          {%- if owner.email %} ({{ owner.email.value }}){%- elseif owner.phone %} ({{ owner.phone }}){%- endif -%}
+        </td>
       </tr>
       <tr>
         <td>ID объявления</td>
