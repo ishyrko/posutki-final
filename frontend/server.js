@@ -39,6 +39,29 @@ function isUploadsRequest(pathname) {
   return pathname === "/uploads" || pathname.startsWith("/uploads/");
 }
 
+/** www.posutki.by → posutki.by (cPanel; same behaviour as docker/nginx reverse-proxy). */
+function redirectWwwToCanonical(req, res) {
+  const hostHeader = req.headers.host;
+  if (!hostHeader) {
+    return false;
+  }
+  const host = hostHeader.split(":")[0].toLowerCase();
+  if (!host.startsWith("www.")) {
+    return false;
+  }
+  const bareHost = host.slice(4);
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  const proto =
+    typeof forwardedProto === "string" && forwardedProto.split(",")[0].trim() === "https"
+      ? "https"
+      : "http";
+  const location = `${proto}://${bareHost}${req.url || "/"}`;
+  res.statusCode = 301;
+  res.setHeader("Location", location);
+  res.end();
+  return true;
+}
+
 function forwardResponseHeaders(proxyRes, res) {
   for (const [key, value] of Object.entries(proxyRes.headers)) {
     if (!key || HOP_BY_HOP.has(key.toLowerCase())) {
@@ -108,6 +131,9 @@ app
     }
 
     http.createServer((req, res) => {
+      if (redirectWwwToCanonical(req, res)) {
+        return;
+      }
       const pathname = new URL(req.url || "/", "http://localhost").pathname;
       if (isUploadsRequest(pathname)) {
         if (!backendOrigin) {
