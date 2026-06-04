@@ -87,6 +87,10 @@ import {
     CITY_SEARCH_MIN_LENGTH,
     getDescriptionFieldError,
     getTitleFieldError,
+    cityFieldLabel,
+    cityFieldNameGenitive,
+    cityFieldNameInText,
+    cityNotFoundMessage,
     getCityFieldError,
     getApartmentStreetFieldError,
     getApartmentBuildingFieldError,
@@ -622,7 +626,7 @@ export default function EditPropertyPage() {
             return;
         }
 
-        const cityErr = getCityFieldError(form.cityId);
+        const cityErr = getCityFieldError(form.cityId, form.type);
         if (cityErr) {
             toast.error(cityErr);
             return;
@@ -1241,7 +1245,7 @@ export default function EditPropertyPage() {
                     <div className="space-y-4">
                         <div ref={cityContainerRef} className="relative">
                             <Label className="text-foreground" htmlFor="edit-listing-city">
-                                Город *
+                                {cityFieldLabel(form.type)}
                             </Label>
                             <div className="relative mt-1.5">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -1317,7 +1321,7 @@ export default function EditPropertyPage() {
                                     && !citySearching
                                     && cityResults.length === 0 && (
                                     <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-border bg-popover px-4 py-3 text-sm text-muted-foreground shadow-lg">
-                                        Город не найден. Проверьте название или уточните регион.
+                                        {cityNotFoundMessage(form.type)}
                                     </div>
                                 )}
                             </div>
@@ -1325,7 +1329,7 @@ export default function EditPropertyPage() {
                                 <p id="edit-listing-city-hint" className="text-xs text-muted-foreground mt-1.5">
                                     {form?.cityId
                                         ? `Выбран: ${form.cityName}`
-                                        : 'Введите не менее 2 букв, затем выберите город из списка'}
+                                        : `Введите не менее 2 букв, затем выберите ${cityFieldNameInText(form.type)} из списка`}
                                 </p>
                             )}
                         </div>
@@ -1336,7 +1340,7 @@ export default function EditPropertyPage() {
                             </Label>
                             {!form.cityId && (
                                 <p className="text-xs text-muted-foreground mt-1 mb-1.5">
-                                    Поле станет доступно после выбора города из списка подсказок выше
+                                    {`Поле станет доступно после выбора ${cityFieldNameGenitive(form.type)} из списка подсказок выше`}
                                 </p>
                             )}
                             <div className="relative">
@@ -1357,7 +1361,7 @@ export default function EditPropertyPage() {
                                     placeholder={
                                         form.cityId
                                             ? 'Начните вводить и выберите улицу из списка (можно ввести вручную)'
-                                            : 'Сначала выберите город из списка'
+                                            : `Сначала выберите ${cityFieldNameInText(form.type)} из списка`
                                     }
                                     disabled={!form.cityId}
                                     aria-disabled={!form.cityId}

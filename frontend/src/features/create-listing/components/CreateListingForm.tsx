@@ -90,6 +90,10 @@ import {
     CITY_SEARCH_MIN_LENGTH,
     getDescriptionFieldError,
     getTitleFieldError,
+    cityFieldLabel,
+    cityFieldNameGenitive,
+    cityFieldNameInText,
+    cityNotFoundMessage,
     getCityFieldError,
     getApartmentStreetFieldError,
     getApartmentBuildingFieldError,
@@ -471,7 +475,7 @@ export function CreateListingForm() {
                 break;
             }
             case 5: {
-                const cityErr = getCityFieldError(form.cityId);
+                const cityErr = getCityFieldError(form.cityId, form.propertyType);
                 if (cityErr) errs.citySlug = cityErr;
                 {
                     const streetErr = getApartmentStreetFieldError(
@@ -660,7 +664,7 @@ export function CreateListingForm() {
     };
 
     const submitProperty = async () => {
-        if (!form.cityId) { toast.error('Город не найден'); return; }
+        if (!form.cityId) { toast.error(cityNotFoundMessage(form.propertyType)); return; }
 
         if (form.photos.some((p) => p.uploading)) {
             toast.error('Дождитесь окончания загрузки всех фото');
@@ -1429,7 +1433,7 @@ export function CreateListingForm() {
 
                                     <div ref={cityContainerRef} className="relative">
                                         <label className={labelClass} htmlFor="listing-city">
-                                            Город *
+                                            {cityFieldLabel(form.propertyType)}
                                         </label>
                                         <div className="relative">
                                             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -1461,7 +1465,7 @@ export function CreateListingForm() {
                                                     window.setTimeout(() => {
                                                         setCityDropdownOpen(false);
                                                         if (isCitySelectionPending(cityQuery, form.cityId)) {
-                                                            const cityErr = getCityFieldError(form.cityId);
+                                                            const cityErr = getCityFieldError(form.cityId, form.propertyType);
                                                             if (cityErr) {
                                                                 setErrors((prev) => ({ ...prev, citySlug: cityErr }));
                                                             }
@@ -1520,7 +1524,7 @@ export function CreateListingForm() {
                                                 && !citySearching
                                                 && cityResults.length === 0 && (
                                                 <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-border bg-popover px-4 py-3 text-sm text-muted-foreground shadow-lg">
-                                                    Город не найден. Проверьте название или уточните регион.
+                                                    {cityNotFoundMessage(form.propertyType)}
                                                 </div>
                                             )}
                                         </div>
@@ -1529,7 +1533,7 @@ export function CreateListingForm() {
                                             <p id="listing-city-hint" className="text-xs text-muted-foreground mt-1.5">
                                                 {form.cityId
                                                     ? `Выбран: ${form.cityName}`
-                                                    : 'Введите не менее 2 букв, затем выберите город из списка'}
+                                                    : `Введите не менее 2 букв, затем выберите ${cityFieldNameInText(form.propertyType)} из списка`}
                                             </p>
                                         )}
                                     </div>
@@ -1540,7 +1544,7 @@ export function CreateListingForm() {
                                         </label>
                                         {!form.cityId && (
                                             <p className="text-xs text-muted-foreground -mt-3 mb-2">
-                                                Поле станет доступно после выбора города из списка подсказок выше
+                                                {`Поле станет доступно после выбора ${cityFieldNameGenitive(form.propertyType)} из списка подсказок выше`}
                                             </p>
                                         )}
                                         <div className="relative">
@@ -1563,7 +1567,7 @@ export function CreateListingForm() {
                                                 placeholder={
                                                     form.cityId
                                                         ? 'Начните вводить и выберите улицу из списка (можно ввести вручную)'
-                                                        : 'Сначала выберите город из списка'
+                                                        : `Сначала выберите ${cityFieldNameInText(form.propertyType)} из списка`
                                                 }
                                                 disabled={!form.cityId}
                                                 aria-disabled={!form.cityId}

@@ -71,12 +71,32 @@ export const requiresApartmentAddress = (propertyType: string): boolean => prope
 export const isCitySelectionPending = (cityQuery: string, cityId: number | null): boolean =>
     cityQuery.trim().length >= CITY_SEARCH_MIN_LENGTH && cityId === null;
 
-export const getCityFieldError = (cityId: number | null): string | undefined => {
+export const isHousePropertyType = (propertyType: string): boolean => propertyType === 'house';
+
+export const cityFieldLabel = (propertyType: string, required = true): string => {
+    const name = isHousePropertyType(propertyType) ? 'Населенный пункт' : 'Город';
+    return required ? `${name} *` : name;
+};
+
+/** Название поля в текстах подсказок («город», «населённый пункт»). */
+export const cityFieldNameInText = (propertyType: string): string =>
+    isHousePropertyType(propertyType) ? 'населённый пункт' : 'город';
+
+/** Родительный падеж для «после выбора …». */
+export const cityFieldNameGenitive = (propertyType: string): string =>
+    isHousePropertyType(propertyType) ? 'населённого пункта' : 'города';
+
+export const getCityFieldError = (cityId: number | null, propertyType = 'apartment'): string | undefined => {
     if (cityId !== null) {
         return undefined;
     }
-    return 'Выберите город из списка подсказок';
+    return `Выберите ${cityFieldNameInText(propertyType)} из списка подсказок`;
 };
+
+export const cityNotFoundMessage = (propertyType: string): string =>
+    isHousePropertyType(propertyType)
+        ? 'Населённый пункт не найден. Проверьте название или уточните регион.'
+        : 'Город не найден. Проверьте название или уточните регион.';
 
 type CityQueryAddressSlice = {
     cityId: number | null;
