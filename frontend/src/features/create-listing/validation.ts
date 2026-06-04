@@ -62,7 +62,51 @@ export const getDescriptionFieldError = (value: string): string | undefined => {
     return undefined;
 };
 
+/** Минимум символов в поле города перед поиском подсказок. */
+export const CITY_SEARCH_MIN_LENGTH = 2;
+
 export const requiresApartmentAddress = (propertyType: string): boolean => propertyType === 'apartment';
+
+/** Пользователь ввёл текст, но не выбрал город из подсказок. */
+export const isCitySelectionPending = (cityQuery: string, cityId: number | null): boolean =>
+    cityQuery.trim().length >= CITY_SEARCH_MIN_LENGTH && cityId === null;
+
+export const getCityFieldError = (cityId: number | null): string | undefined => {
+    if (cityId !== null) {
+        return undefined;
+    }
+    return 'Выберите город из списка подсказок';
+};
+
+type CityQueryAddressSlice = {
+    cityId: number | null;
+    cityName: string;
+    streetName: string;
+    streetId: number | null;
+    citySlug?: string;
+};
+
+/** Сбрасывает выбранный город при очистке поля или правке текста после выбора. */
+export const getAddressAfterCityQueryChange = <T extends CityQueryAddressSlice>(
+    prev: T,
+    query: string,
+): { next: T; clearStreet: boolean } => {
+    const cleared = {
+        cityId: null,
+        cityName: '',
+        streetName: '',
+        streetId: null,
+        ...(prev.citySlug !== undefined ? { citySlug: '' } : {}),
+    } as Partial<T>;
+
+    if (!query.trim()) {
+        return { next: { ...prev, ...cleared }, clearStreet: true };
+    }
+    if (prev.cityId !== null && query.trim() !== prev.cityName.trim()) {
+        return { next: { ...prev, ...cleared }, clearStreet: true };
+    }
+    return { next: prev, clearStreet: false };
+};
 
 export const getApartmentStreetFieldError = (
     propertyType: string,
