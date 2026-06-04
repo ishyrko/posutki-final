@@ -6,7 +6,7 @@ import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from '@/feature
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ListingSubmitLink } from '@/components/ListingSubmitLink';
-import { Plus, Edit, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, Rocket } from 'lucide-react';
+import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, Rocket } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +20,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { useArchiveProperty, useBoostProperty, useDeleteProperty, useExchangeRates, useMyProperties } from '@/features/properties/hooks';
+import { useArchiveProperty, useBoostProperty, useDeleteProperty, useExchangeRates, useMyProperties, useUnarchiveProperty } from '@/features/properties/hooks';
 import { Property, formatAddress } from '@/features/properties/types';
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
@@ -105,9 +105,16 @@ function getDeleteEligibility(property: Property) {
     return { neverPublished, daysUntilDelete, canDelete, showDeleteButton };
 }
 
-function ListingCard({ property }: { property: Property }) {
+function ListingCard({
+    property,
+    showPublicLinks,
+}: {
+    property: Property;
+    showPublicLinks: boolean;
+}) {
     const boost = useBoostProperty();
     const archive = useArchiveProperty();
+    const unarchive = useUnarchiveProperty();
     const deletePropertyMutation = useDeleteProperty();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const { data: rates } = useExchangeRates();
@@ -129,39 +136,58 @@ function ListingCard({ property }: { property: Property }) {
     const boostCooldownOk = isAtLeast24HoursAfterCreation(property.createdAt);
     const { daysUntilDelete, canDelete, showDeleteButton } = getDeleteEligibility(property);
 
+    const imageBlock = (
+        <>
+            {property.images[0] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                    src={property.images[0].thumbnailUrl || property.images[0].url}
+                    alt={property.title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                />
+            ) : (
+                <div className="absolute inset-0 w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-sm">
+                    Нет фото
+                </div>
+            )}
+            {!isActive && (
+                <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusConfig.className}`}>
+                        {statusConfig.label}
+                    </span>
+                </div>
+            )}
+        </>
+    );
+
+    const imageClassName =
+        'relative sm:w-48 flex-shrink-0 aspect-[4/3] sm:aspect-auto sm:h-auto overflow-hidden';
+
     return (
         <div className="w-full max-w-full flex flex-col sm:flex-row bg-card rounded-xl shadow-card overflow-hidden">
-            <Link href={propertyHref} className="relative sm:w-48 flex-shrink-0 aspect-[4/3] sm:aspect-auto sm:h-auto overflow-hidden">
-                {property.images[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                        src={property.images[0].thumbnailUrl || property.images[0].url}
-                        alt={property.title}
-                        className="absolute inset-0 w-full h-full object-cover"
-                    />
-                ) : (
-                    <div className="absolute inset-0 w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-sm">
-                        Нет фото
-                    </div>
-                )}
-                {!isActive && (
-                    <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
-                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusConfig.className}`}>
-                            {statusConfig.label}
-                        </span>
-                    </div>
-                )}
-            </Link>
+            {showPublicLinks ? (
+                <Link href={propertyHref} className={imageClassName}>
+                    {imageBlock}
+                </Link>
+            ) : (
+                <div className={imageClassName}>{imageBlock}</div>
+            )}
             <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col justify-between">
                 <div>
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                         <div className="min-w-0">
-                            <Link
-                                href={propertyHref}
-                                className="block font-semibold text-foreground hover:text-primary transition-colors break-words line-clamp-2"
-                            >
-                                {property.title}
-                            </Link>
+                            {showPublicLinks ? (
+                                <Link
+                                    href={propertyHref}
+                                    className="block font-semibold text-foreground hover:text-primary transition-colors break-words line-clamp-2"
+                                >
+                                    {property.title}
+                                </Link>
+                            ) : (
+                                <span className="block font-semibold text-foreground break-words line-clamp-2">
+                                    {property.title}
+                                </span>
+                            )}
                             <span className={`inline-flex mt-2 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${statusConfig.className}`}>
                                 {statusConfig.label}
                             </span>
@@ -267,6 +293,22 @@ function ListingCard({ property }: { property: Property }) {
                         >
                             <EyeOff className="w-3.5 h-3.5 mr-1" />Скрыть
                         </Button>
+                    ) : property.status === 'archived' ? (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="justify-start"
+                            disabled={unarchive.isPending && unarchive.variables === property.id}
+                            onClick={() =>
+                                unarchive.mutate(property.id, {
+                                    onSuccess: () => toast.success('Объявление снова опубликовано'),
+                                    onError: (e) =>
+                                        toast.error(getApiErrorMessage(e, 'Не удалось активировать объявление')),
+                                })
+                            }
+                        >
+                            <Eye className="w-3.5 h-3.5 mr-1" />Активировать
+                        </Button>
                     ) : null}
                     {showDeleteButton && (
                         canDelete ? (
@@ -332,7 +374,7 @@ function ListingCard({ property }: { property: Property }) {
 
 function isStatusMatch(propertyStatus: Property['status'], tabStatus: MyAdsStatus) {
     if (tabStatus === 'inactive') {
-        return propertyStatus === 'archived' || propertyStatus === 'deleted';
+        return propertyStatus === 'archived';
     }
     return propertyStatus === tabStatus;
 }
@@ -350,7 +392,7 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
             published: properties.filter((property) => property.status === 'published').length,
             moderation: properties.filter((property) => property.status === 'moderation').length,
             rejected: properties.filter((property) => property.status === 'rejected').length,
-            inactive: properties.filter((property) => property.status === 'archived' || property.status === 'deleted').length,
+            inactive: properties.filter((property) => property.status === 'archived').length,
         };
     }, [properties]);
 
@@ -416,7 +458,11 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
             ) : (
                 <div className="space-y-4">
                     {filteredProperties.map((property) => (
-                        <ListingCard key={property.id} property={property} />
+                        <ListingCard
+                            key={property.id}
+                            property={property}
+                            showPublicLinks={activeStatus !== 'inactive'}
+                        />
                     ))}
                 </div>
             )}

@@ -54,6 +54,43 @@ final class PropertyTest extends TestCase
         $property->archive();
 
         self::assertSame('archived', $property->getStatus());
+        self::assertNotNull($property->getArchivedAt());
+    }
+
+    public function testUnarchiveMovesArchivedToPublishedAndClearsArchivedAt(): void
+    {
+        $property = $this->createProperty();
+        $property->publish();
+        $property->approve();
+        $property->archive();
+
+        $property->unarchive();
+
+        self::assertSame('published', $property->getStatus());
+        self::assertNull($property->getArchivedAt());
+    }
+
+    public function testUnarchiveFromDraftThrowsDomainException(): void
+    {
+        $property = $this->createProperty();
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Активировать можно только скрытое объявление');
+
+        $property->unarchive();
+    }
+
+    public function testApproveClearsArchivedAt(): void
+    {
+        $property = $this->createProperty();
+        $property->publish();
+        $property->approve();
+        $property->archive();
+        $property->publish();
+        $property->approve();
+
+        self::assertSame('published', $property->getStatus());
+        self::assertNull($property->getArchivedAt());
     }
 
     public function testDeleteMarksPropertyAsDeleted(): void

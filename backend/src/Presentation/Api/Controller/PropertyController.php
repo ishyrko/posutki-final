@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Api\Controller;
 
 use App\Application\Command\Property\ArchiveProperty\ArchivePropertyCommand;
+use App\Application\Command\Property\UnarchiveProperty\UnarchivePropertyCommand;
 use App\Application\Command\Property\BoostProperty\BoostPropertyCommand;
 use App\Application\Command\Property\CreateProperty\CreatePropertyCommand;
 use App\Application\Command\Property\PublishProperty\PublishPropertyCommand;
@@ -358,6 +359,25 @@ class PropertyController extends AbstractController
 
         return $this->json(
             ApiResponse::success(['archivedAt' => $archivedAt])
+        );
+    }
+
+    #[Route('/{id}/unarchive', name: 'unarchive', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function unarchive(string $id, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $command = new UnarchivePropertyCommand(
+            propertyId: $id,
+            userId: (string) $user->getId()->getValue(),
+        );
+
+        $this->commandBus->dispatch($command);
+
+        return $this->json(
+            ApiResponse::success(['message' => 'Объявление снова опубликовано'])
         );
     }
 

@@ -48,6 +48,10 @@ final class GetPropertyHandler
             throw new NotFoundException('Объявление не найдено');
         }
 
+        if (in_array($property->getStatus(), ['archived', 'deleted'], true)) {
+            throw new NotFoundException('Объявление не найдено');
+        }
+
         if ($property->getStatus() !== 'published') {
             if ($query->viewerUserId === null || !$property->isOwnedBy($query->viewerUserId)) {
                 throw new NotFoundException('Объявление не найдено');

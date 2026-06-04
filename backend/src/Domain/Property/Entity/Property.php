@@ -1309,6 +1309,17 @@ class Property
         $this->updatedAt = new \DateTimeImmutable();
     }
 
+    public function unarchive(): void
+    {
+        if ($this->status !== 'archived') {
+            throw new DomainException('Активировать можно только скрытое объявление');
+        }
+
+        $this->status = 'published';
+        $this->archivedAt = null;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
     public function incrementViews(): void
     {
         $this->views++;

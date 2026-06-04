@@ -183,6 +183,10 @@ export const archiveProperty = async (id: number): Promise<void> => {
     await api.post(`/properties/${id}/archive`);
 };
 
+export const unarchiveProperty = async (id: number): Promise<void> => {
+    await api.post(`/properties/${id}/unarchive`);
+};
+
 export const deleteProperty = async (id: number): Promise<void> => {
     await api.delete(`/properties/${id}`);
 };

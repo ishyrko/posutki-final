@@ -181,6 +181,16 @@ abstract class ApiTestCase extends WebTestCase
         return $property;
     }
 
+    protected function setPropertyArchivedAt(Property $property, \DateTimeImmutable $archivedAt): void
+    {
+        if ($property->getStatus() !== 'archived') {
+            $property->archive();
+        }
+
+        $this->setPrivate($property, 'archivedAt', $archivedAt);
+        $this->entityManager()->flush();
+    }
+
     protected function createMetroStation(City $city, int $id, string $slug = 'test-station'): MetroStation
     {
         $station = new MetroStation(
