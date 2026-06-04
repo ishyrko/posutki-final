@@ -12,12 +12,12 @@ export default function StaticPageLayoutClient({
   sanitizedHtml,
 }: StaticPageLayoutClientProps) {
   return (
-    <section className="bg-background pt-24 pb-16">
+    <section className="bg-background pt-10 pb-16">
       <div className="container mx-auto max-w-3xl px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-10 text-center"
+          className="mb-6 text-center"
         >
           <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">
             {title}
