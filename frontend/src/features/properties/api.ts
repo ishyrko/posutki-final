@@ -179,6 +179,14 @@ export const boostProperty = async (id: number): Promise<{ boostedAt: string }> 
     return response.data.data;
 };
 
+export const archiveProperty = async (id: number): Promise<void> => {
+    await api.post(`/properties/${id}/archive`);
+};
+
+export const deleteProperty = async (id: number): Promise<void> => {
+    await api.delete(`/properties/${id}`);
+};
+
 export type BlockedDateRange = {
     start: string;
     end: string;

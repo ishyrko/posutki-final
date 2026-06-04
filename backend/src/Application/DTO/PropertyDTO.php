@@ -81,6 +81,7 @@ final class PropertyDTO implements \JsonSerializable
         public readonly int $favoritesCount,
         public readonly \DateTimeImmutable $createdAt,
         public readonly ?\DateTimeImmutable $publishedAt = null,
+        public readonly ?\DateTimeImmutable $archivedAt = null,
         public readonly ?\DateTimeImmutable $boostedAt = null,
         /** @var array<int, array{name: string, price: float}>|null */
         public readonly ?array $additionalServices = null,
@@ -186,6 +187,7 @@ final class PropertyDTO implements \JsonSerializable
             favoritesCount: $favoritesCount,
             createdAt: $property->getCreatedAt(),
             publishedAt: $property->getPublishedAt(),
+            archivedAt: $property->getArchivedAt(),
             boostedAt: $property->getBoostedAt(),
             additionalServices: $property->getAdditionalServices(),
             instagramUrl: $property->getInstagramUrl(),
@@ -281,6 +283,7 @@ final class PropertyDTO implements \JsonSerializable
             'favoritesCount' => $this->favoritesCount,
             'createdAt' => $this->createdAt->format('c'),
             'publishedAt' => $this->publishedAt?->format('c'),
+            'archivedAt' => $this->archivedAt?->format('c'),
             'boostedAt' => $this->boostedAt?->format('c'),
             'additionalServices' => $this->additionalServices ?? [],
             'instagramUrl' => $this->instagramUrl,

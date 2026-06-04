@@ -145,6 +145,10 @@ services:
         tags:
             - { name: messenger.message_handler, bus: command.bus }
 
+    App\Application\Command\Property\ArchiveProperty\ArchivePropertyHandler:
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
     App\Application\Command\User\RegisterUser\RegisterUserHandler:
         tags:
             - { name: messenger.message_handler, bus: command.bus }

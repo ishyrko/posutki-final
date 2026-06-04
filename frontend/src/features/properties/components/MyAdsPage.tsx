@@ -1,16 +1,26 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { ExchangeRates } from '@/features/properties/api';
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from '@/features/properties/price-display';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ListingSubmitLink } from '@/components/ListingSubmitLink';
-import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, Rocket } from 'lucide-react';
+import { Plus, Edit, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, Rocket } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { useBoostProperty, useExchangeRates, useMyProperties } from '@/features/properties/hooks';
+import { useArchiveProperty, useBoostProperty, useDeleteProperty, useExchangeRates, useMyProperties } from '@/features/properties/hooks';
 import { Property, formatAddress } from '@/features/properties/types';
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
@@ -41,6 +51,7 @@ const STATUS_ROUTE_SEGMENTS: Record<MyAdsStatus, string> = {
 };
 
 const MS_PER_HOUR = 60 * 60 * 1000;
+const MS_PER_DAY = 24 * MS_PER_HOUR;
 
 /** Boost: earliest 24h after listing creation */
 function isAtLeast24HoursAfterCreation(createdAtIso: string | undefined): boolean {
@@ -62,7 +73,7 @@ function isBoostedToday(iso: string | null | undefined): boolean {
     );
 }
 
-function getBoostErrorMessage(error: unknown, fallback: string): string {
+function getApiErrorMessage(error: unknown, fallback: string): string {
     if (typeof error !== 'object' || error === null || !('response' in error)) {
         return fallback;
     }
@@ -78,8 +89,27 @@ function getBoostErrorMessage(error: unknown, fallback: string): string {
     return fallback;
 }
 
+function getDeleteEligibility(property: Property) {
+    const neverPublished = !property.publishedAt;
+    const archivedAt = property.archivedAt ? new Date(property.archivedAt) : null;
+    const daysInArchive =
+        archivedAt && !Number.isNaN(archivedAt.getTime())
+            ? Math.floor((Date.now() - archivedAt.getTime()) / MS_PER_DAY)
+            : null;
+    const daysUntilDelete = daysInArchive !== null ? Math.max(0, 30 - daysInArchive) : 30;
+    const canDelete =
+        neverPublished || (property.status === 'archived' && daysUntilDelete === 0);
+    const showDeleteButton =
+        property.status !== 'deleted' && (neverPublished || property.status === 'archived');
+
+    return { neverPublished, daysUntilDelete, canDelete, showDeleteButton };
+}
+
 function ListingCard({ property }: { property: Property }) {
     const boost = useBoostProperty();
+    const archive = useArchiveProperty();
+    const deletePropertyMutation = useDeleteProperty();
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const { data: rates } = useExchangeRates();
     const exchangeRates: ExchangeRates = useMemo(
         () => rates ?? DEFAULT_EXCHANGE_RATES_FALLBACK,
@@ -97,6 +127,7 @@ function ListingCard({ property }: { property: Property }) {
     );
     const boostedToday = isBoostedToday(property.boostedAt);
     const boostCooldownOk = isAtLeast24HoursAfterCreation(property.createdAt);
+    const { daysUntilDelete, canDelete, showDeleteButton } = getDeleteEligibility(property);
 
     return (
         <div className="w-full max-w-full flex flex-col sm:flex-row bg-card rounded-xl shadow-card overflow-hidden">
@@ -204,7 +235,7 @@ function ListingCard({ property }: { property: Property }) {
                                     boost.mutate(property.id, {
                                         onSuccess: () => toast.success('Объявление поднято в топ'),
                                         onError: (e) =>
-                                            toast.error(getBoostErrorMessage(e, 'Не удалось поднять объявление')),
+                                            toast.error(getApiErrorMessage(e, 'Не удалось поднять объявление')),
                                     })
                                 }
                             >
@@ -220,17 +251,79 @@ function ListingCard({ property }: { property: Property }) {
                         <Button variant="ghost" size="sm" disabled className="justify-start text-muted-foreground">
                             <Clock className="w-3.5 h-3.5 mr-1" />Отклонено модерацией
                         </Button>
-                    ) : (
-                        <Button variant="ghost" size="sm" className="justify-start">
-                            {isActive
-                                ? <><EyeOff className="w-3.5 h-3.5 mr-1" />Скрыть</>
-                                : <><Eye className="w-3.5 h-3.5 mr-1" />Показать</>
+                    ) : property.status === 'published' ? (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="justify-start"
+                            disabled={archive.isPending && archive.variables === property.id}
+                            onClick={() =>
+                                archive.mutate(property.id, {
+                                    onSuccess: () => toast.success('Объявление скрыто'),
+                                    onError: (e) =>
+                                        toast.error(getApiErrorMessage(e, 'Не удалось скрыть объявление')),
+                                })
                             }
+                        >
+                            <EyeOff className="w-3.5 h-3.5 mr-1" />Скрыть
                         </Button>
+                    ) : null}
+                    {showDeleteButton && (
+                        canDelete ? (
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="justify-start text-destructive hover:text-destructive"
+                                    disabled={deletePropertyMutation.isPending && deletePropertyMutation.variables === property.id}
+                                    onClick={() => setDeleteDialogOpen(true)}
+                                >
+                                    <Trash2 className="w-3.5 h-3.5 mr-1" />Удалить
+                                </Button>
+                                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Удалить объявление?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Объявление будет удалено без возможности восстановления.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Отмена</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                disabled={deletePropertyMutation.isPending}
+                                                onClick={() =>
+                                                    deletePropertyMutation.mutate(property.id, {
+                                                        onSuccess: () => {
+                                                            setDeleteDialogOpen(false);
+                                                            toast.success('Объявление удалено');
+                                                        },
+                                                        onError: (e) =>
+                                                            toast.error(
+                                                                getApiErrorMessage(e, 'Не удалось удалить объявление'),
+                                                            ),
+                                                    })
+                                                }
+                                            >
+                                                Удалить
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </>
+                        ) : (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled
+                                className="justify-start text-muted-foreground"
+                            >
+                                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                                Удалить через {daysUntilDelete} дн.
+                            </Button>
+                        )
                     )}
-                    <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive">
-                        <Trash2 className="w-3.5 h-3.5 mr-1" />Удалить
-                    </Button>
                 </div>
             </div>
         </div>

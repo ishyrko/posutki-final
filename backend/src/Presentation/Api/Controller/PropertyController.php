@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Api\Controller;
 
+use App\Application\Command\Property\ArchiveProperty\ArchivePropertyCommand;
 use App\Application\Command\Property\BoostProperty\BoostPropertyCommand;
 use App\Application\Command\Property\CreateProperty\CreatePropertyCommand;
 use App\Application\Command\Property\PublishProperty\PublishPropertyCommand;
@@ -338,6 +339,25 @@ class PropertyController extends AbstractController
 
         return $this->json(
             ApiResponse::success(['message' => 'Объявление успешно удалено'])
+        );
+    }
+
+    #[Route('/{id}/archive', name: 'archive', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function archive(string $id, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $command = new ArchivePropertyCommand(
+            propertyId: $id,
+            userId: (string) $user->getId()->getValue(),
+        );
+
+        $archivedAt = $this->commandBus->dispatch($command);
+
+        return $this->json(
+            ApiResponse::success(['archivedAt' => $archivedAt])
         );
     }
 

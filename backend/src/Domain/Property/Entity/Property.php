@@ -146,6 +146,9 @@ class Property
     #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'published_at')]
     private ?\DateTimeImmutable $publishedAt = null;
 
+    #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'archived_at')]
+    private ?\DateTimeImmutable $archivedAt = null;
+
     #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'boosted_at')]
     private ?\DateTimeImmutable $boostedAt = null;
 
@@ -321,6 +324,9 @@ class Property
         }
         if ($status === 'published' && $this->publishedAt === null) {
             $this->publishedAt = new \DateTimeImmutable();
+        }
+        if ($status === 'published' || $status === 'moderation') {
+            $this->archivedAt = null;
         }
         $this->updatedAt = new \DateTimeImmutable();
     }
@@ -725,6 +731,11 @@ class Property
     public function getPublishedAt(): ?\DateTimeImmutable
     {
         return $this->publishedAt;
+    }
+
+    public function getArchivedAt(): ?\DateTimeImmutable
+    {
+        return $this->archivedAt;
     }
 
     public function getBoostedAt(): ?\DateTimeImmutable
@@ -1236,6 +1247,7 @@ class Property
         }
 
         $this->status = 'moderation';
+        $this->archivedAt = null;
         $this->moderationComment = null;
         $this->updatedAt = new \DateTimeImmutable();
     }
@@ -1275,6 +1287,7 @@ class Property
         $this->status = 'published';
         $this->moderationComment = null;
         $this->publishedAt = new \DateTimeImmutable();
+        $this->archivedAt = null;
         $this->updatedAt = new \DateTimeImmutable();
     }
 
@@ -1292,6 +1305,7 @@ class Property
     public function archive(): void
     {
         $this->status = 'archived';
+        $this->archivedAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }
 
