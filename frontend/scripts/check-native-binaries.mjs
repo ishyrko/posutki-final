@@ -83,17 +83,30 @@ for (const group of groups) {
   }
 }
 
+let wasmFallback = false;
+try {
+  require.resolve("@tailwindcss/oxide-wasm32-wasi");
+  wasmFallback = true;
+} catch {
+  // no wasm package — good
+}
+
 if (missing.length === 0) {
+  if (wasmFallback && platform() === "linux") {
+    console.warn(
+      "[check-native] @tailwindcss/oxide-wasm32-wasi is installed — build may use WASM if native load fails.",
+    );
+  }
   process.exit(0);
 }
 
 console.error(
   [
     `[check-native] Missing native binaries: ${missing.join(", ")}`,
-    "Build tools will fall back to WebAssembly and often hit OOM on shared hosting (4 GB RSS).",
-    "On the server run: rm -rf node_modules && npm install",
+    "npm will fall back to WebAssembly → WebAssembly.instantiate(): Out of memory on shared hosting.",
+    "On the server run: npm run install:cpanel",
     "Do not use --omit=optional. Do not copy node_modules from macOS/Windows.",
-    "Alternative: build in CI/Docker and deploy the .next folder.",
+    "If natives install but build still OOMs: make frontend-build-cpanel-prod on Mac and upload .next.",
   ].join("\n"),
 );
 process.exit(1);

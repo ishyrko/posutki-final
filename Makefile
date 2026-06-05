@@ -156,6 +156,9 @@ frontend-build-cpanel-prod: ## Prod NEXT_PUBLIC_* for cPanel (vars in .env.cpane
 frontend-build-cpanel-verify-3g: ## Smoke test: prod build must pass with Docker mem_limit=3g
 	$(MAKE) frontend-build-cpanel-prod
 
+frontend-check-native: ## Verify SWC/Tailwind/Lightning native binaries in frontend container
+	docker-compose exec frontend node scripts/check-native-binaries.mjs
+
 frontend-shell: ## Open frontend shell
 	docker-compose exec frontend sh
 
