@@ -20,6 +20,13 @@ const nextConfig = {
           workerThreads: false,
           memoryBasedWorkersCount: false,
           cpus: 1,
+          optimizePackageImports: [
+            "lucide-react",
+            "lodash",
+            "date-fns",
+            "recharts",
+            "framer-motion",
+          ],
         },
       }
     : {}),
@@ -29,6 +36,11 @@ const nextConfig = {
     if (lowMemoryBuild) {
       config.parallelism = 1;
       config.cache = false;
+      config.devtool = false;
+      config.optimization = {
+        ...config.optimization,
+        minimize: false,
+      };
     }
 
     const alias = config.resolve?.alias;
