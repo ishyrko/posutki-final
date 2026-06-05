@@ -8,11 +8,17 @@ const lowMemoryBuild = process.env.NEXT_LOW_MEMORY_BUILD === "1";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   trailingSlash: true,
-  /** Shared hosting (cPanel): one worker to avoid spawn ENOMEM during page-data collection. */
+  /** Shared hosting (cPanel): single worker, no webpack worker, lower webpack peak RSS. */
   ...(lowMemoryBuild
     ? {
+        eslint: {
+          ignoreDuringBuilds: true,
+        },
         experimental: {
+          webpackMemoryOptimizations: true,
+          webpackBuildWorker: false,
           workerThreads: false,
+          memoryBasedWorkersCount: false,
           cpus: 1,
         },
       }
@@ -20,6 +26,11 @@ const nextConfig = {
   /** CJS sanitizer: load from node_modules at runtime (avoids bundler edge cases). */
   serverExternalPackages: ["sanitize-html"],
   webpack: (config) => {
+    if (lowMemoryBuild) {
+      config.parallelism = 1;
+      config.cache = false;
+    }
+
     const alias = config.resolve?.alias;
     const existing =
       alias && typeof alias === "object" && !Array.isArray(alias)

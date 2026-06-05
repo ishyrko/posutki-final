@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
-    "build:low-memory": "NEXT_LOW_MEMORY_BUILD=1 next build --webpack",
+    "check-swc": "node scripts/check-swc-native.mjs",
+    "build:low-memory": "node scripts/check-swc-native.mjs && NODE_OPTIONS='--max-old-space-size=2560' UV_THREADPOOL_SIZE=1 NEXT_TELEMETRY_DISABLED=1 NEXT_LOW_MEMORY_BUILD=1 next build --webpack",
     "start": "next start",
     "start:cpanel": "node server.js",
     "lint": "eslint"
@@ -54,5 +55,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6"
+  },
+  "optionalDependencies": {
+    "@next/swc-linux-x64-gnu": "16.1.6",
+    "@next/swc-linux-x64-musl": "16.1.6"
   }
 }
