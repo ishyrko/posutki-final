@@ -2,7 +2,8 @@ import { spawnSync } from "node:child_process";
 import { rmSync } from "node:fs";
 import path from "node:path";
 
-const heapMb = Number.parseInt(process.env.CPANEL_BUILD_HEAP_MB ?? "1536", 10);
+/** 2048 ≈ вчерашний дефолт; уменьшайте только если ENOMEM (не ниже 1536). */
+const heapMb = Number.parseInt(process.env.CPANEL_BUILD_HEAP_MB ?? "2048", 10);
 
 /** Defaults for cPanel / CloudLinux (virtual memory limit + low RSS). */
 const DEFAULT_NODE_OPTIONS = [
@@ -29,12 +30,14 @@ process.env.NEXT_LOW_MEMORY_BUILD = "1";
 process.env.NODE_OPTIONS = mergeNodeOptions(process.env.NODE_OPTIONS);
 console.log(`[build:low-memory] NODE_OPTIONS=${process.env.NODE_OPTIONS}`);
 
-for (const rel of [".next/cache", "node_modules/.cache"]) {
-  try {
-    rmSync(path.join(process.cwd(), rel), { recursive: true, force: true });
-    console.log(`[build:low-memory] cleared ${rel}`);
-  } catch {
-    // ignore
+if (process.env.CPANEL_BUILD_CLEAN === "1") {
+  for (const rel of [".next/cache", "node_modules/.cache"]) {
+    try {
+      rmSync(path.join(process.cwd(), rel), { recursive: true, force: true });
+      console.log(`[build:low-memory] cleared ${rel}`);
+    } catch {
+      // ignore
+    }
   }
 }
 

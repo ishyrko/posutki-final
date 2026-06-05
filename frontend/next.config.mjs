@@ -39,7 +39,9 @@ const nextConfig = {
     };
     if (lowMemoryBuild) {
       config.parallelism = 1;
-      config.cache = false;
+      if (process.env.CPANEL_BUILD_NO_WEBPACK_CACHE === "1") {
+        config.cache = false;
+      }
     }
     return config;
   },
