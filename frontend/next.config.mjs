@@ -16,8 +16,8 @@ const nextConfig = {
           workerThreads: false,
           cpus: 1,
           webpackMemoryOptimizations: true,
-          /** Custom webpack config disables the worker by default — re-enable for lower peak RSS. */
-          webpackBuildWorker: true,
+          /** Off on shared hosting: second Node process doubles virtual-memory pressure (CloudLinux ulimit -v). */
+          webpackBuildWorker: false,
           optimizePackageImports: ["lucide-react", "date-fns", "framer-motion"],
         },
       }

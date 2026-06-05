@@ -106,7 +106,8 @@ console.error(
     "npm will fall back to WebAssembly → WebAssembly.instantiate(): Out of memory on shared hosting.",
     "On the server run: npm run install:cpanel",
     "Do not use --omit=optional. Do not copy node_modules from macOS/Windows.",
-    "If natives install but build still OOMs: make frontend-build-cpanel-prod on Mac and upload .next.",
+    "If natives are OK but build still WASM-OOM: add NODE_OPTIONS='--disable-wasm-trap-handler' (CloudLinux virtual memory limit).",
+    "Last resort: make frontend-build-cpanel-prod on Mac and upload .next.",
   ].join("\n"),
 );
 process.exit(1);

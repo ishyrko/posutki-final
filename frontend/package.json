@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "prebuild:low-memory": "node scripts/check-native-binaries.mjs",
-    "build:low-memory": "NEXT_TELEMETRY_DISABLED=1 NEXT_LOW_MEMORY_BUILD=1 NODE_OPTIONS='--max-old-space-size=2048' next build --webpack",
+    "build:low-memory": "node scripts/build-low-memory.mjs",
     "install:cpanel": "rm -rf node_modules && npm install && node scripts/check-native-binaries.mjs",
     "start": "next start",
     "start:cpanel": "node server.js",
