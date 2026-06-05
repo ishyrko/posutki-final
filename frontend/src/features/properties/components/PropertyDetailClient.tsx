@@ -15,7 +15,7 @@ import { PAYMENT_METHOD_LABELS, type PaymentMethodId } from "@/features/properti
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
-import { notFound, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useHasAuthToken } from "@/hooks/useHasAuthToken";
 import { useProperty, useFavoriteIds, useToggleFavorite, useExchangeRates } from "@/features/properties/hooks";
 import { trackPhoneView } from "@/features/properties/api";
@@ -303,13 +303,29 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
     );
   }
 
-  if (
-    isError ||
-    !property ||
-    property.status === "archived" ||
-    property.status === "deleted"
-  ) {
-    notFound();
+  if (isError || !property) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-20 text-center">
+          <MapPin className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-4">Объект не найден</h1>
+          <p className="text-muted-foreground mb-8">
+            Объект, который вы ищете, не существует или был удалён.
+          </p>
+          <Button asChild>
+            <Link
+              href={buildCatalogUrlFromAddress(
+                initialProperty.address.regionName,
+                initialProperty.address.citySlug,
+                initialProperty.type,
+              )}
+            >
+              Вернуться в каталог
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const isOwner =

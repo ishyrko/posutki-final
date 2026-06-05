@@ -108,15 +108,15 @@ function getDeleteEligibility(property: Property) {
 function ListingCard({
     property,
     showPublicLinks,
+    onRequestDelete,
 }: {
     property: Property;
     showPublicLinks: boolean;
+    onRequestDelete?: (propertyId: number) => void;
 }) {
     const boost = useBoostProperty();
     const archive = useArchiveProperty();
     const unarchive = useUnarchiveProperty();
-    const deletePropertyMutation = useDeleteProperty();
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const { data: rates } = useExchangeRates();
     const exchangeRates: ExchangeRates = useMemo(
         () => rates ?? DEFAULT_EXCHANGE_RATES_FALLBACK,
@@ -312,48 +312,14 @@ function ListingCard({
                     ) : null}
                     {showDeleteButton && (
                         canDelete ? (
-                            <>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="justify-start text-destructive hover:text-destructive"
-                                    disabled={deletePropertyMutation.isPending && deletePropertyMutation.variables === property.id}
-                                    onClick={() => setDeleteDialogOpen(true)}
-                                >
-                                    <Trash2 className="w-3.5 h-3.5 mr-1" />Удалить
-                                </Button>
-                                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Удалить объявление?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Объявление будет удалено без возможности восстановления.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Отмена</AlertDialogCancel>
-                                            <AlertDialogAction
-                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                disabled={deletePropertyMutation.isPending}
-                                                onClick={() =>
-                                                    deletePropertyMutation.mutate(property.id, {
-                                                        onSuccess: () => {
-                                                            setDeleteDialogOpen(false);
-                                                            toast.success('Объявление удалено');
-                                                        },
-                                                        onError: (e) =>
-                                                            toast.error(
-                                                                getApiErrorMessage(e, 'Не удалось удалить объявление'),
-                                                            ),
-                                                    })
-                                                }
-                                            >
-                                                Удалить
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start text-destructive hover:text-destructive"
+                                onClick={() => onRequestDelete?.(property.id)}
+                            >
+                                <Trash2 className="w-3.5 h-3.5 mr-1" />Удалить
+                            </Button>
                         ) : (
                             <Button
                                 variant="ghost"
@@ -380,6 +346,8 @@ function isStatusMatch(propertyStatus: Property['status'], tabStatus: MyAdsStatu
 }
 
 export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
+    const deletePropertyMutation = useDeleteProperty();
+    const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
     const { data, isLoading } = useMyProperties();
     const properties = useMemo(() => data?.data ?? [], [data?.data]);
 
@@ -396,12 +364,44 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
         };
     }, [properties]);
 
+    const closeDeleteDialog = () => setDeleteTargetId(null);
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
+            <AlertDialog open={deleteTargetId !== null} onOpenChange={(open) => !open && closeDeleteDialog()}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Удалить объявление?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Объявление будет удалено без возможности восстановления.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={deletePropertyMutation.isPending}
+                            onClick={() => {
+                                if (deleteTargetId === null) return;
+                                deletePropertyMutation.mutate(deleteTargetId, {
+                                    onSuccess: () => {
+                                        closeDeleteDialog();
+                                        toast.success('Объявление удалено');
+                                    },
+                                    onError: (e) =>
+                                        toast.error(getApiErrorMessage(e, 'Не удалось удалить объявление')),
+                                });
+                            }}
+                        >
+                            Удалить
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                 <div>
                     <h1 className="font-display text-2xl font-bold text-foreground">Мои объявления</h1>
@@ -462,6 +462,7 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
                             key={property.id}
                             property={property}
                             showPublicLinks={activeStatus !== 'inactive'}
+                            onRequestDelete={setDeleteTargetId}
                         />
                     ))}
                 </div>

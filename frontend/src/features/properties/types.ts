@@ -138,7 +138,6 @@ export interface Property {
     viewerReview?: { id: number; status: 'pending' | 'approved' | 'rejected' } | null;
     createdAt: string;
     publishedAt?: string | null;
-    archivedAt?: string | null;
     boostedAt?: string | null;
 }
 

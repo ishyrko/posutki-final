@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, getFavorites, getExchangeRates, getPropertyStats, boostProperty, archiveProperty, unarchiveProperty, deleteProperty, getPropertyCalendar, getOwnerListings } from './api';
+import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, getFavorites, getExchangeRates, getPropertyStats, boostProperty, getPropertyCalendar, getOwnerListings } from './api';
 import { Property, PropertyFilters, PropertyListResponse } from './types';
 import { isAuthenticated } from '@/lib/auth';
 
@@ -129,39 +129,6 @@ export const useBoostProperty = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (id: number) => boostProperty(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['my-properties'] });
-            queryClient.invalidateQueries({ queryKey: ['properties'] });
-        },
-    });
-};
-
-export const useArchiveProperty = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (id: number) => archiveProperty(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['my-properties'] });
-            queryClient.invalidateQueries({ queryKey: ['properties'] });
-        },
-    });
-};
-
-export const useUnarchiveProperty = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (id: number) => unarchiveProperty(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['my-properties'] });
-            queryClient.invalidateQueries({ queryKey: ['properties'] });
-        },
-    });
-};
-
-export const useDeleteProperty = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (id: number) => deleteProperty(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['my-properties'] });
             queryClient.invalidateQueries({ queryKey: ['properties'] });

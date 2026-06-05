@@ -84,18 +84,10 @@ import {
     TOTAL_FLOORS_MIN,
     YEAR_BUILT_MAX,
     YEAR_BUILT_MIN,
-    CITY_SEARCH_MIN_LENGTH,
     getDescriptionFieldError,
     getTitleFieldError,
-    cityFieldLabel,
-    cityFieldNameGenitive,
-    cityFieldNameInText,
-    cityNotFoundMessage,
-    getCityFieldError,
     getApartmentStreetFieldError,
     getApartmentBuildingFieldError,
-    getAddressAfterCityQueryChange,
-    isCitySelectionPending,
     isNumberInRange,
 } from '@/features/create-listing/validation';
 import type { CitySearchResult, AdditionalService } from '@/features/create-listing/types';
@@ -287,7 +279,6 @@ export default function EditPropertyPage() {
     const [geocoding, setGeocoding] = useState(false);
 
     const [cityQuery, setCityQuery] = useState('');
-    const [cityInputUnlocked, setCityInputUnlocked] = useState(false);
     const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
     const debouncedCityQuery = useDebouncedValue(cityQuery, 300);
     const { data: cityResults = [], isFetching: citySearching } = useSearchCities(debouncedCityQuery);
@@ -623,12 +614,6 @@ export default function EditPropertyPage() {
         const readyImageCount = form.images.filter((img) => !img.uploading).length;
         if (readyImageCount < MIN_PHOTOS) {
             toast.error(`Загрузите не менее ${MIN_PHOTOS} фотографий`);
-            return;
-        }
-
-        const cityErr = getCityFieldError(form.cityId, form.type);
-        if (cityErr) {
-            toast.error(cityErr);
             return;
         }
 
@@ -1244,109 +1229,63 @@ export default function EditPropertyPage() {
                     <h2 className="text-lg font-semibold text-foreground mb-4">Расположение</h2>
                     <div className="space-y-4">
                         <div ref={cityContainerRef} className="relative">
-                            <Label className="text-foreground" htmlFor="edit-listing-city">
-                                {cityFieldLabel(form.type)}
-                            </Label>
+                            <Label className="text-foreground">Город *</Label>
                             <div className="relative mt-1.5">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                                 <Input
-                                    id="edit-listing-city"
                                     value={cityQuery}
                                     onChange={(e) => {
-                                        const value = e.target.value;
-                                        setCityQuery(value);
+                                        setCityQuery(e.target.value);
                                         setCityDropdownOpen(true);
-                                        setForm((prev) => {
-                                            if (!prev) return prev;
-                                            const { next, clearStreet } = getAddressAfterCityQueryChange(prev, value);
-                                            if (clearStreet) {
-                                                setStreetQuery('');
-                                            }
-                                            return next;
-                                        });
+                                        if (!e.target.value.trim()) {
+                                            setForm((prev) =>
+                                                prev
+                                                    ? { ...prev, cityId: null, cityName: '', streetName: '', streetId: null }
+                                                    : prev,
+                                            );
+                                            setStreetQuery('');
+                                        }
                                     }}
                                     onFocus={() => {
-                                        setCityInputUnlocked(true);
-                                        if (cityQuery.length >= CITY_SEARCH_MIN_LENGTH) setCityDropdownOpen(true);
+                                        if (cityQuery.length >= 2) setCityDropdownOpen(true);
                                     }}
-                                    onBlur={() => {
-                                        window.setTimeout(() => setCityDropdownOpen(false), 200);
-                                    }}
-                                    placeholder="Например: Минск"
-                                    type="search"
-                                    name="posutki-edit-listing-city-search"
-                                    autoComplete="one-time-code"
-                                    autoCorrect="off"
-                                    spellCheck={false}
-                                    readOnly={!cityInputUnlocked}
-                                    data-lpignore="true"
-                                    data-1p-ignore
-                                    aria-describedby="edit-listing-city-hint"
-                                    className={cn(
-                                        'pl-9',
-                                        form && isCitySelectionPending(cityQuery, form.cityId)
-                                            ? 'border-amber-500/80 focus-visible:ring-amber-500/30'
-                                            : '',
-                                    )}
+                                    placeholder="Начните вводить название города..."
+                                    className="pl-9"
                                 />
                                 {citySearching && (
                                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
                                 )}
-
-                                {cityDropdownOpen && debouncedCityQuery.length >= CITY_SEARCH_MIN_LENGTH && cityResults.length > 0 && (
-                                    <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-border bg-popover shadow-lg">
-                                        {cityResults.map((city) => {
-                                            const parts = formatCityLabel(city);
-                                            return (
-                                                <button
-                                                    key={city.id}
-                                                    type="button"
-                                                    onMouseDown={(e) => e.preventDefault()}
-                                                    onClick={() => selectCity(city)}
-                                                    className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
-                                                >
-                                                    <span className="font-medium text-foreground">{parts[0]}</span>
-                                                    {parts.length > 1 && (
-                                                        <span className="text-sm text-muted-foreground ml-2">
-                                                            {parts.slice(1).join(', ')}
-                                                        </span>
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                                {cityDropdownOpen
-                                    && debouncedCityQuery.length >= CITY_SEARCH_MIN_LENGTH
-                                    && !citySearching
-                                    && cityResults.length === 0 && (
-                                    <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-border bg-popover px-4 py-3 text-sm text-muted-foreground shadow-lg">
-                                        {cityNotFoundMessage(form.type)}
-                                    </div>
-                                )}
                             </div>
-                            {(form?.cityId || !isCitySelectionPending(cityQuery, form?.cityId ?? null)) && (
-                                <p id="edit-listing-city-hint" className="text-xs text-muted-foreground mt-1.5">
-                                    {form?.cityId
-                                        ? `Выбран: ${form.cityName}`
-                                        : `Введите не менее 2 букв, затем выберите ${cityFieldNameInText(form.type)} из списка`}
-                                </p>
+                            {cityDropdownOpen && cityResults.length > 0 && (
+                                <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg max-h-60 overflow-auto">
+                                    {cityResults.map((city) => {
+                                        const parts = formatCityLabel(city);
+                                        return (
+                                            <button
+                                                key={city.id}
+                                                onClick={() => selectCity(city)}
+                                                className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
+                                            >
+                                                <span className="font-medium text-foreground">{parts[0]}</span>
+                                                {parts.length > 1 && (
+                                                    <span className="text-sm text-muted-foreground ml-2">
+                                                        {parts.slice(1).join(', ')}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             )}
                         </div>
 
                         <div ref={streetContainerRef} className="relative">
-                            <Label className="text-foreground" htmlFor="edit-listing-street">
+                            <Label className="text-foreground">
                                 Улица{form.type === 'apartment' ? ' *' : ''}
                             </Label>
-                            {!form.cityId && (
-                                <p className="text-xs text-muted-foreground mt-1 mb-1.5">
-                                    {`Поле станет доступно после выбора ${cityFieldNameGenitive(form.type)} из списка подсказок выше`}
-                                </p>
-                            )}
-                            <div className="relative">
+                            <div className="relative mt-1.5">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                                 <Input
-                                    id="edit-listing-street"
                                     value={streetQuery}
                                     onChange={(e) => {
                                         setStreetQuery(e.target.value);
@@ -1358,49 +1297,41 @@ export default function EditPropertyPage() {
                                     onFocus={() => {
                                         if (form.cityId && streetQuery.length >= 1) setStreetDropdownOpen(true);
                                     }}
-                                    placeholder={
-                                        form.cityId
-                                            ? 'Начните вводить и выберите улицу из списка (можно ввести вручную)'
-                                            : `Сначала выберите ${cityFieldNameInText(form.type)} из списка`
-                                    }
+                                    placeholder={form.cityId ? 'Начните вводить название улицы...' : 'Сначала выберите город'}
                                     disabled={!form.cityId}
-                                    aria-disabled={!form.cityId}
-                                    className={cn('pl-9', !form.cityId && 'opacity-60 cursor-not-allowed bg-muted/40')}
+                                    className="pl-9"
                                 />
                                 {streetSearching && (
                                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
                                 )}
-
-                                {streetDropdownOpen && streetResults.length > 0 && (
-                                    <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-border bg-popover shadow-lg">
-                                        {streetResults.map((street) => (
-                                            <button
-                                                key={street.id}
-                                                type="button"
-                                                onMouseDown={(e) => e.preventDefault()}
-                                                onClick={() => {
-                                                    const displayName = street.type
-                                                        ? `${street.type} ${street.name}`
-                                                        : street.name;
-                                                    setStreetQuery(displayName);
-                                                    setForm((prev) =>
-                                                        prev
-                                                            ? { ...prev, streetName: displayName, streetId: street.id }
-                                                            : prev,
-                                                    );
-                                                    setStreetDropdownOpen(false);
-                                                }}
-                                                className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
-                                            >
-                                                {street.type && (
-                                                    <span className="text-sm text-muted-foreground mr-1">{street.type}</span>
-                                                )}
-                                                <span className="font-medium text-foreground">{street.name}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
+                            {streetDropdownOpen && streetResults.length > 0 && (
+                                <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg max-h-60 overflow-auto">
+                                    {streetResults.map((street) => (
+                                        <button
+                                            key={street.id}
+                                            onClick={() => {
+                                                const displayName = street.type
+                                                    ? `${street.type} ${street.name}`
+                                                    : street.name;
+                                                setStreetQuery(displayName);
+                                                setForm((prev) =>
+                                                    prev
+                                                        ? { ...prev, streetName: displayName, streetId: street.id }
+                                                        : prev,
+                                                );
+                                                setStreetDropdownOpen(false);
+                                            }}
+                                            className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
+                                        >
+                                            {street.type && (
+                                                <span className="text-sm text-muted-foreground mr-1">{street.type}</span>
+                                            )}
+                                            <span className="font-medium text-foreground">{street.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -1,6 +1,7 @@
- 'use client';
-
 import { CreateListingForm } from '@/features/create-listing/components/CreateListingForm';
+
+/** Форма подачи тяжёлая; не собираем статически при build. */
+export const dynamic = 'force-dynamic';
 
 export default function CreateListingPage() {
     return (

@@ -87,18 +87,10 @@ import {
     TOTAL_FLOORS_MIN,
     YEAR_BUILT_MAX,
     YEAR_BUILT_MIN,
-    CITY_SEARCH_MIN_LENGTH,
     getDescriptionFieldError,
     getTitleFieldError,
-    cityFieldLabel,
-    cityFieldNameGenitive,
-    cityFieldNameInText,
-    cityNotFoundMessage,
-    getCityFieldError,
     getApartmentStreetFieldError,
     getApartmentBuildingFieldError,
-    getAddressAfterCityQueryChange,
-    isCitySelectionPending,
     isFloorNotAboveTotalFloors,
 } from '../validation';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
@@ -239,7 +231,6 @@ export function CreateListingForm() {
 
     // City autocomplete state
     const [cityQuery, setCityQuery] = useState('');
-    const [cityInputUnlocked, setCityInputUnlocked] = useState(false);
     const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
     const debouncedCityQuery = useDebouncedValue(cityQuery, 300);
     const { data: cityResults = [], isFetching: citySearching } = useSearchCities(debouncedCityQuery);
@@ -474,9 +465,8 @@ export function CreateListingForm() {
                 }
                 break;
             }
-            case 5: {
-                const cityErr = getCityFieldError(form.cityId, form.propertyType);
-                if (cityErr) errs.citySlug = cityErr;
+            case 5:
+                if (!form.cityId) errs.citySlug = 'Выберите город';
                 {
                     const streetErr = getApartmentStreetFieldError(
                         form.propertyType,
@@ -488,7 +478,6 @@ export function CreateListingForm() {
                     if (buildingErr) errs.building = buildingErr;
                 }
                 break;
-            }
             case 6:
                 if (form.dealType === 'daily') {
                     if (!form.maxDailyGuests) {
@@ -642,7 +631,6 @@ export function CreateListingForm() {
         setStep(1);
         setErrors({});
         setCityQuery('');
-        setCityInputUnlocked(false);
         setStreetQuery('');
         setCityDropdownOpen(false);
         setStreetDropdownOpen(false);
@@ -664,7 +652,7 @@ export function CreateListingForm() {
     };
 
     const submitProperty = async () => {
-        if (!form.cityId) { toast.error(cityNotFoundMessage(form.propertyType)); return; }
+        if (!form.cityId) { toast.error('Город не найден'); return; }
 
         if (form.photos.some((p) => p.uploading)) {
             toast.error('Дождитесь окончания загрузки всех фото');
@@ -1432,125 +1420,69 @@ export function CreateListingForm() {
                                     <h2 className="font-display text-lg font-semibold text-foreground">Расположение</h2>
 
                                     <div ref={cityContainerRef} className="relative">
-                                        <label className={labelClass} htmlFor="listing-city">
-                                            {cityFieldLabel(form.propertyType)}
-                                        </label>
+                                        <label className={labelClass}>Город *</label>
                                         <div className="relative">
                                             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                                             <input
-                                                id="listing-city"
                                                 value={cityQuery}
                                                 onChange={(e) => {
-                                                    const value = e.target.value;
-                                                    setCityQuery(value);
+                                                    setCityQuery(e.target.value);
                                                     setCityDropdownOpen(true);
-                                                    const { next, clearStreet } = getAddressAfterCityQueryChange(form, value);
-                                                    setForm(next);
-                                                    if (clearStreet) {
+                                                    if (!e.target.value.trim()) {
+                                                        setForm((prev) => ({
+                                                            ...prev,
+                                                            cityId: null,
+                                                            citySlug: '',
+                                                            cityName: '',
+                                                            streetName: '',
+                                                            streetId: null,
+                                                        }));
                                                         setStreetQuery('');
-                                                    }
-                                                    if (errors.citySlug) {
-                                                        setErrors((prev) => {
-                                                            const updated = { ...prev };
-                                                            delete updated.citySlug;
-                                                            return updated;
-                                                        });
                                                     }
                                                 }}
                                                 onFocus={() => {
-                                                    setCityInputUnlocked(true);
-                                                    if (cityQuery.length >= CITY_SEARCH_MIN_LENGTH) setCityDropdownOpen(true);
+                                                    if (cityQuery.length >= 2) setCityDropdownOpen(true);
                                                 }}
-                                                onBlur={() => {
-                                                    window.setTimeout(() => {
-                                                        setCityDropdownOpen(false);
-                                                        if (isCitySelectionPending(cityQuery, form.cityId)) {
-                                                            const cityErr = getCityFieldError(form.cityId, form.propertyType);
-                                                            if (cityErr) {
-                                                                setErrors((prev) => ({ ...prev, citySlug: cityErr }));
-                                                            }
-                                                        }
-                                                    }, 200);
-                                                }}
-                                                placeholder="Например: Минск"
-                                                type="search"
-                                                name="posutki-listing-city-search"
-                                                autoComplete="one-time-code"
-                                                autoCorrect="off"
-                                                spellCheck={false}
-                                                readOnly={!cityInputUnlocked}
-                                                data-lpignore="true"
-                                                data-1p-ignore
-                                                aria-invalid={Boolean(errors.citySlug) || isCitySelectionPending(cityQuery, form.cityId)}
-                                                aria-describedby="listing-city-hint"
-                                                className={cn(
-                                                    inputClass,
-                                                    'pl-10',
-                                                    errors.citySlug ? 'border-destructive' : '',
-                                                    isCitySelectionPending(cityQuery, form.cityId) && !errors.citySlug
-                                                        ? 'border-amber-500/80 focus-visible:ring-amber-500/30'
-                                                        : '',
-                                                )}
+                                                placeholder="Начните вводить название города..."
+                                                className={cn(inputClass, 'pl-10', errors.citySlug ? 'border-destructive' : '')}
                                             />
                                             {citySearching && (
                                                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
                                             )}
-
-                                            {cityDropdownOpen && debouncedCityQuery.length >= CITY_SEARCH_MIN_LENGTH && cityResults.length > 0 && (
-                                                <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-border bg-popover shadow-lg">
-                                                    {cityResults.map((city) => {
-                                                        const parts = formatCityLabel(city);
-                                                        return (
-                                                            <button
-                                                                key={city.id}
-                                                                type="button"
-                                                                onMouseDown={(e) => e.preventDefault()}
-                                                                onClick={() => selectCity(city)}
-                                                                className="w-full cursor-pointer px-4 py-2.5 text-left transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-accent"
-                                                            >
-                                                                <span className="font-medium text-foreground">{parts[0]}</span>
-                                                                {parts.length > 1 && (
-                                                                    <span className="text-sm text-muted-foreground ml-2">
-                                                                        {parts.slice(1).join(', ')}
-                                                                    </span>
-                                                                )}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-                                            {cityDropdownOpen
-                                                && debouncedCityQuery.length >= CITY_SEARCH_MIN_LENGTH
-                                                && !citySearching
-                                                && cityResults.length === 0 && (
-                                                <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-border bg-popover px-4 py-3 text-sm text-muted-foreground shadow-lg">
-                                                    {cityNotFoundMessage(form.propertyType)}
-                                                </div>
-                                            )}
                                         </div>
                                         <FieldError field="citySlug" />
-                                        {(form.cityId || !isCitySelectionPending(cityQuery, form.cityId)) && (
-                                            <p id="listing-city-hint" className="text-xs text-muted-foreground mt-1.5">
-                                                {form.cityId
-                                                    ? `Выбран: ${form.cityName}`
-                                                    : `Введите не менее 2 букв, затем выберите ${cityFieldNameInText(form.propertyType)} из списка`}
-                                            </p>
+
+                                        {cityDropdownOpen && cityResults.length > 0 && (
+                                            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg max-h-60 overflow-auto">
+                                                {cityResults.map((city) => {
+                                                    const parts = formatCityLabel(city);
+                                                    return (
+                                                        <button
+                                                            key={city.id}
+                                                            type="button"
+                                                            onClick={() => selectCity(city)}
+                                                            className="w-full cursor-pointer px-4 py-2.5 text-left transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-accent"
+                                                        >
+                                                            <span className="font-medium text-foreground">{parts[0]}</span>
+                                                            {parts.length > 1 && (
+                                                                <span className="text-sm text-muted-foreground ml-2">
+                                                                    {parts.slice(1).join(', ')}
+                                                                </span>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
                                         )}
                                     </div>
 
                                     <div ref={streetContainerRef} className="relative">
-                                        <label className={labelClass} htmlFor="listing-street">
+                                        <label className={labelClass}>
                                             Улица{form.propertyType === 'apartment' ? ' *' : ''}
                                         </label>
-                                        {!form.cityId && (
-                                            <p className="text-xs text-muted-foreground -mt-3 mb-2">
-                                                {`Поле станет доступно после выбора ${cityFieldNameGenitive(form.propertyType)} из списка подсказок выше`}
-                                            </p>
-                                        )}
                                         <div className="relative">
                                             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                                             <input
-                                                id="listing-street"
                                                 value={streetQuery}
                                                 onChange={(e) => {
                                                     setStreetQuery(e.target.value);
@@ -1564,54 +1496,48 @@ export function CreateListingForm() {
                                                 onFocus={() => {
                                                     if (form.cityId && streetQuery.length >= 1) setStreetDropdownOpen(true);
                                                 }}
-                                                placeholder={
-                                                    form.cityId
-                                                        ? 'Начните вводить и выберите улицу из списка (можно ввести вручную)'
-                                                        : `Сначала выберите ${cityFieldNameInText(form.propertyType)} из списка`
-                                                }
+                                                placeholder={form.cityId ? 'Начните вводить название улицы...' : 'Сначала выберите город'}
                                                 disabled={!form.cityId}
-                                                aria-disabled={!form.cityId}
                                                 className={cn(
                                                     inputClass,
                                                     'pl-10',
-                                                    !form.cityId && 'opacity-60 cursor-not-allowed bg-muted/40',
+                                                    !form.cityId && 'opacity-60 cursor-not-allowed',
                                                     errors.streetName ? 'border-destructive' : '',
                                                 )}
                                             />
                                             {streetSearching && (
                                                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
                                             )}
-
-                                            {streetDropdownOpen && streetResults.length > 0 && (
-                                                <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-border bg-popover shadow-lg">
-                                                    {streetResults.map((street) => (
-                                                        <button
-                                                            key={street.id}
-                                                            type="button"
-                                                            onMouseDown={(e) => e.preventDefault()}
-                                                            onClick={() => {
-                                                                const displayName = street.type
-                                                                    ? `${street.type} ${street.name}`
-                                                                    : street.name;
-                                                                setStreetQuery(displayName);
-                                                                setForm((prev) => ({
-                                                                    ...prev,
-                                                                    streetName: displayName,
-                                                                    streetId: street.id,
-                                                                }));
-                                                                setStreetDropdownOpen(false);
-                                                            }}
-                                                            className="w-full cursor-pointer px-4 py-2.5 text-left transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-accent"
-                                                        >
-                                                            {street.type && (
-                                                                <span className="text-sm text-muted-foreground mr-1">{street.type}</span>
-                                                            )}
-                                                            <span className="font-medium text-foreground">{street.name}</span>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
                                         </div>
+
+                                        {streetDropdownOpen && streetResults.length > 0 && (
+                                            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg max-h-60 overflow-auto">
+                                                {streetResults.map((street) => (
+                                                    <button
+                                                        key={street.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const displayName = street.type
+                                                                ? `${street.type} ${street.name}`
+                                                                : street.name;
+                                                            setStreetQuery(displayName);
+                                                            setForm((prev) => ({
+                                                                ...prev,
+                                                                streetName: displayName,
+                                                                streetId: street.id,
+                                                            }));
+                                                            setStreetDropdownOpen(false);
+                                                        }}
+                                                        className="w-full cursor-pointer px-4 py-2.5 text-left transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-accent"
+                                                    >
+                                                        {street.type && (
+                                                            <span className="text-sm text-muted-foreground mr-1">{street.type}</span>
+                                                        )}
+                                                        <span className="font-medium text-foreground">{street.name}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                         <FieldError field="streetName" />
                                     </div>
 
