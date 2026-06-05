@@ -109,7 +109,7 @@ frontend-build: ## Build frontend for production
 	docker-compose exec frontend npm run build
 
 frontend-build-cpanel: ## Build frontend with low-memory profile (run in Docker, upload .next to cPanel)
-	docker-compose exec frontend npm run build:low-memory
+	docker-compose exec -e NODE_ENV=production frontend npm run build:low-memory
 
 frontend-shell: ## Open frontend shell
 	docker-compose exec frontend sh
