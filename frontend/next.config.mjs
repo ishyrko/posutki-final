@@ -13,6 +13,7 @@ const nextConfig = {
     ? {
         productionBrowserSourceMaps: false,
         experimental: {
+          serverSourceMaps: false,
           workerThreads: false,
           cpus: 1,
           webpackMemoryOptimizations: true,
@@ -38,6 +39,7 @@ const nextConfig = {
     };
     if (lowMemoryBuild) {
       config.parallelism = 1;
+      config.cache = false;
     }
     return config;
   },
