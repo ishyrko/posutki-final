@@ -8,9 +8,12 @@ test-unit:
 
 test-functional:
 	docker compose exec php sh -lc "cd /var/www/backend && composer test:functional"
-.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo admin-user frontend-install frontend-dev frontend-build clean exchange-rates sync-metro-proximity prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
+.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo admin-user frontend-install frontend-dev frontend-build frontend-build-cpanel frontend-build-cpanel-prod frontend-build-cpanel-verify-3g frontend-export-cpanel frontend-cpanel-clean clean exchange-rates sync-metro-proximity prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
 
 PROD_ENV_FILE = .env.prod
+CPANEL_ENV_FILE = .env.cpanel
+CPANEL_COMPOSE  = docker compose -f docker-compose.yml -f docker-compose.cpanel-build.yml
+-include $(CPANEL_ENV_FILE)
 PROD_COMPOSE  = docker compose -f docker-compose.prod.yml --env-file $(PROD_ENV_FILE)
 PROD_EDGE_ARGS = $(shell set -a; . ./$(PROD_ENV_FILE) 2>/dev/null; set +a; [ "$${PROD_ENABLE_EDGE_PROXY:-0}" = "1" ] && echo --profile edge)
 HOST_UID      = $(shell id -u)
@@ -108,8 +111,50 @@ frontend-dev: ## Start frontend development server
 frontend-build: ## Build frontend for production
 	docker-compose exec frontend npm run build
 
+define verify_cpanel_next
+	@test -f frontend/$(1)/BUILD_ID || (echo "Missing frontend/$(1)/BUILD_ID" && exit 1)
+	@test -d frontend/$(1)/static/chunks || (echo "Missing frontend/$(1)/static — incomplete build, do not upload" && exit 1)
+	@test -d frontend/$(1)/server || (echo "Missing frontend/$(1)/server — incomplete build, do not upload" && exit 1)
+	@if [ -d frontend/$(1)/dev ]; then echo "WARN: frontend/$(1)/dev present — remove before upload (rm -rf frontend/$(1)/dev)"; fi
+endef
+
+frontend-cpanel-clean: ## Remove .next before cPanel build (stops dev container if running)
+	docker-compose stop frontend 2>/dev/null || true
+	$(CPANEL_COMPOSE) run --rm --no-deps frontend sh -c 'mkdir -p /app/.next && find /app/.next -mindepth 1 -delete'
+
+# Если собирали через `docker-compose exec` (dev-контейнер), .next в volume — скопировать на хост.
+frontend-export-cpanel: ## Copy .next from Docker volume to frontend/.next-cpanel
+	rm -rf frontend/.next-cpanel
+	docker cp posutki_frontend:/app/.next frontend/.next-cpanel
+	$(call verify_cpanel_next,.next-cpanel)
+	@echo "${GREEN}Ready to upload: frontend/.next-cpanel ($(shell du -sh frontend/.next-cpanel 2>/dev/null | cut -f1))${RESET}"
+	@echo "On server: rm -rf .next && upload .next-cpanel as .next"
+
 frontend-build-cpanel: ## Build frontend with low-memory profile (run in Docker, upload .next to cPanel)
-	docker-compose exec -e NODE_ENV=production frontend npm run build:low-memory
+	$(MAKE) frontend-cpanel-clean
+	$(CPANEL_COMPOSE) run --rm --no-deps -e NODE_ENV=production frontend npm run build:low-memory
+	$(call verify_cpanel_next,.next)
+	@echo "${GREEN}Build output: frontend/.next ($(shell du -sh frontend/.next 2>/dev/null | cut -f1))${RESET}"
+
+frontend-build-cpanel-prod: ## Prod NEXT_PUBLIC_* for cPanel (vars in .env.cpanel or VAR=value on CLI)
+	@test -n "$(NEXT_PUBLIC_API_URL)" || (echo "Set NEXT_PUBLIC_API_URL (e.g. in $(CPANEL_ENV_FILE))" && exit 1)
+	$(MAKE) frontend-cpanel-clean
+	$(CPANEL_COMPOSE) run --rm --no-deps \
+		-e NODE_ENV=production \
+		-e BACKEND_INTERNAL_URL="$(BACKEND_INTERNAL_URL)" \
+		-e NEXT_PUBLIC_API_URL="$(NEXT_PUBLIC_API_URL)" \
+		-e NEXT_PUBLIC_SITE_URL="$(NEXT_PUBLIC_SITE_URL)" \
+		-e NEXT_PUBLIC_GOOGLE_CLIENT_ID="$(NEXT_PUBLIC_GOOGLE_CLIENT_ID)" \
+		-e NEXT_PUBLIC_RECAPTCHA_SITE_KEY="$(NEXT_PUBLIC_RECAPTCHA_SITE_KEY)" \
+		-e NEXT_PUBLIC_YANDEX_MAPS_API_KEY="$(NEXT_PUBLIC_YANDEX_MAPS_API_KEY)" \
+		-e NEXT_PUBLIC_YANDEX_GEOCODER_API_KEY="$(NEXT_PUBLIC_YANDEX_GEOCODER_API_KEY)" \
+		-e REVALIDATION_SECRET="$(REVALIDATION_SECRET)" \
+		frontend npm run build:low-memory
+	$(call verify_cpanel_next,.next)
+	@echo "${GREEN}Build output: frontend/.next ($(shell du -sh frontend/.next 2>/dev/null | cut -f1))${RESET}"
+
+frontend-build-cpanel-verify-3g: ## Smoke test: prod build must pass with Docker mem_limit=3g
+	$(MAKE) frontend-build-cpanel-prod
 
 frontend-shell: ## Open frontend shell
 	docker-compose exec frontend sh

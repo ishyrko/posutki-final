@@ -2,6 +2,9 @@
 /.idea/
 /.db-backups/
 .env.prod
+.env.cpanel
+frontend/.next-cpanel/
+frontend/.next-staging/
 
 # Symfony local overrides (full copy or deltas; not committed)
 backend/.env.local

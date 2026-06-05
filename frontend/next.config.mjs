@@ -8,12 +8,17 @@ const lowMemoryBuild = process.env.NEXT_LOW_MEMORY_BUILD === "1";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   trailingSlash: true,
-  /** Shared hosting (cPanel): one worker to avoid spawn ENOMEM during page-data collection. */
+  /** Shared hosting (cPanel, ≤3 GB RAM): single worker, lower webpack peak RSS. */
   ...(lowMemoryBuild
     ? {
+        productionBrowserSourceMaps: false,
         experimental: {
           workerThreads: false,
           cpus: 1,
+          webpackMemoryOptimizations: true,
+          /** Custom webpack config disables the worker by default — re-enable for lower peak RSS. */
+          webpackBuildWorker: true,
+          optimizePackageImports: ["lucide-react", "date-fns", "framer-motion"],
         },
       }
     : {}),
@@ -31,6 +36,9 @@ const nextConfig = {
       "@": path.resolve(__dirname, "src"),
       "@radix-ui/react-id": radixReactIdShim,
     };
+    if (lowMemoryBuild) {
+      config.parallelism = 1;
+    }
     return config;
   },
   typescript: {
