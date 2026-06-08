@@ -61,7 +61,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (propertyId) {
     const property = await getPropertyById(Number(propertyId));
 
-    if (!property) {
+    if (!property || property.status === "archived" || property.status === "deleted") {
       notFound();
     }
 
@@ -139,7 +139,7 @@ export default async function SegmentsPage({ params }: PageProps) {
   if (propertyId) {
     const numericPropertyId = Number(propertyId);
     const property = await getPropertyById(numericPropertyId);
-    if (!property) {
+    if (!property || property.status === "archived" || property.status === "deleted") {
       notFound();
     }
 

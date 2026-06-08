@@ -27,7 +27,7 @@ use PHPUnit\Framework\TestCase;
 
 final class GetPropertyHandlerTest extends TestCase
 {
-    public function testArchivedPropertyReturnsNotFoundEvenForOwner(): void
+    public function testArchivedPropertyReturnsNotFoundForGuest(): void
     {
         $property = $this->createProperty(ownerId: 4);
         $property->setStatus('published');
@@ -38,19 +38,32 @@ final class GetPropertyHandlerTest extends TestCase
         $this->expectException(NotFoundException::class);
         $this->expectExceptionMessage('Объявление не найдено');
 
-        $handler(new GetPropertyQuery('20', '4'));
+        $handler(new GetPropertyQuery('20', null));
     }
 
-    public function testDeletedPropertyReturnsNotFoundEvenForOwner(): void
+    public function testArchivedPropertyReturnsDtoForOwner(): void
+    {
+        $property = $this->createProperty(ownerId: 4);
+        $property->setStatus('published');
+        $property->archive();
+
+        $handler = $this->createHandler($property, expectSave: false);
+        $dto = $handler(new GetPropertyQuery('20', '4'));
+
+        self::assertSame(20, $dto->id);
+        self::assertSame('archived', $dto->status);
+    }
+
+    public function testDeletedPropertyReturnsDtoForOwner(): void
     {
         $property = $this->createProperty(ownerId: 4);
         $property->delete();
 
         $handler = $this->createHandler($property, expectSave: false);
+        $dto = $handler(new GetPropertyQuery('20', '4'));
 
-        $this->expectException(NotFoundException::class);
-
-        $handler(new GetPropertyQuery('20', '4'));
+        self::assertSame(20, $dto->id);
+        self::assertSame('deleted', $dto->status);
     }
 
     public function testDraftPropertyReturnsDtoForOwner(): void

@@ -17,6 +17,7 @@ use App\Domain\Property\Validation\RoomDealDetailsValidator;
 use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
+use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\Exception\UnauthorizedException;
 use App\Domain\Shared\ValueObject\Id;
 use App\Infrastructure\Service\ExchangeRateService;
@@ -42,6 +43,10 @@ readonly class UpdatePropertyHandler
 
         if (!$property->isOwnedBy($command->userId)) {
             throw new UnauthorizedException('Нет прав на изменение этого объявления');
+        }
+
+        if (in_array($property->getStatus(), ['archived', 'deleted'], true)) {
+            throw new DomainException('Нельзя изменять удалённое или неактивное объявление');
         }
 
         $effectiveFloor = $command->floor ?? $property->getFloor();

@@ -48,14 +48,14 @@ final class GetPropertyHandler
             throw new NotFoundException('Объявление не найдено');
         }
 
-        if (in_array($property->getStatus(), ['archived', 'deleted'], true)) {
+        $isOwner = $query->viewerUserId !== null && $property->isOwnedBy($query->viewerUserId);
+
+        if (in_array($property->getStatus(), ['archived', 'deleted'], true) && !$isOwner) {
             throw new NotFoundException('Объявление не найдено');
         }
 
-        if ($property->getStatus() !== 'published') {
-            if ($query->viewerUserId === null || !$property->isOwnedBy($query->viewerUserId)) {
-                throw new NotFoundException('Объявление не найдено');
-            }
+        if ($property->getStatus() !== 'published' && !$isOwner) {
+            throw new NotFoundException('Объявление не найдено');
         }
 
         $city = $this->cityRepository->findById($property->getCityId());
@@ -69,9 +69,11 @@ final class GetPropertyHandler
             $street = $this->streetRepository->findById($property->getStreetId());
         }
 
-        $property->incrementViews();
-        $this->propertyRepository->save($property);
-        $this->propertyDailyStatRepository->upsertView($property->getId()->getValue(), new \DateTimeImmutable());
+        if (!in_array($property->getStatus(), ['archived', 'deleted'], true)) {
+            $property->incrementViews();
+            $this->propertyRepository->save($property);
+            $this->propertyDailyStatRepository->upsertView($property->getId()->getValue(), new \DateTimeImmutable());
+        }
 
         $propertyMetroStations = $this->propertyMetroStationRepository->findByPropertyIds([$property->getId()->getValue()]);
         $metroStationIds = array_values(array_unique(array_map(

@@ -16,6 +16,7 @@ use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
 use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
+use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\MetroProximityCalculator;
@@ -73,6 +74,38 @@ final class UpdatePropertyHandlerTest extends TestCase
 
         self::assertTrue($requiresModeration);
         self::assertSame($originalTitle, $property->getTitle());
+    }
+
+    public function testArchivedPropertyUpdateThrowsDomainException(): void
+    {
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $revisionRepository = $this->createMock(PropertyRevisionRepositoryInterface::class);
+        $propertyMetroStationRepository = $this->createMock(PropertyMetroStationRepositoryInterface::class);
+        $metroCalculator = $this->createMetroCalculator($propertyMetroStationRepository);
+        $exchangeRateService = $this->createExchangeRateService(['USD' => 3.2]);
+
+        $property = $this->createProperty(ownerId: 1, propertyId: 202);
+        $property->setStatus('archived');
+
+        $propertyRepository->method('findById')->willReturn($property);
+        $revisionRepository->expects(self::never())->method('save');
+        $propertyRepository->expects(self::never())->method('save');
+
+        $handler = new UpdatePropertyHandler(
+            $propertyRepository,
+            $revisionRepository,
+            $exchangeRateService,
+            $metroCalculator,
+        );
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Нельзя изменять удалённое или неактивное объявление');
+
+        $handler(new UpdatePropertyCommand(
+            propertyId: '202',
+            userId: '1',
+            title: 'Updated title',
+        ));
     }
 
     public function testPublishedPropertyPriceOnlyUpdateAppliesDirectlyWithoutRevision(): void

@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { useArchiveProperty, useBoostProperty, useDeleteProperty, useExchangeRates, useMyProperties, useUnarchiveProperty } from '@/features/properties/hooks';
-import { Property, formatAddress } from '@/features/properties/types';
+import { Property, formatAddress, isPropertyEditable } from '@/features/properties/types';
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
 
@@ -230,11 +230,23 @@ function ListingCard({
                     )}
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-3 pt-3 border-t border-border">
-                    <Button variant="ghost" size="sm" asChild className="justify-start">
-                        <Link href={`/kabinet/redaktirovat/${property.id}/`}>
+                    {isPropertyEditable(property.status) ? (
+                        <Button variant="ghost" size="sm" asChild className="justify-start">
+                            <Link href={`/kabinet/redaktirovat/${property.id}/`}>
+                                <Edit className="w-3.5 h-3.5 mr-1" />Изменить
+                            </Link>
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled
+                            className="justify-start text-muted-foreground"
+                            title="Нельзя изменять удалённое или неактивное объявление"
+                        >
                             <Edit className="w-3.5 h-3.5 mr-1" />Изменить
-                        </Link>
-                    </Button>
+                        </Button>
+                    )}
                     <Button variant="ghost" size="sm" asChild className="justify-start">
                         <Link href={`/kabinet/statistika/${property.id}/`}>
                             <BarChart3 className="w-3.5 h-3.5 mr-1" />Статистика

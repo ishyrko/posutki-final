@@ -8,12 +8,30 @@ use App\Domain\Property\Entity\Property;
 
 final class PropertyLifecycleControllerTest extends ApiTestCase
 {
-    public function testGetArchivedPropertyReturnsNotFoundEvenForOwner(): void
+    public function testGetArchivedPropertyReturnsNotFoundForGuest(): void
     {
         $email = 'owner-archived-get@example.com';
         $password = 'Password123!';
         $owner = $this->createUser($email, $password);
         $city = $this->createCity('Minsk Archived Get', 'minsk-archived-get', 'г. Минск');
+        $property = $this->createProperty($owner, $city, 'published');
+        $property->archive();
+        $this->entityManager()->flush();
+
+        $this->client->request(
+            'GET',
+            '/api/properties/' . $property->getId()->getValue(),
+        );
+
+        self::assertSame(404, $this->client->getResponse()->getStatusCode());
+    }
+
+    public function testGetArchivedPropertyReturnsOkForOwner(): void
+    {
+        $email = 'owner-archived-get-owner@example.com';
+        $password = 'Password123!';
+        $owner = $this->createUser($email, $password);
+        $city = $this->createCity('Minsk Archived Get Owner', 'minsk-archived-get-owner', 'г. Минск');
         $property = $this->createProperty($owner, $city, 'published');
         $property->archive();
         $this->entityManager()->flush();
@@ -29,15 +47,17 @@ final class PropertyLifecycleControllerTest extends ApiTestCase
             server: ['HTTP_AUTHORIZATION' => 'Bearer ' . $token],
         );
 
-        self::assertSame(404, $this->client->getResponse()->getStatusCode());
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('archived', $payload['data']['status']);
     }
 
-    public function testGetDeletedPropertyReturnsNotFoundEvenForOwner(): void
+    public function testGetDeletedPropertyReturnsOkForOwner(): void
     {
-        $email = 'owner-deleted-get@example.com';
+        $email = 'owner-deleted-get-owner@example.com';
         $password = 'Password123!';
         $owner = $this->createUser($email, $password);
-        $city = $this->createCity('Minsk Deleted Get', 'minsk-deleted-get', 'г. Минск');
+        $city = $this->createCity('Minsk Deleted Get Owner', 'minsk-deleted-get-owner', 'г. Минск');
         $property = $this->createProperty($owner, $city, 'published');
         $property->delete();
         $this->entityManager()->flush();
@@ -53,7 +73,9 @@ final class PropertyLifecycleControllerTest extends ApiTestCase
             server: ['HTTP_AUTHORIZATION' => 'Bearer ' . $token],
         );
 
-        self::assertSame(404, $this->client->getResponse()->getStatusCode());
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('deleted', $payload['data']['status']);
     }
 
     public function testArchiveAndUnarchivePublishedPropertyAsOwner(): void

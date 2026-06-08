@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import type { ExchangeRates } from '../api';
-import { Property, formatAddress } from '../types';
+import { Property, formatAddress, isPropertyEditable } from '../types';
 import { useExchangeRates } from '../hooks';
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from '../price-display';
 import { Card, CardFooter, CardHeader } from '@/components/ui/card';
@@ -103,12 +103,25 @@ export function MyPropertyCard({ property, onDelete }: MyPropertyCardProps) {
             </CardHeader>
 
             <CardFooter className="p-4 pt-0 gap-2 mt-auto">
-                <Button asChild variant="outline" size="sm" className="flex-1">
-                    <Link href={`/kabinet/redaktirovat/${property.id}/`}>
+                {isPropertyEditable(property.status) ? (
+                    <Button asChild variant="outline" size="sm" className="flex-1">
+                        <Link href={`/kabinet/redaktirovat/${property.id}/`}>
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                        </Link>
+                    </Button>
+                ) : (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        disabled
+                        title="Нельзя изменять удалённое или неактивное объявление"
+                    >
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
-                    </Link>
-                </Button>
+                    </Button>
+                )}
                 <Button asChild variant="secondary" size="sm" className="flex-1">
                     <Link href={propertyHref}>
                         <Eye className="h-4 w-4 mr-1" />

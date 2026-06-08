@@ -39,7 +39,8 @@ import AddressMapPicker from '@/components/AddressMapPicker';
 import { geocodeAddress as yandexGeocode } from '@/lib/yandex-geocoder';
 import { useProperty, useUpdateProperty } from '@/features/properties/hooks';
 import type { UpdatePropertyPayload } from '@/features/properties/api';
-import type { Property as PropertyItem } from '@/features/properties/types';
+import { isPropertyEditable } from '@/features/properties/types';
+import type { Property as PropertyItem, PropertyStatus } from '@/features/properties/types';
 import { useSearchCities, useSearchStreets } from '@/features/create-listing/hooks';
 import { LISTING_AMENITY_GROUPS } from '@/features/create-listing/listing-amenity-groups';
 import { PAYMENT_METHOD_OPTIONS } from '@/features/properties/payment-methods';
@@ -275,11 +276,59 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
     };
 }
 
+function editBlockedBackHref(status?: PropertyStatus): string {
+    return status === 'archived'
+        ? '/kabinet/moi-obyavleniya/neaktivnye/'
+        : '/kabinet/moi-obyavleniya/aktivnye/';
+}
+
+function editBlockedHint(status?: PropertyStatus): string {
+    if (status === 'archived') {
+        return 'Сначала активируйте объявление в разделе «Неактивные», затем его можно будет отредактировать.';
+    }
+    if (status === 'deleted') {
+        return 'Удалённые объявления восстановить нельзя.';
+    }
+    return 'Объявление не найдено или недоступно для редактирования. Если оно скрыто, активируйте его в разделе «Неактивные».';
+}
+
+function EditPropertyUnavailable({
+    backHref,
+    hint,
+}: {
+    backHref: string;
+    hint: string;
+}) {
+    return (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+            <div className="flex items-center gap-3 mb-6">
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href={backHref}>
+                        <ArrowLeft className="w-5 h-5" />
+                    </Link>
+                </Button>
+                <div>
+                    <h1 className="text-2xl font-display font-bold text-foreground">Редактирование объявления</h1>
+                </div>
+            </div>
+            <div className="max-w-3xl rounded-2xl border border-border bg-card p-6 shadow-card space-y-4">
+                <p className="text-foreground font-medium">
+                    Нельзя изменять удалённое или неактивное объявление.
+                </p>
+                <p className="text-sm text-muted-foreground">{hint}</p>
+                <Button asChild variant="outline">
+                    <Link href={backHref}>Вернуться к моим объявлениям</Link>
+                </Button>
+            </div>
+        </motion.div>
+    );
+}
+
 export default function EditPropertyPage() {
     const { id } = useParams<{ id: string }>();
     const propertyId = Number(id);
     const router = useRouter();
-    const { data: property, isLoading } = useProperty(propertyId);
+    const { data: property, isLoading, isError } = useProperty(propertyId);
     const { mutateAsync: updateProperty, isPending: saving } = useUpdateProperty();
 
     const [form, setForm] = useState<EditFormData | null>(null);
@@ -442,6 +491,10 @@ export default function EditPropertyPage() {
 
     const handleSubmit = async () => {
         if (!form || !Number.isFinite(propertyId) || propertyId <= 0) return;
+        if (property && !isPropertyEditable(property.status)) {
+            toast.error('Нельзя изменять удалённое или неактивное объявление');
+            return;
+        }
         if (property?.pendingRevisionStatus === 'pending') {
             toast.error('Изменения уже отправлены на модерацию');
             return;
@@ -725,7 +778,33 @@ export default function EditPropertyPage() {
         return parts;
     };
 
-    if (isLoading || !form) {
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-24">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (isError || !property) {
+        return (
+            <EditPropertyUnavailable
+                backHref={editBlockedBackHref()}
+                hint={editBlockedHint()}
+            />
+        );
+    }
+
+    if (!isPropertyEditable(property.status)) {
+        return (
+            <EditPropertyUnavailable
+                backHref={editBlockedBackHref(property.status)}
+                hint={editBlockedHint(property.status)}
+            />
+        );
+    }
+
+    if (!form) {
         return (
             <div className="flex items-center justify-center py-24">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />

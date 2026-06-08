@@ -28,6 +28,11 @@ export interface Price {
     currency: string;
 }
 
+export type PropertyStatus = 'draft' | 'moderation' | 'rejected' | 'published' | 'archived' | 'deleted';
+
+export const isPropertyEditable = (status: PropertyStatus): boolean =>
+    status !== 'archived' && status !== 'deleted';
+
 export interface Property {
     id: number;
     ownerId?: number;
@@ -47,7 +52,7 @@ export interface Property {
     type: string;
     typeLabel?: string;
     dealType: 'sale' | 'rent' | 'daily';
-    status: 'draft' | 'moderation' | 'rejected' | 'published' | 'archived' | 'deleted';
+    status: PropertyStatus;
     moderationComment?: string | null;
     pendingRevisionStatus?: 'pending' | 'rejected' | null;
     pendingRevisionComment?: string | null;
