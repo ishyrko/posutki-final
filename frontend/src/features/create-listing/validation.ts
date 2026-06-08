@@ -62,7 +62,71 @@ export const getDescriptionFieldError = (value: string): string | undefined => {
     return undefined;
 };
 
+/** Минимум символов в поле города перед поиском подсказок. */
+export const CITY_SEARCH_MIN_LENGTH = 2;
+
 export const requiresApartmentAddress = (propertyType: string): boolean => propertyType === 'apartment';
+
+export const isHousePropertyType = (propertyType: string): boolean => propertyType === 'house';
+
+export const cityFieldLabel = (propertyType: string, required = true): string => {
+    const name = isHousePropertyType(propertyType) ? 'Населенный пункт' : 'Город';
+    return required ? `${name} *` : name;
+};
+
+/** Название поля в текстах подсказок («город», «населённый пункт»). */
+export const cityFieldNameInText = (propertyType: string): string =>
+    isHousePropertyType(propertyType) ? 'населённый пункт' : 'город';
+
+/** Родительный падеж для «после выбора …». */
+export const cityFieldNameGenitive = (propertyType: string): string =>
+    isHousePropertyType(propertyType) ? 'населённого пункта' : 'города';
+
+/** Пользователь ввёл текст, но не выбрал город из подсказок. */
+export const isCitySelectionPending = (cityQuery: string, cityId: number | null): boolean =>
+    cityQuery.trim().length >= CITY_SEARCH_MIN_LENGTH && cityId === null;
+
+export const getCityFieldError = (cityId: number | null, propertyType = 'apartment'): string | undefined => {
+    if (cityId !== null) {
+        return undefined;
+    }
+    return `Выберите ${cityFieldNameInText(propertyType)} из списка подсказок`;
+};
+
+export const cityNotFoundMessage = (propertyType: string): string =>
+    isHousePropertyType(propertyType)
+        ? 'Населённый пункт не найден. Проверьте название или уточните регион.'
+        : 'Город не найден. Проверьте название или уточните регион.';
+
+type CityQueryAddressSlice = {
+    cityId: number | null;
+    cityName: string;
+    streetName: string;
+    streetId: number | null;
+    citySlug?: string;
+};
+
+/** Сбрасывает выбранный город при очистке поля или правке текста после выбора. */
+export const getAddressAfterCityQueryChange = <T extends CityQueryAddressSlice>(
+    prev: T,
+    query: string,
+): { next: T; clearStreet: boolean } => {
+    const cleared = {
+        cityId: null,
+        cityName: '',
+        streetName: '',
+        streetId: null,
+        ...(prev.citySlug !== undefined ? { citySlug: '' } : {}),
+    } as Partial<T>;
+
+    if (!query.trim()) {
+        return { next: { ...prev, ...cleared }, clearStreet: true };
+    }
+    if (prev.cityId !== null && query.trim() !== prev.cityName.trim()) {
+        return { next: { ...prev, ...cleared }, clearStreet: true };
+    }
+    return { next: prev, clearStreet: false };
+};
 
 export const getApartmentStreetFieldError = (
     propertyType: string,
