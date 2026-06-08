@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { fetchPublicApi } from "@/lib/server-api";
 import { getSiteOrigin } from "@/lib/site-url";
 import {
-  CITY_PREFIX_SLUGS,
+  CITY_PREFIX_SLUG_LIST,
   PROPERTY_TYPE_SLUG_TO_VALUE,
   REGION_SLUGS,
   buildCatalogUrl,
@@ -72,7 +72,7 @@ function catalogEntries(now: Date): Entry[] {
     }
   }
 
-  for (const city of CITY_PREFIX_SLUGS) {
+  for (const city of CITY_PREFIX_SLUG_LIST) {
     urls.add(buildCatalogUrl({ city, propertyType: "apartment" }));
   }
 

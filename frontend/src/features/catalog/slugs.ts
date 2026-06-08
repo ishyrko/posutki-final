@@ -14,7 +14,7 @@ export const REGION_SLUGS: ReadonlySet<string> = new Set([
 ] as const);
 
 /** Города с префиксом в URL (только квартиры): /pinsk/kvartiry/, /pinsk/kvartiry/62/ */
-export const CITY_PREFIX_SLUGS: ReadonlySet<string> = new Set([
+export const CITY_PREFIX_SLUG_LIST = [
   'orsha',
   'svetlogorsk',
   'smorgon',
@@ -25,7 +25,9 @@ export const CITY_PREFIX_SLUGS: ReadonlySet<string> = new Set([
   'bobruysk',
   'zhlobin',
   'volkovysk',
-] as const);
+] as const;
+
+export const CITY_PREFIX_SLUGS: ReadonlySet<string> = new Set(CITY_PREFIX_SLUG_LIST);
 
 /** Только посуточная аренда — в URL сделка не кодируется, всегда daily. */
 export const IMPLICIT_DEAL_TYPE = 'daily' as const;
