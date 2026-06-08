@@ -7,6 +7,8 @@ namespace App\Presentation\Api\Request;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\SellerType;
+use App\Domain\Property\Validation\PropertyImageLimitsValidator;
+use App\Domain\Shared\Exception\DomainException;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
@@ -152,12 +154,6 @@ class CreatePropertyRequest
     public array $coordinates;
 
     #[Assert\Type('array')]
-    #[Assert\Count(
-        min: 3,
-        max: 20,
-        minMessage: 'Загрузите не менее {{ limit }} фотографий',
-        maxMessage: 'Не более {{ limit }} фотографий',
-    )]
     public array $images = [];
 
     #[Assert\Type('array')]
@@ -186,6 +182,18 @@ class CreatePropertyRequest
         new Assert\Length(max: 2000),
     ])]
     public ?array $externalCalendarUrls = null;
+
+    #[Assert\Callback]
+    public function validateImages(ExecutionContextInterface $context): void
+    {
+        try {
+            PropertyImageLimitsValidator::assertValid($this->type, count($this->images));
+        } catch (DomainException $e) {
+            $context->buildViolation($e->getMessage())
+                ->atPath('images')
+                ->addViolation();
+        }
+    }
 
     #[Assert\Callback]
     public function validateApartmentAddress(ExecutionContextInterface $context): void

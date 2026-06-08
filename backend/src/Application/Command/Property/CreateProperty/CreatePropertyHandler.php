@@ -12,6 +12,7 @@ use App\Domain\Property\Validation\DealConditionsValidator;
 use App\Domain\Property\Validation\PaymentMethodsValidator;
 use App\Domain\Property\Validation\FloorTotalFloorsValidator;
 use App\Domain\Property\Validation\PropertyDealCombinationValidator;
+use App\Domain\Property\Validation\PropertyImageLimitsValidator;
 use App\Domain\Property\Validation\RoomDealDetailsValidator;
 use App\Domain\Property\ValueObject\{Price, Address, Coordinates};
 use App\Domain\Shared\Exception\DomainException;
@@ -52,6 +53,7 @@ final class CreatePropertyHandler
             roomsArea: $command->roomsArea,
         );
         PropertyDealCombinationValidator::assertValid($command->dealType, $command->type);
+        PropertyImageLimitsValidator::assertValid($command->type, count($command->images));
         FloorTotalFloorsValidator::assertValid($command->floor, $command->totalFloors);
         $this->assertAreaConstraints($command->type, $command->area, $command->landArea);
 

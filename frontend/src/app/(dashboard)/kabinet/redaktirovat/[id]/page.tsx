@@ -73,8 +73,8 @@ import {
     DESCRIPTION_MIN_LENGTH,
     FLOOR_MAX,
     FLOOR_MIN,
-    MAX_PHOTOS,
     MIN_PHOTOS,
+    getMaxPhotos,
     ROOMS_MAX,
     ROOMS_MIN,
     DAILY_BEDS_MAX,
@@ -1301,10 +1301,11 @@ export default function EditPropertyPage() {
                 <section className="bg-card rounded-2xl shadow-card border border-border p-6">
                     <h2 className="text-lg font-semibold text-foreground mb-1">Фотографии</h2>
                     <p className="text-sm text-muted-foreground mb-4">
-                        Не менее {MIN_PHOTOS} и не более {MAX_PHOTOS} фото. Перетаскивайте фото, чтобы изменить порядок (на телефоне — удерживайте и перетащите), первое станет обложкой.
+                        Не менее {MIN_PHOTOS} и не более {getMaxPhotos(form.type)} фото. Перетаскивайте фото, чтобы изменить порядок (на телефоне — удерживайте и перетащите), первое станет обложкой.
                     </p>
                     <PropertyPhotoGrid
                         photos={form.images}
+                        maxPhotos={getMaxPhotos(form.type)}
                         onChange={(images) => setForm((prev) => (
                             prev
                                 ? {

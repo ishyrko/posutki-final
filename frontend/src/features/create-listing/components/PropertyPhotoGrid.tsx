@@ -35,12 +35,13 @@ import {
     ACCEPTED_IMAGE_TYPES,
     MAX_FILE_SIZE,
     MAX_FILE_SIZE_MB,
-    MAX_PHOTOS,
+    MAX_PHOTOS_APARTMENT,
 } from '../validation';
 
 interface PropertyPhotoGridProps {
     photos: UploadedPhoto[];
     onChange: Dispatch<SetStateAction<UploadedPhoto[]>>;
+    maxPhotos?: number;
     uploadLabel?: string;
     addLabel?: string;
 }
@@ -129,6 +130,7 @@ function SortablePhotoItem({ photo, index, onRotate, onRemove }: SortablePhotoIt
 export function PropertyPhotoGrid({
     photos,
     onChange,
+    maxPhotos = MAX_PHOTOS_APARTMENT,
     uploadLabel = 'Загрузить фото',
     addLabel = 'Добавить',
 }: PropertyPhotoGridProps) {
@@ -194,7 +196,7 @@ export function PropertyPhotoGrid({
     const handleFiles = useCallback(
         async (files: FileList | File[]) => {
             const arr = Array.from(files);
-            const remaining = MAX_PHOTOS - photos.length;
+            const remaining = maxPhotos - photos.length;
             if (arr.length > remaining) {
                 toast.error(`Можно добавить ещё ${remaining} фото`);
             }
@@ -235,7 +237,7 @@ export function PropertyPhotoGrid({
                 }
             }
         },
-        [onChange, photos.length, uploadPhotoFile],
+        [maxPhotos, onChange, photos.length, uploadPhotoFile],
     );
 
     const rotatePhoto = useCallback(
@@ -349,7 +351,7 @@ export function PropertyPhotoGrid({
                             />
                         ))}
 
-                        {photos.length < MAX_PHOTOS && (
+                        {photos.length < maxPhotos && (
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}

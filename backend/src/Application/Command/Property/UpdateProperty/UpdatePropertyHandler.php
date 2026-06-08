@@ -13,6 +13,7 @@ use App\Domain\Property\Validation\DealConditionsValidator;
 use App\Domain\Property\Validation\PaymentMethodsValidator;
 use App\Domain\Property\Validation\FloorTotalFloorsValidator;
 use App\Domain\Property\Validation\PropertyDealCombinationValidator;
+use App\Domain\Property\Validation\PropertyImageLimitsValidator;
 use App\Domain\Property\Validation\RoomDealDetailsValidator;
 use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
@@ -80,6 +81,9 @@ readonly class UpdatePropertyHandler
             roomsArea: $effectiveRoomsArea,
         );
         PropertyDealCombinationValidator::assertValid($effectiveDealType, $effectiveType);
+        if ($command->images !== null) {
+            PropertyImageLimitsValidator::assertValid($effectiveType, count($command->images));
+        }
         $this->assertAreaConstraints($effectiveType, $effectiveLandArea);
 
         $price = null;

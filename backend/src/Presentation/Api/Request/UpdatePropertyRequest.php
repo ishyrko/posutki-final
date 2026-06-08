@@ -7,6 +7,7 @@ namespace App\Presentation\Api\Request;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\SellerType;
+use App\Domain\Property\Validation\PropertyImageLimitsValidator;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
@@ -141,17 +142,6 @@ class UpdatePropertyRequest
     public ?array $coordinates = null;
 
     #[Assert\Type('array')]
-    #[Assert\When(
-        expression: 'value !== null',
-        constraints: [
-            new Assert\Count(
-                min: 3,
-                max: 20,
-                minMessage: 'Загрузите не менее {{ limit }} фотографий',
-                maxMessage: 'Не более {{ limit }} фотографий',
-            ),
-        ],
-    )]
     public ?array $images = null;
 
     #[Assert\Type('array')]
@@ -180,6 +170,30 @@ class UpdatePropertyRequest
         new Assert\Length(max: 2000),
     ])]
     public ?array $externalCalendarUrls = null;
+
+    #[Assert\Callback]
+    public function validateImages(ExecutionContextInterface $context): void
+    {
+        if ($this->images === null || $this->type === null) {
+            return;
+        }
+
+        $count = count($this->images);
+        if ($count < PropertyImageLimitsValidator::MIN) {
+            $context->buildViolation(sprintf('Загрузите не менее %d фотографий', PropertyImageLimitsValidator::MIN))
+                ->atPath('images')
+                ->addViolation();
+
+            return;
+        }
+
+        $max = PropertyImageLimitsValidator::maxForType($this->type);
+        if ($count > $max) {
+            $context->buildViolation(sprintf('Не более %d фотографий', $max))
+                ->atPath('images')
+                ->addViolation();
+        }
+    }
 
     #[Assert\Callback]
     public function validateApartmentAddress(ExecutionContextInterface $context): void

@@ -19,7 +19,8 @@ export const YEAR_BUILT_MIN = 1000;
 export const YEAR_BUILT_MAX = 2050;
 /** Минимум фотографий при подаче и редактировании (согласовано с API). */
 export const MIN_PHOTOS = 3;
-export const MAX_PHOTOS = 20;
+export const MAX_PHOTOS_APARTMENT = 20;
+export const MAX_PHOTOS_HOUSE = 30;
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export const MAX_FILE_SIZE_MB = 20;
 export const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -68,6 +69,9 @@ export const CITY_SEARCH_MIN_LENGTH = 2;
 export const requiresApartmentAddress = (propertyType: string): boolean => propertyType === 'apartment';
 
 export const isHousePropertyType = (propertyType: string): boolean => propertyType === 'house';
+
+export const getMaxPhotos = (propertyType: string): number =>
+    isHousePropertyType(propertyType) ? MAX_PHOTOS_HOUSE : MAX_PHOTOS_APARTMENT;
 
 export const cityFieldLabel = (propertyType: string, required = true): string => {
     const name = isHousePropertyType(propertyType) ? 'Населенный пункт' : 'Город';

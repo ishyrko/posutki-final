@@ -75,8 +75,8 @@ import {
     FLOOR_MAX,
     FLOOR_MIN,
     MAX_FILE_SIZE_MB,
-    MAX_PHOTOS,
     MIN_PHOTOS,
+    getMaxPhotos,
     ROOMS_MAX,
     ROOMS_MIN,
     DAILY_BEDS_MAX,
@@ -1393,13 +1393,14 @@ export function CreateListingForm() {
                                 <div>
                                     <h2 className="font-display text-lg font-semibold text-foreground">Фотографии</h2>
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        Не менее {MIN_PHOTOS} и не более {MAX_PHOTOS} фото. Перетаскивайте фото, чтобы изменить порядок (на телефоне — удерживайте и перетащите), первое станет обложкой.
+                                        Не менее {MIN_PHOTOS} и не более {getMaxPhotos(form.propertyType)} фото. Перетаскивайте фото, чтобы изменить порядок (на телефоне — удерживайте и перетащите), первое станет обложкой.
                                     </p>
                                     <FieldError field="photos" />
                                 </div>
 
                                 <PropertyPhotoGrid
                                     photos={form.photos}
+                                    maxPhotos={getMaxPhotos(form.propertyType)}
                                     onChange={(photos) => setForm((prev) => ({
                                         ...prev,
                                         photos: typeof photos === 'function' ? photos(prev.photos) : photos,
