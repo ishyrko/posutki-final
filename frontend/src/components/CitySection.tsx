@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   Building2,
   TreePine,
@@ -13,111 +14,47 @@ import {
   Mountain,
 } from "lucide-react";
 import Link from "next/link";
-import { buildCatalogUrl } from "@/features/catalog/slugs";
+import { buildCatalogUrl, REGION_SLUGS } from "@/features/catalog/slugs";
+import { HOME_CITIES } from "@/features/home/home-cities";
 import {
   fetchHomeCityApartmentCounts,
   formatApartmentCount,
 } from "@/features/home/city-apartment-counts";
 
-const cities = [
-  /** Минск — без префикса региона в URL, как в каталоге. */
-  {
-    name: "Минск",
-    slug: "minsk",
-    icon: Building2,
-    href: buildCatalogUrl({ propertyType: "apartment" }),
-  },
-  {
-    name: "Брест",
-    slug: "brest",
-    icon: Landmark,
-    href: buildCatalogUrl({ region: "brest", propertyType: "apartment" }),
-  },
-  {
-    name: "Витебск",
-    slug: "vitebsk",
-    icon: Waves,
-    href: buildCatalogUrl({ region: "vitebsk", propertyType: "apartment" }),
-  },
-  {
-    name: "Гродно",
-    slug: "grodno",
-    icon: Castle,
-    href: buildCatalogUrl({ region: "grodno", propertyType: "apartment" }),
-  },
-  {
-    name: "Гомель",
-    slug: "gomel",
-    icon: Factory,
-    href: buildCatalogUrl({ region: "gomel", propertyType: "apartment" }),
-  },
-  {
-    name: "Могилёв",
-    slug: "mogilev",
-    icon: TreePine,
-    href: buildCatalogUrl({ region: "mogilev", propertyType: "apartment" }),
-  },
-  {
-    name: "Барановичи",
-    slug: "baranovichi",
-    icon: MapPin,
-    href: buildCatalogUrl({ city: "baranovichi", propertyType: "apartment" }),
-  },
-  {
-    name: "Пинск",
-    slug: "pinsk",
-    icon: Home,
-    href: buildCatalogUrl({ city: "pinsk", propertyType: "apartment" }),
-  },
-  {
-    name: "Бобруйск",
-    slug: "bobruysk",
-    icon: Factory,
-    href: buildCatalogUrl({ city: "bobruysk", propertyType: "apartment" }),
-  },
-  {
-    name: "Молодечно",
-    slug: "molodechno",
-    icon: Building2,
-    href: buildCatalogUrl({ city: "molodechno", propertyType: "apartment" }),
-  },
-  {
-    name: "Орша",
-    slug: "orsha",
-    icon: MapPin,
-    href: buildCatalogUrl({ city: "orsha", propertyType: "apartment" }),
-  },
-  {
-    name: "Новополоцк",
-    slug: "novopolotsk",
-    icon: Factory,
-    href: buildCatalogUrl({ city: "novopolotsk", propertyType: "apartment" }),
-  },
-  {
-    name: "Светлогорск",
-    slug: "svetlogorsk",
-    icon: Mountain,
-    href: buildCatalogUrl({ city: "svetlogorsk", propertyType: "apartment" }),
-  },
-  {
-    name: "Жлобин",
-    slug: "zhlobin",
-    icon: MapPin,
-    href: buildCatalogUrl({ city: "zhlobin", propertyType: "apartment" }),
-  },
-  {
-    name: "Сморгонь",
-    slug: "smorgon",
-    icon: Castle,
-    href: buildCatalogUrl({ city: "smorgon", propertyType: "apartment" }),
-  },
-  {
-    name: "Волковыск",
-    slug: "volkovysk",
-    icon: MapPin,
-    href: buildCatalogUrl({ city: "volkovysk", propertyType: "apartment" }),
-  },
-];
+const CITY_ICONS: Record<string, LucideIcon> = {
+  minsk: Building2,
+  brest: Landmark,
+  vitebsk: Waves,
+  grodno: Castle,
+  gomel: Factory,
+  mogilev: TreePine,
+  baranovichi: MapPin,
+  pinsk: Home,
+  bobruysk: Factory,
+  molodechno: Building2,
+  orsha: MapPin,
+  novopolotsk: Factory,
+  svetlogorsk: Mountain,
+  zhlobin: MapPin,
+  smorgon: Castle,
+  volkovysk: MapPin,
+};
+
+function homeCityHref(slug: string): string {
+  if (slug === "minsk") {
+    return buildCatalogUrl({ propertyType: "apartment" });
+  }
+  if (REGION_SLUGS.has(slug)) {
+    return buildCatalogUrl({ region: slug, propertyType: "apartment" });
+  }
+  return buildCatalogUrl({ city: slug, propertyType: "apartment" });
+}
+
+const cities = HOME_CITIES.map((city) => ({
+  ...city,
+  icon: CITY_ICONS[city.slug] ?? MapPin,
+  href: homeCityHref(city.slug),
+}));
 
 interface CitySectionProps {
   apartmentCountsBySlug?: Record<string, number>;

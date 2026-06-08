@@ -41,7 +41,7 @@ import { useProperty, useUpdateProperty } from '@/features/properties/hooks';
 import type { UpdatePropertyPayload } from '@/features/properties/api';
 import { isPropertyEditable } from '@/features/properties/types';
 import type { Property as PropertyItem, PropertyStatus } from '@/features/properties/types';
-import { useSearchCities, useSearchStreets } from '@/features/create-listing/hooks';
+import { useCityAutocompleteResults, useSearchStreets } from '@/features/create-listing/hooks';
 import { LISTING_AMENITY_GROUPS } from '@/features/create-listing/listing-amenity-groups';
 import { PAYMENT_METHOD_OPTIONS } from '@/features/properties/payment-methods';
 import { PropertyPhotoGrid } from '@/features/create-listing/components/PropertyPhotoGrid';
@@ -85,7 +85,6 @@ import {
     TOTAL_FLOORS_MIN,
     YEAR_BUILT_MAX,
     YEAR_BUILT_MIN,
-    CITY_SEARCH_MIN_LENGTH,
     cityFieldLabel,
     cityFieldNameGenitive,
     cityFieldNameInText,
@@ -339,7 +338,7 @@ export default function EditPropertyPage() {
     const [cityInputUnlocked, setCityInputUnlocked] = useState(false);
     const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
     const debouncedCityQuery = useDebouncedValue(cityQuery, 300);
-    const { data: cityResults = [], isFetching: citySearching } = useSearchCities(debouncedCityQuery);
+    const { cityResults, citySearching, showCityNotFound } = useCityAutocompleteResults(debouncedCityQuery);
     const cityContainerRef = useRef<HTMLDivElement>(null);
 
     const [streetQuery, setStreetQuery] = useState('');
@@ -1346,7 +1345,7 @@ export default function EditPropertyPage() {
                                     }}
                                     onFocus={() => {
                                         setCityInputUnlocked(true);
-                                        if (cityQuery.length >= CITY_SEARCH_MIN_LENGTH) setCityDropdownOpen(true);
+                                        setCityDropdownOpen(true);
                                     }}
                                     onBlur={() => {
                                         window.setTimeout(() => setCityDropdownOpen(false), 200);
@@ -1372,7 +1371,7 @@ export default function EditPropertyPage() {
                                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
                                 )}
 
-                                {cityDropdownOpen && debouncedCityQuery.length >= CITY_SEARCH_MIN_LENGTH && cityResults.length > 0 && (
+                                {cityDropdownOpen && cityResults.length > 0 && (
                                     <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-border bg-popover shadow-lg">
                                         {cityResults.map((city) => {
                                             const parts = formatCityLabel(city);
@@ -1395,10 +1394,7 @@ export default function EditPropertyPage() {
                                         })}
                                     </div>
                                 )}
-                                {cityDropdownOpen
-                                    && debouncedCityQuery.length >= CITY_SEARCH_MIN_LENGTH
-                                    && !citySearching
-                                    && cityResults.length === 0 && (
+                                {cityDropdownOpen && showCityNotFound && (
                                     <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-border bg-popover px-4 py-3 text-sm text-muted-foreground shadow-lg">
                                         {cityNotFoundMessage(form.type)}
                                     </div>
@@ -1408,7 +1404,7 @@ export default function EditPropertyPage() {
                                 <p id="edit-listing-city-hint" className="text-xs text-muted-foreground mt-1.5">
                                     {form.cityId
                                         ? `Выбран: ${form.cityName}`
-                                        : `Введите не менее 2 букв, затем выберите ${cityFieldNameInText(form.type)} из списка`}
+                                        : 'Выберите город из списка или введите название для поиска'}
                                 </p>
                             )}
                         </div>

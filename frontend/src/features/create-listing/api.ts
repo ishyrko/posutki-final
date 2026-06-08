@@ -1,5 +1,6 @@
 import api from '@/lib/api';
 import { isAxiosError } from 'axios';
+import { HOME_CITY_SLUGS } from '@/features/home/home-cities';
 import {
     City,
     CitySearchResult,
@@ -8,6 +9,17 @@ import {
     CreatePropertyResponse,
     UploadResponse,
 } from './types';
+
+interface CityBySlugResponse {
+    id: number;
+    name: string;
+    slug: string;
+    shortName: string;
+    latitude?: number;
+    longitude?: number;
+    district?: { id: number; name: string };
+    region?: { id: number; name: string };
+}
 
 export class FileTooLargeError extends Error {
     constructor(fileName: string) {
@@ -32,6 +44,32 @@ export const getCities = async (): Promise<City[]> => {
     } catch {
         return FALLBACK_CITIES;
     }
+};
+
+const mapCityBySlugResponse = (city: CityBySlugResponse): CitySearchResult => ({
+    id: city.id,
+    name: city.name,
+    slug: city.slug,
+    shortName: city.shortName,
+    districtName: city.district?.name,
+    regionName: city.region?.name,
+    latitude: city.latitude,
+    longitude: city.longitude,
+});
+
+export const getCityBySlug = async (slug: string): Promise<CitySearchResult | null> => {
+    try {
+        const response = await api.get<{ data: CityBySlugResponse }>(`/cities/${encodeURIComponent(slug)}`);
+        const city = response.data?.data;
+        return city ? mapCityBySlugResponse(city) : null;
+    } catch {
+        return null;
+    }
+};
+
+export const getHomePageCities = async (): Promise<CitySearchResult[]> => {
+    const results = await Promise.all(HOME_CITY_SLUGS.map((slug) => getCityBySlug(slug)));
+    return results.filter((city): city is CitySearchResult => city !== null);
 };
 
 export const searchCities = async (query: string): Promise<CitySearchResult[]> => {

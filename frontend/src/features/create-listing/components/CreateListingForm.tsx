@@ -32,7 +32,7 @@ import { BynCurrencyMark } from '@/components/BynCurrency';
 import { cn } from '@/lib/utils';
 import AddressMapPicker from '@/components/AddressMapPicker';
 import { geocodeAddress as yandexGeocode } from '@/lib/yandex-geocoder';
-import { useSearchCities, useSearchStreets, useCreateProperty } from '../hooks';
+import { useCityAutocompleteResults, useSearchStreets, useCreateProperty } from '../hooks';
 import type { ListingFormData, CreatePropertyPayload, CitySearchResult, AdditionalService } from '../types';
 import { PropertyPhotoGrid } from './PropertyPhotoGrid';
 import { LISTING_AMENITY_GROUPS } from '../listing-amenity-groups';
@@ -87,7 +87,6 @@ import {
     TOTAL_FLOORS_MIN,
     YEAR_BUILT_MAX,
     YEAR_BUILT_MIN,
-    CITY_SEARCH_MIN_LENGTH,
     cityFieldLabel,
     cityFieldNameGenitive,
     cityFieldNameInText,
@@ -242,7 +241,7 @@ export function CreateListingForm() {
     const [cityInputUnlocked, setCityInputUnlocked] = useState(false);
     const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
     const debouncedCityQuery = useDebouncedValue(cityQuery, 300);
-    const { data: cityResults = [], isFetching: citySearching } = useSearchCities(debouncedCityQuery);
+    const { cityResults, citySearching, showCityNotFound } = useCityAutocompleteResults(debouncedCityQuery);
     const cityContainerRef = useRef<HTMLDivElement>(null);
 
     // Street autocomplete state
@@ -1457,7 +1456,7 @@ export function CreateListingForm() {
                                                 }}
                                                 onFocus={() => {
                                                     setCityInputUnlocked(true);
-                                                    if (cityQuery.length >= CITY_SEARCH_MIN_LENGTH) setCityDropdownOpen(true);
+                                                    setCityDropdownOpen(true);
                                                 }}
                                                 onBlur={() => {
                                                     window.setTimeout(() => {
@@ -1494,7 +1493,7 @@ export function CreateListingForm() {
                                                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
                                             )}
 
-                                            {cityDropdownOpen && debouncedCityQuery.length >= CITY_SEARCH_MIN_LENGTH && cityResults.length > 0 && (
+                                            {cityDropdownOpen && cityResults.length > 0 && (
                                                 <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-border bg-popover shadow-lg">
                                                     {cityResults.map((city) => {
                                                         const parts = formatCityLabel(city);
@@ -1517,10 +1516,7 @@ export function CreateListingForm() {
                                                     })}
                                                 </div>
                                             )}
-                                            {cityDropdownOpen
-                                                && debouncedCityQuery.length >= CITY_SEARCH_MIN_LENGTH
-                                                && !citySearching
-                                                && cityResults.length === 0 && (
+                                            {cityDropdownOpen && showCityNotFound && (
                                                 <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-border bg-popover px-4 py-3 text-sm text-muted-foreground shadow-lg">
                                                     {cityNotFoundMessage(form.propertyType)}
                                                 </div>
@@ -1531,7 +1527,7 @@ export function CreateListingForm() {
                                             <p id="listing-city-hint" className="text-xs text-muted-foreground mt-1.5">
                                                 {form.cityId
                                                     ? `Выбран: ${form.cityName}`
-                                                    : `Введите не менее 2 букв, затем выберите ${cityFieldNameInText(form.propertyType)} из списка`}
+                                                    : 'Выберите город из списка или введите название для поиска'}
                                             </p>
                                         )}
                                     </div>
