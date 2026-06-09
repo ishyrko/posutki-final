@@ -211,11 +211,11 @@ const Header = () => {
           <Image
             src="/brand/logo.png"
             alt="posutki.by"
-            width={180}
-            height={40}
+            width={0}
+            height={0}
             sizes="(max-width: 640px) 140px, (max-width: 1024px) 160px, 180px"
             priority
-            className="w-36 sm:w-40 lg:w-[180px] h-auto"
+            className="h-auto w-36 sm:w-40 lg:w-[180px]"
           />
           <span className="sr-only">posutki.by</span>
         </Link>

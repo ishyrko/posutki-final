@@ -15,11 +15,11 @@ export function AuthBrandLogo({ variant = 'default', className }: AuthBrandLogoP
             <Image
                 src={src}
                 alt="posutki.by"
-                width={180}
-                height={40}
+                width={0}
+                height={0}
                 sizes="160px"
                 priority
-                className="h-10 w-auto object-contain mx-auto"
+                className="mx-auto h-10 w-auto object-contain"
             />
             <span className="sr-only">posutki.by</span>
         </Link>

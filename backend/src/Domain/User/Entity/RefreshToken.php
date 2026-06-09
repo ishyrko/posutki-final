@@ -13,7 +13,7 @@ class RefreshToken
 {
     #[ORM\Id]
     #[ORM\Column(type: 'id')]
-    #[ORM\GeneratedValue]
+    #[ORM\GeneratedValue(strategy: 'IDENTITY')]
     private Id $id;
 
     #[ORM\Column(type: 'id', name: 'user_id')]
