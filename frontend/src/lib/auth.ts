@@ -1,8 +1,11 @@
 import {
     AUTH_COOKIE_MAX_AGE_SECONDS,
+    AUTH_REFRESH_TOKEN_KEY,
     AUTH_TOKEN_KEY,
+    LISTING_SUBMIT_PATH,
     resolveAuthRedirectPath,
 } from '@/lib/auth-constants';
+import { readRefreshToken, refreshAuthTokens } from '@/lib/auth-refresh';
 
 export { resolveAuthRedirectPath };
 
@@ -53,6 +56,8 @@ const removeAuthCookie = () => {
     document.cookie = `${AUTH_TOKEN_KEY}=; path=/; max-age=0; samesite=lax`;
 };
 
+export const getRefreshToken = (): string | null => readRefreshToken();
+
 export const getToken = (): string | null => {
     if (!isBrowser) {
         return null;
@@ -72,11 +77,14 @@ export const getToken = (): string | null => {
     return null;
 };
 
-export const setToken = (token: string) => {
+export const setToken = (token: string, refreshToken?: string | null) => {
     if (!isBrowser) return;
 
     localStorage.setItem(AUTH_TOKEN_KEY, token);
     setAuthCookie(token);
+    if (refreshToken) {
+        localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refreshToken);
+    }
     dispatchAuthChanged();
 };
 
@@ -84,11 +92,51 @@ export const removeToken = () => {
     if (!isBrowser) return;
 
     localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
     removeAuthCookie();
     dispatchAuthChanged();
 };
 
 export const isAuthenticated = () => !!getToken();
+
+export const hasRefreshToken = () => !!getRefreshToken();
+
+/** Пытается восстановить access JWT по refresh-токену. */
+export const bootstrapAuthSession = async (): Promise<boolean> => {
+    if (!isBrowser || getToken()) {
+        return !!getToken();
+    }
+
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+        return false;
+    }
+
+    try {
+        const pair = await refreshAuthTokens(refreshToken);
+        setToken(pair.token, pair.refreshToken);
+        return true;
+    } catch {
+        removeToken();
+        return false;
+    }
+};
+
+/** Редирект на логин при истёкшей сессии на странице подачи объявления. */
+export const redirectToLoginIfListingSessionExpired = (): void => {
+    if (!isBrowser) {
+        return;
+    }
+
+    const { pathname, search } = window.location;
+    const isListingPage = pathname === '/razmestit' || pathname.startsWith('/razmestit/');
+    if (!isListingPage) {
+        return;
+    }
+
+    const next = encodeURIComponent(`${pathname}${search}` || LISTING_SUBMIT_PATH);
+    window.location.assign(`/login?next=${next}`);
+};
 
 /** Синхронизирует JWT из localStorage в cookie для middleware (например /razmestit/). */
 export const syncAuthCookie = (): void => {

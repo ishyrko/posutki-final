@@ -56,8 +56,16 @@ export const confirmResetPassword = async (data: { email: string; token: string;
 };
 
 export const googleLogin = async (idToken: string): Promise<LoginResponse> => {
-    const response = await api.post<{ data: { token: string } }>('/auth/google', { idToken });
-    return { token: response.data.data.token };
+    const response = await api.post<{ data: LoginResponse }>('/auth/google', { idToken });
+    return response.data.data;
+};
+
+export const logout = async (): Promise<void> => {
+    try {
+        await api.post('/auth/logout');
+    } catch {
+        // Сессия могла уже истечь — локально всё равно очищаем.
+    }
 };
 
 export const getMe = async (): Promise<User> => {

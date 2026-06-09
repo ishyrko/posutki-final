@@ -2,3 +2,5 @@ lexik_jwt_authentication:
     secret_key: '%env(resolve:JWT_SECRET_KEY)%'
     public_key: '%env(resolve:JWT_PUBLIC_KEY)%'
     pass_phrase: '%env(JWT_PASSPHRASE)%'
+    # Согласовано с AUTH_COOKIE_MAX_AGE_SECONDS на фронте (30 дней).
+    token_ttl: 2592000

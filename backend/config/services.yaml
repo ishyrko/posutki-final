@@ -92,6 +92,9 @@ services:
     App\Domain\User\Repository\PhoneAuthCodeRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\PhoneAuthCodeRepository
 
+    App\Domain\User\Repository\RefreshTokenRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\RefreshTokenRepository
+
     App\Domain\Message\Repository\ConversationRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\ConversationRepository
 

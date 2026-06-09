@@ -8,6 +8,7 @@ use App\Application\Command\Auth\RequestSmsCode\RequestSmsCodeCommand;
 use App\Application\Command\Auth\VerifySmsCode\VerifySmsCodeCommand;
 use App\Application\Command\CommandBusInterface;
 use App\Infrastructure\Recaptcha\RecaptchaVerifier;
+use App\Infrastructure\Security\AuthTokenIssuer;
 use App\Presentation\Api\Request\RequestSmsCodeRequest;
 use App\Presentation\Api\Request\VerifySmsCodeRequest;
 use App\Presentation\Api\Response\ApiResponse;
@@ -22,6 +23,7 @@ class SmsAuthController extends AbstractController
     public function __construct(
         private readonly CommandBusInterface $commandBus,
         private readonly RecaptchaVerifier $recaptcha,
+        private readonly AuthTokenIssuer $authTokenIssuer,
     ) {
     }
 
@@ -45,15 +47,14 @@ class SmsAuthController extends AbstractController
     #[Route('/verify', name: 'verify', methods: ['POST'])]
     public function verifyCode(VerifySmsCodeRequest $request): JsonResponse
     {
-        $token = $this->commandBus->dispatch(
+        /** @var \App\Domain\User\Entity\User $user */
+        $user = $this->commandBus->dispatch(
             new VerifySmsCodeCommand(
                 phone: $request->phone,
                 code: $request->code,
             )
         );
 
-        return $this->json(ApiResponse::success([
-            'token' => $token,
-        ]));
+        return $this->json(ApiResponse::success($this->authTokenIssuer->issue($user)));
     }
 }

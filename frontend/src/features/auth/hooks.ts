@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { login, register, googleLogin, getMe, resetPassword, confirmResetPassword, LoginCredentials, RegisterCredentials, ResetPasswordData } from './api';
-import { setToken, removeToken, isAuthenticated, navigateAfterAuth } from '@/lib/auth';
+import { login, register, googleLogin, getMe, logout as logoutApi, resetPassword, confirmResetPassword, LoginCredentials, RegisterCredentials, ResetPasswordData } from './api';
+import { setToken, removeToken, isAuthenticated, hasRefreshToken, navigateAfterAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -37,7 +37,7 @@ export const useLogin = (redirectAfter?: string) => {
     return useMutation({
         mutationFn: (credentials: LoginCredentials) => login(credentials),
         onSuccess: (data) => {
-            setToken(data.token);
+            setToken(data.token, data.refreshToken);
             queryClient.invalidateQueries({ queryKey: ['me'] });
             toast.success('Вы успешно вошли');
             navigateAfterAuth(redirectAfter ?? '/kabinet/');
@@ -109,7 +109,7 @@ export const useGoogleLogin = (redirectAfter?: string) => {
     const { mutateAsync } = useMutation({
         mutationFn: (idToken: string) => googleLogin(idToken),
         onSuccess: (data) => {
-            setToken(data.token);
+            setToken(data.token, data.refreshToken);
             queryClient.invalidateQueries({ queryKey: ['me'] });
             toast.success('Вход через Google выполнен');
             navigateAfterAuth(redirectAfter ?? '/kabinet/');
@@ -190,7 +190,7 @@ export const useUser = () => {
     return useQuery({
         queryKey: ['me'],
         queryFn: getMe,
-        enabled: isAuthenticated(),
+        enabled: isAuthenticated() || hasRefreshToken(),
         // One retry reduces blank redirect flashes from transient network errors on /kabinet.
         retry: 1,
     });
@@ -201,9 +201,11 @@ export const useLogout = () => {
     const queryClient = useQueryClient();
 
     return () => {
-        removeToken();
-        queryClient.removeQueries({ queryKey: ['me'] });
-        router.push('/login');
-        toast.success('Вы вышли из аккаунта');
+        void logoutApi().finally(() => {
+            removeToken();
+            queryClient.removeQueries({ queryKey: ['me'] });
+            router.push('/login');
+            toast.success('Вы вышли из аккаунта');
+        });
     };
 };

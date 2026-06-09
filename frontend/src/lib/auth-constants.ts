@@ -1,4 +1,5 @@
 export const AUTH_TOKEN_KEY = 'token';
+export const AUTH_REFRESH_TOKEN_KEY = 'refresh_token';
 export const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
 /** Страница подачи объявления — middleware проверяет cookie, не localStorage. */

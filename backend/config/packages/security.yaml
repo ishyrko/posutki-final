@@ -66,6 +66,7 @@ security:
         - { path: ^/api/auth/google, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/sms, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/refresh, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/logout, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/api/auth/reset-password, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/verify-email, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/resend-verification, roles: PUBLIC_ACCESS }
@@ -76,7 +77,6 @@ security:
         - { path: ^/api/metro, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/properties/[0-9a-f-]+/phone-view$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/properties, roles: PUBLIC_ACCESS, methods: [GET] }
-        - { path: ^/api/upload$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/exchange-rates, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/article-categories, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/articles, roles: PUBLIC_ACCESS, methods: [GET] }

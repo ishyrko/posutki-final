@@ -221,12 +221,46 @@ const INITIAL_FORM: ListingFormData = {
 export function CreateListingForm() {
     const router = useRouter();
     const [isMounted, setIsMounted] = useState(false);
-    const { data: user, isLoading: userLoading } = useUser();
+    const [sessionReady, setSessionReady] = useState(false);
+    const { data: user, isLoading: userLoading, isError: userError } = useUser();
     const hasVerifiedPhone = isMounted && Boolean(user?.isPhoneVerified);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    useEffect(() => {
+        if (!isMounted) {
+            return;
+        }
+
+        let cancelled = false;
+        void (async () => {
+            const { bootstrapAuthSession, isAuthenticated, redirectToLoginIfListingSessionExpired } = await import('@/lib/auth');
+            const ok = await bootstrapAuthSession();
+            if (!cancelled) {
+                setSessionReady(true);
+                if (!ok && !isAuthenticated()) {
+                    redirectToLoginIfListingSessionExpired();
+                }
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isMounted]);
+
+    useEffect(() => {
+        if (!isMounted || !sessionReady || userLoading) {
+            return;
+        }
+        if (userError) {
+            void import('@/lib/auth').then(({ redirectToLoginIfListingSessionExpired }) => {
+                redirectToLoginIfListingSessionExpired();
+            });
+        }
+    }, [isMounted, sessionReady, userError, userLoading]);
 
     const [step, setStep] = useState(1);
     const [form, setForm] = useState<ListingFormData>(INITIAL_FORM);

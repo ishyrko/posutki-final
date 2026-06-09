@@ -11,19 +11,16 @@ use App\Domain\User\Entity\UserPhone;
 use App\Domain\User\Repository\PhoneAuthCodeRepositoryInterface;
 use App\Domain\User\Repository\UserPhoneRepositoryInterface;
 use App\Domain\User\Repository\UserRepositoryInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
-
 final readonly class VerifySmsCodeHandler
 {
     public function __construct(
         private PhoneAuthCodeRepositoryInterface $phoneAuthCodeRepository,
         private UserRepositoryInterface $userRepository,
         private UserPhoneRepositoryInterface $userPhoneRepository,
-        private JWTTokenManagerInterface $jwtManager,
     ) {
     }
 
-    public function __invoke(VerifySmsCodeCommand $command): string
+    public function __invoke(VerifySmsCodeCommand $command): User
     {
         $normalizedPhone = $this->normalizePhone($command->phone);
         $phoneAuthCode = $this->phoneAuthCodeRepository->findByPhone($normalizedPhone);
@@ -46,7 +43,7 @@ final readonly class VerifySmsCodeHandler
         $this->saveVerifiedPhone($user, $normalizedPhone, $command->code);
         $this->phoneAuthCodeRepository->delete($phoneAuthCode);
 
-        return $this->jwtManager->create($user);
+        return $user;
     }
 
     private function saveVerifiedPhone(User $user, string $phone, string $code): void

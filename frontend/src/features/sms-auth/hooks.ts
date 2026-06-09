@@ -50,8 +50,8 @@ export const useVerifySmsCode = (options?: UseVerifySmsCodeOptions) => {
 
     return useMutation({
         mutationFn: ({ phone, code }: { phone: string; code: string }) => verifySmsCode(phone, code),
-        onSuccess: (token) => {
-            setToken(token);
+        onSuccess: ({ token, refreshToken }) => {
+            setToken(token, refreshToken);
             queryClient.invalidateQueries({ queryKey: ['me'] });
             queryClient.invalidateQueries({ queryKey: ['phones'] });
             toast.success('Вход выполнен');

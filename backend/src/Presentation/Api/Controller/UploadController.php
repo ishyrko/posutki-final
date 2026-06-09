@@ -47,14 +47,15 @@ class UploadController extends AbstractController
             );
         }
 
+        if (!$user) {
+            return $this->json(
+                ApiResponse::error('Требуется авторизация', 401),
+                401
+            );
+        }
+
         try {
             $scope = (string) $request->request->get('scope', 'properties');
-            if (in_array($scope, ['articles', 'avatars'], true) && !$user) {
-                return $this->json(
-                    ApiResponse::error('Требуется авторизация', 401),
-                    401
-                );
-            }
 
             $maxBytes = match ($scope) {
                 'avatars' => 5 * 1024 * 1024,

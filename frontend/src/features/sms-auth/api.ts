@@ -3,6 +3,7 @@ import api from '@/lib/api';
 type SmsAuthResponse = {
     data: {
         token: string;
+        refreshToken: string;
     };
 };
 
@@ -10,7 +11,7 @@ export const requestSmsCode = async (phone: string, recaptchaToken: string): Pro
     await api.post('/auth/sms/request', { phone, recaptchaToken });
 };
 
-export const verifySmsCode = async (phone: string, code: string): Promise<string> => {
+export const verifySmsCode = async (phone: string, code: string): Promise<SmsAuthResponse['data']> => {
     const response = await api.post<SmsAuthResponse>('/auth/sms/verify', { phone, code });
-    return response.data.data.token;
+    return response.data.data;
 };

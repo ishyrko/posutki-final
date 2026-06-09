@@ -18,7 +18,9 @@ use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\User\ValueObject\Email;
 use App\Infrastructure\Bus\QueryBus;
 use App\Presentation\Api\Response\ApiResponse;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use App\Infrastructure\Security\AuthTokenIssuer;
+use App\Infrastructure\Security\RefreshTokenService;
+use App\Domain\Shared\Exception\DomainException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,7 +34,8 @@ class AuthController extends AbstractController
     public function __construct(
         private readonly QueryBus $queryBus,
         private readonly CommandBusInterface $commandBus,
-        private readonly JWTTokenManagerInterface $jwtManager,
+        private readonly AuthTokenIssuer $authTokenIssuer,
+        private readonly RefreshTokenService $refreshTokenService,
         private readonly UserRepositoryInterface $userRepository,
     ) {
     }
@@ -116,9 +119,7 @@ class AuthController extends AbstractController
             $this->userRepository->save($user);
         }
 
-        $token = $this->jwtManager->create($user);
-
-        return $this->json(ApiResponse::success(['token' => $token]));
+        return $this->json(ApiResponse::success($this->authTokenIssuer->issue($user)));
     }
 
     #[Route('/verify-email', name: 'verify_email', methods: ['POST'])]
@@ -203,10 +204,37 @@ class AuthController extends AbstractController
     #[Route('/refresh', name: 'refresh', methods: ['POST'])]
     public function refresh(Request $request): JsonResponse
     {
-        // TODO: Implement refresh token logic
-        // For now, return not implemented
-        return $this->json([
-            'error' => 'Обновление токена пока не реализовано',
-        ], Response::HTTP_NOT_IMPLEMENTED);
+        $data = json_decode($request->getContent(), true);
+        $refreshToken = is_array($data) ? ($data['refreshToken'] ?? null) : null;
+
+        if (!is_string($refreshToken) || trim($refreshToken) === '') {
+            return $this->json(
+                ApiResponse::error('Требуется refresh-токен', 400),
+                400,
+            );
+        }
+
+        try {
+            $user = $this->refreshTokenService->exchange($refreshToken);
+        } catch (DomainException $e) {
+            return $this->json(
+                ApiResponse::error($e->getMessage(), 401),
+                401,
+            );
+        }
+
+        return $this->json(ApiResponse::success($this->authTokenIssuer->issue($user)));
+    }
+
+    #[Route('/logout', name: 'logout', methods: ['POST'])]
+    public function logout(#[CurrentUser] ?User $user): JsonResponse
+    {
+        if ($user !== null) {
+            $this->refreshTokenService->revokeAllForUser($user);
+        }
+
+        return $this->json(ApiResponse::success([
+            'message' => 'Вы вышли из аккаунта',
+        ]));
     }
 }

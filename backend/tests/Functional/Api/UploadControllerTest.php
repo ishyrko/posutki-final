@@ -10,17 +10,17 @@ use Symfony\Component\Security\Core\Authorization\Voter\AuthenticatedVoter;
 
 final class UploadControllerTest extends ApiTestCase
 {
-    public function testAccessMapMarksUploadAsPublic(): void
+    public function testAccessMapRequiresAuthenticationForUpload(): void
     {
         $accessMap = static::getContainer()->get('security.access_map');
 
         $request = Request::create('/api/upload', 'POST');
         [$attributes] = $accessMap->getPatterns($request);
 
-        self::assertSame([AuthenticatedVoter::PUBLIC_ACCESS], $attributes);
+        self::assertSame([AuthenticatedVoter::IS_AUTHENTICATED_FULLY], $attributes);
     }
 
-    public function testUploadWorksWithoutAuthorization(): void
+    public function testUploadWithoutAuthorizationIsDenied(): void
     {
         $this->client->request(
             'POST',
@@ -29,10 +29,10 @@ final class UploadControllerTest extends ApiTestCase
             ['file' => $this->createTestImage()],
         );
 
-        self::assertResponseIsSuccessful();
+        self::assertResponseStatusCodeSame(403);
     }
 
-    public function testUploadWorksWithInvalidJwtOnPublicRoute(): void
+    public function testUploadWithInvalidJwtIsUnauthorized(): void
     {
         $this->client->request(
             'POST',
@@ -40,6 +40,28 @@ final class UploadControllerTest extends ApiTestCase
             ['scope' => 'properties'],
             ['file' => $this->createTestImage()],
             server: ['HTTP_AUTHORIZATION' => 'Bearer eyJhbGciOiJSUzI1NiJ9.invalid'],
+        );
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    public function testUploadWithValidJwtSucceeds(): void
+    {
+        $email = 'upload-auth@example.com';
+        $password = 'Password123!';
+        $this->createUser($email, $password);
+
+        $token = $this->loginAndGetToken($email, $password);
+        if ($token === '') {
+            self::markTestSkipped('Could not obtain JWT token for upload test.');
+        }
+
+        $this->client->request(
+            'POST',
+            '/api/upload',
+            ['scope' => 'properties'],
+            ['file' => $this->createTestImage()],
+            server: ['HTTP_AUTHORIZATION' => 'Bearer ' . $token],
         );
 
         self::assertResponseIsSuccessful();
