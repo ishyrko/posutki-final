@@ -125,8 +125,8 @@ export default function PropertyStatsPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="min-w-0">
-                            <div className="h-80 w-full min-w-0">
-                                <ResponsiveContainer width="100%" height="100%">
+                            <div className="w-full min-w-0">
+                                <ResponsiveContainer width="100%" height={320} minWidth={0}>
                                     <LineChart data={chartData} margin={{ top: 8, right: 6, left: 4, bottom: 6 }}>
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis dataKey="shortDate" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
@@ -145,8 +145,8 @@ export default function PropertyStatsPage() {
                             <CardTitle>Контакты и избранное по дням</CardTitle>
                         </CardHeader>
                         <CardContent className="min-w-0">
-                            <div className="h-80 w-full min-w-0">
-                                <ResponsiveContainer width="100%" height="100%">
+                            <div className="w-full min-w-0">
+                                <ResponsiveContainer width="100%" height={320} minWidth={0}>
                                     <BarChart data={chartData} margin={{ top: 8, right: 6, left: 4, bottom: 6 }}>
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis dataKey="shortDate" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
