@@ -20,8 +20,11 @@ parameters:
     app.recaptcha.enabled: '%env(bool:RECAPTCHA_ENABLED)%'
     app.recaptcha.secret: '%env(string:RECAPTCHA_SECRET)%'
     upload_directory: '%kernel.project_dir%/public/uploads'
+    app.jwt_refresh_ttl: 2592000
 
 services:
+    Symfony\Component\Security\Http\AccessMapInterface: '@security.access_map'
+
     # default configuration for services in *this* file
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
@@ -352,8 +355,14 @@ services:
         tags:
             - { name: controller.argument_value_resolver, priority: 150 }
 
+    # Must decorate the firewall authenticator (security.authenticator.jwt.api), not the abstract
+    # lexik parent — otherwise ChildDefinition keeps using the raw JWTAuthenticator.
+    App\Infrastructure\Security\RefreshTokenService:
+        arguments:
+            $refreshTtlSeconds: '%app.jwt_refresh_ttl%'
+
     App\Infrastructure\Security\PublicAwareJWTAuthenticator:
-        decorates: lexik_jwt_authentication.security.jwt_authenticator
+        decorates: security.authenticator.jwt.api
 
     # Event Listeners
     App\Infrastructure\Symfony\EventListener\ApiExceptionListener:

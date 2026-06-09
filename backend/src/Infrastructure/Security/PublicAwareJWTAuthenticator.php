@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Security;
 
+use Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTDecodeFailureException;
 use Lexik\Bundle\JWTAuthenticationBundle\Security\Authenticator\JWTAuthenticator;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,6 +21,8 @@ use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface
 /**
  * Lets routes marked PUBLIC_ACCESS in access_control work when the client sends
  * an expired or invalid Bearer token (browser still has localStorage token).
+ *
+ * Valid tokens on those routes are still authenticated (e.g. owner preview of drafts).
  */
 final class PublicAwareJWTAuthenticator implements AuthenticatorInterface, AuthenticationEntryPointInterface
 {
@@ -26,12 +30,21 @@ final class PublicAwareJWTAuthenticator implements AuthenticatorInterface, Authe
         #[AutowireDecorated]
         private readonly JWTAuthenticator $inner,
         private readonly AccessMapInterface $accessMap,
+        private readonly JWTTokenManagerInterface $jwtManager,
     ) {
     }
 
     public function supports(Request $request): ?bool
     {
-        return $this->inner->supports($request);
+        if (false === $this->inner->supports($request)) {
+            return false;
+        }
+
+        if (!$this->isPublicAccessRoute($request)) {
+            return true;
+        }
+
+        return $this->hasParsableToken($request);
     }
 
     public function authenticate(Request $request): Passport
@@ -61,6 +74,25 @@ final class PublicAwareJWTAuthenticator implements AuthenticatorInterface, Authe
     public function start(Request $request, ?AuthenticationException $authException = null): Response
     {
         return $this->inner->start($request, $authException);
+    }
+
+    private function hasParsableToken(Request $request): bool
+    {
+        $authorization = $request->headers->get('Authorization', '');
+        if (!str_starts_with($authorization, 'Bearer ')) {
+            return false;
+        }
+
+        $token = trim(substr($authorization, 7));
+        if ($token === '') {
+            return false;
+        }
+
+        try {
+            return (bool) $this->jwtManager->parse($token);
+        } catch (JWTDecodeFailureException) {
+            return false;
+        }
     }
 
     private function isPublicAccessRoute(Request $request): bool
