@@ -147,7 +147,24 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
 }
 
 export function isCatalogRoute(parsed: ParsedSegments): boolean {
-  return parsed.propertyType !== undefined || parsed.nearMetro === true;
+  return parsed.propertyType !== undefined;
+}
+
+/** Метро в URL — только /kvartiry/vozle-metro/ и /kvartiry/metro/{slug}/ (Минск). */
+export function isValidMetroCatalogSegments(parsed: ParsedSegments): boolean {
+  if (!parsed.nearMetro && !parsed.metroStationSlug) {
+    return true;
+  }
+  if (parsed.propertyType !== 'apartment') {
+    return false;
+  }
+  if (parsed.regionSlug) {
+    return false;
+  }
+  if (parsed.citySlug != null && parsed.citySlug !== MINSK_CITY_SLUG) {
+    return false;
+  }
+  return true;
 }
 
 /** Структура URL каталога: регион → тип → город / метро (без проверки slug в API). */
@@ -196,12 +213,13 @@ export function validatePublicSegmentsStructure(segments: string[] = []): boolea
     if (!validateCatalogSegmentsStructure(catalogSegments)) return false;
 
     const parsed = parseSegments(catalogSegments);
-    return parsed.propertyType !== undefined;
+    return parsed.propertyType !== undefined && isValidMetroCatalogSegments(parsed);
   }
 
   if (!validateCatalogSegmentsStructure(segments)) return false;
 
-  return isCatalogRoute(parseSegments(segments));
+  const parsed = parseSegments(segments);
+  return isCatalogRoute(parsed) && isValidMetroCatalogSegments(parsed);
 }
 
 /** Фильтр метро — только квартиры в Минске (не дома, не другие области/города). */
@@ -395,6 +413,14 @@ export function buildPageTitle(
   return `${typePart} ${location}`;
 }
 
+/** SEO-лендинг «возле метро»: /kvartiry/vozle-metro/ (без конкретной станции). */
+export function isNearMetroLandingPage(parsed: ParsedSegments): boolean {
+  return parsed.propertyType === 'apartment' && parsed.nearMetro === true && !parsed.metroStationSlug;
+}
+
+export const NEAR_METRO_CATALOG_INTRO =
+  'Снимайте квартиры на сутки рядом со станциями минского метро — удобно для поездок по делам и отдыха в центре города. Все объявления напрямую от владельцев.';
+
 function resolveApartmentCatalogMetaLocation(
   parsed: ParsedSegments,
   metroStationName?: string,
@@ -428,6 +454,10 @@ export function buildCatalogMetaTitle(
   parsed: ParsedSegments,
   metroStationName?: string,
 ): string | null {
+  if (isNearMetroLandingPage(parsed)) {
+    return 'Снять квартиру возле метро в Минске недорого. Посуточная аренда у метро в Минске на Посутки.by.';
+  }
+
   const apartmentLocation = resolveApartmentCatalogMetaLocation(parsed, metroStationName);
   if (apartmentLocation) {
     return `Снять квартиру ${apartmentLocation} недорого. Посуточная аренда ${apartmentLocation}.`;
@@ -446,6 +476,10 @@ export function buildCatalogMetaDescription(
   parsed: ParsedSegments,
   metroStationName?: string,
 ): string | null {
+  if (isNearMetroLandingPage(parsed)) {
+    return 'Квартиры на сутки возле метро в Минске. Посуточная аренда квартир у станций минского метро на Posutki.by без посредников.';
+  }
+
   const apartmentLocation = resolveApartmentCatalogMetaLocation(parsed, metroStationName);
   if (apartmentLocation) {
     return `Квартиры на сутки ${apartmentLocation}. Посуточная аренда квартир ${apartmentLocation} на Posutki.by без посредников.`;

@@ -19,6 +19,7 @@ import {
   Flame,
   Bath,
   LayoutDashboard,
+  TrainFront,
 } from "lucide-react";
 import Link from "next/link";
 import { ListingSubmitLink } from "@/components/ListingSubmitLink";
@@ -26,7 +27,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { isAuthenticated } from "@/lib/auth";
-import { withRegionalCatalogHref } from "@/lib/region-header";
+import { withRegionalCatalogHref, HEADER_REGION_MINSK_SLUG } from "@/lib/region-header";
 import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
 import { useHeaderCatalogPropertyType } from "@/hooks/useHeaderCatalogPropertyType";
 import { buildCatalogUrl } from "@/features/catalog/slugs";
@@ -49,6 +50,12 @@ function buildMegaMenu(
   const r = (path: string) => withRegionalCatalogHref(path, regionSlug);
   const cityHref = (region?: string) =>
     buildCatalogUrl({ region, propertyType: catalogPropertyType });
+  const nearMetroItem = {
+    label: "Возле метро",
+    desc: "Квартиры у станций метро",
+    icon: <TrainFront className="h-4 w-4" />,
+    href: buildCatalogUrl({ propertyType: "apartment", nearMetro: true }),
+  };
 
   return {
     Квартиры: [
@@ -64,6 +71,7 @@ function buildMegaMenu(
         title: "По типу",
         items: [
           { label: "Все квартиры", desc: "Комфортное жильё на сутки", icon: <Home className="h-4 w-4" />, href: r("/kvartiry/") },
+          ...(regionSlug === HEADER_REGION_MINSK_SLUG ? [nearMetroItem] : []),
           { label: "С джакузи", desc: "Романтический отдых", icon: <Star className="h-4 w-4" />, href: r("/kvartiry/?amenity=jacuzzi") },
         ],
       },

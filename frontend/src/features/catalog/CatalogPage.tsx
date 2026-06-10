@@ -49,6 +49,8 @@ import {
 import {
   buildPageTitle,
   isMetroCatalogContext,
+  isNearMetroLandingPage,
+  NEAR_METRO_CATALOG_INTRO,
   propertyUrlRegionSlug,
   type ParsedSegments,
 } from "@/features/catalog/slugs";
@@ -280,6 +282,8 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const validPageFromQuery = Number.isFinite(pageFromQuery) && pageFromQuery > 0 ? Math.floor(pageFromQuery) : 1;
   const [currentPage, setCurrentPage] = useState(validPageFromQuery);
   const metroFilterVisible = isMetroCatalogContext(parsed);
+  const nearMetroLanding = isNearMetroLandingPage(parsed);
+  const showMetroSidebarFilters = metroFilterVisible && !parsed.metroStationSlug;
   const { data: metroStations = [] } = useMetroStations(1, metroFilterVisible);
   const roomsFilterVisible = showRoomsCatalogFilter(parsed.propertyType);
 
@@ -347,8 +351,8 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     (hasPriceFilter ? 1 : 0) +
     (guestsFromQuery !== null ? 1 : 0) +
     (roomsFilterVisible && roomBuckets.length > 0 ? 1 : 0) +
-    (metroFilterVisible && nearMetro && metroStationId !== "all" ? 1 : 0) +
-    (metroFilterVisible && nearMetro ? 1 : 0) +
+    (showMetroSidebarFilters && !nearMetroLanding && nearMetro && metroStationId !== "all" ? 1 : 0) +
+    (showMetroSidebarFilters && !nearMetroLanding && nearMetro ? 1 : 0) +
     selectedAmenityIds.length +
     selectedPaymentMethodIds.length;
 
@@ -365,7 +369,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
       ? metroStations.find((station) => station.slug === parsed.metroStationSlug)
       : undefined;
     if (routeMetroStation) return routeMetroStation.id;
-    if (nearMetro && metroStationId !== "all") return Number(metroStationId);
+    if ((parsed.nearMetro || nearMetro) && metroStationId !== "all") return Number(metroStationId);
     return null;
   }, [metroFilterVisible, parsed.metroStationSlug, metroStations, nearMetro, metroStationId]);
 
@@ -395,7 +399,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     if (metroFilterVisible) {
       if (routeMetroStation) {
         f.metroStationId = routeMetroStation.id;
-      } else if (nearMetro && metroStationId !== "all") {
+      } else if ((parsed.nearMetro || nearMetro) && metroStationId !== "all") {
         f.metroStationId = Number(metroStationId);
       }
       if (parsed.nearMetro || nearMetro) {
@@ -499,7 +503,9 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     setPriceType("total");
     setRoomBuckets([]);
     setMetroStationId("all");
-    setNearMetro(false);
+    if (!nearMetroLanding) {
+      setNearMetro(false);
+    }
     setSelectedAmenityIds([]);
     setSelectedPaymentMethodIds([]);
     setShowAllAmenities(false);
@@ -613,10 +619,17 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
         </div>
       )}
 
-      {metroFilterVisible && (
+      {showMetroSidebarFilters && (
       <div>
         <label className="text-sm font-semibold text-foreground mb-2 block font-display">Станция метро</label>
-        <Select value={metroStationId} onValueChange={setMetroStationId} disabled={!nearMetro}>
+        <Select
+          value={metroStationId}
+          onValueChange={(value) => {
+            setMetroStationId(value);
+            resetToFirstPage();
+          }}
+          disabled={!nearMetro && !nearMetroLanding}
+        >
           <SelectTrigger
             className={cn(
               filterSurfaceInput,
@@ -651,6 +664,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
             ))}
           </SelectContent>
         </Select>
+        {!nearMetroLanding && (
         <label className="mt-3 inline-flex items-center gap-2 text-sm text-foreground/80 cursor-pointer">
           <Checkbox
             checked={nearMetro}
@@ -664,6 +678,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
           />
           Рядом с метро
         </label>
+        )}
       </div>
       )}
 
@@ -824,6 +839,11 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
               <h1 className="font-display font-bold text-2xl md:text-3xl text-foreground tracking-tight">
                 {pageTitle}
               </h1>
+              {nearMetroLanding && (
+                <p className="text-muted-foreground text-sm md:text-base mt-2 max-w-3xl">
+                  {NEAR_METRO_CATALOG_INTRO}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">

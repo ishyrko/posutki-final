@@ -76,6 +76,8 @@ function catalogEntries(now: Date): Entry[] {
     urls.add(buildCatalogUrl({ city, propertyType: "apartment" }));
   }
 
+  urls.add(buildCatalogUrl({ propertyType: "apartment", nearMetro: true }));
+
   urls.delete("/");
 
   return Array.from(urls).map((path) => ({
