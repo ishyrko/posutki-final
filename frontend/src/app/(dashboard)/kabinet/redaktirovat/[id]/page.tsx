@@ -115,6 +115,10 @@ const propertyTypes = [
     { value: 'apartment', label: 'Квартира' },
     { value: 'house', label: 'Дом / коттедж' },
 ];
+
+function propertyTypeLabel(type: string): string {
+    return propertyTypes.find((pt) => pt.value === type)?.label ?? type;
+}
 const lotAreaTypes = ['house'];
 
 const requiresAreaInSquareMeters = (_propertyType: string): boolean => true;
@@ -381,20 +385,7 @@ export default function EditPropertyPage() {
                 return next;
             });
         }
-        setForm((prev) => {
-            if (!prev) return prev;
-            if (key === 'type') {
-                const nextType = value as string;
-                return {
-                    ...prev,
-                    type: nextType,
-                    roomsInDeal: '',
-                    roomsArea: '',
-                    dealConditions: sanitizeDealConditionsForPropertyType(nextType, prev.dealConditions),
-                };
-            }
-            return { ...prev, [key]: value };
-        });
+        setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
     }, []);
 
     const handleTitleBlur = useCallback(() => {
@@ -699,7 +690,6 @@ export default function EditPropertyPage() {
 
         try {
             const payload: UpdatePropertyPayload = {
-                type: form.type,
                 dealType: form.dealType,
                 title,
                 description,
@@ -818,7 +808,6 @@ export default function EditPropertyPage() {
         form.latitude !== null && form.longitude !== null
             ? [form.latitude, form.longitude]
             : DEFAULT_CENTER;
-    const availablePropertyTypes = propertyTypes;
     const revisionOnModeration = property?.pendingRevisionStatus === 'pending';
     const revisionRejected = property?.pendingRevisionStatus === 'rejected';
     const formReadonly = revisionOnModeration || saving;
@@ -862,18 +851,9 @@ export default function EditPropertyPage() {
                         </div>
                         <div>
                             <Label className="text-foreground">Тип недвижимости</Label>
-                            <Select value={form.type} onValueChange={(v) => update('type', v)}>
-                                <SelectTrigger className="mt-1.5">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {availablePropertyTypes.map((pt) => (
-                                        <SelectItem key={pt.value} value={pt.value}>
-                                            {pt.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <p className="mt-1.5 text-sm text-muted-foreground rounded-lg border border-border bg-muted/30 px-3 py-2">
+                                {propertyTypeLabel(form.type)}
+                            </p>
                         </div>
                     </div>
                 </section>

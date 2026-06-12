@@ -76,6 +76,37 @@ final class UpdatePropertyHandlerTest extends TestCase
         self::assertSame($originalTitle, $property->getTitle());
     }
 
+    public function testPropertyTypeChangeThrowsDomainException(): void
+    {
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $revisionRepository = $this->createMock(PropertyRevisionRepositoryInterface::class);
+        $propertyMetroStationRepository = $this->createMock(PropertyMetroStationRepositoryInterface::class);
+        $metroCalculator = $this->createMetroCalculator($propertyMetroStationRepository);
+        $exchangeRateService = $this->createExchangeRateService(['USD' => 3.2]);
+
+        $property = $this->createProperty(ownerId: 1, propertyId: 203);
+
+        $propertyRepository->method('findById')->willReturn($property);
+        $revisionRepository->expects(self::never())->method('save');
+        $propertyRepository->expects(self::never())->method('save');
+
+        $handler = new UpdatePropertyHandler(
+            $propertyRepository,
+            $revisionRepository,
+            $exchangeRateService,
+            $metroCalculator,
+        );
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Нельзя изменить тип недвижимости');
+
+        $handler(new UpdatePropertyCommand(
+            propertyId: '203',
+            userId: '1',
+            type: 'house',
+        ));
+    }
+
     public function testArchivedPropertyUpdateThrowsDomainException(): void
     {
         $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);

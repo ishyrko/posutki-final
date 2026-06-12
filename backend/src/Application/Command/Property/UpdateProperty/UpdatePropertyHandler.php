@@ -50,6 +50,10 @@ readonly class UpdatePropertyHandler
             throw new DomainException('Нельзя изменять удалённое или неактивное объявление');
         }
 
+        if ($command->type !== null && $command->type !== $property->getType()) {
+            throw new DomainException('Нельзя изменить тип недвижимости');
+        }
+
         $effectiveFloor = $command->floor ?? $property->getFloor();
         $effectiveTotalFloors = $command->totalFloors ?? $property->getTotalFloors();
         FloorTotalFloorsValidator::assertValid($effectiveFloor, $effectiveTotalFloors);
