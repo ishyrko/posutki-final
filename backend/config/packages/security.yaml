@@ -59,6 +59,10 @@ security:
             provider: app_user_provider
             jwt: ~
 
+        ical:
+            pattern: ^/ical
+            security: false
+
     access_control:
         - { path: ^/admin/login, roles: PUBLIC_ACCESS }
         - { path: ^/admin, roles: ROLE_ADMIN }
@@ -76,6 +80,8 @@ security:
         - { path: ^/api/cities, roles: PUBLIC_ACCESS }
         - { path: ^/api/metro, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/properties/[0-9a-f-]+/phone-view$, roles: PUBLIC_ACCESS, methods: [POST] }
+        - { path: ^/api/properties/\d+/availability, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/api/properties/\d+/calendar/export-token, roles: IS_AUTHENTICATED_FULLY, methods: [POST] }
         - { path: ^/api/properties, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/exchange-rates, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/article-categories, roles: PUBLIC_ACCESS, methods: [GET] }

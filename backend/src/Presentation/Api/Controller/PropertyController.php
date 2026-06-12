@@ -10,15 +10,19 @@ use App\Application\Command\Property\BoostProperty\BoostPropertyCommand;
 use App\Application\Command\Property\CreateProperty\CreatePropertyCommand;
 use App\Application\Command\Property\PublishProperty\PublishPropertyCommand;
 use App\Application\Command\Property\UpdateProperty\UpdatePropertyCommand;
+use App\Application\Command\Property\CreateAvailabilityBlock\CreateAvailabilityBlockCommand;
+use App\Application\Command\Property\DeleteAvailabilityBlock\DeleteAvailabilityBlockCommand;
 use App\Application\Command\Property\DeleteProperty\DeletePropertyCommand;
+use App\Application\Command\Property\RegenerateCalendarExportToken\RegenerateCalendarExportTokenCommand;
 use App\Application\Query\Property\GetHomeCityApartmentCounts\GetHomeCityApartmentCountsQuery;
+use App\Application\Query\Property\GetOwnerCalendar\GetOwnerCalendarQuery;
 use App\Application\Query\Property\GetHomeRegionHouseCounts\GetHomeRegionHouseCountsQuery;
 use App\Application\Query\Property\GetOwnerListings\GetOwnerListingsQuery;
 use App\Application\Query\Property\GetProperty\GetPropertyQuery;
 use App\Application\Query\Property\SearchProperties\SearchPropertiesQuery;
 use App\Application\Command\CommandBusInterface;
 use App\Application\Query\QueryBusInterface;
-use App\Application\Service\IcsCalendarService;
+use App\Application\Service\PropertyCalendarAggregator;
 use App\Domain\Favorite\Repository\FavoriteRepositoryInterface;
 use App\Domain\Property\Repository\PropertyDailyStatRepositoryInterface;
 use App\Domain\Property\Enum\PropertyType;
@@ -45,7 +49,7 @@ class PropertyController extends AbstractController
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyDailyStatRepositoryInterface $propertyDailyStatRepository,
         private readonly FavoriteRepositoryInterface $favoriteRepository,
-        private readonly IcsCalendarService $icsCalendarService,
+        private readonly PropertyCalendarAggregator $propertyCalendarAggregator,
     ) {
     }
 
@@ -408,25 +412,86 @@ class PropertyController extends AbstractController
             throw new DomainException('Объявление не найдено');
         }
 
-        $urls = $property->getExternalCalendarUrls() ?? [];
-        if ($urls === []) {
-            return $this->json(
-                ApiResponse::success([
-                    'blockedRanges' => [],
-                    'lastUpdatedAt' => null,
-                ]),
-                Response::HTTP_OK,
-                ['Cache-Control' => 'public, max-age=1800'],
-            );
-        }
-
-        $calendarData = $this->icsCalendarService->fetchCalendarData($urls);
+        $calendarData = $this->propertyCalendarAggregator->getPublicCalendarData($property);
 
         return $this->json(
             ApiResponse::success($calendarData),
             Response::HTTP_OK,
             ['Cache-Control' => 'public, max-age=1800'],
         );
+    }
+
+    #[Route('/{id}/availability', name: 'availability', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function availability(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $data = $this->queryBus->ask(new GetOwnerCalendarQuery(
+            propertyId: $id,
+            userId: (string) $user->getId()->getValue(),
+            exportBaseUrl: $request->getSchemeAndHttpHost(),
+        ));
+
+        return $this->json(ApiResponse::success($data));
+    }
+
+    #[Route('/{id}/availability/block', name: 'availability_block_create', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function createAvailabilityBlock(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (!\is_array($payload)) {
+            return $this->json(ApiResponse::error('Некорректное тело запроса', 400), 400);
+        }
+
+        $block = $this->commandBus->dispatch(new CreateAvailabilityBlockCommand(
+            propertyId: $id,
+            userId: (string) $user->getId()->getValue(),
+            startDate: (string) ($payload['startDate'] ?? $payload['start'] ?? ''),
+            endDate: (string) ($payload['endDate'] ?? $payload['end'] ?? ''),
+            note: isset($payload['note']) ? (string) $payload['note'] : null,
+        ));
+
+        return $this->json(ApiResponse::success($block), Response::HTTP_CREATED);
+    }
+
+    #[Route('/{id}/availability/block/{blockId}', name: 'availability_block_delete', methods: ['DELETE'], requirements: ['id' => '\d+', 'blockId' => '\d+'])]
+    public function deleteAvailabilityBlock(string $id, string $blockId, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $this->commandBus->dispatch(new DeleteAvailabilityBlockCommand(
+            propertyId: $id,
+            userId: (string) $user->getId()->getValue(),
+            blockId: $blockId,
+        ));
+
+        return $this->json(ApiResponse::success(['deleted' => true]));
+    }
+
+    #[Route('/{id}/calendar/export-token', name: 'calendar_export_token_regenerate', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function regenerateCalendarExportToken(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $token = $this->commandBus->dispatch(new RegenerateCalendarExportTokenCommand(
+            propertyId: $id,
+            userId: (string) $user->getId()->getValue(),
+        ));
+
+        return $this->json(ApiResponse::success([
+            'exportToken' => $token,
+            'exportUrl' => $request->getSchemeAndHttpHost() . '/ical/' . $token . '.ics',
+        ]));
     }
 
     #[Route('/{id}/phone-view', name: 'phone_view', methods: ['POST'], requirements: ['id' => '\d+'])]

@@ -7,7 +7,8 @@ namespace App\Application\Command\BookingInquiry\Submit;
 use App\Domain\BookingInquiry\Entity\BookingInquiry;
 use App\Domain\BookingInquiry\Event\BookingInquirySubmittedEvent;
 use App\Domain\BookingInquiry\Repository\BookingInquiryRepositoryInterface;
-use App\Application\Service\IcsCalendarService;
+use App\Application\Service\PropertyCalendarAggregator;
+use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
@@ -21,7 +22,7 @@ final class SubmitBookingInquiryHandler
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly UserRepositoryInterface $userRepository,
         private readonly MessageBusInterface $notificationBus,
-        private readonly IcsCalendarService $icsCalendarService,
+        private readonly PropertyCalendarAggregator $propertyCalendarAggregator,
     ) {
     }
 
@@ -50,7 +51,7 @@ final class SubmitBookingInquiryHandler
             throw new DomainException('Дата выезда не может быть раньше даты заезда');
         }
 
-        $this->assertDatesNotBlocked($property->getExternalCalendarUrls(), $checkIn, $checkOut);
+        $this->assertDatesNotBlocked($property, $checkIn, $checkOut);
 
         $inquiry = new BookingInquiry(
             propertyId: Id::fromString($command->propertyId),
@@ -90,23 +91,16 @@ final class SubmitBookingInquiryHandler
         return $date;
     }
 
-    /**
-     * @param list<string>|null $externalCalendarUrls
-     */
     private function assertDatesNotBlocked(
-        ?array $externalCalendarUrls,
+        Property $property,
         ?\DateTimeImmutable $checkIn,
         ?\DateTimeImmutable $checkOut,
     ): void {
-        if ($externalCalendarUrls === null || $externalCalendarUrls === []) {
-            return;
-        }
-
         if ($checkIn === null && $checkOut === null) {
             return;
         }
 
-        $calendarData = $this->icsCalendarService->fetchCalendarData($externalCalendarUrls);
+        $calendarData = $this->propertyCalendarAggregator->getPublicCalendarData($property);
         $blockedKeys = $this->blockedDateKeys($calendarData['blockedRanges']);
 
         if ($checkIn !== null && isset($blockedKeys[$checkIn->format('Y-m-d')])) {

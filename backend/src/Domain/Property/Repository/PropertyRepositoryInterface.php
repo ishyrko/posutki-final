@@ -13,6 +13,13 @@ interface PropertyRepositoryInterface
 
     public function findById(Id $id): ?Property;
 
+    public function findByCalendarExportToken(string $token): ?Property;
+
+    /**
+     * @return Property[]
+     */
+    public function findWithExternalCalendarUrls(): array;
+
     public function findPublished(array $filters = [], int $page = 1, int $limit = 20): array;
 
     /**

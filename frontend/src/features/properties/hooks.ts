@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, getFavorites, getExchangeRates, getPropertyStats, boostProperty, archiveProperty, unarchiveProperty, deleteProperty, getPropertyCalendar, getOwnerListings } from './api';
+import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, getFavorites, getExchangeRates, getPropertyStats, boostProperty, archiveProperty, unarchiveProperty, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock, regenerateCalendarExportToken } from './api';
 import { Property, PropertyFilters, PropertyListResponse } from './types';
 import { isAuthenticated } from '@/lib/auth';
 
@@ -184,5 +184,56 @@ export const useOwnerListings = (propertyId: number, limit = 10) => {
         queryFn: () => getOwnerListings(propertyId, limit),
         enabled: propertyId > 0,
         staleTime: 5 * 60 * 1000,
+    });
+};
+
+export const useOwnerCalendar = (propertyId: number) => {
+    return useQuery({
+        queryKey: ['owner-calendar', propertyId],
+        queryFn: () => getOwnerCalendar(propertyId),
+        enabled: propertyId > 0 && isAuthenticated(),
+    });
+};
+
+export const useCreateAvailabilityBlock = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({
+            propertyId,
+            startDate,
+            endDate,
+            note,
+        }: {
+            propertyId: number;
+            startDate: string;
+            endDate: string;
+            note?: string;
+        }) => createAvailabilityBlock(propertyId, { startDate, endDate, note }),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['owner-calendar', variables.propertyId] });
+            queryClient.invalidateQueries({ queryKey: ['property-calendar', variables.propertyId] });
+        },
+    });
+};
+
+export const useDeleteAvailabilityBlock = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ propertyId, blockId }: { propertyId: number; blockId: string }) =>
+            deleteAvailabilityBlock(propertyId, blockId),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['owner-calendar', variables.propertyId] });
+            queryClient.invalidateQueries({ queryKey: ['property-calendar', variables.propertyId] });
+        },
+    });
+};
+
+export const useRegenerateCalendarExportToken = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (propertyId: number) => regenerateCalendarExportToken(propertyId),
+        onSuccess: (_data, propertyId) => {
+            queryClient.invalidateQueries({ queryKey: ['owner-calendar', propertyId] });
+        },
     });
 };

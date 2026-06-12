@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Heart, MessageSquare, User, LogOut, ChevronRight } from 'lucide-react';
+import { CalendarDays, Home, Heart, MessageSquare, User, LogOut, ChevronRight } from 'lucide-react';
 import { useUser, useLogout } from '@/features/auth/hooks';
 import { useUnreadCount } from '@/features/messages/hooks';
 import { useUnreadBookingInquiryCount } from '@/features/properties/booking-inquiry';
@@ -13,6 +13,7 @@ import { formatUserDisplayName } from '@/features/profile/displayName';
 const navigation = [
     { name: 'Профиль', href: '/kabinet/profil', icon: User },
     { name: 'Мои объявления', mobileName: 'Объявления', href: '/kabinet/moi-obyavleniya/aktivnye', activePrefix: '/kabinet/moi-obyavleniya', icon: Home },
+    { name: 'Календарь', href: '/kabinet/kalendar', icon: CalendarDays },
     { name: 'Избранное', href: '/kabinet/izbrannoe', icon: Heart },
     { name: 'Сообщения', href: '/kabinet/soobshcheniya', icon: MessageSquare, badgeKey: 'unread' as const },
 ];

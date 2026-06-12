@@ -38,6 +38,26 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         return $this->find($id->getValue());
     }
 
+    public function findByCalendarExportToken(string $token): ?Property
+    {
+        if ($token === '') {
+            return null;
+        }
+
+        return $this->findOneBy(['calendarExportToken' => $token]);
+    }
+
+    public function findWithExternalCalendarUrls(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.externalCalendarUrls IS NOT NULL')
+            ->andWhere('p.status != :deleted')
+            ->setParameter('deleted', 'deleted')
+            ->orderBy('p.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findPublished(array $filters = [], int $page = 1, int $limit = 20): array
     {
         $qb = $this->createQueryBuilder('p')

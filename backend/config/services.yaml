@@ -77,6 +77,9 @@ services:
     App\Domain\Property\Repository\PropertyDailyStatRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyDailyStatRepository
 
+    App\Domain\Property\Repository\PropertyAvailabilityBlockRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyAvailabilityBlockRepository
+
     App\Domain\User\Repository\UserPhoneRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\UserPhoneRepository
 
@@ -151,6 +154,18 @@ services:
         tags:
             - { name: messenger.message_handler, bus: command.bus }
 
+    App\Application\Command\Property\CreateAvailabilityBlock\CreateAvailabilityBlockHandler:
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    App\Application\Command\Property\DeleteAvailabilityBlock\DeleteAvailabilityBlockHandler:
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    App\Application\Command\Property\RegenerateCalendarExportToken\RegenerateCalendarExportTokenHandler:
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
     App\Application\Command\Property\ArchiveProperty\ArchivePropertyHandler:
         tags:
             - { name: messenger.message_handler, bus: command.bus }
@@ -202,6 +217,10 @@ services:
             - { name: messenger.message_handler, bus: query.bus }
 
     App\Application\Query\Property\GetOwnerListings\GetOwnerListingsHandler:
+        tags:
+            - { name: messenger.message_handler, bus: query.bus }
+
+    App\Application\Query\Property\GetOwnerCalendar\GetOwnerCalendarHandler:
         tags:
             - { name: messenger.message_handler, bus: query.bus }
 

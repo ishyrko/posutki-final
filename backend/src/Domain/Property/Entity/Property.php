@@ -184,6 +184,16 @@ class Property
     #[ORM\Column(type: 'json', nullable: true, name: 'external_calendar_urls')]
     private ?array $externalCalendarUrls = null;
 
+    #[ORM\Column(type: 'string', length: 64, nullable: true, unique: true, name: 'calendar_export_token')]
+    private ?string $calendarExportToken = null;
+
+    /** @var array{blockedRanges: list<array{start: string, end: string}>}|null */
+    #[ORM\Column(type: 'json', nullable: true, name: 'external_calendar_snapshot')]
+    private ?array $externalCalendarSnapshot = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'external_calendar_synced_at')]
+    private ?\DateTimeImmutable $externalCalendarSyncedAt = null;
+
     /**
      * @var Collection<int, PropertyRevision>
      */
@@ -448,6 +458,67 @@ class Property
         }
 
         $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getCalendarExportToken(): ?string
+    {
+        return $this->calendarExportToken;
+    }
+
+    public function ensureCalendarExportToken(): string
+    {
+        if ($this->calendarExportToken === null || $this->calendarExportToken === '') {
+            $this->calendarExportToken = bin2hex(random_bytes(24));
+            $this->updatedAt = new \DateTimeImmutable();
+        }
+
+        return $this->calendarExportToken;
+    }
+
+    public function regenerateCalendarExportToken(): string
+    {
+        $this->calendarExportToken = bin2hex(random_bytes(24));
+        $this->updatedAt = new \DateTimeImmutable();
+
+        return $this->calendarExportToken;
+    }
+
+    /**
+     * @return array{blockedRanges: list<array{start: string, end: string}>}|null
+     */
+    public function getExternalCalendarSnapshot(): ?array
+    {
+        return $this->externalCalendarSnapshot;
+    }
+
+    /**
+     * @param list<array{start: string, end: string}> $blockedRanges
+     */
+    public function setExternalCalendarSnapshot(array $blockedRanges, ?\DateTimeImmutable $syncedAt = null): void
+    {
+        $this->externalCalendarSnapshot = ['blockedRanges' => $blockedRanges];
+        $this->externalCalendarSyncedAt = $syncedAt ?? new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function clearExternalCalendarSnapshot(): void
+    {
+        $this->externalCalendarSnapshot = null;
+        $this->externalCalendarSyncedAt = null;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getExternalCalendarSyncedAt(): ?\DateTimeImmutable
+    {
+        return $this->externalCalendarSyncedAt;
+    }
+
+    /**
+     * @return list<array{start: string, end: string}>
+     */
+    public function getImportedBlockedRanges(): array
+    {
+        return $this->externalCalendarSnapshot['blockedRanges'] ?? [];
     }
 
     /**

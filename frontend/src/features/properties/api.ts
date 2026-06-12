@@ -213,3 +213,51 @@ export const getOwnerListings = async (propertyId: number, limit = 10): Promise<
     );
     return response.data.data;
 };
+
+export type AvailabilityBlock = {
+    id: string;
+    start: string;
+    end: string;
+    note: string | null;
+    createdAt: string;
+};
+
+export type OwnerCalendarData = {
+    propertyId: string;
+    propertyTitle: string;
+    manualBlocks: AvailabilityBlock[];
+    importedBlockedRanges: BlockedDateRange[];
+    externalCalendarUrls: string[];
+    externalCalendarSyncedAt: string | null;
+    exportToken: string;
+    exportUrl: string;
+};
+
+export const getOwnerCalendar = async (propertyId: number): Promise<OwnerCalendarData> => {
+    const response = await api.get<{ data: OwnerCalendarData }>(`/properties/${propertyId}/availability`);
+    return response.data.data;
+};
+
+export const createAvailabilityBlock = async (
+    propertyId: number,
+    payload: { startDate: string; endDate: string; note?: string },
+): Promise<AvailabilityBlock> => {
+    const response = await api.post<{ data: AvailabilityBlock }>(
+        `/properties/${propertyId}/availability/block`,
+        payload,
+    );
+    return response.data.data;
+};
+
+export const deleteAvailabilityBlock = async (propertyId: number, blockId: string): Promise<void> => {
+    await api.delete(`/properties/${propertyId}/availability/block/${blockId}`);
+};
+
+export const regenerateCalendarExportToken = async (
+    propertyId: number,
+): Promise<{ exportToken: string; exportUrl: string }> => {
+    const response = await api.post<{ data: { exportToken: string; exportUrl: string } }>(
+        `/properties/${propertyId}/calendar/export-token`,
+    );
+    return response.data.data;
+};
