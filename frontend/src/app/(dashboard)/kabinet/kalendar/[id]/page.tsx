@@ -2,6 +2,6 @@
 
 import { OwnerCalendarPage } from '@/features/properties/components/OwnerCalendarPage';
 
-export default function KabinetCalendarPage() {
+export default function PropertyCalendarPage() {
     return <OwnerCalendarPage />;
 }

@@ -6,7 +6,7 @@ import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from '@/feature
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ListingSubmitLink } from '@/components/ListingSubmitLink';
-import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, Rocket } from 'lucide-react';
+import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, CalendarDays, Rocket } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -252,6 +252,13 @@ function ListingCard({
                             <BarChart3 className="w-3.5 h-3.5 mr-1" />Статистика
                         </Link>
                     </Button>
+                    {property.dealType === 'daily' && (
+                        <Button variant="ghost" size="sm" asChild className="justify-start">
+                            <Link href={`/kabinet/kalendar/${property.id}/`}>
+                                <CalendarDays className="w-3.5 h-3.5 mr-1" />Календарь
+                            </Link>
+                        </Button>
+                    )}
                     {property.status === 'published' &&
                         (!boostCooldownOk ? (
                             <Button variant="ghost" size="sm" disabled className="justify-start text-muted-foreground">
