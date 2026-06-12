@@ -23,6 +23,7 @@ import { useSendMessage } from "@/features/messages/hooks";
 import { useUser } from "@/features/auth/hooks";
 import { formatAddress, Property } from "@/features/properties/types";
 import { getVideoEmbedInfo } from "@/features/properties/lib/videoEmbed";
+import { PropertyVideoPlayer } from "@/features/properties/components/PropertyVideoPlayer";
 import { formatPropertyDealHeading } from "@/features/properties/property-deal-heading";
 import type { ExchangeRates } from "@/features/properties/api";
 import { PriceDisplay } from "@/components/BynCurrency";
@@ -934,15 +935,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
               {videoEmbed && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28, duration: 0.5 }}>
                   <h2 className="text-xl font-bold text-foreground mb-4">Видео</h2>
-                  <div className="relative w-full overflow-hidden rounded-2xl border border-border/50 bg-black aspect-video">
-                    <iframe
-                      src={videoEmbed.embedUrl}
-                      title="Видео объявления"
-                      className="absolute inset-0 h-full w-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                    />
-                  </div>
+                  <PropertyVideoPlayer embed={videoEmbed} />
                 </motion.div>
               )}
 

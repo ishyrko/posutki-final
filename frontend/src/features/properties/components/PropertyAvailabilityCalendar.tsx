@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { buttonVariants } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { usePropertyCalendar } from '@/features/properties/hooks';
 import { bookedDayModifierClassNames, expandBlockedRanges } from '@/features/properties/property-calendar-utils';
 import { cn } from '@/lib/utils';
@@ -49,6 +48,7 @@ const mobileExpandedCalendarClassNames = {
 export function PropertyAvailabilityCalendar({ propertyId, className }: PropertyAvailabilityCalendarProps) {
     const [open, setOpen] = useState(false);
     const { data, isLoading, isError } = usePropertyCalendar(propertyId, open);
+    const panelId = `property-calendar-panel-${propertyId}`;
 
     const bookedDates = useMemo(
         () => expandBlockedRanges(data?.blockedRanges ?? []),
@@ -56,60 +56,59 @@ export function PropertyAvailabilityCalendar({ propertyId, className }: Property
     );
 
     return (
-        <Collapsible
-            open={open}
-            onOpenChange={setOpen}
-            className={cn('w-full rounded-2xl border border-border/50 bg-card shadow-card', className)}
-        >
-            <CollapsibleTrigger asChild>
-                <button
-                    type="button"
-                    className="flex w-full cursor-pointer items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-muted/30 rounded-2xl"
-                >
-                    <div className="min-w-0">
-                        <h3 className="text-base font-semibold text-foreground">Календарь занятости</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                            {open
-                                ? 'Актуальные занятые даты по данным владельца'
-                                : 'Показать календарь занятости'}
-                        </p>
-                    </div>
-                    <ChevronDown
-                        className={cn(
-                            'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
-                            open && 'rotate-180',
-                        )}
-                    />
-                </button>
-            </CollapsibleTrigger>
-
-            <CollapsibleContent className="overflow-hidden px-2 pb-4 sm:px-4">
-                {isLoading ? (
-                    <div className="flex items-center justify-center py-10">
-                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    </div>
-                ) : isError ? (
-                    <p className="text-sm text-muted-foreground py-4">
-                        Не удалось загрузить календарь занятости
+        <div className={cn('w-full rounded-2xl border border-border/50 bg-card shadow-card', className)}>
+            <button
+                type="button"
+                aria-expanded={open}
+                aria-controls={panelId}
+                onClick={() => setOpen((value) => !value)}
+                className="flex w-full cursor-pointer items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-muted/30 rounded-2xl"
+            >
+                <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-foreground">Календарь занятости</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        {open
+                            ? 'Актуальные занятые даты по данным владельца'
+                            : 'Показать календарь занятости'}
                     </p>
-                ) : (
-                    <>
-                        <Calendar
-                            mode="single"
-                            disabled={bookedDates}
-                            modifiers={{ booked: bookedDates }}
-                            modifiersClassNames={bookedDayModifierClassNames}
-                            className="w-full p-2 sm:w-fit sm:p-3 sm:mx-auto"
-                            classNames={mobileExpandedCalendarClassNames}
-                        />
-                        {data?.lastUpdatedAt && (
-                            <p className="text-xs text-muted-foreground mt-3 text-center">
-                                Обновлено: {formatLastUpdatedAt(data.lastUpdatedAt)}
-                            </p>
-                        )}
-                    </>
-                )}
-            </CollapsibleContent>
-        </Collapsible>
+                </div>
+                <ChevronDown
+                    className={cn(
+                        'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+                        open && 'rotate-180',
+                    )}
+                />
+            </button>
+
+            {open && (
+                <div id={panelId} className="overflow-hidden px-2 pb-4 sm:px-4">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-10">
+                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        </div>
+                    ) : isError ? (
+                        <p className="text-sm text-muted-foreground py-4">
+                            Не удалось загрузить календарь занятости
+                        </p>
+                    ) : (
+                        <>
+                            <Calendar
+                                mode="single"
+                                disabled={bookedDates}
+                                modifiers={{ booked: bookedDates }}
+                                modifiersClassNames={bookedDayModifierClassNames}
+                                className="w-full p-2 sm:w-fit sm:p-3 sm:mx-auto"
+                                classNames={mobileExpandedCalendarClassNames}
+                            />
+                            {data?.lastUpdatedAt && (
+                                <p className="text-xs text-muted-foreground mt-3 text-center">
+                                    Обновлено: {formatLastUpdatedAt(data.lastUpdatedAt)}
+                                </p>
+                            )}
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
     );
 }

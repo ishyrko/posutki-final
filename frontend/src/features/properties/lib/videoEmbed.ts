@@ -2,7 +2,10 @@ export type VideoEmbedPlatform = 'youtube' | 'tiktok';
 
 export interface VideoEmbedInfo {
     platform: VideoEmbedPlatform;
-    embedUrl: string;
+    originalUrl: string;
+    videoId: string;
+    /** YouTube iframe src; not used for TikTok (official widget instead). */
+    embedUrl?: string;
 }
 
 function parseYoutubeVideoId(url: URL): string | null {
@@ -56,10 +59,14 @@ export function getVideoEmbedInfo(rawUrl?: string | null): VideoEmbedInfo | null
         return null;
     }
 
+    const originalUrl = url.toString();
+
     const youtubeId = parseYoutubeVideoId(url);
     if (youtubeId) {
         return {
             platform: 'youtube',
+            originalUrl,
+            videoId: youtubeId,
             embedUrl: `https://www.youtube.com/embed/${youtubeId}`,
         };
     }
@@ -68,7 +75,8 @@ export function getVideoEmbedInfo(rawUrl?: string | null): VideoEmbedInfo | null
     if (tiktokId) {
         return {
             platform: 'tiktok',
-            embedUrl: `https://www.tiktok.com/embed/v2/${tiktokId}`,
+            originalUrl,
+            videoId: tiktokId,
         };
     }
 
