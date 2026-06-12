@@ -288,6 +288,9 @@ class PropertyCrudController extends AbstractCrudController
         yield TextField::new('websiteUrl', 'Сайт')
             ->hideOnIndex();
 
+        yield TextField::new('videoUrl', 'Видео')
+            ->hideOnIndex();
+
         yield FormField::addTab('Условия и медиа');
 
         yield ArrayField::new('dealConditions', 'Условия сделки')

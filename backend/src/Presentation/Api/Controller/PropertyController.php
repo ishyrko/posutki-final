@@ -219,6 +219,7 @@ class PropertyController extends AbstractController
             additionalServices: $request->additionalServices,
             instagramUrl: $request->instagramUrl,
             websiteUrl: $request->websiteUrl,
+            videoUrl: $request->videoUrl,
             externalCalendarUrls: $request->externalCalendarUrls,
         );
 
@@ -308,6 +309,7 @@ class PropertyController extends AbstractController
             additionalServices: $request->additionalServices,
             instagramUrl: $request->instagramUrl,
             websiteUrl: $request->websiteUrl,
+            videoUrl: $request->videoUrl,
             externalCalendarUrls: $request->externalCalendarUrls,
         );
 

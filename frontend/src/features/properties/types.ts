@@ -94,6 +94,7 @@ export interface Property {
         additionalServices?: Array<{ name: string; price: number }>;
         instagramUrl?: string;
         websiteUrl?: string;
+        videoUrl?: string;
         externalCalendarUrls?: string[];
     } | null;
     price: Price;
@@ -103,6 +104,7 @@ export interface Property {
     additionalServices?: Array<{ name: string; price: number }>;
     instagramUrl?: string | null;
     websiteUrl?: string | null;
+    videoUrl?: string | null;
     externalCalendarUrls?: string[];
     /** Последнее обновление календаря занятости (внутренний или внешний источник). */
     calendarLastUpdatedAt?: string | null;

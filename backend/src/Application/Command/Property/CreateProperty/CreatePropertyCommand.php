@@ -48,6 +48,7 @@ final class CreatePropertyCommand
         public readonly ?array $additionalServices = null,
         public readonly ?string $instagramUrl = null,
         public readonly ?string $websiteUrl = null,
+        public readonly ?string $videoUrl = null,
         public readonly ?array $externalCalendarUrls = null,
     ) {
     }

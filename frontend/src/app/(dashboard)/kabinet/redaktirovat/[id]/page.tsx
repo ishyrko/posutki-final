@@ -173,6 +173,7 @@ interface EditFormData {
     additionalServices: AdditionalService[];
     instagramUrl: string;
     websiteUrl: string;
+    videoUrl: string;
     externalCalendarUrls: string[];
 }
 
@@ -267,6 +268,7 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
         )?.map((s) => ({ name: s.name, price: String(s.price) })) ?? [{ name: '', price: '' }],
         instagramUrl: (revisionData?.instagramUrl ?? property.instagramUrl) as string ?? '',
         websiteUrl: (revisionData?.websiteUrl ?? property.websiteUrl) as string ?? '',
+        videoUrl: (revisionData?.videoUrl ?? property.videoUrl) as string ?? '',
         externalCalendarUrls: (
             (revisionData?.externalCalendarUrls ?? property.externalCalendarUrls) as string[] | undefined
         )?.length
@@ -751,12 +753,13 @@ export default function EditPropertyPage() {
                         .filter((s) => s.name.trim() !== '' && s.price !== '')
                         .map((s) => ({ name: s.name.trim(), price: Number(s.price) }))
                     : undefined,
-                instagramUrl: form.type === 'house' && form.instagramUrl.trim()
+                instagramUrl: form.type === 'house'
                     ? form.instagramUrl.trim()
                     : undefined,
-                websiteUrl: form.type === 'house' && form.websiteUrl.trim()
+                websiteUrl: form.type === 'house'
                     ? form.websiteUrl.trim()
                     : undefined,
+                videoUrl: form.videoUrl.trim(),
                 externalCalendarUrls: form.dealType === 'daily'
                     ? form.externalCalendarUrls.map((url) => url.trim()).filter(Boolean)
                     : undefined,
@@ -1316,6 +1319,18 @@ export default function EditPropertyPage() {
                         ))}
                         addLabel="Добавить"
                     />
+                    <div className="mt-4">
+                        <Label className="text-foreground">Ссылка на видео (YouTube или TikTok)</Label>
+                        <Input
+                            value={form.videoUrl}
+                            onChange={(e) => update('videoUrl', e.target.value)}
+                            placeholder="https://youtube.com/... или https://tiktok.com/..."
+                            className="mt-1.5"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                            Необязательно. Можно добавить одно видео для демонстрации объекта.
+                        </p>
+                    </div>
                 </section>
 
                 {/* Address */}

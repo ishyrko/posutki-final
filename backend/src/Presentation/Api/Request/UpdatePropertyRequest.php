@@ -8,6 +8,8 @@ use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\SellerType;
 use App\Domain\Property\Validation\PropertyImageLimitsValidator;
+use App\Domain\Property\Validation\PropertyVideoUrlValidator;
+use App\Domain\Shared\Exception\DomainException;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
@@ -162,6 +164,9 @@ class UpdatePropertyRequest
     #[Assert\Length(max: 500)]
     public ?string $websiteUrl = null;
 
+    #[Assert\Length(max: 500)]
+    public ?string $videoUrl = null;
+
     #[Assert\Type('array')]
     #[Assert\All([
         new Assert\Type('string'),
@@ -191,6 +196,18 @@ class UpdatePropertyRequest
         if ($count > $max) {
             $context->buildViolation(sprintf('Не более %d фотографий', $max))
                 ->atPath('images')
+                ->addViolation();
+        }
+    }
+
+    #[Assert\Callback]
+    public function validateVideoUrl(ExecutionContextInterface $context): void
+    {
+        try {
+            PropertyVideoUrlValidator::assertValid($this->videoUrl);
+        } catch (DomainException $e) {
+            $context->buildViolation($e->getMessage())
+                ->atPath('videoUrl')
                 ->addViolation();
         }
     }

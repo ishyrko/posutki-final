@@ -127,6 +127,9 @@ readonly class ApproveRevisionHandler
             images: isset($data['images']) && is_array($data['images']) ? $data['images'] : null,
             amenities: isset($data['amenities']) && is_array($data['amenities']) ? $data['amenities'] : null,
             sellerType: isset($data['sellerType']) ? (string) $data['sellerType'] : null,
+            instagramUrl: array_key_exists('instagramUrl', $data) ? ($data['instagramUrl'] !== null ? (string) $data['instagramUrl'] : null) : null,
+            websiteUrl: array_key_exists('websiteUrl', $data) ? ($data['websiteUrl'] !== null ? (string) $data['websiteUrl'] : null) : null,
+            videoUrl: array_key_exists('videoUrl', $data) ? ($data['videoUrl'] !== null ? (string) $data['videoUrl'] : null) : null,
         );
 
         if ($priceAmount !== null) {

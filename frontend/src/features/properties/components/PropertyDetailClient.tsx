@@ -22,6 +22,7 @@ import { trackPhoneView } from "@/features/properties/api";
 import { useSendMessage } from "@/features/messages/hooks";
 import { useUser } from "@/features/auth/hooks";
 import { formatAddress, Property } from "@/features/properties/types";
+import { getVideoEmbedInfo } from "@/features/properties/lib/videoEmbed";
 import { formatPropertyDealHeading } from "@/features/properties/property-deal-heading";
 import type { ExchangeRates } from "@/features/properties/api";
 import { PriceDisplay } from "@/components/BynCurrency";
@@ -337,6 +338,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   const images = property.images?.map(img => img.url) || [
     "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80",
   ];
+  const videoEmbed = useMemo(() => getVideoEmbedInfo(property.videoUrl), [property.videoUrl]);
   const formatStableDate = (value: string) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "-";
@@ -929,6 +931,21 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
               )}
 
               {/* Описание — после удобств */}
+              {videoEmbed && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28, duration: 0.5 }}>
+                  <h2 className="text-xl font-bold text-foreground mb-4">Видео</h2>
+                  <div className="relative w-full overflow-hidden rounded-2xl border border-border/50 bg-black aspect-video">
+                    <iframe
+                      src={videoEmbed.embedUrl}
+                      title="Видео объявления"
+                      className="absolute inset-0 h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  </div>
+                </motion.div>
+              )}
+
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
                 <h2 className="text-xl font-bold text-foreground mb-4">Описание</h2>
                 <div className="text-muted-foreground leading-relaxed space-y-3 whitespace-pre-line">

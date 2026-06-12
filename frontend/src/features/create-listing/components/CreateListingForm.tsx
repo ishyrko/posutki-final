@@ -215,6 +215,7 @@ const INITIAL_FORM: ListingFormData = {
     additionalServices: [{ name: '', price: '' }],
     instagramUrl: '',
     websiteUrl: '',
+    videoUrl: '',
     externalCalendarUrls: [''],
 };
 
@@ -784,6 +785,7 @@ export function CreateListingForm() {
             websiteUrl: form.propertyType === 'house' && form.websiteUrl.trim()
                 ? form.websiteUrl.trim()
                 : undefined,
+            videoUrl: form.videoUrl.trim() || undefined,
             externalCalendarUrls: form.dealType === 'daily'
                 ? form.externalCalendarUrls.map((url) => url.trim()).filter(Boolean)
                 : undefined,
@@ -1440,6 +1442,22 @@ export function CreateListingForm() {
                                         photos: typeof photos === 'function' ? photos(prev.photos) : photos,
                                     }))}
                                 />
+
+                                <div>
+                                    <label className={labelClass}>
+                                        <LinkIcon className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
+                                        Ссылка на видео (YouTube или TikTok):
+                                    </label>
+                                    <input
+                                        value={form.videoUrl}
+                                        onChange={(e) => update('videoUrl', e.target.value)}
+                                        placeholder="https://youtube.com/... или https://tiktok.com/..."
+                                        className={inputClass}
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1.5">
+                                        Необязательно. Можно добавить одно видео для демонстрации объекта.
+                                    </p>
+                                </div>
 
                                 <div className="bg-muted/50 rounded-xl p-4 flex items-start gap-3">
                                     <ImageIcon className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />

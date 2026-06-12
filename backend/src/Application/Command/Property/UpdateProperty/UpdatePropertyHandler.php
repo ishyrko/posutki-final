@@ -175,6 +175,7 @@ readonly class UpdatePropertyHandler
             additionalServices: $command->additionalServices,
             instagramUrl: $command->instagramUrl,
             websiteUrl: $command->websiteUrl,
+            videoUrl: $command->videoUrl,
             externalCalendarUrls: $command->externalCalendarUrls,
         );
 
@@ -262,6 +263,9 @@ readonly class UpdatePropertyHandler
             'longitude' => $property->getCoordinates()->getLongitude(),
             'images' => $property->getImages(),
             'amenities' => $property->getAmenities(),
+            'instagramUrl' => $property->getInstagramUrl(),
+            'websiteUrl' => $property->getWebsiteUrl(),
+            'videoUrl' => $property->getVideoUrl(),
         ];
     }
 
@@ -306,6 +310,9 @@ readonly class UpdatePropertyHandler
             'longitude' => $command->longitude ?? $property->getCoordinates()->getLongitude(),
             'images' => $command->images ?? $property->getImages(),
             'amenities' => $command->amenities ?? $property->getAmenities(),
+            'instagramUrl' => $command->instagramUrl ?? $property->getInstagramUrl(),
+            'websiteUrl' => $command->websiteUrl ?? $property->getWebsiteUrl(),
+            'videoUrl' => $command->videoUrl ?? $property->getVideoUrl(),
         ];
     }
 
@@ -375,6 +382,7 @@ readonly class UpdatePropertyHandler
             'additionalServices' => $command->additionalServices,
             'instagramUrl' => $command->instagramUrl,
             'websiteUrl' => $command->websiteUrl,
+            'videoUrl' => $command->videoUrl,
             'externalCalendarUrls' => $command->externalCalendarUrls,
         ], static fn(mixed $value): bool => $value !== null);
     }

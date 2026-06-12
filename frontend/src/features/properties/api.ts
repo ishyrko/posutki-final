@@ -113,6 +113,7 @@ export interface UpdatePropertyPayload {
     additionalServices?: Array<{ name: string; price: number }>;
     instagramUrl?: string;
     websiteUrl?: string;
+    videoUrl?: string;
     externalCalendarUrls?: string[];
 }
 

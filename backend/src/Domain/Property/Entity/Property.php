@@ -180,6 +180,9 @@ class Property
     #[ORM\Column(type: 'string', length: 500, nullable: true, name: 'website_url')]
     private ?string $websiteUrl = null;
 
+    #[ORM\Column(type: 'string', length: 500, nullable: true, name: 'video_url')]
+    private ?string $videoUrl = null;
+
     /** @var list<string>|null */
     #[ORM\Column(type: 'json', nullable: true, name: 'external_calendar_urls')]
     private ?array $externalCalendarUrls = null;
@@ -241,6 +244,7 @@ class Property
         ?array $additionalServices = null,
         ?string $instagramUrl = null,
         ?string $websiteUrl = null,
+        ?string $videoUrl = null,
     ) {
         $this->ownerId = $ownerId;
         $this->type = $type;
@@ -281,6 +285,7 @@ class Property
         $this->additionalServices = $additionalServices;
         $this->instagramUrl = $instagramUrl;
         $this->websiteUrl = $websiteUrl;
+        $this->videoUrl = $videoUrl;
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
         $this->revisions = new ArrayCollection();
@@ -435,6 +440,17 @@ class Property
     public function setWebsiteUrl(?string $websiteUrl): void
     {
         $this->websiteUrl = $websiteUrl !== '' ? $websiteUrl : null;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getVideoUrl(): ?string
+    {
+        return $this->videoUrl;
+    }
+
+    public function setVideoUrl(?string $videoUrl): void
+    {
+        $this->videoUrl = $videoUrl !== '' ? $videoUrl : null;
         $this->updatedAt = new \DateTimeImmutable();
     }
 
@@ -675,6 +691,9 @@ class Property
             'longitude' => 'Долгота',
             'images' => 'Фото',
             'amenities' => 'Удобства',
+            'instagramUrl' => 'Instagram',
+            'websiteUrl' => 'Сайт',
+            'videoUrl' => 'Видео',
         ];
 
         $currentSnapshot = $this->getCurrentSnapshot();
@@ -743,6 +762,9 @@ class Property
             'longitude' => $this->coordinates->getLongitude(),
             'images' => $this->images,
             'amenities' => $this->amenities,
+            'instagramUrl' => $this->instagramUrl,
+            'websiteUrl' => $this->websiteUrl,
+            'videoUrl' => $this->videoUrl,
         ];
     }
 
@@ -1453,6 +1475,7 @@ class Property
         ?array $additionalServices = null,
         ?string $instagramUrl = null,
         ?string $websiteUrl = null,
+        ?string $videoUrl = null,
         ?array $externalCalendarUrls = null,
     ): void {
         if ($type !== null) $this->type = $type;
@@ -1516,6 +1539,9 @@ class Property
         }
         if ($websiteUrl !== null) {
             $this->websiteUrl = $websiteUrl !== '' ? $websiteUrl : null;
+        }
+        if ($videoUrl !== null) {
+            $this->videoUrl = $videoUrl !== '' ? $videoUrl : null;
         }
         if ($externalCalendarUrls !== null) {
             $this->setExternalCalendarUrls($externalCalendarUrls);

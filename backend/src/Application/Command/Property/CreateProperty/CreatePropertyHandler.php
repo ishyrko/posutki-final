@@ -114,6 +114,9 @@ final class CreatePropertyHandler
         if ($command->websiteUrl !== null) {
             $property->setWebsiteUrl($command->websiteUrl);
         }
+        if ($command->videoUrl !== null) {
+            $property->setVideoUrl($command->videoUrl);
+        }
         if ($command->externalCalendarUrls !== null) {
             $property->setExternalCalendarUrls($command->externalCalendarUrls);
         }
