@@ -11,6 +11,7 @@ use App\Domain\User\Exception\UserNotFoundException;
 use App\Domain\User\Repository\UserPhoneRepositoryInterface;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\User\Service\PhoneNumberNormalizer;
+use App\Domain\User\Service\TelegramUsernameNormalizer;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 
 readonly class UpdateUserProfileHandler
@@ -52,7 +53,7 @@ readonly class UpdateUserProfileHandler
 
         if ($command->telegram !== null || $command->phoneHasViber !== null || $command->phoneHasWhatsapp !== null) {
             $user->updateContactChannels(
-                $command->telegram,
+                $this->normalizeTelegram($command->telegram),
                 $command->phoneHasViber,
                 $command->phoneHasWhatsapp,
             );
@@ -97,6 +98,19 @@ readonly class UpdateUserProfileHandler
             return PhoneNumberNormalizer::normalize($phone);
         } catch (\InvalidArgumentException) {
             return null;
+        }
+    }
+
+    private function normalizeTelegram(?string $telegram): ?string
+    {
+        if ($telegram === null) {
+            return null;
+        }
+
+        try {
+            return TelegramUsernameNormalizer::normalize($telegram);
+        } catch (\InvalidArgumentException $e) {
+            throw new DomainException($e->getMessage());
         }
     }
 }

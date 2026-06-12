@@ -11,6 +11,7 @@ import { useUpdateProfile } from '@/features/profile/hooks';
 import { formatUserDisplayName } from '@/features/profile/displayName';
 import { usePhones, useDeletePhone, useUpdatePhoneFlags } from '@/features/phones/hooks';
 import { PhoneVerifyDialog } from '@/features/phones/components/PhoneVerifyDialog';
+import { getTelegramUsernameError, normalizeTelegramUsername } from '@/lib/telegramUsername';
 
 function MessengerCheckboxes({
     hasViber,
@@ -56,10 +57,12 @@ export function ProfileContactsSection({ user }: { user: User | undefined }) {
     const { mutate: updatePhoneFlags } = useUpdatePhoneFlags();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [telegram, setTelegram] = useState('');
+    const [telegramError, setTelegramError] = useState<string | null>(null);
 
     useEffect(() => {
         if (user) {
-            setTelegram(user.telegram ?? '');
+            setTelegram(user.telegram ? `@${user.telegram}` : '');
+            setTelegramError(null);
         }
     }, [user?.telegram, user?.id]);
 
@@ -69,13 +72,30 @@ export function ProfileContactsSection({ user }: { user: User | undefined }) {
         telegram?: string;
     }) => {
         if (!user) return;
-        updateProfile({
+
+        const payload = {
             name: formatUserDisplayName(user),
             phone: user.phone,
-            telegram: overrides?.telegram ?? telegram,
             phoneHasViber: overrides?.phoneHasViber ?? user.phoneHasViber ?? false,
             phoneHasWhatsapp: overrides?.phoneHasWhatsapp ?? user.phoneHasWhatsapp ?? false,
-        });
+        };
+
+        if (overrides && 'telegram' in overrides) {
+            const telegramValue = overrides.telegram ?? '';
+            const error = getTelegramUsernameError(telegramValue);
+            if (error) {
+                setTelegramError(error);
+                return;
+            }
+            setTelegramError(null);
+            updateProfile({
+                ...payload,
+                telegram: normalizeTelegramUsername(telegramValue) ?? '',
+            });
+            return;
+        }
+
+        updateProfile(payload);
     };
 
     const mainPhoneDigits = user?.phone ? normalizePhoneDigits(user.phone) : '';
@@ -202,7 +222,13 @@ export function ProfileContactsSection({ user }: { user: User | undefined }) {
                     <Input
                         placeholder="@username"
                         value={telegram}
-                        onChange={(e) => setTelegram(e.target.value)}
+                        onChange={(e) => {
+                            setTelegram(e.target.value);
+                            if (telegramError) {
+                                setTelegramError(null);
+                            }
+                        }}
+                        aria-invalid={telegramError ? true : undefined}
                     />
                     <Button
                         type="button"
@@ -213,7 +239,13 @@ export function ProfileContactsSection({ user }: { user: User | undefined }) {
                         {isSavingContacts ? 'Сохранение...' : 'Сохранить'}
                     </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1.5">Укажите ник без ссылки — например, @myname</p>
+                {telegramError ? (
+                    <p className="text-xs text-destructive mt-1.5">{telegramError}</p>
+                ) : (
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                        Укажите ник или ссылку t.me — например, @myname или https://t.me/myname
+                    </p>
+                )}
             </div>
 
             <PhoneVerifyDialog open={dialogOpen} onOpenChange={setDialogOpen} />

@@ -365,12 +365,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function updateContactChannels(?string $telegram, ?bool $phoneHasViber = null, ?bool $phoneHasWhatsapp = null): void
     {
         if ($telegram !== null) {
-            $trimmed = trim($telegram);
-            if ($trimmed === '') {
-                $this->telegram = null;
-            } else {
-                $this->telegram = ltrim($trimmed, '@');
-            }
+            $this->telegram = $telegram;
         }
         if ($phoneHasViber !== null) {
             $this->phoneHasViber = $phoneHasViber;

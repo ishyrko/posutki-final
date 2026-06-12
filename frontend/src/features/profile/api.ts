@@ -3,12 +3,31 @@ import { isAxiosError } from 'axios';
 import { z } from 'zod';
 import { User } from '@/features/auth/types';
 import { FileTooLargeError } from '@/features/create-listing/api';
+import { getTelegramUsernameError, normalizeTelegramUsername } from '@/lib/telegramUsername';
+
+const telegramFieldSchema = z
+    .string()
+    .max(100)
+    .optional()
+    .superRefine((value, ctx) => {
+        if (value === undefined || value.trim() === '') {
+            return;
+        }
+
+        const error = getTelegramUsernameError(value);
+        if (error) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: error,
+            });
+        }
+    });
 
 export const updateProfileSchema = z.object({
     name: z.string().min(2, 'Введите имя').max(100, 'Имя не длиннее 100 символов'),
     phone: z.string().optional(),
     avatar: z.string().optional(),
-    telegram: z.string().max(100).optional(),
+    telegram: telegramFieldSchema,
     phoneHasViber: z.boolean().optional(),
     phoneHasWhatsapp: z.boolean().optional(),
 });
@@ -45,11 +64,14 @@ export const uploadAvatar = async (file: File): Promise<string> => {
 };
 
 export const updateProfile = async (data: UpdateProfileData): Promise<User> => {
-    const { avatar, ...rest } = data;
+    const { avatar, telegram, ...rest } = data;
     const payload: Record<string, unknown> = { ...rest };
     const trimmedAvatar = avatar?.trim();
     if (trimmedAvatar) {
         payload.avatar = trimmedAvatar;
+    }
+    if (telegram !== undefined) {
+        payload.telegram = normalizeTelegramUsername(telegram) ?? '';
     }
     const response = await api.put<User>('/users/profile', payload);
     return response.data;

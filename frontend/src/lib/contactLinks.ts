@@ -18,5 +18,6 @@ export function whatsAppHref(phone: string): string {
 
 export function telegramHref(username: string): string {
     const handle = username.replace(/^@/, '').trim();
-    return `https://t.me/${encodeURIComponent(handle)}`;
+    const normalized = handle.match(/^(?:https?:\/\/)?(?:www\.)?(?:t\.me|telegram\.me)\/([a-zA-Z0-9_]+)/i)?.[1] ?? handle;
+    return `https://t.me/${encodeURIComponent(normalized)}`;
 }
