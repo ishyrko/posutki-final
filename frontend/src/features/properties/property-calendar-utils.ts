@@ -1,5 +1,34 @@
-import { format } from 'date-fns';
+import { format, parseISO, subDays } from 'date-fns';
 import type { BlockedDateRange } from '@/features/properties/api';
+
+export const CALENDAR_VISIBILITY_DAYS = 30;
+
+/** Стили занятых дат в react-day-picker (классы вешаются на ячейку, зачёркивание — на кнопку). */
+export const bookedDayModifierClassNames = {
+    booked: [
+        'bg-muted',
+        '[&_button]:bg-muted',
+        '[&_button]:text-muted-foreground',
+        '[&_button]:line-through',
+        '[&_button]:opacity-70',
+        '[&_button]:hover:bg-muted',
+        '[&_button]:cursor-not-allowed',
+    ].join(' '),
+};
+
+export function isCalendarRecentlyActive(lastUpdatedAt: string | null | undefined): boolean {
+    if (!lastUpdatedAt) {
+        return false;
+    }
+
+    const updated = parseISO(lastUpdatedAt);
+    if (Number.isNaN(updated.getTime())) {
+        return false;
+    }
+
+    const threshold = subDays(new Date(), CALENDAR_VISIBILITY_DAYS);
+    return updated.getTime() >= threshold.getTime();
+}
 
 export function expandBlockedRanges(ranges: BlockedDateRange[]): Date[] {
     const dates: Date[] = [];

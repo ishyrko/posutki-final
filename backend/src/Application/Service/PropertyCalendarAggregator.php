@@ -47,8 +47,28 @@ final class PropertyCalendarAggregator
                 ...$manualRanges,
                 ...$importedData['blockedRanges'],
             ]),
-            'lastUpdatedAt' => $importedData['lastUpdatedAt'],
+            'lastUpdatedAt' => $this->getCalendarLastUpdatedAt($property)?->format('c'),
         ];
+    }
+
+    public function getCalendarLastUpdatedAt(Property $property): ?\DateTimeImmutable
+    {
+        $importedData = $this->resolveImportedCalendarData($property);
+        $importedAt = $importedData['lastUpdatedAt'] !== null
+            ? new \DateTimeImmutable($importedData['lastUpdatedAt'])
+            : null;
+
+        $manualAt = $this->availabilityBlockRepository->findLatestCreatedAtByPropertyId($property->getId());
+
+        if ($importedAt === null) {
+            return $manualAt;
+        }
+
+        if ($manualAt === null) {
+            return $importedAt;
+        }
+
+        return $importedAt > $manualAt ? $importedAt : $manualAt;
     }
 
     /**

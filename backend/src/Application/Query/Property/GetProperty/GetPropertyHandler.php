@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Query\Property\GetProperty;
 
+use App\Application\Service\PropertyCalendarAggregator;
 use App\Application\Service\PropertyOwnerPublicContactResolver;
 use App\Application\DTO\PropertyDTO;
 use App\Domain\Property\Enum\DealType;
@@ -36,6 +37,7 @@ final class GetPropertyHandler
         private readonly UserBusinessProfileRepositoryInterface $userBusinessProfileRepository,
         private readonly PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
         private readonly ReviewRepositoryInterface $reviewRepository,
+        private readonly PropertyCalendarAggregator $propertyCalendarAggregator,
     ) {
     }
 
@@ -169,6 +171,7 @@ final class GetPropertyHandler
             $reviewAggregate['avg'],
             $reviewAggregate['count'],
             $viewerReview,
+            $this->propertyCalendarAggregator->getCalendarLastUpdatedAt($property),
         );
     }
 }

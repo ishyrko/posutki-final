@@ -19,4 +19,6 @@ interface PropertyAvailabilityBlockRepositoryInterface
      * @return PropertyAvailabilityBlock[]
      */
     public function findByPropertyId(Id $propertyId): array;
+
+    public function findLatestCreatedAtByPropertyId(Id $propertyId): ?\DateTimeImmutable;
 }

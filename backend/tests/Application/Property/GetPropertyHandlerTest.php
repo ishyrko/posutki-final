@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Property;
 
+use App\Application\Service\IcsCalendarService;
+use App\Application\Service\PropertyCalendarAggregator;
 use App\Application\Query\Property\GetProperty\GetPropertyHandler;
 use App\Application\Query\Property\GetProperty\GetPropertyQuery;
 use App\Application\Service\PropertyOwnerPublicContactResolver;
@@ -13,6 +15,7 @@ use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\MetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyDailyStatRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
+use App\Domain\Property\Repository\PropertyAvailabilityBlockRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\StreetRepositoryInterface;
 use App\Domain\Property\ValueObject\Address;
@@ -24,6 +27,7 @@ use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Repository\UserBusinessProfileRepositoryInterface;
 use App\Domain\User\Repository\UserIndividualProfileRepositoryInterface;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpClient\MockHttpClient;
 
 final class GetPropertyHandlerTest extends TestCase
 {
@@ -126,6 +130,13 @@ final class GetPropertyHandlerTest extends TestCase
         $reviewRepository->method('getAggregateByPropertyId')->willReturn(['avg' => null, 'count' => 0]);
         $reviewRepository->method('findByAuthorAndProperty')->willReturn(null);
 
+        $availabilityBlockRepository = $this->createStub(PropertyAvailabilityBlockRepositoryInterface::class);
+        $availabilityBlockRepository->method('findLatestCreatedAtByPropertyId')->willReturn(null);
+        $propertyCalendarAggregator = new PropertyCalendarAggregator(
+            $availabilityBlockRepository,
+            new IcsCalendarService(new MockHttpClient()),
+        );
+
         return new GetPropertyHandler(
             $propertyRepository,
             $cityRepository,
@@ -137,6 +148,7 @@ final class GetPropertyHandlerTest extends TestCase
             $userBusinessProfileRepository,
             $ownerContactResolver,
             $reviewRepository,
+            $propertyCalendarAggregator,
         );
     }
 

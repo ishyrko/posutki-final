@@ -44,4 +44,20 @@ class PropertyAvailabilityBlockRepository extends ServiceEntityRepository implem
             ->getQuery()
             ->getResult();
     }
+
+    public function findLatestCreatedAtByPropertyId(Id $propertyId): ?\DateTimeImmutable
+    {
+        $result = $this->createQueryBuilder('b')
+            ->select('MAX(b.createdAt)')
+            ->where('b.propertyId = :propertyId')
+            ->setParameter('propertyId', $propertyId->getValue())
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        if (!\is_string($result) || $result === '') {
+            return null;
+        }
+
+        return new \DateTimeImmutable($result);
+    }
 }

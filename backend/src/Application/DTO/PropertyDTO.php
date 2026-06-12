@@ -92,6 +92,7 @@ final class PropertyDTO implements \JsonSerializable
         public readonly int $reviewCount = 0,
         /** @var array{id:int,status:string}|null Отзыв текущего пользователя (если передан viewer id). */
         public readonly ?array $viewerReview = null,
+        public readonly ?\DateTimeImmutable $calendarLastUpdatedAt = null,
     ) {
     }
 
@@ -107,6 +108,7 @@ final class PropertyDTO implements \JsonSerializable
         ?float $ratingAvg = null,
         int $reviewCount = 0,
         ?array $viewerReview = null,
+        ?\DateTimeImmutable $calendarLastUpdatedAt = null,
     ): self {
         $district = $city->getRegionDistrict();
         $region = $district?->getRegion();
@@ -196,6 +198,7 @@ final class PropertyDTO implements \JsonSerializable
             ratingAvg: $ratingAvg,
             reviewCount: $reviewCount,
             viewerReview: $viewerReview,
+            calendarLastUpdatedAt: $calendarLastUpdatedAt,
         );
     }
 
@@ -289,6 +292,7 @@ final class PropertyDTO implements \JsonSerializable
             'instagramUrl' => $this->instagramUrl,
             'websiteUrl' => $this->websiteUrl,
             'externalCalendarUrls' => $this->externalCalendarUrls ?? [],
+            'calendarLastUpdatedAt' => $this->calendarLastUpdatedAt?->format('c'),
             'ratingAvg' => $this->ratingAvg,
             'reviewCount' => $this->reviewCount,
         ];

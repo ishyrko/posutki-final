@@ -52,6 +52,7 @@ import {
   showYearBuilt,
 } from "@/features/create-listing/property-field-rules";
 import { PropertyAvailabilityCalendar } from "@/features/properties/components/PropertyAvailabilityCalendar";
+import { isCalendarRecentlyActive } from "@/features/properties/property-calendar-utils";
 import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { ReviewList } from "@/features/reviews/components/ReviewList";
 import { ReviewSummary } from "@/features/reviews/components/ReviewSummary";
@@ -1017,7 +1018,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
             </div>
 
             <div className="space-y-4">
-              {(property.externalCalendarUrls?.length ?? 0) > 0 && (
+              {isCalendarRecentlyActive(property.calendarLastUpdatedAt) && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}

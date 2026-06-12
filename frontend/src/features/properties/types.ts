@@ -104,6 +104,8 @@ export interface Property {
     instagramUrl?: string | null;
     websiteUrl?: string | null;
     externalCalendarUrls?: string[];
+    /** Последнее обновление календаря занятости (внутренний или внешний источник). */
+    calendarLastUpdatedAt?: string | null;
     address: Address;
     coordinates?: Coordinates;
     specifications: {

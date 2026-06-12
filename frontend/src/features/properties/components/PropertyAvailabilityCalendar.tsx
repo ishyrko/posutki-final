@@ -5,7 +5,7 @@ import { ChevronDown, Loader2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { usePropertyCalendar } from '@/features/properties/hooks';
-import { expandBlockedRanges } from '@/features/properties/property-calendar-utils';
+import { bookedDayModifierClassNames, expandBlockedRanges } from '@/features/properties/property-calendar-utils';
 import { cn } from '@/lib/utils';
 
 type PropertyAvailabilityCalendarProps = {
@@ -27,10 +27,6 @@ function formatLastUpdatedAt(value: string): string {
         minute: '2-digit',
     }).format(date);
 }
-
-const bookedModifiersClassNames = {
-    booked: 'bg-muted text-muted-foreground line-through opacity-70',
-};
 
 export function PropertyAvailabilityCalendar({ propertyId, className }: PropertyAvailabilityCalendarProps) {
     const [open, setOpen] = useState(false);
@@ -56,7 +52,7 @@ export function PropertyAvailabilityCalendar({ propertyId, className }: Property
                         <h3 className="text-base font-semibold text-foreground">Календарь занятости</h3>
                         <p className="text-xs text-muted-foreground mt-0.5">
                             {open
-                                ? 'Занятые даты синхронизируются с внешними календарями'
+                                ? 'Актуальные занятые даты по данным владельца'
                                 : 'Показать календарь занятости'}
                         </p>
                     </div>
@@ -84,7 +80,7 @@ export function PropertyAvailabilityCalendar({ propertyId, className }: Property
                             mode="single"
                             disabled={bookedDates}
                             modifiers={{ booked: bookedDates }}
-                            modifiersClassNames={bookedModifiersClassNames}
+                            modifiersClassNames={bookedDayModifierClassNames}
                             className="mx-auto"
                         />
                         {data?.lastUpdatedAt && (

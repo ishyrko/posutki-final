@@ -13,9 +13,9 @@ function Calendar({ className, classNames, showOutsideDays = true, locale = ru, 
     <DayPicker
       locale={locale}
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("w-fit p-3", className)}
       classNames={{
-        months: "relative flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+        months: "relative flex w-fit flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         month_caption: "flex h-9 w-full items-center justify-center px-9",
         caption_label: "text-sm font-medium",

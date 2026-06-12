@@ -43,6 +43,8 @@ import {
     hasBookedNightInStay,
     isBookedDate,
     startOfToday,
+    bookedDayModifierClassNames,
+    isCalendarRecentlyActive,
 } from '@/features/properties/property-calendar-utils';
 import { useCurrency } from '@/context/CurrencyContext';
 import {
@@ -83,15 +85,15 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
 
     const previewImage = property.images[0]?.thumbnailUrl || property.images[0]?.url || null;
     const addressStr = formatAddress(property.address);
-    const hasExternalCalendar = (property.externalCalendarUrls?.length ?? 0) > 0;
-    const { data: calendarData } = usePropertyCalendar(property.id, open && hasExternalCalendar);
+    const hasActiveCalendar = isCalendarRecentlyActive(property.calendarLastUpdatedAt);
+    const { data: calendarData } = usePropertyCalendar(property.id, open && hasActiveCalendar);
     const bookedDateKeys = useMemo(
         () => blockedDateKeySet(calendarData?.blockedRanges ?? []),
         [calendarData?.blockedRanges],
     );
     const bookedDatesForPicker = useMemo(
-        () => (hasExternalCalendar && bookedDateKeys.size > 0 ? Array.from(bookedDateKeys).map((d) => new Date(`${d}T00:00:00`)) : []),
-        [hasExternalCalendar, bookedDateKeys],
+        () => (hasActiveCalendar && bookedDateKeys.size > 0 ? Array.from(bookedDateKeys).map((d) => new Date(`${d}T00:00:00`)) : []),
+        [hasActiveCalendar, bookedDateKeys],
     );
 
     const defaultValues = useMemo<BookingInquiryFormData>(() => ({
@@ -117,7 +119,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
         }
 
         if (
-            hasExternalCalendar
+            hasActiveCalendar
             && data.checkIn?.trim()
             && data.checkOut?.trim()
             && hasBookedNightInStay(data.checkIn, data.checkOut, bookedDateKeys)
@@ -263,7 +265,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                 )}
                                             />
 
-                                            {hasExternalCalendar && bookedDateKeys.size > 0 && (
+                                            {hasActiveCalendar && bookedDateKeys.size > 0 && (
                                                 <p className="text-xs text-muted-foreground">
                                                     Занятые даты синхронизированы с календарём объявления
                                                 </p>
@@ -320,9 +322,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                                 ? { booked: bookedDatesForPicker }
                                                                                 : undefined
                                                                         }
-                                                                        modifiersClassNames={{
-                                                                            booked: 'bg-muted text-muted-foreground line-through opacity-70',
-                                                                        }}
+                                                                        modifiersClassNames={bookedDayModifierClassNames}
                                                                         initialFocus
                                                                     />
                                                                 </PopoverContent>
@@ -375,9 +375,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                                 ? { booked: bookedDatesForPicker }
                                                                                 : undefined
                                                                         }
-                                                                        modifiersClassNames={{
-                                                                            booked: 'bg-muted text-muted-foreground line-through opacity-70',
-                                                                        }}
+                                                                        modifiersClassNames={bookedDayModifierClassNames}
                                                                         initialFocus
                                                                     />
                                                                 </PopoverContent>
