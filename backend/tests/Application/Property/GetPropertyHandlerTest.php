@@ -134,6 +134,7 @@ final class GetPropertyHandlerTest extends TestCase
         $availabilityBlockRepository->method('findLatestCreatedAtByPropertyId')->willReturn(null);
         $propertyCalendarAggregator = new PropertyCalendarAggregator(
             $availabilityBlockRepository,
+            $propertyRepository,
             new IcsCalendarService(new MockHttpClient()),
         );
 

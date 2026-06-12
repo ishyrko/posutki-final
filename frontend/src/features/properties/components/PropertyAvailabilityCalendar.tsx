@@ -64,7 +64,7 @@ export function PropertyAvailabilityCalendar({ propertyId, className }: Property
             <CollapsibleTrigger asChild>
                 <button
                     type="button"
-                    className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-muted/30 rounded-2xl"
+                    className="flex w-full cursor-pointer items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-muted/30 rounded-2xl"
                 >
                     <div className="min-w-0">
                         <h3 className="text-base font-semibold text-foreground">Календарь занятости</h3>

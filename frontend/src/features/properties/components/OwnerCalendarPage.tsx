@@ -18,7 +18,6 @@ import {
     Loader2,
     MapPin,
     Plus,
-    RefreshCw,
     Trash2,
     X,
 } from 'lucide-react';
@@ -31,7 +30,6 @@ import {
     useDeleteAvailabilityBlock,
     useOwnerCalendar,
     useProperty,
-    useRegenerateCalendarExportToken,
 } from '@/features/properties/hooks';
 import type { AvailabilityBlock } from '@/features/properties/api';
 import { blockedDateKeySet } from '@/features/properties/property-calendar-utils';
@@ -117,7 +115,6 @@ export function OwnerCalendarPage() {
     const { data: calendar, isLoading: isLoadingCalendar, isError } = useOwnerCalendar(propertyId);
     const createBlock = useCreateAvailabilityBlock();
     const deleteBlock = useDeleteAvailabilityBlock();
-    const regenerateToken = useRegenerateCalendarExportToken();
 
     const today = useMemo(() => {
         const d = new Date();
@@ -656,20 +653,6 @@ export function OwnerCalendarPage() {
                                 </a>
                             </Button>
                         )}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={regenerateToken.isPending}
-                            onClick={() =>
-                                regenerateToken.mutate(propertyId, {
-                                    onSuccess: () => toast.success('Ссылка обновлена'),
-                                    onError: () => toast.error('Не удалось обновить ссылку'),
-                                })
-                            }
-                        >
-                            <RefreshCw className={cn('h-4 w-4 mr-2', regenerateToken.isPending && 'animate-spin')} />
-                            Обновить ссылку
-                        </Button>
                     </div>
                 </div>
 
@@ -684,10 +667,10 @@ export function OwnerCalendarPage() {
                         </p>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        Последняя синхронизация:{' '}
+                        Последнее обновление импорта:{' '}
                         {calendar?.externalCalendarSyncedAt
                             ? format(parseISO(calendar.externalCalendarSyncedAt), 'd MMM yyyy, HH:mm', { locale: ru })
-                            : 'ещё не выполнялась'}
+                            : 'ещё не выполнялось'}
                     </p>
                     {(calendar?.externalCalendarUrls ?? []).length > 0 ? (
                         <ul className="space-y-2">

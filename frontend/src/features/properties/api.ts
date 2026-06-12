@@ -252,12 +252,3 @@ export const createAvailabilityBlock = async (
 export const deleteAvailabilityBlock = async (propertyId: number, blockId: string): Promise<void> => {
     await api.delete(`/properties/${propertyId}/availability/block/${blockId}`);
 };
-
-export const regenerateCalendarExportToken = async (
-    propertyId: number,
-): Promise<{ exportToken: string; exportUrl: string }> => {
-    const response = await api.post<{ data: { exportToken: string; exportUrl: string } }>(
-        `/properties/${propertyId}/calendar/export-token`,
-    );
-    return response.data.data;
-};

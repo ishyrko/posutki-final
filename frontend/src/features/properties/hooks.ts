@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, getFavorites, getExchangeRates, getPropertyStats, boostProperty, archiveProperty, unarchiveProperty, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock, regenerateCalendarExportToken } from './api';
+import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, getFavorites, getExchangeRates, getPropertyStats, boostProperty, archiveProperty, unarchiveProperty, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock } from './api';
 import { Property, PropertyFilters, PropertyListResponse } from './types';
 import { isAuthenticated } from '@/lib/auth';
 
@@ -224,16 +224,6 @@ export const useDeleteAvailabilityBlock = () => {
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['owner-calendar', variables.propertyId] });
             queryClient.invalidateQueries({ queryKey: ['property-calendar', variables.propertyId] });
-        },
-    });
-};
-
-export const useRegenerateCalendarExportToken = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (propertyId: number) => regenerateCalendarExportToken(propertyId),
-        onSuccess: (_data, propertyId) => {
-            queryClient.invalidateQueries({ queryKey: ['owner-calendar', propertyId] });
         },
     });
 };

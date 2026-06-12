@@ -23,13 +23,15 @@ final class IcsCalendarService
      *
      * @return array{
      *     blockedRanges: list<array{start: string, end: string}>,
-     *     lastUpdatedAt: ?string
+     *     lastUpdatedAt: ?string,
+     *     successfulFetches: int
      * }
      */
     public function fetchCalendarData(array $urls): array
     {
         $blockedRanges = [];
         $lastUpdatedAt = null;
+        $successfulFetches = 0;
 
         foreach ($urls as $url) {
             if (!is_string($url)) {
@@ -43,6 +45,7 @@ final class IcsCalendarService
 
             try {
                 $calendarData = $this->fetchSingleCalendar($url);
+                ++$successfulFetches;
                 $blockedRanges = [...$blockedRanges, ...$calendarData['blockedRanges']];
 
                 if ($calendarData['lastUpdatedAt'] !== null) {
@@ -58,6 +61,7 @@ final class IcsCalendarService
         return [
             'blockedRanges' => $this->mergeBlockedRanges($blockedRanges),
             'lastUpdatedAt' => $lastUpdatedAt,
+            'successfulFetches' => $successfulFetches,
         ];
     }
 
@@ -77,6 +81,11 @@ final class IcsCalendarService
                 'Accept' => 'text/calendar, application/calendar+json, */*',
             ],
         ]);
+
+        $statusCode = $response->getStatusCode();
+        if ($statusCode < 200 || $statusCode >= 300) {
+            throw new \RuntimeException(sprintf('Calendar fetch failed with HTTP %d', $statusCode));
+        }
 
         $content = $response->getContent(false);
         if ($content === '') {

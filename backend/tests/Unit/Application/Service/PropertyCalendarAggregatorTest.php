@@ -8,12 +8,14 @@ use App\Application\Service\IcsCalendarService;
 use App\Application\Service\PropertyCalendarAggregator;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Repository\PropertyAvailabilityBlockRepositoryInterface;
+use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\ValueObject\Id;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
 
 final class PropertyCalendarAggregatorTest extends TestCase
 {
@@ -21,8 +23,9 @@ final class PropertyCalendarAggregatorTest extends TestCase
     {
         $property = $this->createProperty();
         $manualAt = new \DateTimeImmutable('2026-06-10T12:00:00+00:00');
-        $importedAt = new \DateTimeImmutable('2026-06-11T08:00:00+00:00');
+        $importedAt = new \DateTimeImmutable('-30 minutes');
 
+        $property->setExternalCalendarUrls(['https://example.com/calendar.ics']);
         $property->setExternalCalendarSnapshot([], $importedAt);
 
         $availabilityBlockRepository = $this->createStub(PropertyAvailabilityBlockRepositoryInterface::class);
@@ -32,10 +35,82 @@ final class PropertyCalendarAggregatorTest extends TestCase
 
         $aggregator = new PropertyCalendarAggregator(
             $availabilityBlockRepository,
+            $this->createPropertyRepository(),
             new IcsCalendarService(new MockHttpClient()),
         );
 
-        self::assertEquals($importedAt, $aggregator->getCalendarLastUpdatedAt($property));
+        self::assertSame(
+            $importedAt->format('c'),
+            $aggregator->getCalendarLastUpdatedAt($property)?->format('c'),
+        );
+    }
+
+    public function testStaleSnapshotIsRefetchedFromExternalCalendar(): void
+    {
+        $property = $this->createProperty();
+        $property->setExternalCalendarUrls(['https://example.com/calendar.ics']);
+        $property->setExternalCalendarSnapshot(
+            [['start' => '2026-01-01', 'end' => '2026-01-02']],
+            new \DateTimeImmutable('-3 hours'),
+        );
+
+        $ics = <<<ICS
+BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:test-event-1
+DTSTAMP:20260612T120000Z
+LAST-MODIFIED:20260612T120000Z
+DTSTART;VALUE=DATE:20260626
+DTEND;VALUE=DATE:20260628
+SUMMARY:Booked
+END:VEVENT
+END:VCALENDAR
+ICS;
+
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository->expects(self::once())->method('save')->with($property);
+
+        $aggregator = new PropertyCalendarAggregator(
+            $this->createStub(PropertyAvailabilityBlockRepositoryInterface::class),
+            $propertyRepository,
+            new IcsCalendarService(new MockHttpClient([
+                new MockResponse($ics, ['http_code' => 200]),
+            ])),
+        );
+
+        $importedData = $aggregator->resolveImportedCalendarData($property);
+
+        self::assertSame([
+            ['start' => '2026-06-26', 'end' => '2026-06-27'],
+        ], $importedData['blockedRanges']);
+        self::assertNotNull($importedData['lastUpdatedAt']);
+    }
+
+    public function testStaleSnapshotIsDiscardedWhenRefreshFails(): void
+    {
+        $property = $this->createProperty();
+        $property->setExternalCalendarUrls(['https://broken.example/calendar.ics']);
+        $property->setExternalCalendarSnapshot(
+            [['start' => '2026-01-01', 'end' => '2026-01-02']],
+            new \DateTimeImmutable('-3 hours'),
+        );
+
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository->expects(self::never())->method('save');
+
+        $aggregator = new PropertyCalendarAggregator(
+            $this->createStub(PropertyAvailabilityBlockRepositoryInterface::class),
+            $propertyRepository,
+            new IcsCalendarService(new MockHttpClient([
+                new MockResponse('', ['http_code' => 500]),
+            ])),
+        );
+
+        $importedData = $aggregator->resolveImportedCalendarData($property);
+
+        self::assertSame([], $importedData['blockedRanges']);
+        self::assertNull($importedData['lastUpdatedAt']);
     }
 
     public function testGetPublicCalendarDataIncludesManualLastUpdatedAt(): void
@@ -53,6 +128,7 @@ final class PropertyCalendarAggregatorTest extends TestCase
 
         $aggregator = new PropertyCalendarAggregator(
             $availabilityBlockRepository,
+            $this->createPropertyRepository(),
             new IcsCalendarService(new MockHttpClient()),
         );
 
@@ -97,5 +173,10 @@ final class PropertyCalendarAggregatorTest extends TestCase
         $idReflection->setValue($property, Id::fromInt(20));
 
         return $property;
+    }
+
+    private function createPropertyRepository(): PropertyRepositoryInterface
+    {
+        return $this->createStub(PropertyRepositoryInterface::class);
     }
 }

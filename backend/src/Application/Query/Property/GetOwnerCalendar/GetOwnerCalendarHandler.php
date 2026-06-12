@@ -59,7 +59,8 @@ final class GetOwnerCalendarHandler
             ),
             'importedBlockedRanges' => $importedData['blockedRanges'],
             'externalCalendarUrls' => $property->getExternalCalendarUrls() ?? [],
-            'externalCalendarSyncedAt' => $property->getExternalCalendarSyncedAt()?->format('c'),
+            'externalCalendarSyncedAt' => $property->getExternalCalendarSyncedAt()?->format('c')
+                ?? $importedData['lastUpdatedAt'],
             'exportToken' => $token,
             'exportUrl' => $this->buildExportUrl($query->exportBaseUrl, $token),
         ];
