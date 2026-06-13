@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import type { User } from '@/features/auth/types';
 import { UserAvatar } from '@/components/UserAvatar';
 import { uploadAvatar } from '../api';
-import { formatUserDisplayName } from '../displayName';
 import { useUpdateProfile } from '../hooks';
 import { FileTooLargeError } from '@/features/create-listing/api';
 
@@ -53,11 +52,7 @@ export function ProfileAvatarEditor({
         setIsUploading(true);
         try {
             const url = await uploadAvatar(file);
-            updateProfile({
-                name: formatUserDisplayName(user),
-                phone: user.phone ?? undefined,
-                avatar: url,
-            });
+            updateProfile({ avatar: url });
         } catch (error) {
             if (error instanceof FileTooLargeError) {
                 toast.error('Файл слишком большой (максимум 5 МБ)');

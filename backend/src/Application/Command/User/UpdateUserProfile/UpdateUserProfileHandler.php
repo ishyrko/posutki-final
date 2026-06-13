@@ -31,7 +31,9 @@ readonly class UpdateUserProfileHandler
             throw new UserNotFoundException('Пользователь не найден');
         }
 
-        $normalizedPhone = $this->normalizeProfilePhone($command->phone);
+        $normalizedPhone = $command->phone !== null
+            ? $this->normalizeProfilePhone($command->phone)
+            : null;
 
         if ($normalizedPhone !== null) {
             $currentNormalized = $this->normalizeStoredPhone($user->getPhone());
@@ -43,13 +45,21 @@ readonly class UpdateUserProfileHandler
             }
         }
 
-        $displayName = trim($command->name);
-        $user->updateProfile(
-            $displayName,
-            '',
-            $normalizedPhone,
-            $command->avatar
-        );
+        if ($command->name !== null || $command->phone !== null || $command->avatar !== null) {
+            $firstName = $user->getFirstName();
+            $lastName = $user->getLastName();
+            if ($command->name !== null) {
+                $firstName = trim($command->name);
+                $lastName = '';
+            }
+
+            $user->updateProfile(
+                $firstName,
+                $lastName,
+                $command->phone !== null ? $normalizedPhone : $user->getPhone(),
+                $command->avatar,
+            );
+        }
 
         if ($command->telegram !== null || $command->phoneHasViber !== null || $command->phoneHasWhatsapp !== null) {
             $user->updateContactChannels(
@@ -59,7 +69,7 @@ readonly class UpdateUserProfileHandler
             );
         }
 
-        if ($normalizedPhone !== null) {
+        if ($command->phone !== null && $normalizedPhone !== null) {
             $userPhone = $this->userPhoneRepository->findByUserIdAndPhone($userId, $normalizedPhone);
             if ($userPhone !== null && $userPhone->isVerified()) {
                 $user->markPhoneVerified();

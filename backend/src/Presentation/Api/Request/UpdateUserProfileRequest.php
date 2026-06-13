@@ -8,9 +8,19 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class UpdateUserProfileRequest
 {
-    #[Assert\NotBlank(message: 'Укажите имя')]
-    #[Assert\Length(min: 2, max: 100, minMessage: 'Имя не короче {{ limit }} символов', maxMessage: 'Имя не длиннее {{ limit }} символов')]
-    public string $name;
+    #[Assert\When(
+        expression: 'this.name !== null',
+        constraints: [
+            new Assert\NotBlank(message: 'Укажите имя'),
+            new Assert\Length(
+                min: 2,
+                max: 100,
+                minMessage: 'Имя не короче {{ limit }} символов',
+                maxMessage: 'Имя не длиннее {{ limit }} символов',
+            ),
+        ],
+    )]
+    public ?string $name = null;
 
     #[Assert\Length(max: 20)]
     public ?string $phone = null;

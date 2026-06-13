@@ -32,7 +32,14 @@ export const updateProfileSchema = z.object({
     phoneHasWhatsapp: z.boolean().optional(),
 });
 
-export type UpdateProfileData = z.infer<typeof updateProfileSchema>;
+export type UpdateProfileData = {
+    name?: string;
+    phone?: string;
+    avatar?: string;
+    telegram?: string;
+    phoneHasViber?: boolean;
+    phoneHasWhatsapp?: boolean;
+};
 
 export const changePasswordSchema = z.object({
     currentPassword: z.string().min(1, 'Введите текущий пароль'),
@@ -64,15 +71,28 @@ export const uploadAvatar = async (file: File): Promise<string> => {
 };
 
 export const updateProfile = async (data: UpdateProfileData): Promise<User> => {
-    const { avatar, telegram, ...rest } = data;
-    const payload: Record<string, unknown> = { ...rest };
-    const trimmedAvatar = avatar?.trim();
+    const payload: Record<string, unknown> = {};
+
+    if (data.name !== undefined) {
+        payload.name = data.name;
+    }
+    if (data.phone !== undefined) {
+        payload.phone = data.phone;
+    }
+    const trimmedAvatar = data.avatar?.trim();
     if (trimmedAvatar) {
         payload.avatar = trimmedAvatar;
     }
-    if (telegram !== undefined) {
-        payload.telegram = normalizeTelegramUsername(telegram) ?? '';
+    if (data.telegram !== undefined) {
+        payload.telegram = normalizeTelegramUsername(data.telegram) ?? '';
     }
+    if (data.phoneHasViber !== undefined) {
+        payload.phoneHasViber = data.phoneHasViber;
+    }
+    if (data.phoneHasWhatsapp !== undefined) {
+        payload.phoneHasWhatsapp = data.phoneHasWhatsapp;
+    }
+
     const response = await api.put<User>('/users/profile', payload);
     return response.data;
 };
