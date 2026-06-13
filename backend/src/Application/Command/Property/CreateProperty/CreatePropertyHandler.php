@@ -11,6 +11,7 @@ use App\Domain\Property\Validation\DailyRentDetailsValidator;
 use App\Domain\Property\Validation\DealConditionsValidator;
 use App\Domain\Property\Validation\PaymentMethodsValidator;
 use App\Domain\Property\Validation\FloorTotalFloorsValidator;
+use App\Domain\Property\Validation\PropertyDailyPriceValidator;
 use App\Domain\Property\Validation\PropertyDealCombinationValidator;
 use App\Domain\Property\Validation\PropertyImageLimitsValidator;
 use App\Domain\Property\Validation\RoomDealDetailsValidator;
@@ -56,6 +57,9 @@ final class CreatePropertyHandler
         PropertyImageLimitsValidator::assertValid($command->type, count($command->images));
         FloorTotalFloorsValidator::assertValid($command->floor, $command->totalFloors);
         $this->assertAreaConstraints($command->type, $command->area, $command->landArea);
+
+        $priceByn = $this->exchangeRateService->calculatePriceByn($command->priceAmount, $command->priceCurrency);
+        PropertyDailyPriceValidator::assertValid($command->dealType, $command->type, $priceByn);
 
         $ownerId = Id::fromString($command->ownerId);
         $user = $this->userRepository->findById($ownerId);
@@ -121,9 +125,7 @@ final class CreatePropertyHandler
             $property->setExternalCalendarUrls($command->externalCalendarUrls);
         }
 
-        $property->setPriceByn(
-            $this->exchangeRateService->calculatePriceByn($command->priceAmount, $command->priceCurrency)
-        );
+        $property->setPriceByn($priceByn);
 
         $this->propertyRepository->save($property);
         $this->metroProximityCalculator->syncForProperty($property);

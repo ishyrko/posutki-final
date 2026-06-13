@@ -270,6 +270,11 @@ final class UpdatePropertyHandlerTest extends TestCase
             address: Address::create('15', null),
             cityId: 1,
             coordinates: Coordinates::create(53.9045, 27.5615),
+            images: [
+                'https://example.com/photo-1.jpg',
+                'https://example.com/photo-2.jpg',
+                'https://example.com/photo-3.jpg',
+            ],
         );
 
         $reflection = new \ReflectionProperty($property, 'id');

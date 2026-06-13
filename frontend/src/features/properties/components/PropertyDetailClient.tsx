@@ -26,7 +26,7 @@ import { getVideoEmbedInfo } from "@/features/properties/lib/videoEmbed";
 import { PropertyVideoPlayer } from "@/features/properties/components/PropertyVideoPlayer";
 import { formatPropertyDealHeading } from "@/features/properties/property-deal-heading";
 import type { ExchangeRates } from "@/features/properties/api";
-import { PriceDisplay } from "@/components/BynCurrency";
+import { PriceDisplay, BynCurrencyMark } from "@/components/BynCurrency";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";
 import { useCurrency } from "@/context/CurrencyContext";
 import PropertyMap from "@/components/PropertyMap";
@@ -511,6 +511,11 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   const paymentMethods = property.specifications.paymentMethods ?? [];
   const hasPaymentMethods = paymentMethods.length > 0;
 
+  const additionalServices = (property.additionalServices ?? []).filter(
+    (svc) => svc.name.trim() !== "" && Number.isFinite(svc.price),
+  );
+  const hasAdditionalServices = property.type === "house" && additionalServices.length > 0;
+
   const activeAmenities = property.amenities ?? [];
   const hasAmenities = activeAmenities.length > 0;
 
@@ -854,6 +859,25 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                         <Wallet className="w-3.5 h-3.5 flex-shrink-0" />
                         {PAYMENT_METHOD_LABELS[method as PaymentMethodId] ?? method}
                       </span>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {hasAdditionalServices && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.23, duration: 0.5 }}>
+                  <h2 className="text-xl font-bold text-foreground mb-3">Дополнительные услуги</h2>
+                  <div className="rounded-xl border border-border/50 overflow-hidden max-w-lg">
+                    {additionalServices.map((svc, i) => (
+                      <div
+                        key={`${svc.name}-${i}`}
+                        className={`flex items-center justify-between gap-4 px-4 py-3 ${i > 0 ? "border-t border-border/40" : ""} ${i % 2 === 0 ? "bg-muted/20" : ""}`}
+                      >
+                        <span className="text-sm text-foreground">{svc.name}</span>
+                        <span className="text-sm font-semibold text-foreground inline-flex items-baseline gap-1 shrink-0">
+                          {svc.price} <BynCurrencyMark />
+                        </span>
+                      </div>
                     ))}
                   </div>
                 </motion.div>

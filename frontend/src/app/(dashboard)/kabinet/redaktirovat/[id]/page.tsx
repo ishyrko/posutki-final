@@ -79,6 +79,7 @@ import {
     ROOMS_MIN,
     DAILY_BEDS_MAX,
     MAX_DAILY_GUESTS,
+    MIN_DAILY_PRICE_BYN,
     TITLE_MAX_LENGTH,
     TITLE_MIN_LENGTH,
     TOTAL_FLOORS_MAX,
@@ -90,6 +91,7 @@ import {
     cityFieldNameInText,
     cityNotFoundMessage,
     getDescriptionFieldError,
+    getDailyPriceFieldError,
     getTitleFieldError,
     getCityFieldError,
     getApartmentStreetFieldError,
@@ -181,7 +183,7 @@ interface EditFormData {
     externalCalendarUrls: string[];
 }
 
-type EditTitleDescriptionErrors = Partial<Pick<EditFormData, 'title' | 'description'>>;
+type EditTitleDescriptionErrors = Partial<Pick<EditFormData, 'title' | 'description' | 'price'>>;
 
 function mapPropertyToForm(property: PropertyItem): EditFormData {
     const revisionData = property.pendingRevisionStatus ? property.pendingRevisionData : null;
@@ -344,7 +346,10 @@ export default function EditPropertyPage() {
     const [cityInputUnlocked, setCityInputUnlocked] = useState(false);
     const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
     const debouncedCityQuery = useDebouncedValue(cityQuery, 300);
-    const { cityResults, citySearching, showCityNotFound } = useCityAutocompleteResults(debouncedCityQuery);
+    const { cityResults, citySearching, showCityNotFound } = useCityAutocompleteResults(
+        debouncedCityQuery,
+        form?.type ?? '',
+    );
     const cityContainerRef = useRef<HTMLDivElement>(null);
 
     const [streetQuery, setStreetQuery] = useState('');
@@ -407,6 +412,30 @@ export default function EditPropertyPage() {
             return next;
         });
     }, [form?.description]);
+
+    const handlePriceChange = useCallback((value: string) => {
+        setForm((prev) => (prev ? { ...prev, price: value } : prev));
+        if (value.trim() === '') {
+            return;
+        }
+        setFieldErrors((prev) => {
+            const next = { ...prev };
+            const err = getDailyPriceFieldError(value);
+            if (err) next.price = err;
+            else delete next.price;
+            return next;
+        });
+    }, []);
+
+    const handlePriceBlur = useCallback(() => {
+        setFieldErrors((prev) => {
+            const next = { ...prev };
+            const err = getDailyPriceFieldError(form?.price ?? '');
+            if (err) next.price = err;
+            else delete next.price;
+            return next;
+        });
+    }, [form?.price]);
 
     const toggleDealCondition = useCallback((condition: string) => {
         setForm((prev) => {
@@ -655,8 +684,10 @@ export default function EditPropertyPage() {
                 return;
             }
         }
-        if (!form.price || !Number.isFinite(price) || price <= 0) {
-            toast.error('Укажите цену');
+        const priceError = getDailyPriceFieldError(form.price);
+        if (priceError) {
+            setFieldErrors((prev) => ({ ...prev, price: priceError }));
+            toast.error(priceError);
             return;
         }
 
@@ -1715,15 +1746,21 @@ export default function EditPropertyPage() {
                     <div>
                         <Label className="text-foreground">Цена *</Label>
                         <div className="flex items-center gap-2 mt-1.5">
+                            <span className="text-sm text-muted-foreground shrink-0">от</span>
                             <Input
                                 type="number"
-                                min={0}
+                                min={MIN_DAILY_PRICE_BYN}
                                 value={form.price}
-                                onChange={(e) => update('price', e.target.value)}
-                                className="flex-1"
+                                onChange={(e) => handlePriceChange(e.target.value)}
+                                onBlur={handlePriceBlur}
+                                className={cn('flex-1', fieldErrors.price ? 'border-destructive' : '')}
+                                aria-invalid={fieldErrors.price ? true : undefined}
                             />
                             <BynCurrencyMark className="shrink-0" />
                         </div>
+                        {fieldErrors.price ? (
+                            <p className="text-xs text-destructive mt-1">{fieldErrors.price}</p>
+                        ) : null}
                     </div>
                     <div className="flex items-center gap-2 mt-4">
                         <Checkbox

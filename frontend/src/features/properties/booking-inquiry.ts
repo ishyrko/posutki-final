@@ -56,7 +56,7 @@ export interface BookingInquiryListResponse {
     };
 }
 
-function getErrorMessage(error: unknown, fallback: string): string {
+export function getErrorMessage(error: unknown, fallback: string): string {
     if (typeof error !== 'object' || error === null || !('response' in error)) {
         return fallback;
     }

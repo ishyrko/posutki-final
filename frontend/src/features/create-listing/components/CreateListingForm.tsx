@@ -81,6 +81,7 @@ import {
     ROOMS_MIN,
     DAILY_BEDS_MAX,
     MAX_DAILY_GUESTS,
+    MIN_DAILY_PRICE_BYN,
     TITLE_MAX_LENGTH,
     TITLE_MIN_LENGTH,
     TOTAL_FLOORS_MAX,
@@ -92,6 +93,7 @@ import {
     cityFieldNameInText,
     cityNotFoundMessage,
     getDescriptionFieldError,
+    getDailyPriceFieldError,
     getTitleFieldError,
     getCityFieldError,
     getApartmentStreetFieldError,
@@ -276,7 +278,10 @@ export function CreateListingForm() {
     const [cityInputUnlocked, setCityInputUnlocked] = useState(false);
     const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
     const debouncedCityQuery = useDebouncedValue(cityQuery, 300);
-    const { cityResults, citySearching, showCityNotFound } = useCityAutocompleteResults(debouncedCityQuery);
+    const { cityResults, citySearching, showCityNotFound } = useCityAutocompleteResults(
+        debouncedCityQuery,
+        form.propertyType,
+    );
     const cityContainerRef = useRef<HTMLDivElement>(null);
 
     // Street autocomplete state
@@ -555,7 +560,10 @@ export function CreateListingForm() {
                     }
                 }
                 if (!form.price) errs.price = 'Укажите цену';
-                else if (Number(form.price) <= 0) errs.price = 'Цена должна быть положительной';
+                else {
+                    const priceError = getDailyPriceFieldError(form.price);
+                    if (priceError) errs.price = priceError;
+                }
                 break;
         }
 
@@ -622,7 +630,7 @@ export function CreateListingForm() {
             case 6:
                 return !!(
                     form.price
-                    && Number(form.price) > 0
+                    && !getDailyPriceFieldError(form.price)
                     && (form.dealType !== 'daily' || (
                         !!form.maxDailyGuests
                         && Number(form.maxDailyGuests) > 0
@@ -846,6 +854,30 @@ export function CreateListingForm() {
             return next;
         });
     }, [form.description]);
+
+    const handlePriceBlur = useCallback(() => {
+        setErrors((prev) => {
+            const next = { ...prev };
+            const err = getDailyPriceFieldError(form.price);
+            if (err) next.price = err;
+            else delete next.price;
+            return next;
+        });
+    }, [form.price]);
+
+    const handlePriceChange = useCallback((value: string) => {
+        update('price', value);
+        if (value.trim() === '') {
+            return;
+        }
+        setErrors((prev) => {
+            const next = { ...prev };
+            const err = getDailyPriceFieldError(value);
+            if (err) next.price = err;
+            else delete next.price;
+            return next;
+        });
+    }, [update]);
 
     const FieldError = ({ field }: { field: keyof FormErrors }) =>
         errors[field] ? <p className="text-xs text-destructive mt-1">{errors[field]}</p> : null;
@@ -1895,11 +1927,13 @@ export function CreateListingForm() {
                                     <div>
                                         <label className={labelClass}>Цена за сутки *</label>
                                         <div className="flex items-center gap-2">
+                                            <span className="text-sm text-muted-foreground shrink-0">от</span>
                                             <input
                                                 type="number"
-                                                min={0}
+                                                min={MIN_DAILY_PRICE_BYN}
                                                 value={form.price}
-                                                onChange={(e) => update('price', e.target.value)}
+                                                onChange={(e) => handlePriceChange(e.target.value)}
+                                                onBlur={handlePriceBlur}
                                                 placeholder="Например: 85"
                                                 className={cn(inputClass, 'flex-1', errors.price ? 'border-destructive' : '')}
                                             />

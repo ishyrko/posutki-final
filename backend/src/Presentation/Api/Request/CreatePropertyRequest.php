@@ -7,6 +7,7 @@ namespace App\Presentation\Api\Request;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\SellerType;
+use App\Domain\Property\Validation\PropertyDailyPriceValidator;
 use App\Domain\Property\Validation\PropertyImageLimitsValidator;
 use App\Domain\Property\Validation\PropertyVideoUrlValidator;
 use App\Domain\Shared\Exception\DomainException;
@@ -186,6 +187,37 @@ class CreatePropertyRequest
         new Assert\Length(max: 2000),
     ])]
     public ?array $externalCalendarUrls = null;
+
+    #[Assert\Callback]
+    public function validateDailyPrice(ExecutionContextInterface $context): void
+    {
+        if ($this->dealType !== DealType::Daily->value) {
+            return;
+        }
+
+        if (!in_array($this->type, [PropertyType::Apartment->value, PropertyType::House->value], true)) {
+            return;
+        }
+
+        if (!isset($this->price['amount'])) {
+            return;
+        }
+
+        $amount = (int) round((float) $this->price['amount']);
+        $currency = $this->price['currency'] ?? 'BYN';
+
+        if ($currency !== 'BYN') {
+            return;
+        }
+
+        try {
+            PropertyDailyPriceValidator::assertValid($this->dealType, $this->type, $amount);
+        } catch (DomainException $e) {
+            $context->buildViolation($e->getMessage())
+                ->atPath('price.amount')
+                ->addViolation();
+        }
+    }
 
     #[Assert\Callback]
     public function validateImages(ExecutionContextInterface $context): void

@@ -42,6 +42,7 @@ import {
     blockedDateKeySet,
     hasBookedNightInStay,
     isBookedDate,
+    isCheckOutDateDisabled,
     startOfToday,
     bookedDayModifierClassNames,
     isCalendarRecentlyActive,
@@ -50,6 +51,7 @@ import { useCurrency } from '@/context/CurrencyContext';
 import {
     bookingInquirySchema,
     BookingInquiryFormData,
+    getErrorMessage,
     useSubmitBookingInquiry,
 } from '@/features/properties/booking-inquiry';
 
@@ -112,24 +114,47 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
         defaultValues,
     });
 
+    const validateBookingDates = (checkIn?: string, checkOut?: string): boolean => {
+        if (!hasActiveCalendar || bookedDateKeys.size === 0) {
+            form.clearErrors(['checkIn', 'checkOut']);
+            return true;
+        }
+
+        const checkInValue = checkIn?.trim() ?? '';
+        const checkOutValue = checkOut?.trim() ?? '';
+
+        if (checkInValue && isBookedDate(new Date(`${checkInValue}T00:00:00`), bookedDateKeys)) {
+            form.setError('checkIn', { message: 'Дата заезда занята' });
+            return false;
+        }
+
+        form.clearErrors('checkIn');
+
+        if (
+            checkInValue
+            && checkOutValue
+            && hasBookedNightInStay(checkInValue, checkOutValue, bookedDateKeys)
+        ) {
+            form.setError('checkOut', { message: 'Выбранный период включает занятые даты' });
+            return false;
+        }
+
+        if (checkOutValue && isBookedDate(new Date(`${checkOutValue}T00:00:00`), bookedDateKeys)) {
+            form.setError('checkOut', { message: 'Дата выезда занята' });
+            return false;
+        }
+
+        form.clearErrors('checkOut');
+        return true;
+    };
+
     const onSubmit = (data: BookingInquiryFormData) => {
         if (siteKey && !recaptchaToken) {
             toast.error('Подтвердите, что вы не робот');
             return;
         }
 
-        if (
-            hasActiveCalendar
-            && data.checkIn?.trim()
-            && data.checkOut?.trim()
-            && hasBookedNightInStay(data.checkIn, data.checkOut, bookedDateKeys)
-        ) {
-            toast.error('Выбранный период включает занятые даты');
-            return;
-        }
-
-        if (data.checkIn?.trim() && isBookedDate(new Date(`${data.checkIn}T00:00:00`), bookedDateKeys)) {
-            toast.error('Дата заезда занята');
+        if (!validateBookingDates(data.checkIn, data.checkOut)) {
             return;
         }
 
@@ -141,6 +166,17 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                     form.reset(defaultValues);
                     setRecaptchaToken(null);
                     recaptchaRef.current?.reset();
+                },
+                onError: (error: unknown) => {
+                    const message = getErrorMessage(error, '');
+                    if (message === 'Дата заезда занята') {
+                        form.setError('checkIn', { message });
+                    } else if (
+                        message === 'Выбранный период включает занятые даты'
+                        || message === 'Дата выезда занята'
+                    ) {
+                        form.setError('checkOut', { message });
+                    }
                 },
             },
         );
@@ -302,6 +338,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                         onSelect={(date) => {
                                                                             const next = date ? format(date, 'yyyy-MM-dd') : '';
                                                                             field.onChange(next);
+
                                                                             const checkOut = form.getValues('checkOut');
                                                                             if (
                                                                                 next
@@ -310,6 +347,8 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                             ) {
                                                                                 form.setValue('checkOut', '');
                                                                             }
+
+                                                                            validateBookingDates(next, form.getValues('checkOut'));
                                                                         }}
                                                                         disabled={(date) => {
                                                                             if (date < startOfToday()) {
@@ -359,17 +398,16 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                         mode="single"
                                                                         locale={ru}
                                                                         selected={field.value ? new Date(`${field.value}T00:00:00`) : undefined}
-                                                                        onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
-                                                                        disabled={(date) => {
-                                                                            const checkIn = form.getValues('checkIn');
-                                                                            const minDate = checkIn
-                                                                                ? new Date(`${checkIn}T00:00:00`)
-                                                                                : startOfToday();
-                                                                            if (date < minDate) {
-                                                                                return true;
-                                                                            }
-                                                                            return isBookedDate(date, bookedDateKeys);
+                                                                        onSelect={(date) => {
+                                                                            const next = date ? format(date, 'yyyy-MM-dd') : '';
+                                                                            field.onChange(next);
+                                                                            validateBookingDates(form.getValues('checkIn'), next);
                                                                         }}
+                                                                        disabled={(date) => isCheckOutDateDisabled(
+                                                                            form.getValues('checkIn'),
+                                                                            date,
+                                                                            bookedDateKeys,
+                                                                        )}
                                                                         modifiers={
                                                                             bookedDatesForPicker.length > 0
                                                                                 ? { booked: bookedDatesForPicker }

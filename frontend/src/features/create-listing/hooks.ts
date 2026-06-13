@@ -12,7 +12,7 @@ import {
     uploadFile,
 } from './api';
 import { CreatePropertyPayload } from './types';
-import { CITY_SEARCH_MIN_LENGTH } from './validation';
+import { CITY_SEARCH_MIN_LENGTH, requiresApartmentAddress } from './validation';
 
 export const useCities = () => {
     return useQuery({
@@ -22,11 +22,12 @@ export const useCities = () => {
     });
 };
 
-export const useHomePageCities = () => {
+export const useHomePageCities = (enabled = true) => {
     return useQuery({
         queryKey: ['home-page-cities'],
         queryFn: getHomePageCities,
         staleTime: 1000 * 60 * 30,
+        enabled,
     });
 };
 
@@ -39,16 +40,17 @@ export const useSearchCities = (query: string) => {
     });
 };
 
-export const useCityAutocompleteResults = (query: string) => {
-    const { data: homePageCities = [], isLoading: homePageLoading } = useHomePageCities();
+export const useCityAutocompleteResults = (query: string, propertyType = 'apartment') => {
+    const includeHomePageCities = requiresApartmentAddress(propertyType);
+    const { data: homePageCities = [], isLoading: homePageLoading } = useHomePageCities(includeHomePageCities);
     const { data: searchResults = [], isFetching: searchFetching } = useSearchCities(query);
 
     const cityResults = useMemo(
-        () => resolveCityAutocompleteResults(query, homePageCities, searchResults),
-        [query, homePageCities, searchResults],
+        () => resolveCityAutocompleteResults(query, homePageCities, searchResults, includeHomePageCities),
+        [query, homePageCities, searchResults, includeHomePageCities],
     );
 
-    const citySearching = homePageLoading || searchFetching;
+    const citySearching = (includeHomePageCities && homePageLoading) || searchFetching;
     const showCityNotFound =
         query.length >= CITY_SEARCH_MIN_LENGTH && !citySearching && cityResults.length === 0;
 

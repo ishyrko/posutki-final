@@ -11,6 +11,7 @@ use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
 use App\Domain\Property\Validation\DailyRentDetailsValidator;
 use App\Domain\Property\Validation\DealConditionsValidator;
 use App\Domain\Property\Validation\PaymentMethodsValidator;
+use App\Domain\Property\Validation\PropertyDailyPriceValidator;
 use App\Domain\Property\Validation\PropertyDealCombinationValidator;
 use App\Domain\Property\Validation\RoomDealDetailsValidator;
 use App\Domain\Property\ValueObject\Address;
@@ -92,6 +93,14 @@ readonly class ApproveRevisionHandler
         );
         PropertyDealCombinationValidator::assertValid($effectiveDealType, $effectiveType);
         $this->assertAreaConstraints($effectiveType, $effectiveLandArea);
+
+        if ($priceAmount !== null) {
+            $priceByn = $this->exchangeRateService->calculatePriceByn(
+                $priceAmount,
+                $priceCurrency ?? 'BYN',
+            );
+            PropertyDailyPriceValidator::assertValid($effectiveDealType, $effectiveType, $priceByn);
+        }
 
         $property->update(
             type: isset($data['type']) ? (string) $data['type'] : null,

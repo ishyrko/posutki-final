@@ -189,6 +189,7 @@ final class PropertyControllerTest extends ApiTestCase
             'bathrooms' => 1,
             'yearBuilt' => 2017,
             'building' => '10A',
+            'streetName' => 'Lenina',
             'cityId' => 1,
             'coordinates' => [
                 'latitude' => 53.9045,

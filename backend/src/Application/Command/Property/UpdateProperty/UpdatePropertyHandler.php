@@ -12,6 +12,7 @@ use App\Domain\Property\Validation\DailyRentDetailsValidator;
 use App\Domain\Property\Validation\DealConditionsValidator;
 use App\Domain\Property\Validation\PaymentMethodsValidator;
 use App\Domain\Property\Validation\FloorTotalFloorsValidator;
+use App\Domain\Property\Validation\PropertyDailyPriceValidator;
 use App\Domain\Property\Validation\PropertyDealCombinationValidator;
 use App\Domain\Property\Validation\PropertyImageLimitsValidator;
 use App\Domain\Property\Validation\RoomDealDetailsValidator;
@@ -89,6 +90,11 @@ readonly class UpdatePropertyHandler
             PropertyImageLimitsValidator::assertValid($effectiveType, count($command->images));
         }
         $this->assertAreaConstraints($effectiveType, $effectiveLandArea);
+
+        $effectivePriceAmount = $command->priceAmount ?? $property->getPrice()->getAmount();
+        $effectivePriceCurrency = $command->priceCurrency ?? $property->getPrice()->getCurrency();
+        $priceByn = $this->exchangeRateService->calculatePriceByn($effectivePriceAmount, $effectivePriceCurrency);
+        PropertyDailyPriceValidator::assertValid($effectiveDealType, $effectiveType, $priceByn);
 
         $price = null;
         if ($command->priceAmount !== null) {

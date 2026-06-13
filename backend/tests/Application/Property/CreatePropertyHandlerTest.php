@@ -159,6 +159,12 @@ final class CreatePropertyHandlerTest extends TestCase
             checkInTime: '14:00',
             checkOutTime: '12:00',
             sellerType: 'individual',
+            streetName: 'Lenina',
+            images: [
+                'https://example.com/listing-photo-1.jpg',
+                'https://example.com/listing-photo-2.jpg',
+                'https://example.com/listing-photo-3.jpg',
+            ],
         );
     }
 

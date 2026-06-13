@@ -59,6 +59,31 @@ export function isBookedDate(date: Date, bookedKeys: Set<string>): boolean {
     return bookedKeys.has(format(date, 'yyyy-MM-dd'));
 }
 
+/** Дата выезда недоступна: раньше заезда, сама занята или период [checkIn, date) включает занятую ночь. */
+export function isCheckOutDateDisabled(
+    checkIn: string | undefined,
+    date: Date,
+    bookedKeys: Set<string>,
+): boolean {
+    const minDate = checkIn?.trim()
+        ? new Date(`${checkIn.trim()}T00:00:00`)
+        : startOfToday();
+
+    if (date < minDate) {
+        return true;
+    }
+
+    if (isBookedDate(date, bookedKeys)) {
+        return true;
+    }
+
+    if (checkIn?.trim()) {
+        return hasBookedNightInStay(checkIn.trim(), format(date, 'yyyy-MM-dd'), bookedKeys);
+    }
+
+    return false;
+}
+
 /** Занятые ночи в интервале [checkIn, checkOut) */
 export function hasBookedNightInStay(
     checkIn: string,

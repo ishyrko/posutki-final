@@ -9,6 +9,8 @@ export const ROOMS_MAX = 50;
 export const DAILY_BEDS_MAX = 50;
 /** Максимум гостей для посуточной аренды (главная, подача, редактирование, API). */
 export const MAX_DAILY_GUESTS = 20;
+/** Минимальная цена за сутки для квартиры и дома (согласовано с API). */
+export const MIN_DAILY_PRICE_BYN = 10;
 export const BATHROOMS_MIN = 0;
 export const BATHROOMS_MAX = 10;
 export const FLOOR_MIN = -5;
@@ -144,6 +146,16 @@ export const getApartmentStreetFieldError = (
         return undefined;
     }
     return 'Укажите улицу';
+};
+
+export const getDailyPriceFieldError = (value: string): string | undefined => {
+    const price = Number(value);
+    if (!value.trim()) return 'Укажите цену';
+    if (!Number.isFinite(price) || price <= 0) return 'Цена должна быть положительной';
+    if (price < MIN_DAILY_PRICE_BYN) {
+        return `Минимальная цена за сутки — ${MIN_DAILY_PRICE_BYN} BYN`;
+    }
+    return undefined;
 };
 
 export const getApartmentBuildingFieldError = (
