@@ -11,6 +11,8 @@ use App\Domain\User\Entity\UserPhone;
 use App\Domain\User\Repository\PhoneAuthCodeRepositoryInterface;
 use App\Domain\User\Repository\UserPhoneRepositoryInterface;
 use App\Domain\User\Repository\UserRepositoryInterface;
+use App\Domain\User\Service\PhoneNumberNormalizer;
+
 final readonly class VerifySmsCodeHandler
 {
     public function __construct(
@@ -22,7 +24,11 @@ final readonly class VerifySmsCodeHandler
 
     public function __invoke(VerifySmsCodeCommand $command): User
     {
-        $normalizedPhone = $this->normalizePhone($command->phone);
+        try {
+            $normalizedPhone = PhoneNumberNormalizer::normalize($command->phone);
+        } catch (\InvalidArgumentException) {
+            throw new DomainException('Неверный номер телефона');
+        }
         $phoneAuthCode = $this->phoneAuthCodeRepository->findByPhone($normalizedPhone);
 
         if ($phoneAuthCode === null || !$phoneAuthCode->verify($command->code)) {
@@ -58,13 +64,4 @@ final readonly class VerifySmsCodeHandler
         $this->userPhoneRepository->save($userPhone);
     }
 
-    private function normalizePhone(string $phone): string
-    {
-        $digits = preg_replace('/\D+/', '', $phone) ?? '';
-        if ($digits === '') {
-            throw new DomainException('Неверный номер телефона');
-        }
-
-        return '+' . $digits;
-    }
 }
