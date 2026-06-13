@@ -733,9 +733,11 @@ export default function EditPropertyPage() {
                 bathrooms: showBathrooms(form.type)
                     ? resolvedBathroomsForPayload(form.bathrooms, form.amenities)
                     : undefined,
-                floor: showFloor(form.type) ? (Number.isFinite(floor) ? floor : undefined) : undefined,
-                totalFloors: showTotalFloors(form.type)
-                    ? (Number.isFinite(totalFloors) ? totalFloors : undefined)
+                floor: showFloor(form.type) && form.floor !== ''
+                    ? floor
+                    : undefined,
+                totalFloors: showTotalFloors(form.type) && form.totalFloors !== ''
+                    ? totalFloors
                     : undefined,
                 yearBuilt: showYearBuilt(form.type) && form.yearBuilt
                     ? yearBuilt
