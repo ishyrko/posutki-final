@@ -335,7 +335,7 @@ readonly class UpdatePropertyHandler
             ) ?: '[]';
         }
 
-        if ($value === null) {
+        if ($value === null || $value === '') {
             return 'null';
         }
 

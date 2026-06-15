@@ -91,7 +91,6 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             'videoUrl' => 'https://www.tiktok.com/@user/video/7123456789012345678',
         ]);
         $revisionIdReflection = new \ReflectionProperty($revision, 'id');
-        $revisionIdReflection->setAccessible(true);
         $revisionIdReflection->setValue($revision, Id::fromInt(9001));
 
         $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
@@ -123,6 +122,63 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
         self::assertNull($property->getInstagramUrl());
         self::assertSame('https://example.com/new', $property->getWebsiteUrl());
         self::assertSame('https://www.tiktok.com/@user/video/7123456789012345678', $property->getVideoUrl());
+    }
+
+    public function testPublishedPropertyPriceOnlyUpdateWithEmptyVideoUrlDoesNotRequireModeration(): void
+    {
+        $property = $this->createProperty(ownerId: 1, propertyId: 303);
+        $property->setStatus('published');
+        $property->setImages([
+            '/uploads/properties/a.jpg',
+            '/uploads/properties/b.jpg',
+            '/uploads/properties/c.jpg',
+        ]);
+        self::assertNull($property->getVideoUrl());
+
+        $revisionRepository = $this->createMock(PropertyRevisionRepositoryInterface::class);
+        $revisionRepository->expects(self::never())->method('save');
+
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository->method('findById')->willReturn($property);
+        $propertyRepository->expects(self::once())->method('save')->with($property);
+
+        $handler = new UpdatePropertyHandler(
+            $propertyRepository,
+            $revisionRepository,
+            $this->createExchangeRateService(['USD' => 3.2]),
+            $this->createMetroCalculator(),
+        );
+
+        $requiresModeration = $handler(new UpdatePropertyCommand(
+            propertyId: '303',
+            userId: '1',
+            title: $property->getTitle(),
+            description: $property->getDescription(),
+            type: $property->getType(),
+            dealType: $property->getDealType(),
+            priceAmount: 10_000_000,
+            priceCurrency: 'BYN',
+            area: $property->getArea(),
+            rooms: $property->getRooms(),
+            floor: $property->getFloor(),
+            totalFloors: $property->getTotalFloors(),
+            bathrooms: $property->getBathrooms(),
+            yearBuilt: $property->getYearBuilt(),
+            building: $property->getAddress()->getBuilding(),
+            cityId: $property->getCityId(),
+            latitude: $property->getCoordinates()->getLatitude(),
+            longitude: $property->getCoordinates()->getLongitude(),
+            images: $property->getImages(),
+            amenities: $property->getAmenities(),
+            maxDailyGuests: $property->getMaxDailyGuests(),
+            dailySingleBeds: $property->getDailySingleBeds(),
+            dailyDoubleBeds: $property->getDailyDoubleBeds(),
+            videoUrl: '',
+        ));
+
+        self::assertFalse($requiresModeration);
+        self::assertSame(10_000_000, $property->getPrice()->getAmount());
+        self::assertNull($property->getVideoUrl());
     }
 
     public function testPriceOnlyUpdateDoesNotApplyWhenVideoUrlChanges(): void
@@ -215,7 +271,6 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
         );
 
         $reflection = new \ReflectionProperty($property, 'id');
-        $reflection->setAccessible(true);
         $reflection->setValue($property, Id::fromInt($propertyId));
 
         return $property;

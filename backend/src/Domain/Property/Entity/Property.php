@@ -777,7 +777,7 @@ class Property
             ) ?: '[]';
         }
 
-        if ($value === null) {
+        if ($value === null || $value === '') {
             return 'null';
         }
 
