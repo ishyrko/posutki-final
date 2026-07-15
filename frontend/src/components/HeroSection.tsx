@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, MapPin, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
@@ -28,6 +28,9 @@ const HERO_REGION_CITIES: { value: string; label: string; region?: string }[] = 
   { value: "mogilev", label: "Могилёв", region: "mogilev" },
 ];
 
+const selectTriggerClassName =
+  "h-auto min-h-0 border-0 bg-transparent p-0 shadow-none ring-0 ring-offset-0 focus:ring-0 w-full justify-between gap-1 text-sm font-medium text-foreground [&>svg]:shrink-0";
+
 function buildHeroCatalogHref(cityValue: string, propertyType: CatalogPropertyType, guests: number): string {
   const row = HERO_REGION_CITIES.find((c) => c.value === cityValue);
   const path = buildCatalogUrl({
@@ -39,11 +42,25 @@ function buildHeroCatalogHref(cityValue: string, propertyType: CatalogPropertyTy
   return `${path}?${params.toString()}`;
 }
 
+function propertyTypeLabel(value: CatalogPropertyType): string {
+  return value === "house" ? "Дом" : "Квартира";
+}
+
+function cityLabel(value: string): string {
+  return HERO_REGION_CITIES.find((c) => c.value === value)?.label ?? value;
+}
+
 const HeroSection = () => {
   const router = useRouter();
   const [propertyType, setPropertyType] = useState<CatalogPropertyType>("apartment");
   const [cityValue, setCityValue] = useState("minsk");
   const [guestCount, setGuestCount] = useState(2);
+  // Radix Select generates unstable aria-controls ids across SSR/CSR — mount after hydration.
+  const [selectsReady, setSelectsReady] = useState(false);
+
+  useEffect(() => {
+    setSelectsReady(true);
+  }, []);
 
   const handleFind = () => {
     router.push(buildHeroCatalogHref(cityValue, propertyType, guestCount));
@@ -87,21 +104,31 @@ const HeroSection = () => {
                   <label htmlFor="hero-property-type" className="text-xs font-medium text-muted-foreground block">
                     Тип жилья
                   </label>
-                  <Select
-                    value={propertyType}
-                    onValueChange={(v) => setPropertyType(v as CatalogPropertyType)}
-                  >
-                    <SelectTrigger
-                      id="hero-property-type"
-                      className="h-auto min-h-0 border-0 bg-transparent p-0 shadow-none ring-0 ring-offset-0 focus:ring-0 w-full justify-between gap-1 text-sm font-medium text-foreground [&>svg]:shrink-0"
+                  {selectsReady ? (
+                    <Select
+                      value={propertyType}
+                      onValueChange={(v) => setPropertyType(v as CatalogPropertyType)}
                     >
-                      <SelectValue placeholder="Квартира" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="apartment">Квартира</SelectItem>
-                      <SelectItem value="house">Дом</SelectItem>
-                    </SelectContent>
-                  </Select>
+                      <SelectTrigger
+                        id="hero-property-type"
+                        className={selectTriggerClassName}
+                      >
+                        <SelectValue placeholder="Квартира" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="apartment">Квартира</SelectItem>
+                        <SelectItem value="house">Дом</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div
+                      id="hero-property-type"
+                      className="flex h-auto min-h-0 w-full items-center justify-between gap-1 text-sm font-medium text-foreground"
+                      aria-hidden
+                    >
+                      {propertyTypeLabel(propertyType)}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -111,21 +138,31 @@ const HeroSection = () => {
                   <label htmlFor="hero-city" className="text-xs font-medium text-muted-foreground block">
                     Город
                   </label>
-                  <Select value={cityValue} onValueChange={setCityValue}>
-                    <SelectTrigger
+                  {selectsReady ? (
+                    <Select value={cityValue} onValueChange={setCityValue}>
+                      <SelectTrigger
+                        id="hero-city"
+                        className={selectTriggerClassName}
+                      >
+                        <SelectValue placeholder="Город" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {HERO_REGION_CITIES.map((c) => (
+                          <SelectItem key={c.value} value={c.value}>
+                            {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div
                       id="hero-city"
-                      className="h-auto min-h-0 border-0 bg-transparent p-0 shadow-none ring-0 ring-offset-0 focus:ring-0 w-full justify-between gap-1 text-sm font-medium text-foreground [&>svg]:shrink-0"
+                      className="flex h-auto min-h-0 w-full items-center justify-between gap-1 text-sm font-medium text-foreground"
+                      aria-hidden
                     >
-                      <SelectValue placeholder="Город" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {HERO_REGION_CITIES.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>
-                          {c.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      {cityLabel(cityValue)}
+                    </div>
+                  )}
                 </div>
               </div>
 

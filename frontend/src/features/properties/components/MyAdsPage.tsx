@@ -6,7 +6,7 @@ import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from '@/feature
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ListingSubmitLink } from '@/components/ListingSubmitLink';
-import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, CalendarDays, Rocket } from 'lucide-react';
+import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, CalendarDays, Rocket, Star, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,6 +24,8 @@ import { useArchiveProperty, useBoostProperty, useDeleteProperty, useExchangeRat
 import { Property, formatAddress, isPropertyEditable } from '@/features/properties/types';
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
+import { BuyPlacementDialog } from '@/features/placement/components/BuyPlacementDialog';
+import { formatPlacementStatus } from '@/features/placement/types';
 
 export type MyAdsStatus = 'published' | 'moderation' | 'rejected' | 'inactive';
 
@@ -117,6 +119,7 @@ function ListingCard({
     const boost = useBoostProperty();
     const archive = useArchiveProperty();
     const unarchive = useUnarchiveProperty();
+    const [placementDialog, setPlacementDialog] = useState<'special' | 'standard' | null>(null);
     const { data: rates } = useExchangeRates();
     const exchangeRates: ExchangeRates = useMemo(
         () => rates ?? DEFAULT_EXCHANGE_RATES_FALLBACK,
@@ -228,6 +231,11 @@ function ListingCard({
                             Причина отклонения изменений: {property.pendingRevisionComment}
                         </p>
                     )}
+                    {property.status === 'published' && (
+                        <p className="mt-2 text-xs text-muted-foreground bg-muted/50 border border-border rounded-md px-2 py-1.5">
+                            Размещение: {formatPlacementStatus(property)}
+                        </p>
+                    )}
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-3 pt-3 border-t border-border">
                     {isPropertyEditable(property.status) ? (
@@ -288,6 +296,30 @@ function ListingCard({
                                 Поднять в топ
                             </Button>
                         ))}
+                    {property.status === 'published' && (
+                        <>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start"
+                                onClick={() => setPlacementDialog('special')}
+                            >
+                                <Star className="w-3.5 h-3.5 mr-1" />
+                                Купить топ-позицию
+                            </Button>
+                            {(property.placementType === 'free' || property.placementIsTrial) && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="justify-start"
+                                    onClick={() => setPlacementDialog('standard')}
+                                >
+                                    <Tag className="w-3.5 h-3.5 mr-1" />
+                                    Оплатить стандартное
+                                </Button>
+                            )}
+                        </>
+                    )}
                     {property.status === 'moderation' ? (
                         <Button variant="ghost" size="sm" disabled className="justify-start text-muted-foreground">
                             <Clock className="w-3.5 h-3.5 mr-1" />На модерации
@@ -353,6 +385,14 @@ function ListingCard({
                     )}
                 </div>
             </div>
+            <BuyPlacementDialog
+                property={property}
+                open={placementDialog !== null}
+                mode={placementDialog ?? 'special'}
+                onOpenChange={(open) => {
+                    if (!open) setPlacementDialog(null);
+                }}
+            />
         </div>
     );
 }

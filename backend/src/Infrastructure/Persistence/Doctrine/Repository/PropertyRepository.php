@@ -67,13 +67,17 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         $this->applyFilters($qb, $filters);
 
         $todayStart = new \DateTimeImmutable('today');
-        $qb->addSelect('(CASE WHEN p.boostedAt >= :boostTodayStart THEN 1 ELSE 0 END) AS HIDDEN boostScore')
+        $qb->addSelect('(CASE WHEN p.placementType = :placementSpecial THEN 2 WHEN p.placementType = :placementStandard THEN 1 ELSE 0 END) AS HIDDEN placementScore')
+            ->addSelect('(CASE WHEN p.boostedAt >= :boostTodayStart THEN 1 ELSE 0 END) AS HIDDEN boostScore')
+            ->setParameter('placementSpecial', 'special')
+            ->setParameter('placementStandard', 'standard')
             ->setParameter('boostTodayStart', $todayStart);
 
-        $qb->orderBy('boostScore', 'DESC')
-            ->addOrderBy('p.boostedAt', 'DESC');
+        $qb->orderBy('placementScore', 'DESC')
+            ->addOrderBy('p.placementSlotRank', 'ASC')
+            ->addOrderBy('p.placementShuffleKey', 'ASC');
 
-        // Sorting (tertiary after boost score / boostedAt)
+        // Sorting (after placement / shuffle); free tier also uses boost as tie-breaker via boostScore before tertiary sort
         $sortBy = $filters['sortBy'] ?? 'createdAt';
         $sortOrder = $filters['sortOrder'] ?? 'DESC';
         if (!in_array($sortOrder, ['ASC', 'DESC'], true)) {
@@ -89,7 +93,9 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
             default => 'createdAt',
         };
 
-        $qb->addOrderBy('p.' . $sortField, $sortOrder);
+        $qb->addOrderBy('boostScore', 'DESC')
+            ->addOrderBy('p.boostedAt', 'DESC')
+            ->addOrderBy('p.' . $sortField, $sortOrder);
 
         $qb->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
@@ -384,14 +390,53 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         }
 
         $todayStart = new \DateTimeImmutable('today');
-        $qb->addSelect('(CASE WHEN p.boostedAt >= :boostTodayStart THEN 1 ELSE 0 END) AS HIDDEN boostScore')
+        $qb->addSelect('(CASE WHEN p.placementType = :placementSpecial THEN 2 WHEN p.placementType = :placementStandard THEN 1 ELSE 0 END) AS HIDDEN placementScore')
+            ->addSelect('(CASE WHEN p.boostedAt >= :boostTodayStart THEN 1 ELSE 0 END) AS HIDDEN boostScore')
+            ->setParameter('placementSpecial', 'special')
+            ->setParameter('placementStandard', 'standard')
             ->setParameter('boostTodayStart', $todayStart)
-            ->orderBy('boostScore', 'DESC')
+            ->orderBy('placementScore', 'DESC')
+            ->addOrderBy('p.placementSlotRank', 'ASC')
+            ->addOrderBy('p.placementShuffleKey', 'ASC')
+            ->addOrderBy('boostScore', 'DESC')
             ->addOrderBy('p.boostedAt', 'DESC')
             ->addOrderBy('p.createdAt', 'DESC')
             ->setMaxResults($limit);
 
         return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @return Property[]
+     */
+    public function findPublishedForReshuffle(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.status = :status')
+            ->andWhere('p.placementType IN (:types)')
+            ->setParameter('status', 'published')
+            ->setParameter('types', ['special', 'standard'])
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return Property[]
+     */
+    public function findWithExpiredPlacement(?\DateTimeImmutable $now = null): array
+    {
+        $now ??= new \DateTimeImmutable();
+
+        return $this->createQueryBuilder('p')
+            ->where('p.status = :status')
+            ->andWhere(
+                '(p.placementExpiresAt IS NOT NULL AND p.placementExpiresAt <= :now)
+                 OR (p.placementIsTrial = true AND p.freeTrialEndsAt IS NOT NULL AND p.freeTrialEndsAt <= :now)'
+            )
+            ->setParameter('status', 'published')
+            ->setParameter('now', $now)
+            ->getQuery()
+            ->getResult();
     }
 
     public function countByOwner(string $ownerId): int

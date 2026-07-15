@@ -44,4 +44,14 @@ interface PropertyRepositoryInterface
         ?int $excludePropertyId = null,
         ?string $type = null,
     ): array;
+
+    /**
+     * @return Property[]
+     */
+    public function findPublishedForReshuffle(): array;
+
+    /**
+     * @return Property[]
+     */
+    public function findWithExpiredPlacement(?\DateTimeImmutable $now = null): array;
 }

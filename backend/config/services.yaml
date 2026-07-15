@@ -80,6 +80,15 @@ services:
     App\Domain\Property\Repository\PropertyAvailabilityBlockRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyAvailabilityBlockRepository
 
+    App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyPlacementSlotRepository
+
+    App\Domain\Property\Repository\PropertyPlacementStandardPriceRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyPlacementStandardPriceRepository
+
+    App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyPlacementPurchaseRepository
+
     App\Domain\User\Repository\UserPhoneRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\UserPhoneRepository
 
@@ -151,6 +160,10 @@ services:
             - { name: messenger.message_handler, bus: command.bus }
 
     App\Application\Command\Property\BoostProperty\BoostPropertyHandler:
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    App\Application\Command\Property\CreatePlacementPurchase\CreatePlacementPurchaseHandler:
         tags:
             - { name: messenger.message_handler, bus: command.bus }
 

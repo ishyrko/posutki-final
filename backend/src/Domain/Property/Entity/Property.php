@@ -7,6 +7,7 @@ namespace App\Domain\Property\Entity;
 use App\Domain\Shared\Exception\ConflictException;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\Property\Enum\PlacementType;
 use App\Domain\Property\ValueObject\{Price, Address, Coordinates};
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -151,6 +152,24 @@ class Property
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'boosted_at')]
     private ?\DateTimeImmutable $boostedAt = null;
+
+    #[ORM\Column(type: 'string', length: 20, name: 'placement_type', options: ['default' => 'free'])]
+    private string $placementType = PlacementType::Free->value;
+
+    #[ORM\Column(type: 'integer', nullable: true, name: 'placement_slot_rank')]
+    private ?int $placementSlotRank = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'placement_expires_at')]
+    private ?\DateTimeImmutable $placementExpiresAt = null;
+
+    #[ORM\Column(type: 'boolean', name: 'placement_is_trial', options: ['default' => false])]
+    private bool $placementIsTrial = false;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'free_trial_ends_at')]
+    private ?\DateTimeImmutable $freeTrialEndsAt = null;
+
+    #[ORM\Column(type: 'float', name: 'placement_shuffle_key', options: ['default' => 0])]
+    private float $placementShuffleKey = 0.0;
 
     #[ORM\Column(type: 'integer', name: 'price_byn', nullable: true)]
     private ?int $priceByn = null;
@@ -339,6 +358,7 @@ class Property
         }
         if ($status === 'published' && $this->publishedAt === null) {
             $this->publishedAt = new \DateTimeImmutable();
+            $this->ensureFreeTrialStarted($this->publishedAt);
         }
         if ($status === 'published' || $status === 'moderation') {
             $this->archivedAt = null;
@@ -834,6 +854,105 @@ class Property
     public function getBoostedAt(): ?\DateTimeImmutable
     {
         return $this->boostedAt;
+    }
+
+    public function getPlacementType(): string
+    {
+        return $this->placementType;
+    }
+
+    public function getPlacementSlotRank(): ?int
+    {
+        return $this->placementSlotRank;
+    }
+
+    public function getPlacementExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->placementExpiresAt;
+    }
+
+    public function isPlacementIsTrial(): bool
+    {
+        return $this->placementIsTrial;
+    }
+
+    public function getFreeTrialEndsAt(): ?\DateTimeImmutable
+    {
+        return $this->freeTrialEndsAt;
+    }
+
+    public function getPlacementShuffleKey(): float
+    {
+        return $this->placementShuffleKey;
+    }
+
+    public function reshufflePlacement(?float $key = null): void
+    {
+        $this->placementShuffleKey = $key ?? (mt_rand() / mt_getrandmax());
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    /**
+     * Recalculate effective placement from active purchases / free trial.
+     *
+     * @param array{slotRank: int, expiresAt: \DateTimeImmutable}|null $activeSpecial
+     * @param array{expiresAt: \DateTimeImmutable}|null $activeStandard
+     */
+    public function recomputePlacement(
+        ?array $activeSpecial,
+        ?array $activeStandard,
+        ?\DateTimeImmutable $now = null,
+    ): void {
+        $now ??= new \DateTimeImmutable();
+
+        if ($activeSpecial !== null) {
+            $this->placementType = PlacementType::Special->value;
+            $this->placementSlotRank = $activeSpecial['slotRank'];
+            $this->placementExpiresAt = $activeSpecial['expiresAt'];
+            $this->placementIsTrial = false;
+            $this->updatedAt = $now;
+
+            return;
+        }
+
+        if ($activeStandard !== null) {
+            $this->placementType = PlacementType::Standard->value;
+            $this->placementSlotRank = null;
+            $this->placementExpiresAt = $activeStandard['expiresAt'];
+            $this->placementIsTrial = false;
+            $this->updatedAt = $now;
+
+            return;
+        }
+
+        if ($this->freeTrialEndsAt !== null && $this->freeTrialEndsAt > $now) {
+            $this->placementType = PlacementType::Standard->value;
+            $this->placementSlotRank = null;
+            $this->placementExpiresAt = $this->freeTrialEndsAt;
+            $this->placementIsTrial = true;
+            $this->updatedAt = $now;
+
+            return;
+        }
+
+        $this->placementType = PlacementType::Free->value;
+        $this->placementSlotRank = null;
+        $this->placementExpiresAt = null;
+        $this->placementIsTrial = false;
+        $this->updatedAt = $now;
+    }
+
+    private function ensureFreeTrialStarted(\DateTimeImmutable $from): void
+    {
+        if ($this->freeTrialEndsAt !== null) {
+            return;
+        }
+
+        $this->freeTrialEndsAt = $from->modify('+1 month');
+        $this->recomputePlacement(null, null, $from);
+        if ($this->placementShuffleKey <= 0.0) {
+            $this->reshufflePlacement();
+        }
     }
 
     public function getType(): string
@@ -1377,11 +1496,13 @@ class Property
             throw new DomainException('Одобрить можно только объявления на модерации');
         }
 
+        $now = new \DateTimeImmutable();
         $this->status = 'published';
         $this->moderationComment = null;
-        $this->publishedAt = new \DateTimeImmutable();
+        $this->publishedAt = $now;
         $this->archivedAt = null;
-        $this->updatedAt = new \DateTimeImmutable();
+        $this->ensureFreeTrialStarted($now);
+        $this->updatedAt = $now;
     }
 
     public function reject(?string $comment = null): void

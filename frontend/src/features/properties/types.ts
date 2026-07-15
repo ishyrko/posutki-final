@@ -149,6 +149,11 @@ export interface Property {
     publishedAt?: string | null;
     archivedAt?: string | null;
     boostedAt?: string | null;
+    placementType?: 'special' | 'standard' | 'free' | string | null;
+    placementSlotRank?: number | null;
+    placementExpiresAt?: string | null;
+    placementIsTrial?: boolean;
+    freeTrialEndsAt?: string | null;
 }
 
 export interface PropertyStatsPoint {

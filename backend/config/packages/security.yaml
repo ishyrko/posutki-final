@@ -83,6 +83,8 @@ security:
         - { path: ^/api/properties/\d+/availability, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/api/properties/\d+/calendar/export-token, roles: IS_AUTHENTICATED_FULLY, methods: [POST] }
         - { path: ^/api/properties, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/placement-slots, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/placement/standard-price, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/exchange-rates, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/article-categories, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/articles, roles: PUBLIC_ACCESS, methods: [GET] }
