@@ -78,7 +78,7 @@ export function formatPlacementStatus(property: {
         return expires ? `Стандартное, оплачено до ${expires}` : 'Стандартное размещение';
     }
 
-    return 'Бесплатное';
+    return 'Бесплатное (с ограничениями)';
 }
 
 export function placementBadgeLabel(

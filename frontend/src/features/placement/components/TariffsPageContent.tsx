@@ -38,10 +38,18 @@ export function TariffsPageContent() {
 
             <div className="space-y-4 mb-10">
                 <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+                    <h2 className="font-semibold text-foreground mb-2">Спецразмещение</h2>
+                    <p className="text-sm text-muted-foreground">
+                        Фиксированные диапазоны позиций в верхней части каталога. Количество мест
+                        ограничено — при заполнении диапазона покупка недоступна.
+                    </p>
+                </div>
+
+                <div className="rounded-xl border border-border bg-card p-5 shadow-card">
                     <h2 className="font-semibold text-foreground mb-2">Стандартное размещение</h2>
                     <p className="text-sm text-muted-foreground mb-3">
-                        Объявления в общей выдаче с периодической ротацией. Первый месяц после
-                        публикации — бесплатно (пробный период).
+                        Объявления показываются ниже спецразмещения, в общей выдаче с периодической
+                        ротацией. Первый месяц после публикации — бесплатно (пробный период).
                     </p>
                     {standardPrice ? (
                         <p className="text-lg font-semibold text-foreground inline-flex items-baseline gap-1">
@@ -56,10 +64,11 @@ export function TariffsPageContent() {
                 </div>
 
                 <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-                    <h2 className="font-semibold text-foreground mb-2">Спецразмещение</h2>
+                    <h2 className="font-semibold text-foreground mb-2">Бесплатное размещение</h2>
                     <p className="text-sm text-muted-foreground">
-                        Фиксированные диапазоны позиций в верхней части каталога. Количество мест
-                        ограничено — при заполнении диапазона покупка недоступна.
+                        Если пробный период или оплаченное стандартное размещение закончились,
+                        объявление остаётся в каталоге на бесплатном тарифе с ограничениями и более
+                        низкой позицией — ниже спецразмещения и стандартного.
                     </p>
                 </div>
 
@@ -71,7 +80,7 @@ export function TariffsPageContent() {
                     <p className="text-sm text-muted-foreground">
                         После первой публикации объявление автоматически получает стандартное
                         размещение на 1 месяц. По окончании триала без оплаты оно переходит на
-                        бесплатный тариф с более низкой позицией в каталоге.
+                        бесплатный тариф с ограничениями.
                     </p>
                 </div>
             </div>
