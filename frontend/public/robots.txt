@@ -11,6 +11,7 @@ Disallow: /verify-email-pending
 Disallow: /verify-email-pending/
 Disallow: /confirm-email-change
 Disallow: /confirm-email-change/
+Disallow: /login/
 
 Disallow: /api/
 Disallow: /revalidate
@@ -35,7 +36,7 @@ Allow: /*.webp$
 Allow: /*.woff2$
 
 Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content
-Clean-param: fbclid&gclid&yclid&_openstat&ref&from
+Clean-param: fbclid&gclid&yclid&_openstat&ref&from&next
 
 Host: https://posutki.by
 Sitemap: https://posutki.by/sitemap.xml
