@@ -92,9 +92,11 @@ abstract class AbstractPlacementSlotCrudController extends AbstractCrudControlle
                 });
         }
 
-        yield IntegerField::new('rankFrom', 'Позиция с');
+        yield IntegerField::new('rankFrom', 'Позиция с')
+            ->setHelp('Вместимость считается автоматически: «по» − «с» + 1');
         yield IntegerField::new('rankTo', 'Позиция по');
         yield IntegerField::new('capacity', 'Вместимость')
+            ->hideOnForm()
             ->formatValue(function ($value, PropertyPlacementSlot $slot) {
                 $occupied = $this->placementService->getSlotOccupancy($slot);
 
@@ -133,7 +135,6 @@ abstract class AbstractPlacementSlotCrudController extends AbstractCrudControlle
             regionId: null,
             rankFrom: 1,
             rankTo: 1,
-            capacity: 1,
             priceBynPerMonth: 0,
         );
     }

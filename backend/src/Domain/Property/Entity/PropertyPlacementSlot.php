@@ -55,7 +55,6 @@ class PropertyPlacementSlot
         ?int $regionId,
         int $rankFrom,
         int $rankTo,
-        int $capacity,
         int $priceBynPerMonth,
         bool $isTopSlot = false,
         int $sortOrder = 0,
@@ -70,11 +69,11 @@ class PropertyPlacementSlot
         $this->regionId = $regionId !== null && $regionId > 0 ? $regionId : null;
         $this->rankFrom = $rankFrom;
         $this->rankTo = $rankTo;
-        $this->capacity = $capacity;
         $this->priceBynPerMonth = $priceBynPerMonth;
         $this->isTopSlot = $isTopSlot;
         $this->sortOrder = $sortOrder;
         $this->isActive = $isActive;
+        $this->syncCapacityFromRanks();
     }
 
     public function getId(): ?int
@@ -124,6 +123,7 @@ class PropertyPlacementSlot
     public function setRankFrom(int $rankFrom): void
     {
         $this->rankFrom = $rankFrom;
+        $this->syncCapacityFromRanks();
     }
 
     public function getRankTo(): int
@@ -134,16 +134,12 @@ class PropertyPlacementSlot
     public function setRankTo(int $rankTo): void
     {
         $this->rankTo = $rankTo;
+        $this->syncCapacityFromRanks();
     }
 
     public function getCapacity(): int
     {
         return $this->capacity;
-    }
-
-    public function setCapacity(int $capacity): void
-    {
-        $this->capacity = $capacity;
     }
 
     public function getPriceBynPerMonth(): int
@@ -198,6 +194,15 @@ class PropertyPlacementSlot
 
     public function validate(): void
     {
+        if ($this->rankFrom < 1 || $this->rankTo < 1) {
+            throw new DomainException('Позиции должны быть не меньше 1');
+        }
+        if ($this->rankFrom > $this->rankTo) {
+            throw new DomainException('Позиция «с» не может быть больше «по»');
+        }
+
+        $this->syncCapacityFromRanks();
+
         if ($this->propertyType === PropertyType::Apartment->value) {
             if ($this->cityId === null) {
                 throw new DomainException('Для квартир нужно выбрать город');
@@ -226,5 +231,16 @@ class PropertyPlacementSlot
         }
 
         return $this->rankFrom . '-' . $this->rankTo;
+    }
+
+    private function syncCapacityFromRanks(): void
+    {
+        if ($this->rankFrom < 1 || $this->rankTo < 1 || $this->rankFrom > $this->rankTo) {
+            $this->capacity = 0;
+
+            return;
+        }
+
+        $this->capacity = $this->rankTo - $this->rankFrom + 1;
     }
 }
