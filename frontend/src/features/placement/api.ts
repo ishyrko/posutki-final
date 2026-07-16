@@ -65,3 +65,14 @@ export const createPlacementPayment = async (
     );
     return response.data.data;
 };
+
+export const confirmPlacementPayment = async (
+    purchaseId: number,
+    token: string,
+): Promise<PlacementPurchase> => {
+    const response = await api.post<{ data: PlacementPurchase }>(
+        `/placement-purchases/${purchaseId}/payments/confirm`,
+        { token },
+    );
+    return response.data.data;
+};

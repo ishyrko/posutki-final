@@ -40,9 +40,6 @@ class PropertyPlacementSlot
     #[ORM\Column(type: 'integer', name: 'price_byn_per_month')]
     private int $priceBynPerMonth;
 
-    #[ORM\Column(type: 'boolean', name: 'is_top_slot', options: ['default' => false])]
-    private bool $isTopSlot = false;
-
     #[ORM\Column(type: 'integer', name: 'sort_order', options: ['default' => 0])]
     private int $sortOrder = 0;
 
@@ -56,7 +53,6 @@ class PropertyPlacementSlot
         int $rankFrom,
         int $rankTo,
         int $priceBynPerMonth,
-        bool $isTopSlot = false,
         int $sortOrder = 0,
         bool $isActive = true,
     ) {
@@ -70,7 +66,6 @@ class PropertyPlacementSlot
         $this->rankFrom = $rankFrom;
         $this->rankTo = $rankTo;
         $this->priceBynPerMonth = $priceBynPerMonth;
-        $this->isTopSlot = $isTopSlot;
         $this->sortOrder = $sortOrder;
         $this->isActive = $isActive;
         $this->syncCapacityFromRanks();
@@ -150,16 +145,6 @@ class PropertyPlacementSlot
     public function setPriceBynPerMonth(int $priceBynPerMonth): void
     {
         $this->priceBynPerMonth = $priceBynPerMonth;
-    }
-
-    public function isTopSlot(): bool
-    {
-        return $this->isTopSlot;
-    }
-
-    public function setIsTopSlot(bool $isTopSlot): void
-    {
-        $this->isTopSlot = $isTopSlot;
     }
 
     public function getSortOrder(): int

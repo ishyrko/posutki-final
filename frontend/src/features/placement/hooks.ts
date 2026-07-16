@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     createPlacementPurchase,
     createPlacementPayment,
+    confirmPlacementPayment,
     getPlacementPurchase,
     getPlacementSlots,
     getPropertyPlacementPurchases,
@@ -27,13 +28,20 @@ export function useStandardPlacementPrice(scope: PlacementTariffScope | null | u
     });
 }
 
-export function usePlacementPurchase(id: number | null | undefined) {
+export function usePlacementPurchase(
+    id: number | null | undefined,
+    options?: { pollWhilePending?: boolean },
+) {
     return useQuery({
         queryKey: ['placement-purchase', id],
         queryFn: () => getPlacementPurchase(id!),
         enabled: !!id && id > 0,
-        refetchInterval: (query) =>
-            query.state.data?.status === 'pending_payment' ? 15000 : false,
+        refetchInterval: (query) => {
+            if (query.state.data?.status !== 'pending_payment') {
+                return false;
+            }
+            return options?.pollWhilePending ? 3000 : 15000;
+        },
     });
 }
 
@@ -62,5 +70,18 @@ export function useCreatePlacementPurchase() {
 export function useCreatePlacementPayment() {
     return useMutation({
         mutationFn: createPlacementPayment,
+    });
+}
+
+export function useConfirmPlacementPayment() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ purchaseId, token }: { purchaseId: number; token: string }) =>
+            confirmPlacementPayment(purchaseId, token),
+        onSuccess: (data) => {
+            queryClient.setQueryData(['placement-purchase', data.id], data);
+            queryClient.invalidateQueries({ queryKey: ['property-placement-purchases', data.propertyId] });
+            queryClient.invalidateQueries({ queryKey: ['my-properties'] });
+        },
     });
 }

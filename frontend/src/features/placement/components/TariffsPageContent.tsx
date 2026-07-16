@@ -195,11 +195,6 @@ export function TariffsPageContent() {
                                 <tr key={slot.id} className="border-b border-border last:border-0">
                                     <td className="py-3 px-4 text-foreground font-medium">
                                         {slot.label}
-                                        {slot.isTopSlot ? (
-                                            <span className="ml-2 text-[10px] uppercase tracking-wide text-amber-600 font-bold">
-                                                топ
-                                            </span>
-                                        ) : null}
                                     </td>
                                     <td className="py-3 px-4 text-right font-semibold text-foreground">
                                         <span className="inline-flex items-baseline gap-1 justify-end">

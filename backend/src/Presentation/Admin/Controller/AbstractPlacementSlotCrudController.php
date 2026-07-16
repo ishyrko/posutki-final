@@ -103,7 +103,6 @@ abstract class AbstractPlacementSlotCrudController extends AbstractCrudControlle
                 return sprintf('%d (занято %d)', $slot->getCapacity(), $occupied);
             });
         yield IntegerField::new('priceBynPerMonth', 'Цена BYN/мес');
-        yield BooleanField::new('isTopSlot', 'Топ-слот');
         yield IntegerField::new('sortOrder', 'Порядок');
         yield BooleanField::new('isActive', 'Активен');
     }

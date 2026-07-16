@@ -180,7 +180,6 @@ export function BuyPlacementDialog({
                                                 <div>
                                                     <p className="font-medium text-foreground">
                                                         Позиция {slot.label}
-                                                        {slot.isTopSlot ? ' · Топ' : ''}
                                                     </p>
                                                     <p className="text-xs text-muted-foreground">
                                                         {full

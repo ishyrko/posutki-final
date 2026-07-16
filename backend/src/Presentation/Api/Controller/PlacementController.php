@@ -77,7 +77,6 @@ final class PlacementController extends AbstractController
                 'occupied' => $occupied,
                 'available' => max(0, $capacity - $occupied),
                 'priceBynPerMonth' => $slot->getPriceBynPerMonth(),
-                'isTopSlot' => $slot->isTopSlot(),
             ];
         }
 

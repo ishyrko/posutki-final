@@ -48,6 +48,11 @@ final readonly class FrontendUrlBuilder
         return $this->base() . '/kabinet/redaktirovat/' . $propertyId . '/';
     }
 
+    public function placementPayment(int $purchaseId): string
+    {
+        return $this->base() . '/kabinet/oplata/' . $purchaseId . '/';
+    }
+
     /** Same host as the site; nginx routes /admin to Symfony EasyAdmin. */
     public function admin(): string
     {

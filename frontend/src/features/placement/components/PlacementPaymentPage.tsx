@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowLeft, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BynCurrencyMark } from '@/components/BynCurrency';
 import {
+    useConfirmPlacementPayment,
     useCreatePlacementPayment,
     usePlacementPurchase,
     usePropertyPlacementPurchases,
@@ -33,26 +34,90 @@ function getApiErrorMessage(error: unknown, fallback: string): string {
 }
 
 export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
+    const router = useRouter();
     const searchParams = useSearchParams();
-    const { data: purchase, isLoading, isError, refetch } = usePlacementPurchase(purchaseId);
+    const returnStatus = searchParams.get('status');
+    const checkoutToken = searchParams.get('token');
+    const isSuccessReturn =
+        returnStatus === 'success' || returnStatus === 'successful';
+    const hasReturnParams = returnStatus !== null;
+    const [awaitingActivation, setAwaitingActivation] = useState(false);
+    const { data: purchase, isLoading, isError, refetch } = usePlacementPurchase(purchaseId, {
+        pollWhilePending: awaitingActivation,
+    });
     const { data: history = [] } = usePropertyPlacementPurchases(purchase?.propertyId);
     const createPayment = useCreatePlacementPayment();
+    const confirmPayment = useConfirmPlacementPayment();
+    const confirmedRef = useRef(false);
+
+    const cleanReturnUrl = () => {
+        router.replace(`/kabinet/oplata/${purchaseId}/`);
+    };
 
     useEffect(() => {
-        const status = searchParams.get('status');
-        if (!status) return;
-
-        if (status === 'success' || status === 'successful') {
-            toast.success('Оплата обрабатывается…');
-            void refetch();
-        } else if (status === 'decline' || status === 'fail' || status === 'failed') {
-            toast.error('Платёж отклонён. Попробуйте снова или выберите другой способ оплаты.');
-            void refetch();
-        } else if (status === 'cancel') {
-            toast.message('Оплата отменена');
-            void refetch();
+        if (!hasReturnParams || isLoading || !purchase) {
+            return;
         }
-    }, [searchParams, refetch]);
+
+        if (purchase.status === 'active' && isSuccessReturn) {
+            cleanReturnUrl();
+        }
+    }, [hasReturnParams, isLoading, isSuccessReturn, purchase, purchaseId, router]);
+
+    useEffect(() => {
+        if (!returnStatus || confirmedRef.current) {
+            return;
+        }
+
+        if (isSuccessReturn) {
+            if (!checkoutToken) {
+                setAwaitingActivation(true);
+                toast.message('Оплата получена, подтверждаем статус…');
+                void refetch();
+                cleanReturnUrl();
+                return;
+            }
+
+            confirmedRef.current = true;
+            setAwaitingActivation(true);
+            cleanReturnUrl();
+            confirmPayment.mutate(
+                { purchaseId, token: checkoutToken },
+                {
+                    onSuccess: (confirmedPurchase) => {
+                        if (confirmedPurchase.status === 'active') {
+                            toast.success('Оплата прошла успешно, размещение активировано');
+                        } else {
+                            toast.message('Оплата получена, активируем размещение…');
+                        }
+                    },
+                    onError: () => {
+                        toast.message('Оплата получена, подтверждаем статус…');
+                        void refetch();
+                    },
+                },
+            );
+            return;
+        }
+
+        confirmedRef.current = true;
+        if (returnStatus === 'decline' || returnStatus === 'fail' || returnStatus === 'failed') {
+            toast.error('Платёж отклонён. Попробуйте снова или выберите другой способ оплаты.');
+        } else if (returnStatus === 'cancel') {
+            toast.message('Оплата отменена');
+        }
+        cleanReturnUrl();
+        void refetch();
+    }, [
+        checkoutToken,
+        confirmPayment,
+        hasReturnParams,
+        isSuccessReturn,
+        purchaseId,
+        refetch,
+        returnStatus,
+        router,
+    ]);
 
     if (isLoading) {
         return (
@@ -157,7 +222,14 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
                     </p>
                 )}
                 {purchase.status === 'active' && (
-                    <p className="text-xs text-green-700 mt-3">Заявка активирована.</p>
+                    <p className="text-xs text-green-700 mt-3">
+                        Заявка активирована. Размещение уже действует для объявления.
+                    </p>
+                )}
+                {purchase.status === 'pending_payment' && awaitingActivation && (
+                    <p className="text-xs text-muted-foreground mt-3">
+                        Оплата получена, подтверждаем активацию размещения…
+                    </p>
                 )}
             </div>
 

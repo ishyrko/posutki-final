@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Api\Controller;
 
 use App\Application\Command\CommandBusInterface;
+use App\Application\Command\Payment\ConfirmPlacementPayment\ConfirmPlacementPaymentCommand;
 use App\Application\Command\Payment\CreatePlacementPayment\CreatePlacementPaymentCommand;
 use App\Application\Command\Payment\ProcessBePaidWebhook\ProcessBePaidWebhookCommand;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
@@ -50,6 +51,32 @@ final class PaymentController extends AbstractController
         ));
 
         return $this->json(ApiResponse::success($result), 201);
+    }
+
+    #[Route('/api/placement-purchases/{id}/payments/confirm', name: 'api_placement_purchase_payments_confirm', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function confirmPayment(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->json(ApiResponse::error('Некорректное тело запроса', 400), 400);
+        }
+
+        $token = isset($payload['token']) && is_string($payload['token']) ? trim($payload['token']) : '';
+        if ($token === '') {
+            return $this->json(ApiResponse::error('Укажите token', 400), 400);
+        }
+
+        $result = $this->commandBus->dispatch(new ConfirmPlacementPaymentCommand(
+            purchaseId: (int) $id,
+            userId: (string) $user->getId()->getValue(),
+            checkoutToken: $token,
+        ));
+
+        return $this->json(ApiResponse::success($result));
     }
 
     #[Route('/api/webhooks/bepaid', name: 'api_webhooks_bepaid', methods: ['POST'])]

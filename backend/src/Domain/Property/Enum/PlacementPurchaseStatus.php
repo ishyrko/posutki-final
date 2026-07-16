@@ -16,7 +16,7 @@ enum PlacementPurchaseStatus: string
     {
         return match ($this) {
             self::PendingPayment => 'Ожидает оплаты',
-            self::Active => 'Активна',
+            self::Active => 'Оплачено',
             self::Expired => 'Истекла',
             self::Cancelled => 'Отменена',
             self::Rejected => 'Отклонена',

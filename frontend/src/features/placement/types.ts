@@ -27,7 +27,6 @@ export interface PlacementSlot {
     occupied: number;
     available: number;
     priceBynPerMonth: number;
-    isTopSlot: boolean;
 }
 
 export interface StandardPlacementPrice {
