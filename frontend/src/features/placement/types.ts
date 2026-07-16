@@ -58,6 +58,16 @@ export interface PlacementPurchase {
 
 export const PLACEMENT_DURATIONS = [1, 3, 6, 12] as const;
 
+export function isPlacementPurchasePayable(purchase: PlacementPurchase): boolean {
+    if (purchase.status !== 'pending_payment') {
+        return false;
+    }
+    if (!purchase.reservationExpiresAt) {
+        return false;
+    }
+    return new Date(purchase.reservationExpiresAt) > new Date();
+}
+
 export function formatPlacementStatus(property: {
     placementType?: PlacementType | string | null;
     placementSlotRank?: number | null;

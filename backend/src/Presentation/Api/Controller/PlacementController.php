@@ -183,6 +183,44 @@ final class PlacementController extends AbstractController
         return $this->json(ApiResponse::success($data));
     }
 
+    #[Route('/api/placement-purchases', name: 'api_placement_purchases_list', methods: ['GET'])]
+    public function listMyPurchases(#[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $purchases = $this->purchaseRepository->findByOwnerId($user->getId());
+        $propertyTitles = [];
+        $data = [];
+        foreach ($purchases as $purchase) {
+            $propertyId = $purchase->getPropertyId();
+            if (!array_key_exists($propertyId, $propertyTitles)) {
+                $property = $this->propertyRepository->findById(Id::fromInt($propertyId));
+                $propertyTitles[$propertyId] = $property?->getTitle();
+            }
+
+            $slot = $purchase->getSlotId() !== null
+                ? $this->slotRepository->findById($purchase->getSlotId())
+                : null;
+            $data[] = PlacementPurchaseDTO::fromEntity($purchase, $slot, $propertyTitles[$propertyId]);
+        }
+
+        return $this->json(ApiResponse::success($data));
+    }
+
+    #[Route('/api/placement-purchases/pending-count', name: 'api_placement_purchases_pending_count', methods: ['GET'])]
+    public function pendingCount(#[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $count = $this->purchaseRepository->countPendingPaymentByOwnerId($user->getId());
+
+        return $this->json(ApiResponse::success(['pendingCount' => $count]));
+    }
+
     #[Route('/api/placement-purchases/{id}', name: 'api_placement_purchase_get', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function getPurchase(string $id, #[CurrentUser] ?User $user): JsonResponse
     {

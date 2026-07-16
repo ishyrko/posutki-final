@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Property\Repository;
 
 use App\Domain\Property\Entity\PropertyPlacementPurchase;
+use App\Domain\Shared\ValueObject\Id;
 
 interface PropertyPlacementPurchaseRepositoryInterface
 {
@@ -16,6 +17,13 @@ interface PropertyPlacementPurchaseRepositoryInterface
      * @return PropertyPlacementPurchase[]
      */
     public function findByPropertyId(int $propertyId): array;
+
+    /**
+     * @return PropertyPlacementPurchase[]
+     */
+    public function findByOwnerId(Id $ownerId): array;
+
+    public function countPendingPaymentByOwnerId(Id $ownerId, ?\DateTimeImmutable $now = null): int;
 
     public function findActiveSpecialByPropertyId(int $propertyId, ?\DateTimeImmutable $now = null): ?PropertyPlacementPurchase;
 

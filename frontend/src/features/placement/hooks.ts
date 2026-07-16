@@ -5,6 +5,8 @@ import {
     createPlacementPurchase,
     createPlacementPayment,
     confirmPlacementPayment,
+    getMyPlacementPurchases,
+    getPendingPlacementPaymentCount,
     getPlacementPurchase,
     getPlacementSlots,
     getPropertyPlacementPurchases,
@@ -25,6 +27,21 @@ export function useStandardPlacementPrice(scope: PlacementTariffScope | null | u
         queryKey: ['placement-standard-price', scope],
         queryFn: () => getStandardPlacementPrice(scope!),
         enabled: !!scope,
+    });
+}
+
+export function useMyPlacementPurchases() {
+    return useQuery({
+        queryKey: ['my-placement-purchases'],
+        queryFn: getMyPlacementPurchases,
+    });
+}
+
+export function usePendingPlacementPaymentCount() {
+    return useQuery({
+        queryKey: ['placement-purchases-pending-count'],
+        queryFn: getPendingPlacementPaymentCount,
+        refetchInterval: 60_000,
     });
 }
 
@@ -60,6 +77,8 @@ export function useCreatePlacementPurchase() {
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['placement-slots'] });
             queryClient.invalidateQueries({ queryKey: ['my-properties'] });
+            queryClient.invalidateQueries({ queryKey: ['my-placement-purchases'] });
+            queryClient.invalidateQueries({ queryKey: ['placement-purchases-pending-count'] });
             queryClient.invalidateQueries({
                 queryKey: ['property-placement-purchases', data.propertyId],
             });
@@ -81,6 +100,8 @@ export function useConfirmPlacementPayment() {
         onSuccess: (data) => {
             queryClient.setQueryData(['placement-purchase', data.id], data);
             queryClient.invalidateQueries({ queryKey: ['property-placement-purchases', data.propertyId] });
+            queryClient.invalidateQueries({ queryKey: ['my-placement-purchases'] });
+            queryClient.invalidateQueries({ queryKey: ['placement-purchases-pending-count'] });
             queryClient.invalidateQueries({ queryKey: ['my-properties'] });
         },
     });

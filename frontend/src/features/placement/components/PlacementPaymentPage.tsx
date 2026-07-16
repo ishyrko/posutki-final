@@ -150,9 +150,9 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
         <div className="max-w-2xl mx-auto space-y-6">
             <div>
                 <Button variant="ghost" size="sm" asChild className="mb-3 -ml-2">
-                    <Link href="/kabinet/moi-obyavleniya/aktivnye/">
+                    <Link href="/kabinet/oplata/">
                         <ArrowLeft className="w-4 h-4 mr-1" />
-                        К объявлениям
+                        К оплатам
                     </Link>
                 </Button>
                 <h1 className="text-2xl font-display font-bold text-foreground">Оплата размещения</h1>

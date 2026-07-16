@@ -48,6 +48,18 @@ export const getPlacementPurchase = async (id: number): Promise<PlacementPurchas
     return response.data.data;
 };
 
+export const getMyPlacementPurchases = async (): Promise<PlacementPurchase[]> => {
+    const response = await api.get<{ data: PlacementPurchase[] }>('/placement-purchases');
+    return response.data.data;
+};
+
+export const getPendingPlacementPaymentCount = async (): Promise<number> => {
+    const response = await api.get<{ data: { pendingCount: number } }>(
+        '/placement-purchases/pending-count',
+    );
+    return response.data.data.pendingCount;
+};
+
 export const getPropertyPlacementPurchases = async (
     propertyId: number,
 ): Promise<PlacementPurchase[]> => {

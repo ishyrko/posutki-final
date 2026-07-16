@@ -8,6 +8,7 @@ use App\Domain\Property\Entity\PropertyPlacementPurchase;
 use App\Domain\Property\Enum\PlacementPurchaseStatus;
 use App\Domain\Property\Enum\PlacementPurchaseType;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
+use App\Domain\Shared\ValueObject\Id;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -40,6 +41,32 @@ class PropertyPlacementPurchaseRepository extends ServiceEntityRepository implem
             ->orderBy('p.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
+    }
+
+    public function findByOwnerId(Id $ownerId): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.ownerId = :ownerId')
+            ->setParameter('ownerId', $ownerId)
+            ->orderBy('p.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countPendingPaymentByOwnerId(Id $ownerId, ?\DateTimeImmutable $now = null): int
+    {
+        $now ??= new \DateTimeImmutable();
+
+        return (int) $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->where('p.ownerId = :ownerId')
+            ->andWhere('p.status = :status')
+            ->andWhere('p.reservationExpiresAt > :now')
+            ->setParameter('ownerId', $ownerId)
+            ->setParameter('status', PlacementPurchaseStatus::PendingPayment->value)
+            ->setParameter('now', $now)
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
     public function findActiveSpecialByPropertyId(int $propertyId, ?\DateTimeImmutable $now = null): ?PropertyPlacementPurchase
