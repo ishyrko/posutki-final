@@ -54,6 +54,7 @@ final class PropertyDTO implements \JsonSerializable
         public readonly ?int $streetId,
         public readonly ?string $streetName,
         public readonly ?string $districtName,
+        public readonly ?int $regionId,
         public readonly ?string $regionName,
         public readonly float $latitude,
         public readonly float $longitude,
@@ -172,6 +173,7 @@ final class PropertyDTO implements \JsonSerializable
                     : $street->getName())
                 : $property->getStreetName(),
             districtName: $district?->getName(),
+            regionId: $region?->getId(),
             regionName: $region?->getName(),
             latitude: $property->getCoordinates()->getLatitude(),
             longitude: $property->getCoordinates()->getLongitude(),
@@ -234,6 +236,7 @@ final class PropertyDTO implements \JsonSerializable
             'priceByn' => $this->priceByn,
             'weekendPriceNegotiable' => $this->weekendPriceNegotiable,
             'address' => [
+                'regionId' => $this->regionId,
                 'regionName' => $this->regionName,
                 'districtName' => $this->districtName,
                 'cityId' => $this->cityId,

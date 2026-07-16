@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence\Doctrine\Repository;
 
 use App\Domain\Property\Entity\PropertyPlacementSlot;
+use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -34,8 +35,24 @@ class PropertyPlacementSlotRepository extends ServiceEntityRepository implements
     {
         return $this->createQueryBuilder('s')
             ->where('s.cityId = :cityId')
+            ->andWhere('s.propertyType = :propertyType')
             ->andWhere('s.isActive = true')
             ->setParameter('cityId', $cityId)
+            ->setParameter('propertyType', PropertyType::Apartment->value)
+            ->orderBy('s.sortOrder', 'ASC')
+            ->addOrderBy('s.rankFrom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findActiveByRegionId(int $regionId): array
+    {
+        return $this->createQueryBuilder('s')
+            ->where('s.regionId = :regionId')
+            ->andWhere('s.propertyType = :propertyType')
+            ->andWhere('s.isActive = true')
+            ->setParameter('regionId', $regionId)
+            ->setParameter('propertyType', PropertyType::House->value)
             ->orderBy('s.sortOrder', 'ASC')
             ->addOrderBy('s.rankFrom', 'ASC')
             ->getQuery()

@@ -6,6 +6,7 @@ import { resolveCityAutocompleteResults } from './city-autocomplete';
 import {
     getCities,
     getHomePageCities,
+    getRegions,
     searchCities,
     searchStreets,
     createProperty,
@@ -18,6 +19,14 @@ export const useCities = () => {
     return useQuery({
         queryKey: ['cities'],
         queryFn: getCities,
+        staleTime: 1000 * 60 * 30,
+    });
+};
+
+export const useRegions = () => {
+    return useQuery({
+        queryKey: ['regions'],
+        queryFn: getRegions,
         staleTime: 1000 * 60 * 30,
     });
 };

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Domain\Property\Entity;
 
+use App\Domain\Property\Enum\PropertyType;
+use App\Domain\Shared\Exception\DomainException;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'property_placement_slots')]
 #[ORM\Index(columns: ['city_id', 'is_active'], name: 'idx_placement_slots_city_active')]
+#[ORM\Index(columns: ['region_id', 'is_active'], name: 'idx_placement_slots_region_active')]
 class PropertyPlacementSlot
 {
     #[ORM\Id]
@@ -16,8 +19,14 @@ class PropertyPlacementSlot
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\Column(type: 'integer', name: 'city_id')]
-    private int $cityId;
+    #[ORM\Column(type: 'string', length: 20, name: 'property_type')]
+    private string $propertyType;
+
+    #[ORM\Column(type: 'integer', nullable: true, name: 'city_id')]
+    private ?int $cityId = null;
+
+    #[ORM\Column(type: 'integer', nullable: true, name: 'region_id')]
+    private ?int $regionId = null;
 
     #[ORM\Column(type: 'integer', name: 'rank_from')]
     private int $rankFrom;
@@ -41,7 +50,9 @@ class PropertyPlacementSlot
     private bool $isActive = true;
 
     public function __construct(
-        int $cityId,
+        string $propertyType,
+        ?int $cityId,
+        ?int $regionId,
         int $rankFrom,
         int $rankTo,
         int $capacity,
@@ -50,7 +61,13 @@ class PropertyPlacementSlot
         int $sortOrder = 0,
         bool $isActive = true,
     ) {
-        $this->cityId = $cityId;
+        if (!in_array($propertyType, PropertyType::values(), true)) {
+            throw new DomainException('Неизвестный тип недвижимости');
+        }
+
+        $this->propertyType = $propertyType;
+        $this->cityId = $cityId !== null && $cityId > 0 ? $cityId : null;
+        $this->regionId = $regionId !== null && $regionId > 0 ? $regionId : null;
         $this->rankFrom = $rankFrom;
         $this->rankTo = $rankTo;
         $this->capacity = $capacity;
@@ -65,14 +82,38 @@ class PropertyPlacementSlot
         return $this->id;
     }
 
-    public function getCityId(): int
+    public function getPropertyType(): string
+    {
+        return $this->propertyType;
+    }
+
+    public function setPropertyType(string $propertyType): void
+    {
+        if (!in_array($propertyType, PropertyType::values(), true)) {
+            throw new DomainException('Неизвестный тип недвижимости');
+        }
+
+        $this->propertyType = $propertyType;
+    }
+
+    public function getCityId(): ?int
     {
         return $this->cityId;
     }
 
-    public function setCityId(int $cityId): void
+    public function setCityId(?int $cityId): void
     {
-        $this->cityId = $cityId;
+        $this->cityId = $cityId !== null && $cityId > 0 ? $cityId : null;
+    }
+
+    public function getRegionId(): ?int
+    {
+        return $this->regionId;
+    }
+
+    public function setRegionId(?int $regionId): void
+    {
+        $this->regionId = $regionId !== null && $regionId > 0 ? $regionId : null;
     }
 
     public function getRankFrom(): int
@@ -143,6 +184,39 @@ class PropertyPlacementSlot
     public function setIsActive(bool $isActive): void
     {
         $this->isActive = $isActive;
+    }
+
+    public function isForApartments(): bool
+    {
+        return $this->propertyType === PropertyType::Apartment->value;
+    }
+
+    public function isForHouses(): bool
+    {
+        return $this->propertyType === PropertyType::House->value;
+    }
+
+    public function validate(): void
+    {
+        if ($this->propertyType === PropertyType::Apartment->value) {
+            if ($this->cityId === null) {
+                throw new DomainException('Для квартир нужно выбрать город');
+            }
+            if ($this->regionId !== null) {
+                throw new DomainException('Для квартир область не указывается');
+            }
+
+            return;
+        }
+
+        if ($this->propertyType === PropertyType::House->value) {
+            if ($this->regionId === null) {
+                throw new DomainException('Для домов нужно выбрать область');
+            }
+            if ($this->cityId !== null) {
+                throw new DomainException('Для домов город не указывается');
+            }
+        }
     }
 
     public function getLabel(): string

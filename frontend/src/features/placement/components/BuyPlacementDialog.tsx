@@ -26,7 +26,7 @@ import {
     usePlacementSlots,
     useStandardPlacementPrice,
 } from '@/features/placement/hooks';
-import { PLACEMENT_DURATIONS } from '@/features/placement/types';
+import { PLACEMENT_DURATIONS, type PlacementTariffScope } from '@/features/placement/types';
 import { cn } from '@/lib/utils';
 
 function getApiErrorMessage(error: unknown, fallback: string): string {
@@ -59,12 +59,25 @@ export function BuyPlacementDialog({
     onOpenChange,
 }: BuyPlacementDialogProps) {
     const router = useRouter();
-    const cityId = property.address?.cityId ?? null;
+    const isHouse = property.type === 'house';
+    const tariffScope = useMemo((): PlacementTariffScope | null => {
+        if (isHouse) {
+            const regionId = property.address?.regionId;
+            return regionId && regionId > 0
+                ? { propertyType: 'house', regionId }
+                : null;
+        }
+        const cityId = property.address?.cityId;
+        return cityId && cityId > 0 ? { propertyType: 'apartment', cityId } : null;
+    }, [isHouse, property.address?.cityId, property.address?.regionId]);
+    const locationLabel = isHouse
+        ? property.address?.regionName ?? 'области'
+        : property.address?.cityName ?? 'города';
     const { data: slots = [], isLoading: slotsLoading } = usePlacementSlots(
-        mode === 'special' ? cityId : null,
+        mode === 'special' ? tariffScope : null,
     );
     const { data: standardPrice } = useStandardPlacementPrice(
-        mode === 'standard' ? cityId : null,
+        mode === 'standard' ? tariffScope : null,
     );
     const create = useCreatePlacementPurchase();
 
@@ -131,7 +144,7 @@ export function BuyPlacementDialog({
                     </DialogTitle>
                     <DialogDescription>
                         {property.title}. Оплата помесячная — после создания заявки откроется
-                        экран оплаты (подтверждение пока вручную администратором).
+                        экран онлайн-оплаты.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -143,7 +156,7 @@ export function BuyPlacementDialog({
                                 <p className="text-sm text-muted-foreground">Загрузка…</p>
                             ) : slots.length === 0 ? (
                                 <p className="text-sm text-muted-foreground">
-                                    Для города объявления диапазоны ещё не настроены.
+                                    Для {locationLabel} объявления диапазоны ещё не настроены.
                                 </p>
                             ) : (
                                 <div className="space-y-2 max-h-56 overflow-y-auto">
@@ -202,7 +215,7 @@ export function BuyPlacementDialog({
                                 </p>
                             ) : (
                                 <p className="text-muted-foreground">
-                                    Для города объявления цена стандартного размещения не задана.
+                                    Для {locationLabel} объявления цена стандартного размещения не задана.
                                 </p>
                             )}
                         </div>

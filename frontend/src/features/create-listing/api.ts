@@ -5,6 +5,7 @@ import { HEADER_CITY_SLUGS } from '@/lib/region-header';
 import {
     City,
     CitySearchResult,
+    Region,
     Street,
     CreatePropertyPayload,
     CreatePropertyResponse,
@@ -73,6 +74,11 @@ const SUGGESTED_CITY_SLUGS = [...HEADER_CITY_SLUGS, ...CITY_PREFIX_SLUG_LIST];
 export const getHomePageCities = async (): Promise<CitySearchResult[]> => {
     const results = await Promise.all(SUGGESTED_CITY_SLUGS.map((slug) => getCityBySlug(slug)));
     return results.filter((city): city is CitySearchResult => city !== null);
+};
+
+export const getRegions = async (): Promise<Region[]> => {
+    const response = await api.get<{ data: Region[] }>('/address/regions');
+    return response.data?.data ?? [];
 };
 
 export const searchCities = async (query: string): Promise<CitySearchResult[]> => {

@@ -1,19 +1,27 @@
 import api from '@/lib/api';
-import type { PlacementPurchase, PlacementSlot, StandardPlacementPrice } from './types';
+import type { PlacementPurchase, PlacementSlot, PlacementTariffScope, StandardPlacementPrice } from './types';
 
-export const getPlacementSlots = async (cityId: number): Promise<PlacementSlot[]> => {
-    const response = await api.get<{ data: PlacementSlot[] }>('/placement-slots', {
-        params: { cityId },
-    });
+export const getPlacementSlots = async (scope: PlacementTariffScope): Promise<PlacementSlot[]> => {
+    const params =
+        scope.propertyType === 'house'
+            ? { propertyType: 'house', regionId: scope.regionId }
+            : { cityId: scope.cityId };
+
+    const response = await api.get<{ data: PlacementSlot[] }>('/placement-slots', { params });
     return response.data.data;
 };
 
 export const getStandardPlacementPrice = async (
-    cityId: number,
+    scope: PlacementTariffScope,
 ): Promise<StandardPlacementPrice | null> => {
+    const params =
+        scope.propertyType === 'house'
+            ? { propertyType: 'house', regionId: scope.regionId }
+            : { cityId: scope.cityId };
+
     const response = await api.get<{ data: StandardPlacementPrice | null }>(
         '/placement/standard-price',
-        { params: { cityId } },
+        { params },
     );
     return response.data.data;
 };
@@ -45,6 +53,15 @@ export const getPropertyPlacementPurchases = async (
 ): Promise<PlacementPurchase[]> => {
     const response = await api.get<{ data: PlacementPurchase[] }>(
         `/properties/${propertyId}/placement-purchases`,
+    );
+    return response.data.data;
+};
+
+export const createPlacementPayment = async (
+    purchaseId: number,
+): Promise<{ redirectUrl: string; paymentId?: number }> => {
+    const response = await api.post<{ data: { redirectUrl: string; paymentId?: number } }>(
+        `/placement-purchases/${purchaseId}/payments`,
     );
     return response.data.data;
 };

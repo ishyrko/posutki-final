@@ -1,25 +1,58 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowLeft, CreditCard, Landmark, Wallet } from 'lucide-react';
+import { ArrowLeft, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BynCurrencyMark } from '@/components/BynCurrency';
 import {
+    useCreatePlacementPayment,
     usePlacementPurchase,
     usePropertyPlacementPurchases,
 } from '@/features/placement/hooks';
 import { cn } from '@/lib/utils';
 
-const PAYMENT_METHODS = [
-    { id: 'card', label: 'Банковская карта', icon: CreditCard },
-    { id: 'erip', label: 'ЕРИП', icon: Landmark },
-    { id: 'balance', label: 'Баланс', icon: Wallet },
-] as const;
+function getApiErrorMessage(error: unknown, fallback: string): string {
+    if (error && typeof error === 'object' && 'response' in error) {
+        const response = (error as { response?: { data?: { message?: string; error?: string | { message?: string } } } })
+            .response;
+        const err = response?.data?.error;
+        const message =
+            response?.data?.message ??
+            (typeof err === 'string' ? err : err?.message);
+        if (typeof message === 'string' && message.trim() !== '') {
+            return message;
+        }
+    }
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+    return fallback;
+}
 
 export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
-    const { data: purchase, isLoading, isError } = usePlacementPurchase(purchaseId);
+    const searchParams = useSearchParams();
+    const { data: purchase, isLoading, isError, refetch } = usePlacementPurchase(purchaseId);
     const { data: history = [] } = usePropertyPlacementPurchases(purchase?.propertyId);
+    const createPayment = useCreatePlacementPayment();
+
+    useEffect(() => {
+        const status = searchParams.get('status');
+        if (!status) return;
+
+        if (status === 'success' || status === 'successful') {
+            toast.success('Оплата обрабатывается…');
+            void refetch();
+        } else if (status === 'decline' || status === 'fail' || status === 'failed') {
+            toast.error('Платёж отклонён. Попробуйте снова или выберите другой способ оплаты.');
+            void refetch();
+        } else if (status === 'cancel') {
+            toast.message('Оплата отменена');
+            void refetch();
+        }
+    }, [searchParams, refetch]);
 
     if (isLoading) {
         return (
@@ -39,7 +72,13 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
     }
 
     const handlePayClick = () => {
-        toast.success('Заявка отправлена, ожидает подтверждения администратором');
+        createPayment.mutate(purchase.id, {
+            onSuccess: (data) => {
+                window.location.href = data.redirectUrl;
+            },
+            onError: (e) =>
+                toast.error(getApiErrorMessage(e, 'Не удалось перейти к оплате')),
+        });
     };
 
     return (
@@ -94,35 +133,27 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
             </div>
 
             <div className="bg-card rounded-xl border border-border p-5 shadow-card">
-                <h2 className="font-semibold text-foreground mb-4">Способ оплаты</h2>
-                <div className="space-y-2 mb-5">
-                    {PAYMENT_METHODS.map((method) => (
-                        <div
-                            key={method.id}
-                            className="flex items-center gap-3 p-3 rounded-lg border border-border opacity-60"
-                        >
-                            <method.icon className="w-5 h-5 text-muted-foreground" />
-                            <div className="flex-1">
-                                <p className="text-sm font-medium text-foreground">{method.label}</p>
-                                <p className="text-xs text-muted-foreground">Скоро</p>
-                            </div>
-                            <span className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                                В разработке
-                            </span>
-                        </div>
-                    ))}
+                <h2 className="font-semibold text-foreground mb-4">Оплата</h2>
+                <div className="flex items-center gap-3 p-3 rounded-lg border border-border mb-5">
+                    <CreditCard className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">Банковская карта, ЕРИП и другие способы</p>
+                        <p className="text-xs text-muted-foreground">
+                            Безопасная страница оплаты bePaid
+                        </p>
+                    </div>
                 </div>
                 <Button
                     className="w-full sm:w-auto"
-                    disabled={purchase.status !== 'pending_payment'}
+                    disabled={purchase.status !== 'pending_payment' || createPayment.isPending}
                     onClick={handlePayClick}
                 >
-                    Оплатить
+                    {createPayment.isPending ? 'Переход к оплате…' : 'Оплатить онлайн'}
                 </Button>
                 {purchase.status === 'pending_payment' && (
                     <p className="text-xs text-muted-foreground mt-3">
-                        Онлайн-оплата пока не подключена. Нажмите «Оплатить», чтобы подтвердить заявку —
-                        администратор активирует размещение после поступления средств.
+                        После нажатия вы перейдёте на защищённую страницу оплаты. Размещение
+                        активируется автоматически после поступления средств.
                     </p>
                 )}
                 {purchase.status === 'active' && (

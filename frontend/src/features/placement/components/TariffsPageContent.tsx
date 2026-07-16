@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useCities } from '@/features/create-listing/hooks';
+import { useCities, useRegions } from '@/features/create-listing/hooks';
 import { usePlacementSlots, useStandardPlacementPrice } from '@/features/placement/hooks';
+import type { PlacementPropertyType, PlacementTariffScope } from '@/features/placement/types';
 import { BynCurrencyMark } from '@/components/BynCurrency';
 import {
     Select,
@@ -11,20 +12,45 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check } from 'lucide-react';
 
 export function TariffsPageContent() {
+    const [propertyType, setPropertyType] = useState<PlacementPropertyType>('apartment');
     const { data: cities = [], isLoading: citiesLoading } = useCities();
+    const { data: regions = [], isLoading: regionsLoading } = useRegions();
+
     const minsk = useMemo(
         () => cities.find((c) => c.slug === 'minsk') ?? cities[0] ?? null,
         [cities],
     );
-    const [cityId, setCityId] = useState<number | null>(null);
-    const selectedCityId = cityId ?? minsk?.id ?? null;
-    const selectedCity = cities.find((c) => c.id === selectedCityId) ?? minsk;
+    const defaultRegion = useMemo(
+        () => regions.find((r) => r.slug === 'minsk') ?? regions[0] ?? null,
+        [regions],
+    );
 
-    const { data: slots = [], isLoading: slotsLoading } = usePlacementSlots(selectedCityId);
-    const { data: standardPrice } = useStandardPlacementPrice(selectedCityId);
+    const [cityId, setCityId] = useState<number | null>(null);
+    const [regionId, setRegionId] = useState<number | null>(null);
+
+    const selectedCityId = cityId ?? minsk?.id ?? null;
+    const selectedRegionId = regionId ?? defaultRegion?.id ?? null;
+    const selectedCity = cities.find((c) => c.id === selectedCityId) ?? minsk;
+    const selectedRegion = regions.find((r) => r.id === selectedRegionId) ?? defaultRegion;
+
+    const tariffScope = useMemo((): PlacementTariffScope | null => {
+        if (propertyType === 'house') {
+            return selectedRegionId ? { propertyType: 'house', regionId: selectedRegionId } : null;
+        }
+        return selectedCityId ? { propertyType: 'apartment', cityId: selectedCityId } : null;
+    }, [propertyType, selectedCityId, selectedRegionId]);
+
+    const { data: slots = [], isLoading: slotsLoading } = usePlacementSlots(tariffScope);
+    const { data: standardPrice } = useStandardPlacementPrice(tariffScope);
+
+    const locationLabel =
+        propertyType === 'house'
+            ? selectedRegion?.name ?? 'область'
+            : selectedCity?.name ?? 'город';
 
     return (
         <div className="mx-auto max-w-3xl">
@@ -59,7 +85,8 @@ export function TariffsPageContent() {
                         </p>
                     ) : (
                         <p className="text-sm text-muted-foreground">
-                            Для выбранного города цена пока не задана.
+                            Для выбранного {propertyType === 'house' ? 'региона' : 'города'} цена
+                            пока не задана.
                         </p>
                     )}
                 </div>
@@ -88,30 +115,54 @@ export function TariffsPageContent() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 mb-4">
-                <h2 className="font-semibold text-foreground text-lg">Цены по городам</h2>
-                <Select
-                    value={selectedCityId ? String(selectedCityId) : undefined}
-                    onValueChange={(v) => setCityId(Number(v))}
-                    disabled={citiesLoading || cities.length === 0}
+                <h2 className="font-semibold text-foreground text-lg">Цены</h2>
+                <Tabs
+                    value={propertyType}
+                    onValueChange={(value) => setPropertyType(value as PlacementPropertyType)}
                 >
-                    <SelectTrigger className="w-[220px] h-10">
-                        <SelectValue placeholder="Выберите город" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {cities.map((c) => (
-                            <SelectItem key={c.id} value={String(c.id)}>
-                                {c.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                    <TabsList>
+                        <TabsTrigger value="apartment">Квартиры</TabsTrigger>
+                        <TabsTrigger value="house">Дома</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+                {propertyType === 'apartment' ? (
+                    <Select
+                        value={selectedCityId ? String(selectedCityId) : undefined}
+                        onValueChange={(v) => setCityId(Number(v))}
+                        disabled={citiesLoading || cities.length === 0}
+                    >
+                        <SelectTrigger className="w-[220px] h-10">
+                            <SelectValue placeholder="Выберите город" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {cities.map((c) => (
+                                <SelectItem key={c.id} value={String(c.id)}>
+                                    {c.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    <Select
+                        value={selectedRegionId ? String(selectedRegionId) : undefined}
+                        onValueChange={(v) => setRegionId(Number(v))}
+                        disabled={regionsLoading || regions.length === 0}
+                    >
+                        <SelectTrigger className="w-[220px] h-10">
+                            <SelectValue placeholder="Выберите область" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {regions.map((r) => (
+                                <SelectItem key={r.id} value={String(r.id)}>
+                                    {r.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
             </div>
 
-            {selectedCity && (
-                <p className="text-sm text-muted-foreground mb-3">
-                    Стоимость — {selectedCity.name}
-                </p>
-            )}
+            <p className="text-sm text-muted-foreground mb-3">Стоимость — {locationLabel}</p>
 
             <div className="rounded-xl border border-border bg-card overflow-hidden shadow-card mb-6">
                 <table className="w-full text-sm">
@@ -134,7 +185,9 @@ export function TariffsPageContent() {
                         ) : slots.length === 0 ? (
                             <tr>
                                 <td colSpan={3} className="py-8 text-center text-muted-foreground">
-                                    Для этого города диапазоны ещё не настроены.
+                                    {propertyType === 'house'
+                                        ? 'Для этой области диапазоны ещё не настроены.'
+                                        : 'Для этого города диапазоны ещё не настроены.'}
                                 </td>
                             </tr>
                         ) : (

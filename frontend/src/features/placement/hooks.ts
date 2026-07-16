@@ -3,25 +3,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     createPlacementPurchase,
+    createPlacementPayment,
     getPlacementPurchase,
     getPlacementSlots,
     getPropertyPlacementPurchases,
     getStandardPlacementPrice,
 } from './api';
+import type { PlacementTariffScope } from './types';
 
-export function usePlacementSlots(cityId: number | null | undefined) {
+export function usePlacementSlots(scope: PlacementTariffScope | null | undefined) {
     return useQuery({
-        queryKey: ['placement-slots', cityId],
-        queryFn: () => getPlacementSlots(cityId!),
-        enabled: !!cityId && cityId > 0,
+        queryKey: ['placement-slots', scope],
+        queryFn: () => getPlacementSlots(scope!),
+        enabled: !!scope,
     });
 }
 
-export function useStandardPlacementPrice(cityId: number | null | undefined) {
+export function useStandardPlacementPrice(scope: PlacementTariffScope | null | undefined) {
     return useQuery({
-        queryKey: ['placement-standard-price', cityId],
-        queryFn: () => getStandardPlacementPrice(cityId!),
-        enabled: !!cityId && cityId > 0,
+        queryKey: ['placement-standard-price', scope],
+        queryFn: () => getStandardPlacementPrice(scope!),
+        enabled: !!scope,
     });
 }
 
@@ -54,5 +56,11 @@ export function useCreatePlacementPurchase() {
                 queryKey: ['property-placement-purchases', data.propertyId],
             });
         },
+    });
+}
+
+export function useCreatePlacementPayment() {
+    return useMutation({
+        mutationFn: createPlacementPayment,
     });
 }

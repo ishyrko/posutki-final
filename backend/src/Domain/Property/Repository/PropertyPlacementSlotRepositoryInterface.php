@@ -20,5 +20,10 @@ interface PropertyPlacementSlotRepositoryInterface
     /**
      * @return PropertyPlacementSlot[]
      */
+    public function findActiveByRegionId(int $regionId): array;
+
+    /**
+     * @return PropertyPlacementSlot[]
+     */
     public function findAll(): array;
 }

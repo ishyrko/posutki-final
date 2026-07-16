@@ -86,8 +86,14 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Страницы', 'fa fa-file-alt', StaticPage::class);
 
         yield MenuItem::section('Размещение');
-        yield MenuItem::linkToCrud('Диапазоны позиций', 'fa fa-ranking-star', PropertyPlacementSlot::class);
-        yield MenuItem::linkToCrud('Цены стандартного', 'fa fa-tag', PropertyPlacementStandardPrice::class);
+        yield MenuItem::linkToCrud('Позиции — квартиры', 'fa fa-building', PropertyPlacementSlot::class)
+            ->setController(ApartmentPlacementSlotCrudController::class);
+        yield MenuItem::linkToCrud('Позиции — дома', 'fa fa-house', PropertyPlacementSlot::class)
+            ->setController(HousePlacementSlotCrudController::class);
+        yield MenuItem::linkToCrud('Стандарт — квартиры', 'fa fa-building', PropertyPlacementStandardPrice::class)
+            ->setController(ApartmentPlacementStandardPriceCrudController::class);
+        yield MenuItem::linkToCrud('Стандарт — дома', 'fa fa-house', PropertyPlacementStandardPrice::class)
+            ->setController(HousePlacementStandardPriceCrudController::class);
         yield MenuItem::linkToCrud('Заявки на размещение', 'fa fa-receipt', PropertyPlacementPurchase::class);
 
         yield MenuItem::section('Справочники');

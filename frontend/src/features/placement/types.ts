@@ -9,9 +9,17 @@ export type PlacementPurchaseStatus =
     | 'cancelled'
     | 'rejected';
 
+export type PlacementPropertyType = 'apartment' | 'house';
+
+export type PlacementTariffScope =
+    | { propertyType: 'apartment'; cityId: number }
+    | { propertyType: 'house'; regionId: number };
+
 export interface PlacementSlot {
     id: number;
-    cityId: number;
+    propertyType: PlacementPropertyType;
+    cityId: number | null;
+    regionId: number | null;
     rankFrom: number;
     rankTo: number;
     label: string;
@@ -23,7 +31,9 @@ export interface PlacementSlot {
 }
 
 export interface StandardPlacementPrice {
-    cityId: number;
+    propertyType: PlacementPropertyType;
+    cityId?: number | null;
+    regionId?: number | null;
     priceBynPerMonth: number;
 }
 

@@ -7,6 +7,7 @@ export interface PropertyImage {
 }
 
 export interface Address {
+    regionId?: number;
     regionName?: string;
     districtName?: string;
     cityId: number;

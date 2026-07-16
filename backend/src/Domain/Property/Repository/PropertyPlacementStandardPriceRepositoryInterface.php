@@ -13,4 +13,16 @@ interface PropertyPlacementStandardPriceRepositoryInterface
     public function findById(int $id): ?PropertyPlacementStandardPrice;
 
     public function findActiveByCityId(int $cityId): ?PropertyPlacementStandardPrice;
+
+    public function findActiveByRegionId(int $regionId): ?PropertyPlacementStandardPrice;
+
+    /**
+     * @return int[]
+     */
+    public function findConfiguredCityIds(string $propertyType): array;
+
+    /**
+     * @return int[]
+     */
+    public function findConfiguredRegionIds(string $propertyType): array;
 }

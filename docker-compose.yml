@@ -29,6 +29,14 @@ services:
       - 'CORS_ALLOW_ORIGIN=^https?://[^/]+(:[0-9]+)?$'
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-986114625381-ng3peent2ffo7ci9hmltjvcqu1sqngkb.apps.googleusercontent.com}
       - FRONTEND_URL=http://localhost:3000
+      - BACKEND_URL=http://localhost
+      - BEPAID_SHOP_ID=363
+      - BEPAID_SECRET_KEY=${BEPAID_SECRET_KEY:-}
+      - BEPAID_CHECKOUT_URL=https://checkout.bepaid.by
+      - BEPAID_GATEWAY_URL=https://gateway.bepaid.by
+      - BEPAID_API_URL=https://api.bepaid.by
+      - BEPAID_PUBLIC_KEY=${BEPAID_PUBLIC_KEY:-}
+      - BEPAID_TEST_MODE=1
       - MAILER_DSN=smtp://mailpit:1025
       - MAILER_FROM=noreply@rnb.by
       - ADMIN_EMAILS=["admin@rnb.by"]

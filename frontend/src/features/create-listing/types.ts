@@ -5,6 +5,12 @@ export interface City {
     region: string;
 }
 
+export interface Region {
+    id: number;
+    name: string;
+    slug: string;
+}
+
 export interface CitySearchResult {
     id: number;
     name: string;

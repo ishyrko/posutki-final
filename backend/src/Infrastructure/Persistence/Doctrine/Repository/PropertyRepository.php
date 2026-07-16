@@ -449,6 +449,19 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
             ->getSingleScalarResult();
     }
 
+    public function findCityIdsWithListings(string $propertyType): array
+    {
+        $rows = $this->createQueryBuilder('p')
+            ->select('DISTINCT p.cityId')
+            ->where('p.type = :propertyType')
+            ->setParameter('propertyType', $propertyType)
+            ->orderBy('p.cityId', 'ASC')
+            ->getQuery()
+            ->getSingleColumnResult();
+
+        return array_map('intval', $rows);
+    }
+
     public function delete(Property $property): void
     {
         $this->getEntityManager()->remove($property);

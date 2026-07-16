@@ -54,4 +54,9 @@ interface PropertyRepositoryInterface
      * @return Property[]
      */
     public function findWithExpiredPlacement(?\DateTimeImmutable $now = null): array;
+
+    /**
+     * @return int[] city ids that have at least one listing of the given property type
+     */
+    public function findCityIdsWithListings(string $propertyType): array;
 }

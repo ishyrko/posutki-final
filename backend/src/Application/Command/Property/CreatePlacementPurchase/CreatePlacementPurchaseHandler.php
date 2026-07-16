@@ -6,6 +6,11 @@ namespace App\Application\Command\Property\CreatePlacementPurchase;
 
 use App\Domain\Property\Entity\PropertyPlacementPurchase;
 use App\Domain\Property\Enum\PlacementPurchaseType;
+use App\Domain\Property\Enum\PropertyType;
+use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Domain\Property\Entity\Property;
+use App\Domain\Property\Entity\PropertyPlacementSlot;
+use App\Domain\Property\Entity\PropertyPlacementStandardPrice;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementStandardPriceRepositoryInterface;
@@ -21,6 +26,7 @@ final class CreatePlacementPurchaseHandler
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
         private readonly PropertyPlacementSlotRepositoryInterface $slotRepository,
         private readonly PropertyPlacementStandardPriceRepositoryInterface $standardPriceRepository,
+        private readonly CityRepositoryInterface $cityRepository,
     ) {
     }
 
@@ -56,18 +62,20 @@ final class CreatePlacementPurchaseHandler
             if ($slot === null || !$slot->isActive()) {
                 throw new DomainException('Диапазон позиций не найден');
             }
-            if ($slot->getCityId() !== $property->getCityId()) {
-                throw new DomainException('Диапазон позиций не относится к городу объявления');
-            }
+            $this->assertSlotMatchesProperty($slot, $property);
             $occupied = $this->purchaseRepository->countOccupiedForSlot($slotId);
             if ($occupied >= $slot->getCapacity()) {
                 throw new ConflictException('Нет свободных мест в выбранном диапазоне позиций');
             }
             $pricePerMonth = $slot->getPriceBynPerMonth();
         } else {
-            $standard = $this->standardPriceRepository->findActiveByCityId($property->getCityId());
+            $standard = $this->resolveStandardPrice($property);
             if ($standard === null) {
-                throw new DomainException('Для этого города ещё не задана цена стандартного размещения');
+                throw new DomainException(
+                    $property->getType() === PropertyType::House->value
+                        ? 'Для области объявления ещё не задана цена стандартного размещения'
+                        : 'Для этого города ещё не задана цена стандартного размещения',
+                );
             }
             $pricePerMonth = $standard->getPriceBynPerMonth();
             $slotId = null;
@@ -98,5 +106,43 @@ final class CreatePlacementPurchaseHandler
             'createdAt' => $purchase->getCreatedAt()->format('c'),
             'reservationExpiresAt' => $purchase->getReservationExpiresAt()?->format('c'),
         ];
+    }
+
+    private function resolveStandardPrice(Property $property): ?PropertyPlacementStandardPrice
+    {
+        if ($property->getType() === PropertyType::House->value) {
+            $city = $this->cityRepository->findById($property->getCityId());
+            $regionId = $city?->getRegionDistrict()?->getRegion()->getId();
+            if ($regionId === null) {
+                return null;
+            }
+
+            return $this->standardPriceRepository->findActiveByRegionId($regionId);
+        }
+
+        return $this->standardPriceRepository->findActiveByCityId($property->getCityId());
+    }
+
+    private function assertSlotMatchesProperty(PropertyPlacementSlot $slot, Property $property): void
+    {
+        if ($property->getType() === PropertyType::House->value) {
+            if (!$slot->isForHouses()) {
+                throw new DomainException('Диапазон позиций предназначен для квартир');
+            }
+            $city = $this->cityRepository->findById($property->getCityId());
+            $regionId = $city?->getRegionDistrict()?->getRegion()->getId();
+            if ($regionId === null || $slot->getRegionId() !== $regionId) {
+                throw new DomainException('Диапазон позиций не относится к области объявления');
+            }
+
+            return;
+        }
+
+        if (!$slot->isForApartments()) {
+            throw new DomainException('Диапазон позиций предназначен для домов');
+        }
+        if ($slot->getCityId() !== $property->getCityId()) {
+            throw new DomainException('Диапазон позиций не относится к городу объявления');
+        }
     }
 }

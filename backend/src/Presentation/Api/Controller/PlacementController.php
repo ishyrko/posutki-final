@@ -8,6 +8,8 @@ use App\Application\Command\CommandBusInterface;
 use App\Application\Command\Property\CreatePlacementPurchase\CreatePlacementPurchaseCommand;
 use App\Application\DTO\PlacementPurchaseDTO;
 use App\Application\Service\PropertyPlacementService;
+use App\Domain\Property\Enum\PropertyType;
+use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementStandardPriceRepositoryInterface;
@@ -31,25 +33,43 @@ final class PlacementController extends AbstractController
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyPlacementService $placementService,
         private readonly CommandBusInterface $commandBus,
+        private readonly CityRepositoryInterface $cityRepository,
     ) {
     }
 
     #[Route('/api/placement-slots', name: 'api_placement_slots', methods: ['GET'])]
     public function slots(Request $request): JsonResponse
     {
-        $cityId = $request->query->getInt('cityId');
-        if ($cityId <= 0) {
-            return $this->json(ApiResponse::error('Укажите cityId', 400), 400);
+        $propertyType = $request->query->getString('propertyType', PropertyType::Apartment->value);
+        if (!in_array($propertyType, PropertyType::values(), true)) {
+            return $this->json(ApiResponse::error('Некорректный propertyType', 400), 400);
         }
 
-        $slots = $this->slotRepository->findActiveByCityId($cityId);
+        if ($propertyType === PropertyType::House->value) {
+            $regionId = $request->query->getInt('regionId');
+            if ($regionId <= 0) {
+                return $this->json(ApiResponse::error('Укажите regionId', 400), 400);
+            }
+
+            $slots = $this->slotRepository->findActiveByRegionId($regionId);
+        } else {
+            $cityId = $request->query->getInt('cityId');
+            if ($cityId <= 0) {
+                return $this->json(ApiResponse::error('Укажите cityId', 400), 400);
+            }
+
+            $slots = $this->slotRepository->findActiveByCityId($cityId);
+        }
+
         $data = [];
         foreach ($slots as $slot) {
             $occupied = $this->placementService->getSlotOccupancy($slot);
             $capacity = $slot->getCapacity();
             $data[] = [
                 'id' => $slot->getId(),
+                'propertyType' => $slot->getPropertyType(),
                 'cityId' => $slot->getCityId(),
+                'regionId' => $slot->getRegionId(),
                 'rankFrom' => $slot->getRankFrom(),
                 'rankTo' => $slot->getRankTo(),
                 'label' => $slot->getLabel(),
@@ -67,6 +87,29 @@ final class PlacementController extends AbstractController
     #[Route('/api/placement/standard-price', name: 'api_placement_standard_price', methods: ['GET'])]
     public function standardPrice(Request $request): JsonResponse
     {
+        $propertyType = $request->query->getString('propertyType', PropertyType::Apartment->value);
+        if (!in_array($propertyType, PropertyType::values(), true)) {
+            return $this->json(ApiResponse::error('Некорректный propertyType', 400), 400);
+        }
+
+        if ($propertyType === PropertyType::House->value) {
+            $regionId = $request->query->getInt('regionId');
+            if ($regionId <= 0) {
+                return $this->json(ApiResponse::error('Укажите regionId', 400), 400);
+            }
+
+            $price = $this->standardPriceRepository->findActiveByRegionId($regionId);
+            if ($price === null) {
+                return $this->json(ApiResponse::success(null));
+            }
+
+            return $this->json(ApiResponse::success([
+                'propertyType' => PropertyType::House->value,
+                'regionId' => $price->getRegionId(),
+                'priceBynPerMonth' => $price->getPriceBynPerMonth(),
+            ]));
+        }
+
         $cityId = $request->query->getInt('cityId');
         if ($cityId <= 0) {
             return $this->json(ApiResponse::error('Укажите cityId', 400), 400);
@@ -78,6 +121,7 @@ final class PlacementController extends AbstractController
         }
 
         return $this->json(ApiResponse::success([
+            'propertyType' => PropertyType::Apartment->value,
             'cityId' => $price->getCityId(),
             'priceBynPerMonth' => $price->getPriceBynPerMonth(),
         ]));
