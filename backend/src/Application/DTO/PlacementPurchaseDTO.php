@@ -29,6 +29,7 @@ final class PlacementPurchaseDTO implements \JsonSerializable
         public readonly ?\DateTimeImmutable $reservationExpiresAt,
         public readonly ?string $note,
         public readonly ?string $propertyTitle = null,
+        public readonly ?int $basePurchaseId = null,
     ) {
     }
 
@@ -47,7 +48,7 @@ final class PlacementPurchaseDTO implements \JsonSerializable
             durationMonths: $purchase->getDurationMonths(),
             priceByn: $purchase->getPriceByn(),
             status: $purchase->getStatus(),
-            statusLabel: PlacementPurchaseStatus::tryFrom($purchase->getStatus())?->label() ?? $purchase->getStatus(),
+            statusLabel: self::resolveStatusLabel($purchase->getStatus()),
             source: $purchase->getSource(),
             createdAt: $purchase->getCreatedAt(),
             activatedAt: $purchase->getActivatedAt(),
@@ -55,6 +56,7 @@ final class PlacementPurchaseDTO implements \JsonSerializable
             reservationExpiresAt: $purchase->getReservationExpiresAt(),
             note: $purchase->getNote(),
             propertyTitle: $propertyTitle,
+            basePurchaseId: $purchase->getBasePurchaseId(),
         );
     }
 
@@ -78,6 +80,16 @@ final class PlacementPurchaseDTO implements \JsonSerializable
             'expiresAt' => $this->expiresAt?->format('c'),
             'reservationExpiresAt' => $this->reservationExpiresAt?->format('c'),
             'note' => $this->note,
+            'basePurchaseId' => $this->basePurchaseId,
         ];
+    }
+
+    private static function resolveStatusLabel(string $status): string
+    {
+        if ($status === PlacementPurchaseStatus::Superseded->value) {
+            return PlacementPurchaseStatus::Active->label();
+        }
+
+        return PlacementPurchaseStatus::tryFrom($status)?->label() ?? $status;
     }
 }

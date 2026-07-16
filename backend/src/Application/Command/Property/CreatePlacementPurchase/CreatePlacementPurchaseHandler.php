@@ -96,17 +96,18 @@ final class CreatePlacementPurchaseHandler
             }
         }
 
-        $totalPrice = $levelPrice->getPriceBynPerMonth() * $durationMonths;
+        $quote = $this->placementService->quoteLevelPurchase($property, $levelPrice, $durationMonths);
 
         return new PropertyPlacementPurchase(
             propertyId: $property->getId()->getValue(),
             ownerId: $userId,
             kind: PlacementPurchaseKind::Level->value,
-            priceByn: $totalPrice,
+            priceByn: $quote['priceByn'],
             source: 'self_service',
             level: $level,
             levelPriceId: $levelPrice->getId(),
             durationMonths: $durationMonths,
+            basePurchaseId: $quote['anchorPurchase']?->getId(),
         );
     }
 

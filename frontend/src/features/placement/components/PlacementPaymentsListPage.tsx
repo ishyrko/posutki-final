@@ -52,8 +52,9 @@ function PurchaseRow({ purchase }: { purchase: PlacementPurchase }) {
                     <p className="text-sm text-muted-foreground">
                         {purchase.kindLabel}
                         {purchase.level != null ? ` · VIP ${purchase.level}` : ''}
-                        {' · '}
-                        {formatDuration(purchase.durationMonths)}
+                        {purchase.durationMonths != null
+                            ? ` · ${formatDuration(purchase.durationMonths)}`
+                            : ''}
                     </p>
                     <p className="text-xs text-muted-foreground">
                         Создана {formatDate(purchase.createdAt)}

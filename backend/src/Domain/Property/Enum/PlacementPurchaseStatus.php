@@ -11,6 +11,7 @@ enum PlacementPurchaseStatus: string
     case Expired = 'expired';
     case Cancelled = 'cancelled';
     case Rejected = 'rejected';
+    case Superseded = 'superseded';
 
     public function label(): string
     {
@@ -20,6 +21,7 @@ enum PlacementPurchaseStatus: string
             self::Expired => 'Истекла',
             self::Cancelled => 'Отменена',
             self::Rejected => 'Отклонена',
+            self::Superseded => 'Заменена',
         };
     }
 

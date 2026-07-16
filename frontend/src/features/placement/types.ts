@@ -5,7 +5,8 @@ export type PlacementPurchaseStatus =
     | 'active'
     | 'expired'
     | 'cancelled'
-    | 'rejected';
+    | 'rejected'
+    | 'superseded';
 
 export type PlacementPropertyType = 'apartment' | 'house';
 
@@ -52,6 +53,15 @@ export interface PlacementPurchase {
     expiresAt?: string | null;
     reservationExpiresAt?: string | null;
     note?: string | null;
+    basePurchaseId?: number | null;
+}
+
+export interface PlacementPurchaseQuote {
+    mode: 'new' | 'renewal' | 'upgrade';
+    priceByn: number;
+    currentLevel: number | null;
+    currentExpiresAt: string | null;
+    targetExpiresAt: string | null;
 }
 
 export const PLACEMENT_DURATIONS = [1, 3, 6, 12] as const;

@@ -2,6 +2,7 @@ import api from '@/lib/api';
 import type {
     PlacementLevelPrice,
     PlacementPurchase,
+    PlacementPurchaseQuote,
     PlacementScopeSettings,
     PlacementTariffScope,
 } from './types';
@@ -69,6 +70,17 @@ export const getPropertyPlacementPurchases = async (
 ): Promise<PlacementPurchase[]> => {
     const response = await api.get<{ data: PlacementPurchase[] }>(
         `/properties/${propertyId}/placement-purchases`,
+    );
+    return response.data.data;
+};
+
+export const getPlacementPurchaseQuote = async (
+    propertyId: number,
+    params: { level: number; durationMonths: number },
+): Promise<PlacementPurchaseQuote> => {
+    const response = await api.get<{ data: PlacementPurchaseQuote }>(
+        `/properties/${propertyId}/placement-purchases/quote`,
+        { params },
     );
     return response.data.data;
 };

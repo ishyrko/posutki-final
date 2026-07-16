@@ -94,9 +94,148 @@ final class PropertyPlacementService
             }
         }
 
-        $purchase->activate($adminId, $now);
+        $expiresAtOverride = $this->resolveActivationExpiresAt($purchase, $now);
+
+        $purchase->activate($adminId, $now, $expiresAtOverride);
         $this->purchaseRepository->save($purchase);
         $this->recomputeForProperty($property, $now);
+    }
+
+    /**
+     * @return array{
+     *     mode: 'new'|'renewal'|'upgrade',
+     *     priceByn: int,
+     *     anchorPurchase: ?PropertyPlacementPurchase,
+     *     expiresAtPreview: ?\DateTimeImmutable
+     * }
+     */
+    public function quoteLevelPurchase(
+        Property $property,
+        PropertyPlacementLevelPrice $levelPrice,
+        int $durationMonths,
+        ?\DateTimeImmutable $now = null,
+    ): array {
+        $now ??= new \DateTimeImmutable();
+        $propertyId = $property->getId()->getValue();
+        $targetLevel = $levelPrice->getLevel();
+
+        $anchor = $this->purchaseRepository->findActiveLevelByPropertyId($propertyId, $now);
+
+        if ($anchor === null) {
+            return [
+                'mode' => 'new',
+                'priceByn' => $levelPrice->getPriceBynPerMonth() * $durationMonths,
+                'anchorPurchase' => null,
+                'expiresAtPreview' => $now->modify('+' . $durationMonths . ' months'),
+            ];
+        }
+
+        $anchorLevel = $anchor->getLevel();
+        if ($anchorLevel === null) {
+            throw new DomainException('Активная заявка не содержит VIP-уровень');
+        }
+
+        if ($targetLevel < $anchorLevel) {
+            throw new DomainException('Понижение VIP-уровня недоступно, пока действует более высокий уровень');
+        }
+
+        if ($targetLevel === $anchorLevel) {
+            $anchorExpiresAt = $anchor->getExpiresAt();
+            if ($anchorExpiresAt === null) {
+                throw new DomainException('У активной заявки не задан срок действия');
+            }
+
+            $cap = $now->modify('+12 months');
+            $candidate = $anchorExpiresAt->modify('+' . $durationMonths . ' months');
+
+            if ($candidate > $cap) {
+                $availableMonths = $this->monthsBetween($anchorExpiresAt, $cap);
+                throw new DomainException(sprintf(
+                    'Продление недоступно на %d мес.: максимальный срок подписки — 12 месяцев от сегодня. Доступно ещё %d мес.',
+                    $durationMonths,
+                    $availableMonths,
+                ));
+            }
+
+            return [
+                'mode' => 'renewal',
+                'priceByn' => $levelPrice->getPriceBynPerMonth() * $durationMonths,
+                'anchorPurchase' => $anchor,
+                'expiresAtPreview' => $candidate,
+            ];
+        }
+
+        $anchorLevelPriceId = $anchor->getLevelPriceId();
+        if ($anchorLevelPriceId === null) {
+            throw new DomainException('У активной заявки не задан тариф уровня');
+        }
+
+        $oldLevelPrice = $this->levelPriceRepository->findById($anchorLevelPriceId);
+        if ($oldLevelPrice === null) {
+            throw new DomainException('Тариф текущего VIP-уровня не найден');
+        }
+
+        $anchorExpiresAt = $anchor->getExpiresAt();
+        if ($anchorExpiresAt === null) {
+            throw new DomainException('У активной заявки не задан срок действия');
+        }
+
+        $remainingDays = max(0.0, ($anchorExpiresAt->getTimestamp() - $now->getTimestamp()) / 86400);
+        $diffPerMonth = $levelPrice->getPriceBynPerMonth() - $oldLevelPrice->getPriceBynPerMonth();
+        $priceByn = max(0, (int) round($diffPerMonth * $remainingDays / 30));
+
+        return [
+            'mode' => 'upgrade',
+            'priceByn' => $priceByn,
+            'anchorPurchase' => $anchor,
+            'expiresAtPreview' => $anchorExpiresAt,
+        ];
+    }
+
+    private function resolveActivationExpiresAt(
+        PropertyPlacementPurchase $purchase,
+        \DateTimeImmutable $now,
+    ): ?\DateTimeImmutable {
+        $basePurchaseId = $purchase->getBasePurchaseId();
+        if ($basePurchaseId === null || $purchase->isBoost()) {
+            return null;
+        }
+
+        $anchor = $this->purchaseRepository->findById($basePurchaseId);
+        if ($anchor === null || !$anchor->isActive()) {
+            return null;
+        }
+
+        $anchorExpiresAt = $anchor->getExpiresAt();
+        if ($anchorExpiresAt === null || $anchorExpiresAt <= $now) {
+            return null;
+        }
+
+        $expiresAtOverride = null;
+        if ($purchase->getLevel() === $anchor->getLevel()) {
+            $durationMonths = $purchase->getDurationMonths() ?? 0;
+            $candidate = $anchorExpiresAt->modify('+' . $durationMonths . ' months');
+            $cap = $now->modify('+12 months');
+            $expiresAtOverride = $candidate > $cap ? $cap : $candidate;
+        } else {
+            $expiresAtOverride = $anchorExpiresAt;
+        }
+
+        $anchor->supersede();
+        $this->purchaseRepository->save($anchor);
+
+        return $expiresAtOverride;
+    }
+
+    private function monthsBetween(\DateTimeImmutable $from, \DateTimeImmutable $to): int
+    {
+        if ($to <= $from) {
+            return 0;
+        }
+
+        $diff = $from->diff($to);
+
+        return $diff->y * 12 + $diff->m;
     }
 
     public function getLevelPriceOccupancy(PropertyPlacementLevelPrice $levelPrice, ?\DateTimeImmutable $now = null): int

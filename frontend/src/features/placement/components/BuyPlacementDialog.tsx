@@ -24,6 +24,7 @@ import { Property } from '@/features/properties/types';
 import {
     useCreatePlacementPurchase,
     usePlacementLevels,
+    usePlacementPurchaseQuote,
     usePlacementScope,
 } from '@/features/placement/hooks';
 import {
@@ -45,6 +46,16 @@ function getApiErrorMessage(error: unknown, fallback: string): string {
         return error.message;
     }
     return fallback;
+}
+
+function formatDateTime(dateStr: string): string {
+    return new Date(dateStr).toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
 }
 
 type Mode = 'level' | 'boost';
@@ -86,9 +97,23 @@ export function BuyPlacementDialog({
     const [level, setLevel] = useState<number | null>(null);
     const [durationMonths, setDurationMonths] = useState<number>(1);
 
+    const currentLevel = property.placementIsTrial ? 0 : property.placementBaseLevel ?? 0;
+
     const selectedLevel = useMemo(
         () => levels.find((item) => item.level === level) ?? null,
         [levels, level],
+    );
+
+    const {
+        data: quote,
+        isLoading: quoteLoading,
+        isError: quoteError,
+        error: quoteQueryError,
+    } = usePlacementPurchaseQuote(
+        property.id,
+        mode === 'level' ? level : null,
+        durationMonths,
+        open && mode === 'level',
     );
 
     const maxLevel = scopeSettings?.maxLevel ?? 5;
@@ -100,17 +125,28 @@ export function BuyPlacementDialog({
         scopeSettings?.boostPriceByn != null &&
         scopeSettings.boostPriceByn >= 0;
 
-    const pricePerMonth = mode === 'level' ? selectedLevel?.priceBynPerMonth ?? null : null;
+    const isUpgradeMode = quote?.mode === 'upgrade';
+    const isRenewalMode = quote?.mode === 'renewal';
+
     const total =
-        mode === 'level' && pricePerMonth != null ? pricePerMonth * durationMonths : scopeSettings?.boostPriceByn ?? null;
+        mode === 'boost'
+            ? scopeSettings?.boostPriceByn ?? null
+            : quote != null
+              ? quote.priceByn
+              : selectedLevel != null
+                ? selectedLevel.priceBynPerMonth * durationMonths
+                : null;
 
     const canSubmit =
         !create.isPending &&
+        !quoteLoading &&
         (mode === 'boost'
             ? canBuyBoost
             : durationMonths > 0 &&
               selectedLevel != null &&
-              (selectedLevel.available == null || selectedLevel.available > 0));
+              !quoteError &&
+              (selectedLevel.available == null || selectedLevel.available > 0) &&
+              selectedLevel.level >= currentLevel);
 
     const handleSubmit = () => {
         if (!canSubmit) return;
@@ -175,15 +211,21 @@ export function BuyPlacementDialog({
                                     {levels.map((item) => {
                                         const full =
                                             item.available != null && item.available <= 0;
+                                        const isDowngrade =
+                                            currentLevel > 0 && item.level < currentLevel;
+                                        const disabled = full || isDowngrade;
+                                        const isCurrentLevel = item.level === currentLevel;
+                                        const isUpgrade = currentLevel > 0 && item.level > currentLevel;
+
                                         return (
                                             <button
                                                 key={item.id}
                                                 type="button"
-                                                disabled={full}
+                                                disabled={disabled}
                                                 onClick={() => setLevel(item.level)}
                                                 className={cn(
                                                     'w-full flex items-center justify-between gap-3 rounded-lg border p-3 text-left text-sm transition-colors',
-                                                    full
+                                                    disabled
                                                         ? 'opacity-50 cursor-not-allowed border-border'
                                                         : level === item.level
                                                           ? 'border-primary bg-primary/5'
@@ -193,13 +235,25 @@ export function BuyPlacementDialog({
                                                 <div>
                                                     <p className="font-medium text-foreground">
                                                         {item.label}
+                                                        {isCurrentLevel && currentLevel > 0 && (
+                                                            <span className="ml-1.5 text-xs font-normal text-primary">
+                                                                · продление
+                                                            </span>
+                                                        )}
+                                                        {isUpgrade && (
+                                                            <span className="ml-1.5 text-xs font-normal text-primary">
+                                                                · апгрейд
+                                                            </span>
+                                                        )}
                                                     </p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        {full
-                                                            ? 'Нет свободных мест'
-                                                            : item.capacity != null
-                                                              ? `Осталось ${item.available} из ${item.capacity}`
-                                                              : 'Без ограничения по местам'}
+                                                        {isDowngrade
+                                                            ? 'Уровень ниже текущего недоступен'
+                                                            : full
+                                                              ? 'Нет свободных мест'
+                                                              : item.capacity != null
+                                                                ? `Осталось ${item.available} из ${item.capacity}`
+                                                                : 'Без ограничения по местам'}
                                                     </p>
                                                 </div>
                                                 <span className="font-semibold inline-flex items-baseline gap-1 shrink-0">
@@ -248,7 +302,17 @@ export function BuyPlacementDialog({
                         </div>
                     )}
 
-                    {mode === 'level' && (
+                    {mode === 'level' && isUpgradeMode && quote?.targetExpiresAt && (
+                        <div className="rounded-lg border border-border p-3 text-sm space-y-1">
+                            <p className="font-medium text-foreground">Апгрейд текущей подписки</p>
+                            <p className="text-xs text-muted-foreground">
+                                Доплата за разницу в цене до конца текущего срока. Действует до{' '}
+                                {formatDateTime(quote.targetExpiresAt)} (как у текущей подписки).
+                            </p>
+                        </div>
+                    )}
+
+                    {mode === 'level' && !isUpgradeMode && (
                         <div className="space-y-2">
                             <p className="text-sm font-medium text-foreground">Срок</p>
                             <Select
@@ -267,15 +331,31 @@ export function BuyPlacementDialog({
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {isRenewalMode && quote?.targetExpiresAt && (
+                                <p className="text-xs text-muted-foreground">
+                                    Новый срок действия: до {formatDateTime(quote.targetExpiresAt)}
+                                </p>
+                            )}
                         </div>
                     )}
 
-                    {total != null && (
+                    {mode === 'level' && quoteError && level != null && (
+                        <p className="text-sm text-destructive">
+                            {getApiErrorMessage(quoteQueryError, 'Не удалось рассчитать стоимость')}
+                        </p>
+                    )}
+
+                    {total != null && !quoteError && (
                         <p className="text-sm text-foreground">
                             Итого:{' '}
                             <span className="font-bold inline-flex items-baseline gap-1">
-                                {total} <BynCurrencyMark />
+                                {quoteLoading ? '…' : total} {!quoteLoading && <BynCurrencyMark />}
                             </span>
+                            {isUpgradeMode && (
+                                <span className="block text-xs text-muted-foreground mt-1">
+                                    Доплата за апгрейд до конца текущего срока
+                                </span>
+                            )}
                         </p>
                     )}
                 </div>

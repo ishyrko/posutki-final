@@ -67,6 +67,9 @@ class PropertyPlacementPurchase
     #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'reservation_expires_at')]
     private ?\DateTimeImmutable $reservationExpiresAt = null;
 
+    #[ORM\Column(type: 'integer', nullable: true, name: 'base_purchase_id')]
+    private ?int $basePurchaseId = null;
+
     #[ORM\Column(type: 'id', nullable: true, name: 'activated_by_admin_id')]
     private ?Id $activatedByAdminId = null;
 
@@ -82,6 +85,7 @@ class PropertyPlacementPurchase
         ?int $level = null,
         ?int $levelPriceId = null,
         ?int $durationMonths = null,
+        ?int $basePurchaseId = null,
         ?\DateTimeImmutable $now = null,
     ) {
         if (!in_array($kind, PlacementPurchaseKind::values(), true)) {
@@ -117,6 +121,7 @@ class PropertyPlacementPurchase
         $this->level = $level;
         $this->levelPriceId = $levelPriceId;
         $this->durationMonths = $durationMonths;
+        $this->basePurchaseId = $basePurchaseId !== null && $basePurchaseId > 0 ? $basePurchaseId : null;
         $this->priceByn = $priceByn;
         $this->status = PlacementPurchaseStatus::PendingPayment->value;
         $this->source = $source;
@@ -192,6 +197,11 @@ class PropertyPlacementPurchase
     public function getReservationExpiresAt(): ?\DateTimeImmutable
     {
         return $this->reservationExpiresAt;
+    }
+
+    public function getBasePurchaseId(): ?int
+    {
+        return $this->basePurchaseId;
     }
 
     public function getActivatedByAdminId(): ?Id
@@ -275,8 +285,11 @@ class PropertyPlacementPurchase
         return $this->reservationExpiresAt > $now;
     }
 
-    public function activate(?Id $adminId = null, ?\DateTimeImmutable $now = null): void
-    {
+    public function activate(
+        ?Id $adminId = null,
+        ?\DateTimeImmutable $now = null,
+        ?\DateTimeImmutable $expiresAtOverride = null,
+    ): void {
         if (!$this->isPendingPayment()) {
             throw new DomainException('Активировать можно только заявку, ожидающую оплаты');
         }
@@ -284,11 +297,24 @@ class PropertyPlacementPurchase
         $now ??= new \DateTimeImmutable();
         $this->status = PlacementPurchaseStatus::Active->value;
         $this->activatedAt = $now;
-        $this->expiresAt = $this->isBoost()
-            ? $now->modify('+' . self::BOOST_HOURS . ' hours')
-            : $now->modify('+' . $this->durationMonths . ' months');
+        if ($expiresAtOverride !== null) {
+            $this->expiresAt = $expiresAtOverride;
+        } elseif ($this->isBoost()) {
+            $this->expiresAt = $now->modify('+' . self::BOOST_HOURS . ' hours');
+        } else {
+            $this->expiresAt = $now->modify('+' . $this->durationMonths . ' months');
+        }
         $this->reservationExpiresAt = null;
         $this->activatedByAdminId = $adminId;
+    }
+
+    public function supersede(): void
+    {
+        if (!$this->isActive()) {
+            throw new DomainException('Заменить можно только активную заявку');
+        }
+
+        $this->status = PlacementPurchaseStatus::Superseded->value;
     }
 
     public function reject(?string $note = null): void

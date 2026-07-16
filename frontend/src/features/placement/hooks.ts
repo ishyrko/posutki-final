@@ -8,6 +8,7 @@ import {
     getMyPlacementPurchases,
     getPendingPlacementPaymentCount,
     getPlacementPurchase,
+    getPlacementPurchaseQuote,
     getPlacementLevels,
     getPlacementScope,
     getPropertyPlacementPurchases,
@@ -67,6 +68,24 @@ export function usePropertyPlacementPurchases(propertyId: number | null | undefi
         queryKey: ['property-placement-purchases', propertyId],
         queryFn: () => getPropertyPlacementPurchases(propertyId!),
         enabled: !!propertyId && propertyId > 0,
+    });
+}
+
+export function usePlacementPurchaseQuote(
+    propertyId: number | null | undefined,
+    level: number | null | undefined,
+    durationMonths: number,
+    enabled = true,
+) {
+    return useQuery({
+        queryKey: ['placement-purchase-quote', propertyId, level, durationMonths],
+        queryFn: () =>
+            getPlacementPurchaseQuote(propertyId!, {
+                level: level!,
+                durationMonths,
+            }),
+        enabled: enabled && !!propertyId && propertyId > 0 && level != null && level > 0,
+        retry: false,
     });
 }
 

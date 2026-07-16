@@ -108,6 +108,63 @@ final class PlacementController extends AbstractController
         ]));
     }
 
+    #[Route('/api/properties/{id}/placement-purchases/quote', name: 'api_property_placement_purchases_quote', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function quotePurchase(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $property = $this->propertyRepository->findById(Id::fromString($id));
+        if ($property === null) {
+            throw new DomainException('Объявление не найдено');
+        }
+        if (!$property->getOwnerId()->equals($user->getId())) {
+            throw new DomainException('Нет прав на это объявление');
+        }
+
+        $level = $request->query->getInt('level');
+        $durationMonths = $request->query->getInt('durationMonths');
+
+        if (
+            $level < PropertyPlacementLevelPrice::MIN_LEVEL
+            || $level > PropertyPlacementLevelPrice::MAX_LEVEL
+        ) {
+            return $this->json(ApiResponse::error(sprintf(
+                'Укажите VIP-уровень от %d до %d',
+                PropertyPlacementLevelPrice::MIN_LEVEL,
+                PropertyPlacementLevelPrice::MAX_LEVEL,
+            ), 400), 400);
+        }
+
+        if ($durationMonths <= 0 || !in_array($durationMonths, \App\Domain\Property\Entity\PropertyPlacementPurchase::ALLOWED_DURATIONS, true)) {
+            return $this->json(ApiResponse::error('Допустимый срок: 1, 3, 6 или 12 месяцев', 400), 400);
+        }
+
+        $levelPrice = null;
+        foreach ($this->placementService->findLevelPricesForProperty($property) as $candidate) {
+            if ($candidate->getLevel() === $level) {
+                $levelPrice = $candidate;
+                break;
+            }
+        }
+
+        if ($levelPrice === null) {
+            throw new DomainException('Для этого VIP-уровня и локации тариф не задан');
+        }
+
+        $quote = $this->placementService->quoteLevelPurchase($property, $levelPrice, $durationMonths);
+        $anchor = $quote['anchorPurchase'];
+
+        return $this->json(ApiResponse::success([
+            'mode' => $quote['mode'],
+            'priceByn' => $quote['priceByn'],
+            'currentLevel' => $anchor?->getLevel(),
+            'currentExpiresAt' => $anchor?->getExpiresAt()?->format('c'),
+            'targetExpiresAt' => $quote['expiresAtPreview']?->format('c'),
+        ]));
+    }
+
     #[Route('/api/properties/{id}/placement-purchases', name: 'api_property_placement_purchases_create', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function createPurchase(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
