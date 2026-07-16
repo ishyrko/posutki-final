@@ -11,6 +11,7 @@ use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Repository\UserRepositoryInterface;
 
 final class PropertyPlacementService
 {
@@ -18,6 +19,7 @@ final class PropertyPlacementService
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
         private readonly PropertyPlacementSlotRepositoryInterface $slotRepository,
+        private readonly UserRepositoryInterface $userRepository,
     ) {
     }
 
@@ -98,5 +100,33 @@ final class PropertyPlacementService
         }
 
         return $this->purchaseRepository->countOccupiedForSlot($id, $now);
+    }
+
+    /**
+     * One free standard trial per account: true if the owner has not used it yet.
+     */
+    public function shouldGrantFreeTrial(Property $property): bool
+    {
+        $user = $this->userRepository->findById($property->getOwnerId());
+        if ($user === null) {
+            return false;
+        }
+
+        return !$user->hasUsedFreePlacementTrial();
+    }
+
+    /**
+     * Mark the owner account as having consumed the one-time free standard month.
+     * Call only after the trial was actually applied to a listing.
+     */
+    public function markFreePlacementTrialUsed(Property $property): void
+    {
+        $user = $this->userRepository->findById($property->getOwnerId());
+        if ($user === null || $user->hasUsedFreePlacementTrial()) {
+            return;
+        }
+
+        $user->markFreePlacementTrialUsed();
+        $this->userRepository->save($user);
     }
 }

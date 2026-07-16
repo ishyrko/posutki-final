@@ -80,6 +80,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', length: 180, nullable: true, unique: true, name: 'pending_email')]
     private ?string $pendingEmail = null;
 
+    /** One free standard placement month per account (first published listing). */
+    #[ORM\Column(type: 'boolean', name: 'has_used_free_placement_trial', options: ['default' => false])]
+    private bool $hasUsedFreePlacementTrial = false;
+
     public function __construct(
         ?Email $email,
         string $password,
@@ -425,6 +429,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    public function hasUsedFreePlacementTrial(): bool
+    {
+        return $this->hasUsedFreePlacementTrial;
+    }
+
+    public function setHasUsedFreePlacementTrial(bool $hasUsedFreePlacementTrial): void
+    {
+        $this->hasUsedFreePlacementTrial = $hasUsedFreePlacementTrial;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function markFreePlacementTrialUsed(): void
+    {
+        if ($this->hasUsedFreePlacementTrial) {
+            return;
+        }
+
+        $this->hasUsedFreePlacementTrial = true;
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     // Symfony UserInterface methods

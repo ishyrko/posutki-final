@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Command\Property\ApproveRevision;
 
+use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Entity\PropertyRevision;
 use App\Domain\Property\Event\PropertyApprovedEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
@@ -30,6 +31,7 @@ readonly class ApproveRevisionHandler
         private ExchangeRateService $exchangeRateService,
         private MetroProximityCalculator $metroProximityCalculator,
         private MessageBusInterface $notificationBus,
+        private PropertyPlacementService $placementService,
     ) {
     }
 
@@ -152,7 +154,11 @@ readonly class ApproveRevisionHandler
 
         // Rejected listings become published after approved correction.
         if ($property->getStatus() === 'rejected') {
-            $property->setStatus('published');
+            $grantFreeTrial = $this->placementService->shouldGrantFreeTrial($property);
+            $property->setStatus('published', $grantFreeTrial);
+            if ($grantFreeTrial) {
+                $this->placementService->markFreePlacementTrialUsed($property);
+            }
         }
 
         $revision->approve();

@@ -7,6 +7,7 @@ namespace App\Presentation\Admin\Controller;
 use App\Application\Command\CommandBusInterface;
 use App\Application\Command\Property\ApproveRevision\ApproveRevisionCommand;
 use App\Application\Command\Property\RejectRevision\RejectRevisionCommand;
+use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Event\PropertyApprovedEvent;
 use App\Domain\Property\Event\PropertyRejectedEvent;
@@ -41,6 +42,7 @@ final class PropertyModerationCrudController extends PropertyCrudController
         AdminUrlGenerator $adminUrlGenerator,
         private readonly CommandBusInterface $commandBus,
         private readonly MessageBusInterface $notificationBus,
+        private readonly PropertyPlacementService $placementService,
     ) {
         parent::__construct(
             $metroProximityCalculator,
@@ -204,8 +206,12 @@ final class PropertyModerationCrudController extends PropertyCrudController
             return $this->redirect($this->buildIndexUrl());
         }
 
-        $property->approve();
+        $grantFreeTrial = $this->placementService->shouldGrantFreeTrial($property);
+        $property->approve($grantFreeTrial);
         $this->propertyRepository->save($property);
+        if ($grantFreeTrial) {
+            $this->placementService->markFreePlacementTrialUsed($property);
+        }
         $this->notificationBus->dispatch(new PropertyApprovedEvent((string) $property->getId()->getValue()));
 
         $this->addFlash('success', 'Объявление одобрено');

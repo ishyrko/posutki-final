@@ -75,6 +75,10 @@ class UserCrudController extends AbstractCrudController
         yield BooleanField::new('isPhoneVerified', 'Телефон подтвержден')
             ->renderAsSwitch(false);
 
+        yield BooleanField::new('hasUsedFreePlacementTrial', 'Бесплатный месяц использован')
+            ->renderAsSwitch(false)
+            ->setHelp('Один пробный месяц стандартного размещения на аккаунт');
+
         yield ArrayField::new('roles', 'Роли');
 
         yield ImageField::new('avatar', 'Аватар')
@@ -94,6 +98,7 @@ class UserCrudController extends AbstractCrudController
         return $filters
             ->add('isVerified')
             ->add('isPhoneVerified')
+            ->add('hasUsedFreePlacementTrial')
             ->add('createdAt');
     }
 }

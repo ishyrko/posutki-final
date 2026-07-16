@@ -350,7 +350,7 @@ class Property
         return $this->status;
     }
 
-    public function setStatus(string $status): void
+    public function setStatus(string $status, bool $grantFreeTrial = true): void
     {
         $this->status = $status;
         if ($status !== 'rejected') {
@@ -358,7 +358,7 @@ class Property
         }
         if ($status === 'published' && $this->publishedAt === null) {
             $this->publishedAt = new \DateTimeImmutable();
-            $this->ensureFreeTrialStarted($this->publishedAt);
+            $this->applyInitialPlacement($this->publishedAt, $grantFreeTrial);
         }
         if ($status === 'published' || $status === 'moderation') {
             $this->archivedAt = null;
@@ -942,14 +942,26 @@ class Property
         $this->updatedAt = $now;
     }
 
-    private function ensureFreeTrialStarted(\DateTimeImmutable $from): void
+    /**
+     * First publish placement: optional one-time free standard trial, otherwise free tier.
+     */
+    public function applyInitialPlacement(\DateTimeImmutable $from, bool $grantFreeTrial): void
     {
         if ($this->freeTrialEndsAt !== null) {
             return;
         }
 
-        $this->freeTrialEndsAt = $from->modify('+1 month');
-        $this->recomputePlacement(null, null, $from);
+        if ($grantFreeTrial) {
+            $this->freeTrialEndsAt = $from->modify('+1 month');
+            $this->recomputePlacement(null, null, $from);
+        } else {
+            $this->placementType = PlacementType::Free->value;
+            $this->placementSlotRank = null;
+            $this->placementExpiresAt = null;
+            $this->placementIsTrial = false;
+            $this->updatedAt = $from;
+        }
+
         if ($this->placementShuffleKey <= 0.0) {
             $this->reshufflePlacement();
         }
@@ -1490,18 +1502,21 @@ class Property
         $this->updatedAt = $this->boostedAt;
     }
 
-    public function approve(): void
+    public function approve(bool $grantFreeTrial = true): void
     {
         if ($this->status !== 'moderation') {
             throw new DomainException('Одобрить можно только объявления на модерации');
         }
 
         $now = new \DateTimeImmutable();
+        $isFirstPublish = $this->publishedAt === null;
         $this->status = 'published';
         $this->moderationComment = null;
         $this->publishedAt = $now;
         $this->archivedAt = null;
-        $this->ensureFreeTrialStarted($now);
+        if ($isFirstPublish) {
+            $this->applyInitialPlacement($now, $grantFreeTrial);
+        }
         $this->updatedAt = $now;
     }
 

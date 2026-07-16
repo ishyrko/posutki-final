@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Symfony\Command;
 
+use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\PropertyType;
@@ -87,6 +88,7 @@ final class SeedDemoPropertiesCommand extends Command
         private readonly MarketplaceDataPurger $marketplaceDataPurger,
         private readonly ExchangeRateService $exchangeRateService,
         private readonly MetroProximityCalculator $metroProximityCalculator,
+        private readonly PropertyPlacementService $placementService,
     ) {
         parent::__construct();
     }
@@ -105,6 +107,11 @@ final class SeedDemoPropertiesCommand extends Command
 
         $io->section('Clearing existing listings and related rows');
         $this->marketplaceDataPurger->purgeProperties($conn);
+        // Demo owner gets a fresh one-time trial for the first seeded listing.
+        $conn->executeStatement(
+            'UPDATE users SET has_used_free_placement_trial = 0 WHERE id = ?',
+            [$ownerId],
+        );
         $this->em->clear();
 
         $regions = $conn->fetchAllAssociative(
@@ -163,13 +170,17 @@ final class SeedDemoPropertiesCommand extends Command
                     $jitterLon = $baseLon + (($slot % 5) - 2) * 0.015;
 
                     $property = $this->makeProperty($owner, $cityId, $jitterLat, $jitterLon, $spec);
-                    $property->setStatus('published');
+                    $grantFreeTrial = $this->placementService->shouldGrantFreeTrial($property);
+                    $property->setStatus('published', $grantFreeTrial);
                     $amount = $property->getPrice()->getAmount();
                     $currency = $property->getPrice()->getCurrency();
                     $property->setPriceByn($this->exchangeRateService->calculatePriceByn($amount, $currency));
 
                     $this->em->persist($property);
                     $this->em->flush();
+                    if ($grantFreeTrial) {
+                        $this->placementService->markFreePlacementTrialUsed($property);
+                    }
                     $this->metroProximityCalculator->syncForProperty($property);
                     $this->em->flush();
                     ++$total;
