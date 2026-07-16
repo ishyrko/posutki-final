@@ -452,28 +452,31 @@ export default function MessagesPage() {
         >
             <h1 className="font-display text-2xl font-bold text-foreground mb-4">Сообщения</h1>
 
-            <div className="flex gap-2 mb-4">
+            <div className="grid grid-cols-2 gap-2 mb-4">
                 <Button
                     type="button"
                     variant={activeTab === 'conversations' ? 'default' : 'outline'}
                     className={cn(
+                        'w-full min-w-0 h-auto py-2.5 px-2 sm:px-4 text-xs sm:text-sm whitespace-normal',
                         activeTab === 'conversations' && 'bg-gradient-primary text-primary-foreground border-0',
                     )}
                     onClick={() => handleTabChange('conversations')}
                 >
-                    <MessageSquare className="w-4 h-4 mr-2" />
+                    <MessageSquare className="w-4 h-4 shrink-0" />
                     Диалоги
                 </Button>
                 <Button
                     type="button"
                     variant={activeTab === 'bookings' ? 'default' : 'outline'}
                     className={cn(
+                        'w-full min-w-0 h-auto py-2.5 px-2 sm:px-4 text-xs sm:text-sm whitespace-normal',
                         activeTab === 'bookings' && 'bg-gradient-primary text-primary-foreground border-0',
                     )}
                     onClick={() => handleTabChange('bookings')}
                 >
-                    <CalendarCheck className="w-4 h-4 mr-2" />
-                    Заявки на бронирование
+                    <CalendarCheck className="w-4 h-4 shrink-0" />
+                    <span className="sm:hidden">Заявки</span>
+                    <span className="hidden sm:inline">Заявки на бронирование</span>
                     {(unreadBookingInquiryCount ?? 0) > 0 && activeTab !== 'bookings' && (
                         <span className={cn(
                             'ml-2 min-w-[20px] h-5 px-1.5 rounded-full text-xs flex items-center justify-center font-medium',
