@@ -13,11 +13,14 @@ use App\Domain\Payment\Enum\PaymentStatus;
 use App\Domain\Payment\Repository\PaymentRepositoryInterface;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Entity\PropertyPlacementPurchase;
+use App\Domain\Property\Enum\PlacementPurchaseKind;
 use App\Domain\Property\Enum\PlacementPurchaseStatus;
-use App\Domain\Property\Enum\PlacementPurchaseType;
+use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Domain\Property\Repository\PropertyPlacementLevelPriceRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
-use App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface;
+use App\Domain\Property\Repository\PropertyPlacementScopeSettingsRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
+use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
@@ -26,6 +29,7 @@ use App\Infrastructure\Payment\BePaid\BePaidCheckoutReader;
 use App\Infrastructure\Payment\BePaid\BePaidGatewayClient;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
@@ -42,14 +46,14 @@ final class ConfirmPlacementPaymentHandlerTest extends TestCase
         $this->setPaymentId($payment, 1);
 
         $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
-        $purchaseRepository->method('findById')->with(42)->willReturnOnConsecutiveCalls($purchase, $purchase);
+        $purchaseRepository->method('findById')->with(42)->willReturn($purchase);
 
-        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
         $propertyRepository->method('findById')->willReturn($property);
 
         $paymentRepository = $this->createMock(PaymentRepositoryInterface::class);
         $paymentRepository->method('findByCheckoutToken')->with('checkout-token')->willReturn($payment);
-        $paymentRepository->expects(self::once())->method('save')->with($payment);
+        $paymentRepository->expects(self::atLeastOnce())->method('save')->with($payment);
 
         $bePaidClient = $this->createBePaidClient([
             'checkout' => [
@@ -67,16 +71,24 @@ final class ConfirmPlacementPaymentHandlerTest extends TestCase
             ],
         ]);
 
-        $placementService = $this->createMock(PropertyPlacementService::class);
-        $placementService
-            ->expects(self::once())
-            ->method('activatePurchase')
-            ->with($purchase, $property, null);
+        $placementService = new PropertyPlacementService(
+            $propertyRepository,
+            $purchaseRepository,
+            $this->createStub(PropertyPlacementLevelPriceRepositoryInterface::class),
+            $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
+            $this->createStub(CityRepositoryInterface::class),
+            $this->createStub(UserRepositoryInterface::class),
+        );
+        $purchaseRepository->method('findActiveLevelByPropertyId')->willReturnCallback(
+            static fn (int $propertyId, ?\DateTimeImmutable $now = null): ?PropertyPlacementPurchase => $purchase->isActive() ? $purchase : null,
+        );
+        $purchaseRepository->method('save');
+        $propertyRepository->expects(self::atLeastOnce())->method('save')->with($property);
 
         $handler = new ConfirmPlacementPaymentHandler(
             $purchaseRepository,
             $propertyRepository,
-            $this->createStub(PropertyPlacementSlotRepositoryInterface::class),
+            $this->createStub(PropertyPlacementLevelPriceRepositoryInterface::class),
             $paymentRepository,
             $bePaidClient,
             new BePaidCheckoutReader(),
@@ -85,7 +97,7 @@ final class ConfirmPlacementPaymentHandlerTest extends TestCase
                 $purchaseRepository,
                 $propertyRepository,
                 $placementService,
-                $this->createStub(MessageBusInterface::class),
+                $this->createNotificationBus(),
                 $this->createStub(LoggerInterface::class),
             ),
         );
@@ -106,10 +118,11 @@ final class ConfirmPlacementPaymentHandlerTest extends TestCase
         $purchase = new PropertyPlacementPurchase(
             propertyId: 10,
             ownerId: $ownerId,
-            type: PlacementPurchaseType::Standard->value,
-            durationMonths: 1,
+            kind: PlacementPurchaseKind::Level->value,
             priceByn: 49,
             source: 'self_service',
+            level: 1,
+            durationMonths: 1,
         );
 
         $idReflection = new \ReflectionProperty($purchase, 'id');
@@ -189,5 +202,15 @@ final class ConfirmPlacementPaymentHandlerTest extends TestCase
             'https://checkout.bepaid.by',
             true,
         );
+    }
+
+    private function createNotificationBus(): MessageBusInterface
+    {
+        return new class implements MessageBusInterface {
+            public function dispatch(object $message, array $stamps = []): Envelope
+            {
+                return new Envelope($message);
+            }
+        };
     }
 }

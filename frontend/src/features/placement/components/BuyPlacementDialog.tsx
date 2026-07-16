@@ -23,10 +23,14 @@ import { BynCurrencyMark } from '@/components/BynCurrency';
 import { Property } from '@/features/properties/types';
 import {
     useCreatePlacementPurchase,
-    usePlacementSlots,
-    useStandardPlacementPrice,
+    usePlacementLevels,
+    usePlacementScope,
 } from '@/features/placement/hooks';
-import { PLACEMENT_DURATIONS, type PlacementTariffScope } from '@/features/placement/types';
+import {
+    isPlacementBoostActive,
+    PLACEMENT_DURATIONS,
+    type PlacementTariffScope,
+} from '@/features/placement/types';
 import { cn } from '@/lib/utils';
 
 function getApiErrorMessage(error: unknown, fallback: string): string {
@@ -43,7 +47,7 @@ function getApiErrorMessage(error: unknown, fallback: string): string {
     return fallback;
 }
 
-type Mode = 'special' | 'standard';
+type Mode = 'level' | 'boost';
 
 interface BuyPlacementDialogProps {
     property: Property;
@@ -73,45 +77,55 @@ export function BuyPlacementDialog({
     const locationLabel = isHouse
         ? property.address?.regionName ?? 'области'
         : property.address?.cityName ?? 'города';
-    const { data: slots = [], isLoading: slotsLoading } = usePlacementSlots(
-        mode === 'special' ? tariffScope : null,
+    const { data: levels = [], isLoading: levelsLoading } = usePlacementLevels(
+        mode === 'level' ? tariffScope : null,
     );
-    const { data: standardPrice } = useStandardPlacementPrice(
-        mode === 'standard' ? tariffScope : null,
-    );
+    const { data: scopeSettings } = usePlacementScope(tariffScope);
     const create = useCreatePlacementPurchase();
 
-    const [slotId, setSlotId] = useState<number | null>(null);
+    const [level, setLevel] = useState<number | null>(null);
     const [durationMonths, setDurationMonths] = useState<number>(1);
 
-    const selectedSlot = useMemo(
-        () => slots.find((s) => s.id === slotId) ?? null,
-        [slots, slotId],
+    const selectedLevel = useMemo(
+        () => levels.find((item) => item.level === level) ?? null,
+        [levels, level],
     );
 
-    const pricePerMonth =
-        mode === 'special'
-            ? selectedSlot?.priceBynPerMonth ?? null
-            : standardPrice?.priceBynPerMonth ?? null;
+    const maxLevel = scopeSettings?.maxLevel ?? 5;
+    const baseLevel = property.placementBaseLevel ?? 0;
+    const boostActive = isPlacementBoostActive(property.placementBoostExpiresAt);
+    const canBuyBoost =
+        mode === 'boost' &&
+        baseLevel < maxLevel &&
+        scopeSettings?.boostPriceByn != null &&
+        scopeSettings.boostPriceByn >= 0;
+
+    const pricePerMonth = mode === 'level' ? selectedLevel?.priceBynPerMonth ?? null : null;
     const total =
-        pricePerMonth != null ? pricePerMonth * durationMonths : null;
+        mode === 'level' && pricePerMonth != null ? pricePerMonth * durationMonths : scopeSettings?.boostPriceByn ?? null;
 
     const canSubmit =
         !create.isPending &&
-        durationMonths > 0 &&
-        (mode === 'standard'
-            ? standardPrice != null
-            : selectedSlot != null && selectedSlot.available > 0);
+        (mode === 'boost'
+            ? canBuyBoost
+            : durationMonths > 0 &&
+              selectedLevel != null &&
+              (selectedLevel.available == null || selectedLevel.available > 0));
 
     const handleSubmit = () => {
         if (!canSubmit) return;
         create.mutate(
-            {
-                propertyId: property.id,
-                type: mode,
-                durationMonths,
-                slotId: mode === 'special' ? slotId : null,
-            },
+            mode === 'boost'
+                ? {
+                      propertyId: property.id,
+                      kind: 'boost',
+                  }
+                : {
+                      propertyId: property.id,
+                      kind: 'level',
+                      level: level!,
+                      durationMonths,
+                  },
             {
                 onSuccess: (purchase) => {
                     onOpenChange(false);
@@ -129,7 +143,7 @@ export function BuyPlacementDialog({
             open={open}
             onOpenChange={(next) => {
                 if (!next) {
-                    setSlotId(null);
+                    setLevel(null);
                     setDurationMonths(1);
                 }
                 onOpenChange(next);
@@ -138,57 +152,58 @@ export function BuyPlacementDialog({
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>
-                        {mode === 'special'
-                            ? 'Купить топ-позицию'
-                            : 'Оплатить стандартное размещение'}
+                        {mode === 'boost' ? 'Купить VIP-буст на 24 часа' : 'Купить VIP-размещение'}
                     </DialogTitle>
                     <DialogDescription>
-                        {property.title}. Оплата помесячная — после создания заявки откроется
-                        экран онлайн-оплаты.
+                        {property.title}. VIP-ротация не гарантирует фиксированное место, но показывает
+                        объявление выше более низких уровней.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 py-2">
-                    {mode === 'special' && (
+                    {mode === 'level' && (
                         <div className="space-y-2">
-                            <p className="text-sm font-medium text-foreground">Диапазон позиций</p>
-                            {slotsLoading ? (
+                            <p className="text-sm font-medium text-foreground">VIP-уровень</p>
+                            {levelsLoading ? (
                                 <p className="text-sm text-muted-foreground">Загрузка…</p>
-                            ) : slots.length === 0 ? (
+                            ) : levels.length === 0 ? (
                                 <p className="text-sm text-muted-foreground">
-                                    Для {locationLabel} объявления диапазоны ещё не настроены.
+                                    Для {locationLabel} VIP-тарифы ещё не настроены.
                                 </p>
                             ) : (
                                 <div className="space-y-2 max-h-56 overflow-y-auto">
-                                    {slots.map((slot) => {
-                                        const full = slot.available <= 0;
+                                    {levels.map((item) => {
+                                        const full =
+                                            item.available != null && item.available <= 0;
                                         return (
                                             <button
-                                                key={slot.id}
+                                                key={item.id}
                                                 type="button"
                                                 disabled={full}
-                                                onClick={() => setSlotId(slot.id)}
+                                                onClick={() => setLevel(item.level)}
                                                 className={cn(
                                                     'w-full flex items-center justify-between gap-3 rounded-lg border p-3 text-left text-sm transition-colors',
                                                     full
                                                         ? 'opacity-50 cursor-not-allowed border-border'
-                                                        : slotId === slot.id
+                                                        : level === item.level
                                                           ? 'border-primary bg-primary/5'
                                                           : 'border-border hover:border-primary/40',
                                                 )}
                                             >
                                                 <div>
                                                     <p className="font-medium text-foreground">
-                                                        Позиция {slot.label}
+                                                        {item.label}
                                                     </p>
                                                     <p className="text-xs text-muted-foreground">
                                                         {full
                                                             ? 'Нет свободных мест'
-                                                            : `Свободно ${slot.available} из ${slot.capacity}`}
+                                                            : item.capacity != null
+                                                              ? `Осталось ${item.available} из ${item.capacity}`
+                                                              : 'Без ограничения по местам'}
                                                     </p>
                                                 </div>
                                                 <span className="font-semibold inline-flex items-baseline gap-1 shrink-0">
-                                                    {slot.priceBynPerMonth} <BynCurrencyMark />
+                                                    {item.priceBynPerMonth} <BynCurrencyMark />
                                                     <span className="text-xs font-normal text-muted-foreground">
                                                         /мес
                                                     </span>
@@ -201,44 +216,59 @@ export function BuyPlacementDialog({
                         </div>
                     )}
 
-                    {mode === 'standard' && (
-                        <div className="rounded-lg border border-border p-3 text-sm">
-                            {standardPrice ? (
-                                <p className="inline-flex items-baseline gap-1">
-                                    <span className="text-muted-foreground">Цена:</span>
-                                    <span className="font-semibold text-foreground">
-                                        {standardPrice.priceBynPerMonth}
-                                    </span>
-                                    <BynCurrencyMark />
-                                    <span className="text-muted-foreground">/ мес</span>
+                    {mode === 'boost' && (
+                        <div className="rounded-lg border border-border p-3 text-sm space-y-2">
+                            {canBuyBoost ? (
+                                <>
+                                    <p className="inline-flex items-baseline gap-1">
+                                        <span className="text-muted-foreground">Цена:</span>
+                                        <span className="font-semibold text-foreground">
+                                            {scopeSettings?.boostPriceByn}
+                                        </span>
+                                        <BynCurrencyMark />
+                                        <span className="text-muted-foreground">за 24 часа</span>
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Временно повышает объявление на один VIP-уровень (до VIP {maxLevel}).
+                                        {boostActive
+                                            ? ' Новая покупка продлит текущий буст на 24 часа после его окончания.'
+                                            : ''}
+                                    </p>
+                                </>
+                            ) : baseLevel >= maxLevel ? (
+                                <p className="text-muted-foreground">
+                                    Буст недоступен: объявление уже на максимальном VIP-уровне для этой
+                                    локации.
                                 </p>
                             ) : (
                                 <p className="text-muted-foreground">
-                                    Для {locationLabel} объявления цена стандартного размещения не задана.
+                                    Для {locationLabel} цена VIP-буста не задана.
                                 </p>
                             )}
                         </div>
                     )}
 
-                    <div className="space-y-2">
-                        <p className="text-sm font-medium text-foreground">Срок</p>
-                        <Select
-                            value={String(durationMonths)}
-                            onValueChange={(v) => setDurationMonths(Number(v))}
-                        >
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {PLACEMENT_DURATIONS.map((m) => (
-                                    <SelectItem key={m} value={String(m)}>
-                                        {m}{' '}
-                                        {m === 1 ? 'месяц' : m < 5 ? 'месяца' : 'месяцев'}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    {mode === 'level' && (
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium text-foreground">Срок</p>
+                            <Select
+                                value={String(durationMonths)}
+                                onValueChange={(v) => setDurationMonths(Number(v))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {PLACEMENT_DURATIONS.map((m) => (
+                                        <SelectItem key={m} value={String(m)}>
+                                            {m}{' '}
+                                            {m === 1 ? 'месяц' : m < 5 ? 'месяца' : 'месяцев'}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
 
                     {total != null && (
                         <p className="text-sm text-foreground">

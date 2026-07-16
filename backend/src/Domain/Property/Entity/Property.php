@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Property\Entity;
 
-use App\Domain\Shared\Exception\ConflictException;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
-use App\Domain\Property\Enum\PlacementType;
 use App\Domain\Property\ValueObject\{Price, Address, Coordinates};
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -150,23 +148,23 @@ class Property
     #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'archived_at')]
     private ?\DateTimeImmutable $archivedAt = null;
 
-    #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'boosted_at')]
-    private ?\DateTimeImmutable $boostedAt = null;
+    #[ORM\Column(type: 'integer', name: 'placement_base_level', options: ['default' => 0])]
+    private int $placementBaseLevel = 0;
 
-    #[ORM\Column(type: 'string', length: 20, name: 'placement_type', options: ['default' => 'free'])]
-    private string $placementType = PlacementType::Free->value;
-
-    #[ORM\Column(type: 'integer', nullable: true, name: 'placement_slot_rank')]
-    private ?int $placementSlotRank = null;
-
-    #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'placement_expires_at')]
-    private ?\DateTimeImmutable $placementExpiresAt = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'placement_level_expires_at')]
+    private ?\DateTimeImmutable $placementLevelExpiresAt = null;
 
     #[ORM\Column(type: 'boolean', name: 'placement_is_trial', options: ['default' => false])]
     private bool $placementIsTrial = false;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'free_trial_ends_at')]
     private ?\DateTimeImmutable $freeTrialEndsAt = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'placement_boost_expires_at')]
+    private ?\DateTimeImmutable $placementBoostExpiresAt = null;
+
+    #[ORM\Column(type: 'integer', name: 'placement_effective_level', options: ['default' => 0])]
+    private int $placementEffectiveLevel = 0;
 
     #[ORM\Column(type: 'float', name: 'placement_shuffle_key', options: ['default' => 0])]
     private float $placementShuffleKey = 0.0;
@@ -851,24 +849,14 @@ class Property
         return $this->archivedAt;
     }
 
-    public function getBoostedAt(): ?\DateTimeImmutable
+    public function getPlacementBaseLevel(): int
     {
-        return $this->boostedAt;
+        return $this->placementBaseLevel;
     }
 
-    public function getPlacementType(): string
+    public function getPlacementLevelExpiresAt(): ?\DateTimeImmutable
     {
-        return $this->placementType;
-    }
-
-    public function getPlacementSlotRank(): ?int
-    {
-        return $this->placementSlotRank;
-    }
-
-    public function getPlacementExpiresAt(): ?\DateTimeImmutable
-    {
-        return $this->placementExpiresAt;
+        return $this->placementLevelExpiresAt;
     }
 
     public function isPlacementIsTrial(): bool
@@ -879,6 +867,23 @@ class Property
     public function getFreeTrialEndsAt(): ?\DateTimeImmutable
     {
         return $this->freeTrialEndsAt;
+    }
+
+    public function getPlacementBoostExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->placementBoostExpiresAt;
+    }
+
+    public function isPlacementBoostActive(?\DateTimeImmutable $now = null): bool
+    {
+        $now ??= new \DateTimeImmutable();
+
+        return $this->placementBoostExpiresAt !== null && $this->placementBoostExpiresAt > $now;
+    }
+
+    public function getPlacementEffectiveLevel(): int
+    {
+        return $this->placementEffectiveLevel;
     }
 
     public function getPlacementShuffleKey(): float
@@ -893,57 +898,61 @@ class Property
     }
 
     /**
-     * Recalculate effective placement from active purchases / free trial.
-     *
-     * @param array{slotRank: int, expiresAt: \DateTimeImmutable}|null $activeSpecial
-     * @param array{expiresAt: \DateTimeImmutable}|null $activeStandard
+     * Extend (or start) the 24h VIP-boost: repeat purchases while a boost is already
+     * active add 24h on top of the current expiry instead of resetting the clock.
      */
-    public function recomputePlacement(
-        ?array $activeSpecial,
-        ?array $activeStandard,
-        ?\DateTimeImmutable $now = null,
-    ): void {
+    public function extendPlacementBoost(?\DateTimeImmutable $now = null, int $hours = PropertyPlacementPurchase::BOOST_HOURS): void
+    {
         $now ??= new \DateTimeImmutable();
-
-        if ($activeSpecial !== null) {
-            $this->placementType = PlacementType::Special->value;
-            $this->placementSlotRank = $activeSpecial['slotRank'];
-            $this->placementExpiresAt = $activeSpecial['expiresAt'];
-            $this->placementIsTrial = false;
-            $this->updatedAt = $now;
-
-            return;
-        }
-
-        if ($activeStandard !== null) {
-            $this->placementType = PlacementType::Standard->value;
-            $this->placementSlotRank = null;
-            $this->placementExpiresAt = $activeStandard['expiresAt'];
-            $this->placementIsTrial = false;
-            $this->updatedAt = $now;
-
-            return;
-        }
-
-        if ($this->freeTrialEndsAt !== null && $this->freeTrialEndsAt > $now) {
-            $this->placementType = PlacementType::Standard->value;
-            $this->placementSlotRank = null;
-            $this->placementExpiresAt = $this->freeTrialEndsAt;
-            $this->placementIsTrial = true;
-            $this->updatedAt = $now;
-
-            return;
-        }
-
-        $this->placementType = PlacementType::Free->value;
-        $this->placementSlotRank = null;
-        $this->placementExpiresAt = null;
-        $this->placementIsTrial = false;
+        $base = $this->isPlacementBoostActive($now) ? $this->placementBoostExpiresAt : $now;
+        $this->placementBoostExpiresAt = $base->modify('+' . $hours . ' hours');
         $this->updatedAt = $now;
     }
 
     /**
-     * First publish placement: optional one-time free standard trial, otherwise free tier.
+     * Recalculate the base VIP level from the active level-purchase (or the one-time
+     * free trial), and the effective level considering an active boost capped at
+     * $maxLevel for the property's scope.
+     *
+     * @param array{level: int, expiresAt: \DateTimeImmutable}|null $activeLevelPurchase
+     */
+    public function recomputePlacement(
+        ?array $activeLevelPurchase,
+        ?\DateTimeImmutable $now = null,
+        ?int $maxLevel = null,
+    ): void {
+        $now ??= new \DateTimeImmutable();
+
+        if ($activeLevelPurchase !== null) {
+            $this->placementBaseLevel = $activeLevelPurchase['level'];
+            $this->placementLevelExpiresAt = $activeLevelPurchase['expiresAt'];
+            $this->placementIsTrial = false;
+        } elseif ($this->freeTrialEndsAt !== null && $this->freeTrialEndsAt > $now) {
+            $this->placementBaseLevel = 1;
+            $this->placementLevelExpiresAt = $this->freeTrialEndsAt;
+            $this->placementIsTrial = true;
+        } else {
+            $this->placementBaseLevel = 0;
+            $this->placementLevelExpiresAt = null;
+            $this->placementIsTrial = false;
+        }
+
+        if (!$this->isPlacementBoostActive($now)) {
+            $this->placementBoostExpiresAt = null;
+        }
+
+        if ($this->placementBoostExpiresAt !== null) {
+            $cap = $maxLevel !== null ? max($maxLevel, $this->placementBaseLevel) : PropertyPlacementLevelPrice::MAX_LEVEL;
+            $this->placementEffectiveLevel = min($this->placementBaseLevel + 1, $cap);
+        } else {
+            $this->placementEffectiveLevel = $this->placementBaseLevel;
+        }
+
+        $this->updatedAt = $now;
+    }
+
+    /**
+     * First publish placement: optional one-time free VIP 1 trial, otherwise free tier (VIP 0).
      */
     public function applyInitialPlacement(\DateTimeImmutable $from, bool $grantFreeTrial): void
     {
@@ -953,14 +962,9 @@ class Property
 
         if ($grantFreeTrial) {
             $this->freeTrialEndsAt = $from->modify('+1 month');
-            $this->recomputePlacement(null, null, $from);
-        } else {
-            $this->placementType = PlacementType::Free->value;
-            $this->placementSlotRank = null;
-            $this->placementExpiresAt = null;
-            $this->placementIsTrial = false;
-            $this->updatedAt = $from;
         }
+
+        $this->recomputePlacement(null, $from);
 
         if ($this->placementShuffleKey <= 0.0) {
             $this->reshufflePlacement();
@@ -1474,32 +1478,6 @@ class Property
         $this->archivedAt = null;
         $this->moderationComment = null;
         $this->updatedAt = new \DateTimeImmutable();
-    }
-
-    /**
-     * Free catalog boost: once per calendar day (server timezone).
-     */
-    public function boost(): void
-    {
-        if ($this->status !== 'published') {
-            throw new DomainException('Поднимать можно только опубликованные объявления');
-        }
-
-        $now = new \DateTimeImmutable();
-        $eligibleFrom = $this->createdAt->modify('+1 day');
-        if ($now < $eligibleFrom) {
-            throw new DomainException(
-                'Поднятие в топ доступно не ранее чем через 24 часа после создания объявления'
-            );
-        }
-
-        $todayStart = new \DateTimeImmutable('today');
-        if ($this->boostedAt !== null && $this->boostedAt >= $todayStart) {
-            throw new ConflictException('Объявление уже поднималось сегодня');
-        }
-
-        $this->boostedAt = new \DateTimeImmutable();
-        $this->updatedAt = $this->boostedAt;
     }
 
     public function approve(bool $grantFreeTrial = true): void

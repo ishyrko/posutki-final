@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useCities, useRegions } from '@/features/create-listing/hooks';
-import { usePlacementSlots, useStandardPlacementPrice } from '@/features/placement/hooks';
+import { usePlacementLevels, usePlacementScope } from '@/features/placement/hooks';
 import type { PlacementPropertyType, PlacementTariffScope } from '@/features/placement/types';
 import { BynCurrencyMark } from '@/components/BynCurrency';
 import {
@@ -44,8 +44,8 @@ export function TariffsPageContent() {
         return selectedCityId ? { propertyType: 'apartment', cityId: selectedCityId } : null;
     }, [propertyType, selectedCityId, selectedRegionId]);
 
-    const { data: slots = [], isLoading: slotsLoading } = usePlacementSlots(tariffScope);
-    const { data: standardPrice } = useStandardPlacementPrice(tariffScope);
+    const { data: levels = [], isLoading: levelsLoading } = usePlacementLevels(tariffScope);
+    const { data: scopeSettings } = usePlacementScope(tariffScope);
 
     const locationLabel =
         propertyType === 'house'
@@ -55,61 +55,57 @@ export function TariffsPageContent() {
     return (
         <div className="mx-auto max-w-3xl">
             <h1 className="font-display text-3xl font-bold text-foreground mb-3">
-                Стоимость размещения
+                VIP-тарифы размещения
             </h1>
             <p className="text-muted-foreground mb-8">
-                Чем выше тариф, тем выше объявление в каталоге. Один раз на аккаунт доступен
-                бесплатный пробный месяц стандартного размещения для одного объявления.
+                Чем выше VIP-уровень, тем выше объявление в каталоге. Внутри одного уровня объявления
+                ротируются — конкретная позиция не гарантируется. Один раз на аккаунт доступен
+                бесплатный пробный месяц VIP 1 для одного объявления.
             </p>
 
             <div className="space-y-4 mb-10">
                 <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-                    <h2 className="font-semibold text-foreground mb-2">Спецразмещение</h2>
+                    <h2 className="font-semibold text-foreground mb-2">VIP-уровни 1–5</h2>
                     <p className="text-sm text-muted-foreground">
-                        Фиксированные диапазоны позиций в верхней части каталога. Количество мест
-                        ограничено — при заполнении диапазона покупка недоступна.
+                        Платное размещение с повышенным приоритетом в выдаче. Лимиты мест задаются
+                        отдельно для каждого города и уровня — при заполнении покупка недоступна.
                     </p>
                 </div>
 
                 <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-                    <h2 className="font-semibold text-foreground mb-2">Стандартное размещение</h2>
+                    <h2 className="font-semibold text-foreground mb-2">VIP-буст на 24 часа</h2>
                     <p className="text-sm text-muted-foreground mb-3">
-                        Объявления показываются ниже спецразмещения, в общей выдаче с периодической
-                        ротацией. Первый месяц после публикации первого объявления на аккаунте —
-                        бесплатно (пробный период). Остальные объявления сразу на бесплатном тарифе.
+                        Временно повышает объявление на один VIP-уровень. На максимальном уровне буст
+                        недоступен.
                     </p>
-                    {standardPrice ? (
+                    {scopeSettings?.boostPriceByn != null ? (
                         <p className="text-lg font-semibold text-foreground inline-flex items-baseline gap-1">
-                            {standardPrice.priceBynPerMonth} <BynCurrencyMark />
-                            <span className="text-sm font-normal text-muted-foreground">/ мес</span>
+                            {scopeSettings.boostPriceByn} <BynCurrencyMark />
+                            <span className="text-sm font-normal text-muted-foreground">/ 24 ч</span>
                         </p>
                     ) : (
                         <p className="text-sm text-muted-foreground">
-                            Для выбранного {propertyType === 'house' ? 'региона' : 'города'} цена
-                            пока не задана.
+                            Для выбранной локации цена буста пока не задана.
                         </p>
                     )}
                 </div>
 
                 <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-                    <h2 className="font-semibold text-foreground mb-2">Бесплатное размещение</h2>
+                    <h2 className="font-semibold text-foreground mb-2">Бесплатное размещение (VIP 0)</h2>
                     <p className="text-sm text-muted-foreground">
-                        Если пробный период или оплаченное стандартное размещение закончились,
-                        объявление остаётся в каталоге на бесплатном тарифе с ограничениями и более
-                        низкой позицией — ниже спецразмещения и стандартного.
+                        После окончания пробного периода или оплаченного VIP объявление остаётся в
+                        каталоге на бесплатном уровне с ограничениями и более низкой позицией.
                     </p>
                 </div>
 
                 <div className="rounded-xl border border-primary/30 bg-primary/5 p-5">
                     <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                         <Check className="w-4 h-4 text-primary" />
-                        Бесплатный пробный месяц
+                        Бесплатный пробный месяц VIP 1
                     </h2>
                     <p className="text-sm text-muted-foreground">
                         Один раз на аккаунт: после первой публикации одно объявление автоматически
-                        получает стандартное размещение на 1 месяц. Остальные объявления сразу
-                        попадают на бесплатный тариф. По окончании триала без оплаты объявление
-                        тоже переходит на бесплатный тариф с ограничениями.
+                        получает VIP 1 на 1 месяц. Остальные объявления сразу на бесплатном уровне.
                     </p>
                 </div>
             </div>
@@ -162,13 +158,16 @@ export function TariffsPageContent() {
                 )}
             </div>
 
-            <p className="text-sm text-muted-foreground mb-3">Стоимость — {locationLabel}</p>
+            <p className="text-sm text-muted-foreground mb-3">
+                Стоимость — {locationLabel}
+                {scopeSettings?.maxLevel ? ` · макс. VIP ${scopeSettings.maxLevel}` : ''}
+            </p>
 
             <div className="rounded-xl border border-border bg-card overflow-hidden shadow-card mb-6">
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
-                            <th className="text-left py-3 px-4 font-medium">Позиция</th>
+                            <th className="text-left py-3 px-4 font-medium">Уровень</th>
                             <th className="text-right py-3 px-4 font-medium">Цена</th>
                             <th className="text-right py-3 px-4 font-medium hidden sm:table-cell">
                                 Места
@@ -176,55 +175,41 @@ export function TariffsPageContent() {
                         </tr>
                     </thead>
                     <tbody>
-                        {slotsLoading ? (
+                        {levelsLoading ? (
                             <tr>
                                 <td colSpan={3} className="py-8 text-center text-muted-foreground">
                                     Загрузка…
                                 </td>
                             </tr>
-                        ) : slots.length === 0 ? (
+                        ) : levels.length === 0 ? (
                             <tr>
                                 <td colSpan={3} className="py-8 text-center text-muted-foreground">
                                     {propertyType === 'house'
-                                        ? 'Для этой области диапазоны ещё не настроены.'
-                                        : 'Для этого города диапазоны ещё не настроены.'}
+                                        ? 'Для этой области VIP-тарифы ещё не настроены.'
+                                        : 'Для этого города VIP-тарифы ещё не настроены.'}
                                 </td>
                             </tr>
                         ) : (
-                            slots.map((slot) => (
-                                <tr key={slot.id} className="border-b border-border last:border-0">
+                            levels.map((item) => (
+                                <tr key={item.id} className="border-b border-border last:border-0">
                                     <td className="py-3 px-4 text-foreground font-medium">
-                                        {slot.label}
+                                        {item.label}
                                     </td>
                                     <td className="py-3 px-4 text-right font-semibold text-foreground">
                                         <span className="inline-flex items-baseline gap-1 justify-end">
-                                            {slot.priceBynPerMonth} <BynCurrencyMark />
+                                            {item.priceBynPerMonth} <BynCurrencyMark />
                                             <span className="text-xs font-normal text-muted-foreground">
                                                 /мес
                                             </span>
                                         </span>
                                     </td>
                                     <td className="py-3 px-4 text-right text-muted-foreground hidden sm:table-cell">
-                                        {slot.occupied} / {slot.capacity}
+                                        {item.capacity != null
+                                            ? `${item.occupied} / ${item.capacity}`
+                                            : 'без лимита'}
                                     </td>
                                 </tr>
                             ))
-                        )}
-                        {standardPrice && (
-                            <tr className="bg-muted/20">
-                                <td className="py-3 px-4 text-foreground">Стандартное размещение</td>
-                                <td className="py-3 px-4 text-right font-semibold text-foreground">
-                                    <span className="inline-flex items-baseline gap-1 justify-end">
-                                        {standardPrice.priceBynPerMonth} <BynCurrencyMark />
-                                        <span className="text-xs font-normal text-muted-foreground">
-                                            /мес
-                                        </span>
-                                    </span>
-                                </td>
-                                <td className="py-3 px-4 text-right text-muted-foreground hidden sm:table-cell">
-                                    без лимита
-                                </td>
-                            </tr>
                         )}
                     </tbody>
                 </table>

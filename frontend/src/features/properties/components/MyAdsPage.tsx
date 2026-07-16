@@ -6,7 +6,7 @@ import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from '@/feature
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ListingSubmitLink } from '@/components/ListingSubmitLink';
-import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, CalendarDays, Rocket, Star, Tag } from 'lucide-react';
+import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, CalendarDays, Rocket, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,12 +20,12 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { useArchiveProperty, useBoostProperty, useDeleteProperty, useExchangeRates, useMyProperties, useUnarchiveProperty } from '@/features/properties/hooks';
+import { useArchiveProperty, useDeleteProperty, useExchangeRates, useMyProperties, useUnarchiveProperty } from '@/features/properties/hooks';
 import { Property, formatAddress, isPropertyEditable } from '@/features/properties/types';
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
 import { BuyPlacementDialog } from '@/features/placement/components/BuyPlacementDialog';
-import { formatPlacementStatus } from '@/features/placement/types';
+import { formatPlacementStatus, isPlacementBoostActive } from '@/features/placement/types';
 
 export type MyAdsStatus = 'published' | 'moderation' | 'rejected' | 'inactive';
 
@@ -52,28 +52,7 @@ const STATUS_ROUTE_SEGMENTS: Record<MyAdsStatus, string> = {
     inactive: 'neaktivnye',
 };
 
-const MS_PER_HOUR = 60 * 60 * 1000;
-const MS_PER_DAY = 24 * MS_PER_HOUR;
-
-/** Boost: earliest 24h after listing creation */
-function isAtLeast24HoursAfterCreation(createdAtIso: string | undefined): boolean {
-    if (!createdAtIso) return false;
-    const created = new Date(createdAtIso).getTime();
-    if (Number.isNaN(created)) return false;
-    return Date.now() - created >= 24 * MS_PER_HOUR;
-}
-
-function isBoostedToday(iso: string | null | undefined): boolean {
-    if (!iso) return false;
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return false;
-    const now = new Date();
-    return (
-        d.getFullYear() === now.getFullYear() &&
-        d.getMonth() === now.getMonth() &&
-        d.getDate() === now.getDate()
-    );
-}
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function getApiErrorMessage(error: unknown, fallback: string): string {
     if (typeof error !== 'object' || error === null || !('response' in error)) {
@@ -116,10 +95,9 @@ function ListingCard({
     showPublicLinks: boolean;
     onRequestDelete?: (propertyId: number) => void;
 }) {
-    const boost = useBoostProperty();
     const archive = useArchiveProperty();
     const unarchive = useUnarchiveProperty();
-    const [placementDialog, setPlacementDialog] = useState<'special' | 'standard' | null>(null);
+    const [placementDialog, setPlacementDialog] = useState<'level' | 'boost' | null>(null);
     const { data: rates } = useExchangeRates();
     const exchangeRates: ExchangeRates = useMemo(
         () => rates ?? DEFAULT_EXCHANGE_RATES_FALLBACK,
@@ -135,8 +113,7 @@ function ListingCard({
         property.address?.regionName,
         property.address?.citySlug,
     );
-    const boostedToday = isBoostedToday(property.boostedAt);
-    const boostCooldownOk = isAtLeast24HoursAfterCreation(property.createdAt);
+    const boostActive = isPlacementBoostActive(property.placementBoostExpiresAt);
     const { daysUntilDelete, canDelete, showDeleteButton } = getDeleteEligibility(property);
 
     const imageBlock = (
@@ -267,57 +244,31 @@ function ListingCard({
                             </Link>
                         </Button>
                     )}
-                    {property.status === 'published' &&
-                        (!boostCooldownOk ? (
-                            <Button variant="ghost" size="sm" disabled className="justify-start text-muted-foreground">
-                                <Rocket className="w-3.5 h-3.5 mr-1" />
-                                Через 24 ч после создания
-                            </Button>
-                        ) : boostedToday ? (
-                            <Button variant="ghost" size="sm" disabled className="justify-start text-muted-foreground">
-                                <Rocket className="w-3.5 h-3.5 mr-1" />
-                                Поднято сегодня
-                            </Button>
-                        ) : (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="justify-start"
-                                disabled={boost.isPending && boost.variables === property.id}
-                                onClick={() =>
-                                    boost.mutate(property.id, {
-                                        onSuccess: () => toast.success('Объявление поднято в топ'),
-                                        onError: (e) =>
-                                            toast.error(getApiErrorMessage(e, 'Не удалось поднять объявление')),
-                                    })
-                                }
-                            >
-                                <Rocket className="w-3.5 h-3.5 mr-1" />
-                                Поднять в топ
-                            </Button>
-                        ))}
                     {property.status === 'published' && (
                         <>
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 className="justify-start"
-                                onClick={() => setPlacementDialog('special')}
+                                onClick={() => setPlacementDialog('level')}
                             >
                                 <Star className="w-3.5 h-3.5 mr-1" />
-                                Купить топ-позицию
+                                Купить VIP
                             </Button>
-                            {(property.placementType === 'free' || property.placementIsTrial) && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="justify-start"
-                                    onClick={() => setPlacementDialog('standard')}
-                                >
-                                    <Tag className="w-3.5 h-3.5 mr-1" />
-                                    Оплатить стандартное
-                                </Button>
-                            )}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start"
+                                onClick={() => setPlacementDialog('boost')}
+                                title={
+                                    boostActive
+                                        ? 'Буст активен — новая покупка продлит срок на 24 часа после окончания'
+                                        : undefined
+                                }
+                            >
+                                <Rocket className="w-3.5 h-3.5 mr-1" />
+                                {boostActive ? 'Продлить VIP-буст' : 'VIP-буст 24ч'}
+                            </Button>
                         </>
                     )}
                     {property.status === 'moderation' ? (
@@ -388,7 +339,7 @@ function ListingCard({
             <BuyPlacementDialog
                 property={property}
                 open={placementDialog !== null}
-                mode={placementDialog ?? 'special'}
+                mode={placementDialog ?? 'level'}
                 onOpenChange={(open) => {
                     if (!open) setPlacementDialog(null);
                 }}

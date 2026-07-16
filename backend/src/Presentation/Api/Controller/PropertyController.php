@@ -6,7 +6,6 @@ namespace App\Presentation\Api\Controller;
 
 use App\Application\Command\Property\ArchiveProperty\ArchivePropertyCommand;
 use App\Application\Command\Property\UnarchiveProperty\UnarchivePropertyCommand;
-use App\Application\Command\Property\BoostProperty\BoostPropertyCommand;
 use App\Application\Command\Property\CreateProperty\CreatePropertyCommand;
 use App\Application\Command\Property\PublishProperty\PublishPropertyCommand;
 use App\Application\Command\Property\UpdateProperty\UpdatePropertyCommand;
@@ -384,25 +383,6 @@ class PropertyController extends AbstractController
 
         return $this->json(
             ApiResponse::success(['message' => 'Объявление снова опубликовано'])
-        );
-    }
-
-    #[Route('/{id}/boost', name: 'boost', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function boost(string $id, #[CurrentUser] ?User $user): JsonResponse
-    {
-        if (!$user) {
-            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
-        }
-
-        $command = new BoostPropertyCommand(
-            propertyId: $id,
-            userId: (string) $user->getId()->getValue(),
-        );
-
-        $boostedAt = $this->commandBus->dispatch($command);
-
-        return $this->json(
-            ApiResponse::success(['boostedAt' => $boostedAt])
         );
     }
 

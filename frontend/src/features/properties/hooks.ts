@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, getFavorites, getExchangeRates, getPropertyStats, boostProperty, archiveProperty, unarchiveProperty, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock } from './api';
+import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, getFavorites, getExchangeRates, getPropertyStats, archiveProperty, unarchiveProperty, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock } from './api';
 import { Property, PropertyFilters, PropertyListResponse } from './types';
 import { isAuthenticated } from '@/lib/auth';
 
@@ -122,17 +122,6 @@ export const usePropertyStats = (id: number, period: 7 | 30 | 90) => {
         queryKey: ['property-stats', id, period],
         queryFn: () => getPropertyStats(id, period),
         enabled: id > 0 && isAuthenticated(),
-    });
-};
-
-export const useBoostProperty = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (id: number) => boostProperty(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['my-properties'] });
-            queryClient.invalidateQueries({ queryKey: ['properties'] });
-        },
     });
 };
 

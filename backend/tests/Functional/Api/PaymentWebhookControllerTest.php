@@ -6,10 +6,10 @@ namespace App\Tests\Functional\Api;
 
 use App\Domain\Payment\Entity\Payment;
 use App\Domain\Payment\Enum\PaymentStatus;
+use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
 use App\Domain\Property\Entity\PropertyPlacementPurchase;
-use App\Domain\Property\Entity\PropertyPlacementStandardPrice;
+use App\Domain\Property\Enum\PlacementPurchaseKind;
 use App\Domain\Property\Enum\PlacementPurchaseStatus;
-use App\Domain\Property\Enum\PlacementPurchaseType;
 use App\Domain\Property\Enum\PropertyType;
 
 final class PaymentWebhookControllerTest extends ApiTestCase
@@ -22,21 +22,25 @@ final class PaymentWebhookControllerTest extends ApiTestCase
         $city = $this->createCity('Minsk Pay', 'minsk-pay', 'г. Минск');
         $property = $this->createProperty($owner, $city, 'published');
 
-        $standardPrice = new PropertyPlacementStandardPrice(
+        $levelPrice = new PropertyPlacementLevelPrice(
             propertyType: PropertyType::Apartment->value,
             cityId: $city->getId(),
             regionId: null,
+            level: 1,
             priceBynPerMonth: 49,
         );
-        $this->entityManager()->persist($standardPrice);
+        $this->entityManager()->persist($levelPrice);
+        $this->entityManager()->flush();
 
         $purchase = new PropertyPlacementPurchase(
             propertyId: $property->getId()->getValue(),
             ownerId: $owner->getId(),
-            type: PlacementPurchaseType::Standard->value,
-            durationMonths: 1,
+            kind: PlacementPurchaseKind::Level->value,
             priceByn: 49,
             source: 'self_service',
+            level: 1,
+            levelPriceId: $levelPrice->getId(),
+            durationMonths: 1,
         );
         $this->entityManager()->persist($purchase);
         $this->entityManager()->flush();

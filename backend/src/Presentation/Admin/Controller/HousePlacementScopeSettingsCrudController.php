@@ -6,20 +6,20 @@ namespace App\Presentation\Admin\Controller;
 
 use App\Domain\Property\Enum\PropertyType;
 
-final class ApartmentPlacementSlotCrudController extends AbstractPlacementSlotCrudController
+final class HousePlacementScopeSettingsCrudController extends AbstractPlacementScopeSettingsCrudController
 {
     protected function scopedPropertyType(): string
     {
-        return PropertyType::Apartment->value;
+        return PropertyType::House->value;
     }
 
     protected function entityLabelSingular(): string
     {
-        return 'Диапазон позиций (квартиры)';
+        return 'Настройки VIP (дома)';
     }
 
     protected function entityLabelPlural(): string
     {
-        return 'Диапазоны позиций — квартиры';
+        return 'Настройки VIP — дома';
     }
 }

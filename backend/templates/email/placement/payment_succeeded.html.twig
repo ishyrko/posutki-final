@@ -35,8 +35,10 @@
 
     <div class="details-card">
       <p class="details-title">{{ property.title }}</p>
-      <p class="details-row"><strong>Тип:</strong> {{ typeLabel }}{% if slotLabel %} · позиции {{ slotLabel }}{% endif %}</p>
+      <p class="details-row"><strong>Тип:</strong> {{ kindLabel }}{% if purchase.level %} · VIP {{ purchase.level }}{% endif %}</p>
+      {% if purchase.durationMonths %}
       <p class="details-row"><strong>Срок:</strong> {{ purchase.durationMonths }} мес.</p>
+      {% endif %}
       <p class="details-row"><strong>Сумма:</strong> {{ purchase.priceByn }} BYN</p>
       {% if expiresAtFormatted %}
       <p class="details-row"><strong>Действует до:</strong> {{ expiresAtFormatted }}</p>

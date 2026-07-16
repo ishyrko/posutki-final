@@ -38,8 +38,7 @@ interface PropertyListCardProps {
   nearbyMetroStations?: NearbyMetroStation[];
   /** When true, metro badges stay below the address (e.g. catalog "list + map" on desktop). */
   metroOnSeparateLine?: boolean;
-  placementType?: string | null;
-  placementSlotRank?: number | null;
+  placementEffectiveLevel?: number | null;
 }
 
 const lineColorClass = (line: number): string => {
@@ -79,11 +78,10 @@ const PropertyListCard = ({
   regionSlug,
   nearbyMetroStations = [],
   metroOnSeparateLine = false,
-  placementType,
-  placementSlotRank,
+  placementEffectiveLevel,
 }: PropertyListCardProps) => {
   const href = id ? buildPropertyUrl(propertyType, id, regionSlug) : `/property/${index}`;
-  const topBadge = placementBadgeLabel(placementType, placementSlotRank);
+  const topBadge = placementBadgeLabel(placementEffectiveLevel);
   const { data: user } = useUser();
   const { data: favoriteIds = [] } = useFavoriteIds();
   const { mutate: toggleFavorite } = useToggleFavorite();

@@ -173,21 +173,29 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
                     <div>
                         <dt className="text-muted-foreground">Тип</dt>
                         <dd className="font-medium text-foreground">
-                            {purchase.typeLabel}
-                            {purchase.slotLabel ? ` · позиции ${purchase.slotLabel}` : ''}
+                            {purchase.kindLabel}
+                            {purchase.level != null ? ` · VIP ${purchase.level}` : ''}
                         </dd>
                     </div>
-                    <div>
-                        <dt className="text-muted-foreground">Срок</dt>
-                        <dd className="font-medium text-foreground">
-                            {purchase.durationMonths}{' '}
-                            {purchase.durationMonths === 1
-                                ? 'месяц'
-                                : purchase.durationMonths < 5
-                                  ? 'месяца'
-                                  : 'месяцев'}
-                        </dd>
-                    </div>
+                    {purchase.durationMonths != null && (
+                        <div>
+                            <dt className="text-muted-foreground">Срок</dt>
+                            <dd className="font-medium text-foreground">
+                                {purchase.durationMonths}{' '}
+                                {purchase.durationMonths === 1
+                                    ? 'месяц'
+                                    : purchase.durationMonths < 5
+                                      ? 'месяца'
+                                      : 'месяцев'}
+                            </dd>
+                        </div>
+                    )}
+                    {purchase.kind === 'boost' && (
+                        <div>
+                            <dt className="text-muted-foreground">Срок</dt>
+                            <dd className="font-medium text-foreground">24 часа</dd>
+                        </div>
+                    )}
                     <div>
                         <dt className="text-muted-foreground">Сумма</dt>
                         <dd className="font-bold text-foreground inline-flex items-baseline gap-1">
@@ -261,8 +269,8 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
                                             {new Date(item.createdAt).toLocaleDateString('ru-RU')}
                                         </td>
                                         <td className="py-3 text-foreground">
-                                            {item.typeLabel}
-                                            {item.slotLabel ? ` (${item.slotLabel})` : ''},{' '}
+                                            {item.kindLabel}
+                                            {item.level != null ? ` (VIP ${item.level})` : ''},{' '}
                                             {item.durationMonths} мес.
                                         </td>
                                         <td className="py-3 text-right font-medium">

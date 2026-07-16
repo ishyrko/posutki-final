@@ -8,24 +8,24 @@ import {
     getMyPlacementPurchases,
     getPendingPlacementPaymentCount,
     getPlacementPurchase,
-    getPlacementSlots,
+    getPlacementLevels,
+    getPlacementScope,
     getPropertyPlacementPurchases,
-    getStandardPlacementPrice,
 } from './api';
 import type { PlacementTariffScope } from './types';
 
-export function usePlacementSlots(scope: PlacementTariffScope | null | undefined) {
+export function usePlacementLevels(scope: PlacementTariffScope | null | undefined) {
     return useQuery({
-        queryKey: ['placement-slots', scope],
-        queryFn: () => getPlacementSlots(scope!),
+        queryKey: ['placement-levels', scope],
+        queryFn: () => getPlacementLevels(scope!),
         enabled: !!scope,
     });
 }
 
-export function useStandardPlacementPrice(scope: PlacementTariffScope | null | undefined) {
+export function usePlacementScope(scope: PlacementTariffScope | null | undefined) {
     return useQuery({
-        queryKey: ['placement-standard-price', scope],
-        queryFn: () => getStandardPlacementPrice(scope!),
+        queryKey: ['placement-scope', scope],
+        queryFn: () => getPlacementScope(scope!),
         enabled: !!scope,
     });
 }
@@ -75,7 +75,8 @@ export function useCreatePlacementPurchase() {
     return useMutation({
         mutationFn: createPlacementPurchase,
         onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: ['placement-slots'] });
+            queryClient.invalidateQueries({ queryKey: ['placement-levels'] });
+            queryClient.invalidateQueries({ queryKey: ['placement-scope'] });
             queryClient.invalidateQueries({ queryKey: ['my-properties'] });
             queryClient.invalidateQueries({ queryKey: ['my-placement-purchases'] });
             queryClient.invalidateQueries({ queryKey: ['placement-purchases-pending-count'] });

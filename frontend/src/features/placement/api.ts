@@ -1,43 +1,47 @@
 import api from '@/lib/api';
-import type { PlacementPurchase, PlacementSlot, PlacementTariffScope, StandardPlacementPrice } from './types';
+import type {
+    PlacementLevelPrice,
+    PlacementPurchase,
+    PlacementScopeSettings,
+    PlacementTariffScope,
+} from './types';
 
-export const getPlacementSlots = async (scope: PlacementTariffScope): Promise<PlacementSlot[]> => {
+export const getPlacementLevels = async (
+    scope: PlacementTariffScope,
+): Promise<PlacementLevelPrice[]> => {
     const params =
         scope.propertyType === 'house'
             ? { propertyType: 'house', regionId: scope.regionId }
-            : { cityId: scope.cityId };
+            : { propertyType: 'apartment', cityId: scope.cityId };
 
-    const response = await api.get<{ data: PlacementSlot[] }>('/placement-slots', { params });
+    const response = await api.get<{ data: PlacementLevelPrice[] }>('/placement/levels', { params });
     return response.data.data;
 };
 
-export const getStandardPlacementPrice = async (
+export const getPlacementScope = async (
     scope: PlacementTariffScope,
-): Promise<StandardPlacementPrice | null> => {
+): Promise<PlacementScopeSettings> => {
     const params =
         scope.propertyType === 'house'
             ? { propertyType: 'house', regionId: scope.regionId }
-            : { cityId: scope.cityId };
+            : { propertyType: 'apartment', cityId: scope.cityId };
 
-    const response = await api.get<{ data: StandardPlacementPrice | null }>(
-        '/placement/standard-price',
-        { params },
-    );
+    const response = await api.get<{ data: PlacementScopeSettings }>('/placement/scope', { params });
     return response.data.data;
 };
 
 export const createPlacementPurchase = async (input: {
     propertyId: number;
-    type: 'special' | 'standard';
-    durationMonths: number;
-    slotId?: number | null;
+    kind: 'level' | 'boost';
+    level?: number | null;
+    durationMonths?: number | null;
 }): Promise<PlacementPurchase> => {
     const response = await api.post<{ data: PlacementPurchase }>(
         `/properties/${input.propertyId}/placement-purchases`,
         {
-            type: input.type,
-            durationMonths: input.durationMonths,
-            slotId: input.slotId ?? undefined,
+            kind: input.kind,
+            level: input.level ?? undefined,
+            durationMonths: input.durationMonths ?? undefined,
         },
     );
     return response.data.data;

@@ -10,9 +10,9 @@ use App\Domain\StaticPage\Entity\StaticPage;
 use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\MetroStation;
 use App\Domain\Property\Entity\Property;
+use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
 use App\Domain\Property\Entity\PropertyPlacementPurchase;
-use App\Domain\Property\Entity\PropertyPlacementSlot;
-use App\Domain\Property\Entity\PropertyPlacementStandardPrice;
+use App\Domain\Property\Entity\PropertyPlacementScopeSettings;
 use App\Domain\Review\Entity\Review;
 use App\Domain\Property\Entity\Street;
 use App\Domain\User\Entity\User;
@@ -86,14 +86,14 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Страницы', 'fa fa-file-alt', StaticPage::class);
 
         yield MenuItem::section('Размещение');
-        yield MenuItem::linkToCrud('Позиции — квартиры', 'fa fa-building', PropertyPlacementSlot::class)
-            ->setController(ApartmentPlacementSlotCrudController::class);
-        yield MenuItem::linkToCrud('Позиции — дома', 'fa fa-house', PropertyPlacementSlot::class)
-            ->setController(HousePlacementSlotCrudController::class);
-        yield MenuItem::linkToCrud('Стандарт — квартиры', 'fa fa-building', PropertyPlacementStandardPrice::class)
-            ->setController(ApartmentPlacementStandardPriceCrudController::class);
-        yield MenuItem::linkToCrud('Стандарт — дома', 'fa fa-house', PropertyPlacementStandardPrice::class)
-            ->setController(HousePlacementStandardPriceCrudController::class);
+        yield MenuItem::linkToCrud('VIP-тарифы — квартиры', 'fa fa-building', PropertyPlacementLevelPrice::class)
+            ->setController(ApartmentPlacementLevelPriceCrudController::class);
+        yield MenuItem::linkToCrud('VIP-тарифы — дома', 'fa fa-house', PropertyPlacementLevelPrice::class)
+            ->setController(HousePlacementLevelPriceCrudController::class);
+        yield MenuItem::linkToCrud('Настройки VIP — квартиры', 'fa fa-building', PropertyPlacementScopeSettings::class)
+            ->setController(ApartmentPlacementScopeSettingsCrudController::class);
+        yield MenuItem::linkToCrud('Настройки VIP — дома', 'fa fa-house', PropertyPlacementScopeSettings::class)
+            ->setController(HousePlacementScopeSettingsCrudController::class);
         yield MenuItem::linkToCrud('Заявки на размещение', 'fa fa-receipt', PropertyPlacementPurchase::class);
 
         yield MenuItem::section('Справочники');

@@ -9,14 +9,16 @@ use App\Application\Command\Payment\CreatePlacementPayment\CreatePlacementPaymen
 use App\Domain\Payment\Entity\Payment;
 use App\Domain\Payment\Repository\PaymentRepositoryInterface;
 use App\Domain\Property\Entity\PropertyPlacementPurchase;
-use App\Domain\Property\Enum\PlacementPurchaseType;
+use App\Domain\Property\Enum\PlacementPurchaseKind;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
-use App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
 use App\Infrastructure\Payment\BePaid\BePaidGatewayClient;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
 final class CreatePlacementPaymentHandlerTest extends TestCase
 {
@@ -42,31 +44,16 @@ final class CreatePlacementPaymentHandlerTest extends TestCase
                 }
             });
 
-        $bePaidClient = $this->createMock(BePaidGatewayClient::class);
-        $bePaidClient
-            ->expects(self::once())
-            ->method('createCheckout')
-            ->with(
-                self::callback(static function (array $order): bool {
-                    return $order['currency'] === 'BYN'
-                        && $order['amount'] === 4900
-                        && str_starts_with((string) $order['tracking_id'], 'plc-42-');
-                }),
-                self::callback(static function (array $settings): bool {
-                    return str_contains($settings['notification_url'], '/api/webhooks/bepaid')
-                        && str_contains($settings['success_url'], '/kabinet/oplata/42/');
-                }),
-                self::anything(),
-            )
-            ->willReturn([
+        $bePaidClient = $this->createBePaidClientForCheckout([
+            'checkout' => [
                 'token' => 'checkout-token-abc',
-                'redirectUrl' => 'https://checkout.bepaid.by/pay/abc',
-            ]);
+                'redirect_url' => 'https://checkout.bepaid.by/pay/abc',
+            ],
+        ]);
 
         $handler = new CreatePlacementPaymentHandler(
             $purchaseRepository,
             $this->createStub(PropertyRepositoryInterface::class),
-            $this->createStub(PropertyPlacementSlotRepositoryInterface::class),
             $paymentRepository,
             $bePaidClient,
             'http://localhost:3000',
@@ -91,12 +78,21 @@ final class CreatePlacementPaymentHandlerTest extends TestCase
         $purchaseRepository = $this->createStub(PropertyPlacementPurchaseRepositoryInterface::class);
         $purchaseRepository->method('findById')->willReturn($purchase);
 
+        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient->expects(self::never())->method('request');
+
         $handler = new CreatePlacementPaymentHandler(
             $purchaseRepository,
             $this->createStub(PropertyRepositoryInterface::class),
-            $this->createStub(PropertyPlacementSlotRepositoryInterface::class),
             $this->createStub(PaymentRepositoryInterface::class),
-            $this->createStub(BePaidGatewayClient::class),
+            new BePaidGatewayClient(
+                $httpClient,
+                $this->createStub(LoggerInterface::class),
+                '363',
+                'secret',
+                'https://checkout.bepaid.by',
+                true,
+            ),
             'http://localhost:3000',
             'http://localhost',
         );
@@ -115,10 +111,11 @@ final class CreatePlacementPaymentHandlerTest extends TestCase
         $purchase = new PropertyPlacementPurchase(
             propertyId: 10,
             ownerId: $ownerId,
-            type: PlacementPurchaseType::Standard->value,
-            durationMonths: 1,
+            kind: PlacementPurchaseKind::Level->value,
             priceByn: 49,
             source: 'self_service',
+            level: 1,
+            durationMonths: 1,
         );
 
         $idReflection = new \ReflectionProperty($purchase, 'id');
@@ -126,5 +123,32 @@ final class CreatePlacementPaymentHandlerTest extends TestCase
         $idReflection->setValue($purchase, 42);
 
         return $purchase;
+    }
+
+    /**
+     * @param array<string, mixed> $checkoutBody
+     */
+    private function createBePaidClientForCheckout(array $checkoutBody): BePaidGatewayClient
+    {
+        $response = $this->createMock(ResponseInterface::class);
+        $response->method('getStatusCode')->willReturn(200);
+        $response->method('getContent')->willReturnCallback(
+            static fn (?bool $throw = true): string => json_encode($checkoutBody, JSON_THROW_ON_ERROR),
+        );
+
+        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient
+            ->expects(self::once())
+            ->method('request')
+            ->willReturn($response);
+
+        return new BePaidGatewayClient(
+            $httpClient,
+            $this->createStub(LoggerInterface::class),
+            '363',
+            'secret',
+            'https://checkout.bepaid.by',
+            true,
+        );
     }
 }

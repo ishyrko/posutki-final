@@ -1,6 +1,4 @@
-export type PlacementType = 'special' | 'standard' | 'free';
-
-export type PlacementPurchaseType = 'special' | 'standard';
+export type PlacementPurchaseKind = 'level' | 'boost';
 
 export type PlacementPurchaseStatus =
     | 'pending_payment'
@@ -15,36 +13,36 @@ export type PlacementTariffScope =
     | { propertyType: 'apartment'; cityId: number }
     | { propertyType: 'house'; regionId: number };
 
-export interface PlacementSlot {
+export interface PlacementLevelPrice {
     id: number;
     propertyType: PlacementPropertyType;
     cityId: number | null;
     regionId: number | null;
-    rankFrom: number;
-    rankTo: number;
+    level: number;
     label: string;
-    capacity: number;
+    capacity: number | null;
     occupied: number;
-    available: number;
+    available: number | null;
     priceBynPerMonth: number;
 }
 
-export interface StandardPlacementPrice {
+export interface PlacementScopeSettings {
     propertyType: PlacementPropertyType;
     cityId?: number | null;
     regionId?: number | null;
-    priceBynPerMonth: number;
+    maxLevel: number;
+    boostPriceByn: number | null;
 }
 
 export interface PlacementPurchase {
     id: number;
     propertyId: number;
     propertyTitle?: string | null;
-    type: PlacementPurchaseType;
-    typeLabel: string;
-    slotId: number | null;
-    slotLabel: string | null;
-    durationMonths: number;
+    kind: PlacementPurchaseKind;
+    kindLabel: string;
+    level: number | null;
+    levelPriceId: number | null;
+    durationMonths: number | null;
     priceByn: number;
     status: PlacementPurchaseStatus;
     statusLabel: string;
@@ -69,46 +67,72 @@ export function isPlacementPurchasePayable(purchase: PlacementPurchase): boolean
 }
 
 export function formatPlacementStatus(property: {
-    placementType?: PlacementType | string | null;
-    placementSlotRank?: number | null;
-    placementExpiresAt?: string | null;
+    placementBaseLevel?: number | null;
+    placementEffectiveLevel?: number | null;
+    placementLevelExpiresAt?: string | null;
+    placementBoostExpiresAt?: string | null;
     placementIsTrial?: boolean;
     freeTrialEndsAt?: string | null;
 }): string {
-    const type = property.placementType ?? 'free';
-    const expires = property.placementExpiresAt
-        ? new Date(property.placementExpiresAt).toLocaleDateString('ru-RU')
+    const baseLevel = property.placementBaseLevel ?? 0;
+    const effectiveLevel = property.placementEffectiveLevel ?? baseLevel;
+    const levelExpires = property.placementLevelExpiresAt
+        ? new Date(property.placementLevelExpiresAt).toLocaleString('ru-RU', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+          })
+        : null;
+    const boostExpires = property.placementBoostExpiresAt
+        ? new Date(property.placementBoostExpiresAt).toLocaleString('ru-RU', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+          })
         : null;
 
-    if (type === 'special') {
-        const rank = property.placementSlotRank != null ? `позиция от ${property.placementSlotRank}` : 'топ';
-        return expires ? `Спецразмещение (${rank}), до ${expires}` : `Спецразмещение (${rank})`;
+    if (property.placementIsTrial && baseLevel === 1) {
+        const trialEnds = property.freeTrialEndsAt
+            ? new Date(property.freeTrialEndsAt).toLocaleDateString('ru-RU')
+            : levelExpires;
+        return trialEnds
+            ? `VIP 1 (бесплатный пробный период до ${trialEnds})`
+            : 'VIP 1 (бесплатный пробный период)';
     }
 
-    if (type === 'standard') {
-        if (property.placementIsTrial) {
-            const trialEnds = property.freeTrialEndsAt
-                ? new Date(property.freeTrialEndsAt).toLocaleDateString('ru-RU')
-                : expires;
-            return trialEnds
-                ? `Стандартное (бесплатный пробный период до ${trialEnds})`
-                : 'Стандартное (бесплатный пробный период)';
-        }
-        return expires ? `Стандартное, оплачено до ${expires}` : 'Стандартное размещение';
+    if (baseLevel <= 0) {
+        const boostPart = boostExpires ? `, буст до ${boostExpires}` : '';
+        return boostPart ? `Бесплатное размещение${boostPart}` : 'Бесплатное размещение';
     }
 
-    return 'Бесплатное (с ограничениями)';
+    const basePart = levelExpires
+        ? `VIP ${baseLevel}, до ${levelExpires}`
+        : `VIP ${baseLevel}`;
+
+    if (effectiveLevel > baseLevel) {
+        return boostExpires
+            ? `${basePart} · эффективно VIP ${effectiveLevel} (буст до ${boostExpires})`
+            : `${basePart} · эффективно VIP ${effectiveLevel}`;
+    }
+
+    return basePart;
 }
 
-export function placementBadgeLabel(
-    placementType?: string | null,
-    placementSlotRank?: number | null,
-): string | null {
-    if (placementType !== 'special') {
+export function placementBadgeLabel(placementEffectiveLevel?: number | null): string | null {
+    const level = placementEffectiveLevel ?? 0;
+    if (level <= 0) {
         return null;
     }
-    if (placementSlotRank == null) {
-        return 'Топ';
+    return `VIP ${level}`;
+}
+
+export function isPlacementBoostActive(placementBoostExpiresAt?: string | null): boolean {
+    if (!placementBoostExpiresAt) {
+        return false;
     }
-    return placementSlotRank === 1 ? 'Топ-1' : `Топ-${placementSlotRank}`;
+    return new Date(placementBoostExpiresAt) > new Date();
 }

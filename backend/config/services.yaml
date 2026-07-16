@@ -88,11 +88,11 @@ services:
     App\Domain\Property\Repository\PropertyAvailabilityBlockRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyAvailabilityBlockRepository
 
-    App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface:
-        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyPlacementSlotRepository
+    App\Domain\Property\Repository\PropertyPlacementLevelPriceRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyPlacementLevelPriceRepository
 
-    App\Domain\Property\Repository\PropertyPlacementStandardPriceRepositoryInterface:
-        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyPlacementStandardPriceRepository
+    App\Domain\Property\Repository\PropertyPlacementScopeSettingsRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyPlacementScopeSettingsRepository
 
     App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyPlacementPurchaseRepository
@@ -167,10 +167,6 @@ services:
             - { name: messenger.message_handler, bus: command.bus }
 
     App\Application\Command\Property\DeleteProperty\DeletePropertyHandler:
-        tags:
-            - { name: messenger.message_handler, bus: command.bus }
-
-    App\Application\Command\Property\BoostProperty\BoostPropertyHandler:
         tags:
             - { name: messenger.message_handler, bus: command.bus }
 

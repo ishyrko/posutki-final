@@ -13,7 +13,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'app:reshuffle-placement',
-    description: 'Reshuffle placementShuffleKey for special and standard published properties',
+    description: 'Reshuffle placementShuffleKey for all published properties (VIP rotation)',
 )]
 class ReshufflePlacementCommand extends Command
 {

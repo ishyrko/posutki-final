@@ -8,11 +8,12 @@ use App\Application\Command\CommandBusInterface;
 use App\Application\Command\Property\CreatePlacementPurchase\CreatePlacementPurchaseCommand;
 use App\Application\DTO\PlacementPurchaseDTO;
 use App\Application\Service\PropertyPlacementService;
+use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
+use App\Domain\Property\Entity\PropertyPlacementScopeSettings;
 use App\Domain\Property\Enum\PropertyType;
-use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Domain\Property\Repository\PropertyPlacementLevelPriceRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
-use App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface;
-use App\Domain\Property\Repository\PropertyPlacementStandardPriceRepositoryInterface;
+use App\Domain\Property\Repository\PropertyPlacementScopeSettingsRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
@@ -27,18 +28,17 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 final class PlacementController extends AbstractController
 {
     public function __construct(
-        private readonly PropertyPlacementSlotRepositoryInterface $slotRepository,
-        private readonly PropertyPlacementStandardPriceRepositoryInterface $standardPriceRepository,
+        private readonly PropertyPlacementLevelPriceRepositoryInterface $levelPriceRepository,
+        private readonly PropertyPlacementScopeSettingsRepositoryInterface $scopeSettingsRepository,
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyPlacementService $placementService,
         private readonly CommandBusInterface $commandBus,
-        private readonly CityRepositoryInterface $cityRepository,
     ) {
     }
 
-    #[Route('/api/placement-slots', name: 'api_placement_slots', methods: ['GET'])]
-    public function slots(Request $request): JsonResponse
+    #[Route('/api/placement/levels', name: 'api_placement_levels', methods: ['GET'])]
+    public function levels(Request $request): JsonResponse
     {
         $propertyType = $request->query->getString('propertyType', PropertyType::Apartment->value);
         if (!in_array($propertyType, PropertyType::values(), true)) {
@@ -51,40 +51,24 @@ final class PlacementController extends AbstractController
                 return $this->json(ApiResponse::error('Укажите regionId', 400), 400);
             }
 
-            $slots = $this->slotRepository->findActiveByRegionId($regionId);
+            $levelPrices = $this->levelPriceRepository->findActiveByRegionId($regionId);
         } else {
             $cityId = $request->query->getInt('cityId');
             if ($cityId <= 0) {
                 return $this->json(ApiResponse::error('Укажите cityId', 400), 400);
             }
 
-            $slots = $this->slotRepository->findActiveByCityId($cityId);
+            $levelPrices = $this->levelPriceRepository->findActiveByCityId($cityId);
         }
 
-        $data = [];
-        foreach ($slots as $slot) {
-            $occupied = $this->placementService->getSlotOccupancy($slot);
-            $capacity = $slot->getCapacity();
-            $data[] = [
-                'id' => $slot->getId(),
-                'propertyType' => $slot->getPropertyType(),
-                'cityId' => $slot->getCityId(),
-                'regionId' => $slot->getRegionId(),
-                'rankFrom' => $slot->getRankFrom(),
-                'rankTo' => $slot->getRankTo(),
-                'label' => $slot->getLabel(),
-                'capacity' => $capacity,
-                'occupied' => $occupied,
-                'available' => max(0, $capacity - $occupied),
-                'priceBynPerMonth' => $slot->getPriceBynPerMonth(),
-            ];
-        }
-
-        return $this->json(ApiResponse::success($data));
+        return $this->json(ApiResponse::success(array_map(
+            fn (PropertyPlacementLevelPrice $levelPrice) => $this->levelPriceToArray($levelPrice),
+            $levelPrices,
+        )));
     }
 
-    #[Route('/api/placement/standard-price', name: 'api_placement_standard_price', methods: ['GET'])]
-    public function standardPrice(Request $request): JsonResponse
+    #[Route('/api/placement/scope', name: 'api_placement_scope', methods: ['GET'])]
+    public function scope(Request $request): JsonResponse
     {
         $propertyType = $request->query->getString('propertyType', PropertyType::Apartment->value);
         if (!in_array($propertyType, PropertyType::values(), true)) {
@@ -97,32 +81,30 @@ final class PlacementController extends AbstractController
                 return $this->json(ApiResponse::error('Укажите regionId', 400), 400);
             }
 
-            $price = $this->standardPriceRepository->findActiveByRegionId($regionId);
-            if ($price === null) {
-                return $this->json(ApiResponse::success(null));
+            $settings = $this->scopeSettingsRepository->findActiveByRegionId($regionId);
+        } else {
+            $cityId = $request->query->getInt('cityId');
+            if ($cityId <= 0) {
+                return $this->json(ApiResponse::error('Укажите cityId', 400), 400);
             }
 
+            $settings = $this->scopeSettingsRepository->findActiveByCityId($cityId);
+        }
+
+        if ($settings === null) {
             return $this->json(ApiResponse::success([
-                'propertyType' => PropertyType::House->value,
-                'regionId' => $price->getRegionId(),
-                'priceBynPerMonth' => $price->getPriceBynPerMonth(),
+                'propertyType' => $propertyType,
+                'maxLevel' => PropertyPlacementScopeSettings::DEFAULT_MAX_LEVEL,
+                'boostPriceByn' => null,
             ]));
         }
 
-        $cityId = $request->query->getInt('cityId');
-        if ($cityId <= 0) {
-            return $this->json(ApiResponse::error('Укажите cityId', 400), 400);
-        }
-
-        $price = $this->standardPriceRepository->findActiveByCityId($cityId);
-        if ($price === null) {
-            return $this->json(ApiResponse::success(null));
-        }
-
         return $this->json(ApiResponse::success([
-            'propertyType' => PropertyType::Apartment->value,
-            'cityId' => $price->getCityId(),
-            'priceBynPerMonth' => $price->getPriceBynPerMonth(),
+            'propertyType' => $settings->getPropertyType(),
+            'cityId' => $settings->getCityId(),
+            'regionId' => $settings->getRegionId(),
+            'maxLevel' => $settings->getMaxLevel(),
+            'boostPriceByn' => $settings->getBoostPriceByn(),
         ]));
     }
 
@@ -138,19 +120,16 @@ final class PlacementController extends AbstractController
             return $this->json(ApiResponse::error('Некорректное тело запроса', 400), 400);
         }
 
-        $type = isset($payload['type']) && is_string($payload['type']) ? $payload['type'] : '';
-        $durationMonths = isset($payload['durationMonths']) ? (int) $payload['durationMonths'] : 0;
-        $slotId = isset($payload['slotId']) ? (int) $payload['slotId'] : null;
-        if ($slotId !== null && $slotId <= 0) {
-            $slotId = null;
-        }
+        $kind = isset($payload['kind']) && is_string($payload['kind']) ? $payload['kind'] : '';
+        $level = isset($payload['level']) ? (int) $payload['level'] : null;
+        $durationMonths = isset($payload['durationMonths']) ? (int) $payload['durationMonths'] : null;
 
         $result = $this->commandBus->dispatch(new CreatePlacementPurchaseCommand(
             propertyId: $id,
             userId: (string) $user->getId()->getValue(),
-            type: $type,
+            kind: $kind,
+            level: $level,
             durationMonths: $durationMonths,
-            slotId: $slotId,
         ));
 
         return $this->json(ApiResponse::success($result), 201);
@@ -174,10 +153,10 @@ final class PlacementController extends AbstractController
         $purchases = $this->purchaseRepository->findByPropertyId((int) $id);
         $data = [];
         foreach ($purchases as $purchase) {
-            $slot = $purchase->getSlotId() !== null
-                ? $this->slotRepository->findById($purchase->getSlotId())
+            $levelPrice = $purchase->getLevelPriceId() !== null
+                ? $this->levelPriceRepository->findById($purchase->getLevelPriceId())
                 : null;
-            $data[] = PlacementPurchaseDTO::fromEntity($purchase, $slot, $property->getTitle());
+            $data[] = PlacementPurchaseDTO::fromEntity($purchase, $levelPrice, $property->getTitle());
         }
 
         return $this->json(ApiResponse::success($data));
@@ -200,10 +179,10 @@ final class PlacementController extends AbstractController
                 $propertyTitles[$propertyId] = $property?->getTitle();
             }
 
-            $slot = $purchase->getSlotId() !== null
-                ? $this->slotRepository->findById($purchase->getSlotId())
+            $levelPrice = $purchase->getLevelPriceId() !== null
+                ? $this->levelPriceRepository->findById($purchase->getLevelPriceId())
                 : null;
-            $data[] = PlacementPurchaseDTO::fromEntity($purchase, $slot, $propertyTitles[$propertyId]);
+            $data[] = PlacementPurchaseDTO::fromEntity($purchase, $levelPrice, $propertyTitles[$propertyId]);
         }
 
         return $this->json(ApiResponse::success($data));
@@ -237,12 +216,34 @@ final class PlacementController extends AbstractController
         }
 
         $property = $this->propertyRepository->findById(Id::fromInt($purchase->getPropertyId()));
-        $slot = $purchase->getSlotId() !== null
-            ? $this->slotRepository->findById($purchase->getSlotId())
+        $levelPrice = $purchase->getLevelPriceId() !== null
+            ? $this->levelPriceRepository->findById($purchase->getLevelPriceId())
             : null;
 
         return $this->json(ApiResponse::success(
-            PlacementPurchaseDTO::fromEntity($purchase, $slot, $property?->getTitle())
+            PlacementPurchaseDTO::fromEntity($purchase, $levelPrice, $property?->getTitle())
         ));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function levelPriceToArray(PropertyPlacementLevelPrice $levelPrice): array
+    {
+        $occupied = $this->placementService->getLevelPriceOccupancy($levelPrice);
+        $capacity = $levelPrice->getCapacity();
+
+        return [
+            'id' => $levelPrice->getId(),
+            'propertyType' => $levelPrice->getPropertyType(),
+            'cityId' => $levelPrice->getCityId(),
+            'regionId' => $levelPrice->getRegionId(),
+            'level' => $levelPrice->getLevel(),
+            'label' => $levelPrice->getLabel(),
+            'capacity' => $capacity,
+            'occupied' => $occupied,
+            'available' => $capacity !== null ? max(0, $capacity - $occupied) : null,
+            'priceBynPerMonth' => $levelPrice->getPriceBynPerMonth(),
+        ];
     }
 }

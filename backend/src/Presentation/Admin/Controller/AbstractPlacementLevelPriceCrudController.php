@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Admin\Controller;
 
 use App\Application\Service\PropertyPlacementService;
-use App\Domain\Property\Entity\PropertyPlacementSlot;
+use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
@@ -24,8 +24,9 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\BooleanFilter;
+use EasyCorp\Bundle\EasyAdminBundle\Filter\NumericFilter;
 
-abstract class AbstractPlacementSlotCrudController extends AbstractCrudController
+abstract class AbstractPlacementLevelPriceCrudController extends AbstractCrudController
 {
     public function __construct(
         protected readonly PropertyPlacementService $placementService,
@@ -43,7 +44,7 @@ abstract class AbstractPlacementSlotCrudController extends AbstractCrudControlle
 
     public static function getEntityFqcn(): string
     {
-        return PropertyPlacementSlot::class;
+        return PropertyPlacementLevelPrice::class;
     }
 
     public function configureCrud(Crud $crud): Crud
@@ -51,7 +52,7 @@ abstract class AbstractPlacementSlotCrudController extends AbstractCrudControlle
         return $crud
             ->setEntityLabelInSingular($this->entityLabelSingular())
             ->setEntityLabelInPlural($this->entityLabelPlural())
-            ->setDefaultSort(['sortOrder' => 'ASC', 'rankFrom' => 'ASC']);
+            ->setDefaultSort(['sortOrder' => 'ASC', 'level' => 'DESC']);
     }
 
     public function configureFields(string $pageName): iterable
@@ -66,13 +67,13 @@ abstract class AbstractPlacementSlotCrudController extends AbstractCrudControlle
 
             yield IntegerField::new('cityId', 'Город')
                 ->hideOnForm()
-                ->formatValue(function ($value, PropertyPlacementSlot $slot) {
-                    if ($slot->getCityId() === null) {
+                ->formatValue(function ($value, PropertyPlacementLevelPrice $levelPrice) {
+                    if ($levelPrice->getCityId() === null) {
                         return '—';
                     }
-                    $city = $this->cityRepository->findById($slot->getCityId());
+                    $city = $this->cityRepository->findById($levelPrice->getCityId());
 
-                    return $city !== null ? $city->getName() : ('#' . $slot->getCityId());
+                    return $city !== null ? $city->getName() : ('#' . $levelPrice->getCityId());
                 });
         } else {
             yield ChoiceField::new('regionId', 'Область')
@@ -82,25 +83,28 @@ abstract class AbstractPlacementSlotCrudController extends AbstractCrudControlle
 
             yield IntegerField::new('regionId', 'Область')
                 ->hideOnForm()
-                ->formatValue(function ($value, PropertyPlacementSlot $slot) {
-                    if ($slot->getRegionId() === null) {
+                ->formatValue(function ($value, PropertyPlacementLevelPrice $levelPrice) {
+                    if ($levelPrice->getRegionId() === null) {
                         return '—';
                     }
-                    $region = $this->regionRepository->findById($slot->getRegionId());
+                    $region = $this->regionRepository->findById($levelPrice->getRegionId());
 
-                    return $region !== null ? $region->getName() : ('#' . $slot->getRegionId());
+                    return $region !== null ? $region->getName() : ('#' . $levelPrice->getRegionId());
                 });
         }
 
-        yield IntegerField::new('rankFrom', 'Позиция с')
-            ->setHelp('Вместимость считается автоматически: «по» − «с» + 1');
-        yield IntegerField::new('rankTo', 'Позиция по');
-        yield IntegerField::new('capacity', 'Вместимость')
-            ->hideOnForm()
-            ->formatValue(function ($value, PropertyPlacementSlot $slot) {
-                $occupied = $this->placementService->getSlotOccupancy($slot);
+        yield IntegerField::new('level', 'VIP-уровень')
+            ->setHelp(sprintf('От %d до %d', PropertyPlacementLevelPrice::MIN_LEVEL, PropertyPlacementLevelPrice::MAX_LEVEL));
+        yield IntegerField::new('capacity', 'Лимит мест')
+            ->setHelp('Оставьте пустым, если без ограничения')
+            ->setRequired(false)
+            ->formatValue(function ($value, PropertyPlacementLevelPrice $levelPrice) {
+                if ($levelPrice->getCapacity() === null) {
+                    return 'без лимита';
+                }
+                $occupied = $this->placementService->getLevelPriceOccupancy($levelPrice);
 
-                return sprintf('%d (занято %d)', $slot->getCapacity(), $occupied);
+                return sprintf('%d (занято %d)', $levelPrice->getCapacity(), $occupied);
             });
         yield IntegerField::new('priceBynPerMonth', 'Цена BYN/мес');
         yield IntegerField::new('sortOrder', 'Порядок');
@@ -109,7 +113,9 @@ abstract class AbstractPlacementSlotCrudController extends AbstractCrudControlle
 
     public function configureFilters(Filters $filters): Filters
     {
-        return $filters->add(BooleanFilter::new('isActive'));
+        return $filters
+            ->add(BooleanFilter::new('isActive'))
+            ->add(NumericFilter::new('level', 'VIP-уровень'));
     }
 
     public function createIndexQueryBuilder(
@@ -126,21 +132,20 @@ abstract class AbstractPlacementSlotCrudController extends AbstractCrudControlle
             ->setParameter('scopedPropertyType', $this->scopedPropertyType());
     }
 
-    public function createEntity(string $entityFqcn): PropertyPlacementSlot
+    public function createEntity(string $entityFqcn): PropertyPlacementLevelPrice
     {
-        return new PropertyPlacementSlot(
+        return new PropertyPlacementLevelPrice(
             propertyType: $this->scopedPropertyType(),
             cityId: null,
             regionId: null,
-            rankFrom: 1,
-            rankTo: 1,
+            level: PropertyPlacementLevelPrice::MIN_LEVEL,
             priceBynPerMonth: 0,
         );
     }
 
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
-        if ($entityInstance instanceof PropertyPlacementSlot) {
+        if ($entityInstance instanceof PropertyPlacementLevelPrice) {
             $entityInstance->setPropertyType($this->scopedPropertyType());
             if ($this->scopedPropertyType() === PropertyType::Apartment->value) {
                 $entityInstance->setRegionId(null);

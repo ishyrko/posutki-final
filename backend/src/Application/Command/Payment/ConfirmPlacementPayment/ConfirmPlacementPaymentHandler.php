@@ -9,8 +9,8 @@ use App\Application\Service\PlacementPaymentCompletionService;
 use App\Domain\Payment\Entity\Payment;
 use App\Domain\Payment\Enum\PaymentStatus;
 use App\Domain\Payment\Repository\PaymentRepositoryInterface;
+use App\Domain\Property\Repository\PropertyPlacementLevelPriceRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
-use App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
@@ -22,7 +22,7 @@ final class ConfirmPlacementPaymentHandler
     public function __construct(
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
         private readonly PropertyRepositoryInterface $propertyRepository,
-        private readonly PropertyPlacementSlotRepositoryInterface $slotRepository,
+        private readonly PropertyPlacementLevelPriceRepositoryInterface $levelPriceRepository,
         private readonly PaymentRepositoryInterface $paymentRepository,
         private readonly BePaidGatewayClient $bePaidClient,
         private readonly BePaidCheckoutReader $checkoutReader,
@@ -146,11 +146,11 @@ final class ConfirmPlacementPaymentHandler
 
     private function toDto(\App\Domain\Property\Entity\PropertyPlacementPurchase $purchase): PlacementPurchaseDTO
     {
-        $slot = $purchase->getSlotId() !== null
-            ? $this->slotRepository->findById($purchase->getSlotId())
+        $levelPrice = $purchase->getLevelPriceId() !== null
+            ? $this->levelPriceRepository->findById($purchase->getLevelPriceId())
             : null;
         $property = $this->propertyRepository->findById(Id::fromInt($purchase->getPropertyId()));
 
-        return PlacementPurchaseDTO::fromEntity($purchase, $slot, $property?->getTitle());
+        return PlacementPurchaseDTO::fromEntity($purchase, $levelPrice, $property?->getTitle());
     }
 }

@@ -6,7 +6,6 @@ namespace App\Presentation\Admin\Controller;
 
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Enum\DealType;
-use App\Domain\Property\Enum\PlacementType;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\SellerType;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
@@ -360,19 +359,18 @@ class PropertyCrudController extends AbstractCrudController
             ->hideOnForm()
             ->hideOnIndex();
 
-        yield DateTimeField::new('boostedAt', 'Поднятие в топ (бесплатное)')
-            ->hideOnForm()
-            ->hideOnIndex();
-
-        yield ChoiceField::new('placementType', 'Тип размещения')
-            ->setChoices(PlacementType::choices())
+        yield IntegerField::new('placementBaseLevel', 'Базовый VIP-уровень')
             ->hideOnForm();
 
-        yield IntegerField::new('placementSlotRank', 'Ранг слота')
+        yield IntegerField::new('placementEffectiveLevel', 'Эффективный VIP-уровень (с бустом)')
             ->hideOnForm()
             ->hideOnIndex();
 
-        yield DateTimeField::new('placementExpiresAt', 'Размещение до')
+        yield DateTimeField::new('placementLevelExpiresAt', 'VIP до')
+            ->hideOnForm()
+            ->hideOnIndex();
+
+        yield DateTimeField::new('placementBoostExpiresAt', 'Буст до')
             ->hideOnForm()
             ->hideOnIndex();
 

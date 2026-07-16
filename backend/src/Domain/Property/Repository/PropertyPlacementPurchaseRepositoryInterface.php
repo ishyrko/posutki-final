@@ -25,11 +25,9 @@ interface PropertyPlacementPurchaseRepositoryInterface
 
     public function countPendingPaymentByOwnerId(Id $ownerId, ?\DateTimeImmutable $now = null): int;
 
-    public function findActiveSpecialByPropertyId(int $propertyId, ?\DateTimeImmutable $now = null): ?PropertyPlacementPurchase;
+    public function findActiveLevelByPropertyId(int $propertyId, ?\DateTimeImmutable $now = null): ?PropertyPlacementPurchase;
 
-    public function findActiveStandardByPropertyId(int $propertyId, ?\DateTimeImmutable $now = null): ?PropertyPlacementPurchase;
-
-    public function countOccupiedForSlot(int $slotId, ?\DateTimeImmutable $now = null): int;
+    public function countOccupiedForLevelPrice(int $levelPriceId, ?\DateTimeImmutable $now = null): int;
 
     /**
      * @return PropertyPlacementPurchase[]

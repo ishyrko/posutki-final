@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Presentation\Admin\Controller;
 
-use App\Domain\Property\Entity\PropertyPlacementStandardPrice;
+use App\Domain\Property\Entity\PropertyPlacementScopeSettings;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Repository\CityRepositoryInterface;
-use App\Domain\Property\Repository\PropertyPlacementStandardPriceRepositoryInterface;
+use App\Domain\Property\Repository\PropertyPlacementScopeSettingsRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\RegionRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -25,13 +25,13 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\BooleanFilter;
 
-abstract class AbstractPlacementStandardPriceCrudController extends AbstractCrudController
+abstract class AbstractPlacementScopeSettingsCrudController extends AbstractCrudController
 {
     public function __construct(
         protected readonly CityRepositoryInterface $cityRepository,
         protected readonly RegionRepositoryInterface $regionRepository,
         protected readonly PropertyRepositoryInterface $propertyRepository,
-        protected readonly PropertyPlacementStandardPriceRepositoryInterface $standardPriceRepository,
+        protected readonly PropertyPlacementScopeSettingsRepositoryInterface $scopeSettingsRepository,
     ) {
     }
 
@@ -43,7 +43,7 @@ abstract class AbstractPlacementStandardPriceCrudController extends AbstractCrud
 
     public static function getEntityFqcn(): string
     {
-        return PropertyPlacementStandardPrice::class;
+        return PropertyPlacementScopeSettings::class;
     }
 
     public function configureCrud(Crud $crud): Crud
@@ -66,13 +66,13 @@ abstract class AbstractPlacementStandardPriceCrudController extends AbstractCrud
 
             yield IntegerField::new('cityId', 'Город')
                 ->hideOnForm()
-                ->formatValue(function ($value, PropertyPlacementStandardPrice $price) {
-                    if ($price->getCityId() === null) {
+                ->formatValue(function ($value, PropertyPlacementScopeSettings $settings) {
+                    if ($settings->getCityId() === null) {
                         return '—';
                     }
-                    $city = $this->cityRepository->findById($price->getCityId());
+                    $city = $this->cityRepository->findById($settings->getCityId());
 
-                    return $city !== null ? $city->getName() : ('#' . $price->getCityId());
+                    return $city !== null ? $city->getName() : ('#' . $settings->getCityId());
                 });
         } else {
             yield ChoiceField::new('regionId', 'Область')
@@ -82,17 +82,18 @@ abstract class AbstractPlacementStandardPriceCrudController extends AbstractCrud
 
             yield IntegerField::new('regionId', 'Область')
                 ->hideOnForm()
-                ->formatValue(function ($value, PropertyPlacementStandardPrice $price) {
-                    if ($price->getRegionId() === null) {
+                ->formatValue(function ($value, PropertyPlacementScopeSettings $settings) {
+                    if ($settings->getRegionId() === null) {
                         return '—';
                     }
-                    $region = $this->regionRepository->findById($price->getRegionId());
+                    $region = $this->regionRepository->findById($settings->getRegionId());
 
-                    return $region !== null ? $region->getName() : ('#' . $price->getRegionId());
+                    return $region !== null ? $region->getName() : ('#' . $settings->getRegionId());
                 });
         }
 
-        yield IntegerField::new('priceBynPerMonth', 'Цена BYN/мес');
+        yield IntegerField::new('maxLevel', 'Максимальный VIP-уровень');
+        yield IntegerField::new('boostPriceByn', 'Цена VIP-буста (24ч), BYN');
         yield BooleanField::new('isActive', 'Активна');
     }
 
@@ -115,19 +116,18 @@ abstract class AbstractPlacementStandardPriceCrudController extends AbstractCrud
             ->setParameter('scopedPropertyType', $this->scopedPropertyType());
     }
 
-    public function createEntity(string $entityFqcn): PropertyPlacementStandardPrice
+    public function createEntity(string $entityFqcn): PropertyPlacementScopeSettings
     {
-        return new PropertyPlacementStandardPrice(
+        return new PropertyPlacementScopeSettings(
             propertyType: $this->scopedPropertyType(),
             cityId: null,
             regionId: null,
-            priceBynPerMonth: 0,
         );
     }
 
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
-        if ($entityInstance instanceof PropertyPlacementStandardPrice) {
+        if ($entityInstance instanceof PropertyPlacementScopeSettings) {
             $entityInstance->setPropertyType($this->scopedPropertyType());
             if ($this->scopedPropertyType() === PropertyType::Apartment->value) {
                 $entityInstance->setRegionId(null);
@@ -197,7 +197,7 @@ abstract class AbstractPlacementStandardPriceCrudController extends AbstractCrud
     private function excludeConfiguredApartmentCities(array $choices): array
     {
         $configuredCityIds = array_flip(
-            $this->standardPriceRepository->findConfiguredCityIds(PropertyType::Apartment->value),
+            $this->scopeSettingsRepository->findConfiguredCityIds(PropertyType::Apartment->value),
         );
 
         return array_filter(
@@ -214,7 +214,7 @@ abstract class AbstractPlacementStandardPriceCrudController extends AbstractCrud
     private function excludeConfiguredHouseRegions(array $choices): array
     {
         $configuredRegionIds = array_flip(
-            $this->standardPriceRepository->findConfiguredRegionIds(PropertyType::House->value),
+            $this->scopeSettingsRepository->findConfiguredRegionIds(PropertyType::House->value),
         );
 
         return array_filter(

@@ -149,10 +149,10 @@ export interface Property {
     createdAt: string;
     publishedAt?: string | null;
     archivedAt?: string | null;
-    boostedAt?: string | null;
-    placementType?: 'special' | 'standard' | 'free' | string | null;
-    placementSlotRank?: number | null;
-    placementExpiresAt?: string | null;
+    placementBaseLevel?: number;
+    placementEffectiveLevel?: number;
+    placementLevelExpiresAt?: string | null;
+    placementBoostExpiresAt?: string | null;
     placementIsTrial?: boolean;
     freeTrialEndsAt?: string | null;
 }

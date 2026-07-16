@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Presentation\Admin\Controller;
 
 use App\Application\Service\PropertyPlacementService;
+use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
 use App\Domain\Property\Entity\PropertyPlacementPurchase;
+use App\Domain\Property\Enum\PlacementPurchaseKind;
 use App\Domain\Property\Enum\PlacementPurchaseStatus;
-use App\Domain\Property\Enum\PlacementPurchaseType;
+use App\Domain\Property\Repository\PropertyPlacementLevelPriceRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
-use App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Entity\User;
@@ -35,7 +36,7 @@ class PropertyPlacementPurchaseCrudController extends AbstractCrudController
     public function __construct(
         private readonly PropertyPlacementService $placementService,
         private readonly PropertyRepositoryInterface $propertyRepository,
-        private readonly PropertyPlacementSlotRepositoryInterface $slotRepository,
+        private readonly PropertyPlacementLevelPriceRepositoryInterface $levelPriceRepository,
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
         private readonly AdminUrlGenerator $adminUrlGenerator,
     ) {
@@ -80,10 +81,11 @@ class PropertyPlacementPurchaseCrudController extends AbstractCrudController
         return new PropertyPlacementPurchase(
             propertyId: 0,
             ownerId: Id::fromInt(0),
-            type: PlacementPurchaseType::Standard->value,
-            durationMonths: 1,
+            kind: PlacementPurchaseKind::Level->value,
             priceByn: 0,
             source: 'admin',
+            level: PropertyPlacementLevelPrice::MIN_LEVEL,
+            durationMonths: 1,
         );
     }
 
@@ -103,11 +105,12 @@ class PropertyPlacementPurchaseCrudController extends AbstractCrudController
         $purchase = new PropertyPlacementPurchase(
             propertyId: $property->getId()->getValue(),
             ownerId: $property->getOwnerId(),
-            type: $entityInstance->getType(),
-            durationMonths: $entityInstance->getDurationMonths(),
+            kind: $entityInstance->getKind(),
             priceByn: $entityInstance->getPriceByn(),
             source: 'admin',
-            slotId: $entityInstance->getSlotId(),
+            level: $entityInstance->getLevel(),
+            levelPriceId: $entityInstance->getLevelPriceId(),
+            durationMonths: $entityInstance->getDurationMonths(),
         );
         $purchase->setNote($entityInstance->getNote());
         $entityManager->persist($purchase);
@@ -126,21 +129,25 @@ class PropertyPlacementPurchaseCrudController extends AbstractCrudController
                     ? sprintf('#%d — %s', $purchase->getPropertyId(), $title)
                     : ('#' . $purchase->getPropertyId());
             });
-        yield ChoiceField::new('type', 'Тип')
-            ->setChoices(PlacementPurchaseType::choices());
-        yield IntegerField::new('slotId', 'Слот (id, для спецразмещения)')
+        yield ChoiceField::new('kind', 'Тип')
+            ->setChoices(PlacementPurchaseKind::choices());
+        yield IntegerField::new('level', 'VIP-уровень')
+            ->setRequired(false);
+        yield IntegerField::new('levelPriceId', 'Тариф уровня (id)')
             ->formatValue(function ($value, PropertyPlacementPurchase $purchase) {
-                if ($purchase->getSlotId() === null) {
+                if ($purchase->getLevelPriceId() === null) {
                     return '—';
                 }
-                $slot = $this->slotRepository->findById($purchase->getSlotId());
+                $levelPrice = $this->levelPriceRepository->findById($purchase->getLevelPriceId());
 
-                return $slot !== null
-                    ? sprintf('%s (id %d)', $slot->getLabel(), $slot->getId())
-                    : ('#' . $purchase->getSlotId());
+                return $levelPrice !== null
+                    ? sprintf('%s (id %d)', $levelPrice->getLabel(), $levelPrice->getId())
+                    : ('#' . $purchase->getLevelPriceId());
             })
             ->setRequired(false);
-        yield IntegerField::new('durationMonths', 'Срок (мес)');
+        yield IntegerField::new('durationMonths', 'Срок (мес)')
+            ->setRequired(false)
+            ->setHelp('Не заполняется для VIP-буста');
         yield IntegerField::new('priceByn', 'Сумма BYN');
         yield ChoiceField::new('status', 'Статус')
             ->setChoices(PlacementPurchaseStatus::choices())
@@ -157,7 +164,7 @@ class PropertyPlacementPurchaseCrudController extends AbstractCrudController
     {
         return $filters
             ->add(ChoiceFilter::new('status')->setChoices(PlacementPurchaseStatus::choices()))
-            ->add(ChoiceFilter::new('type')->setChoices(PlacementPurchaseType::choices()))
+            ->add(ChoiceFilter::new('kind')->setChoices(PlacementPurchaseKind::choices()))
             ->add('createdAt');
     }
 

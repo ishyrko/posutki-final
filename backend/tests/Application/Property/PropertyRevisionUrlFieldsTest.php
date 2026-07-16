@@ -11,6 +11,11 @@ use App\Application\Command\Property\UpdateProperty\UpdatePropertyHandler;
 use App\Domain\Exchange\Repository\ExchangeRateRepositoryInterface;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Entity\PropertyRevision;
+use App\Application\Service\PropertyPlacementService;
+use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Domain\Property\Repository\PropertyPlacementLevelPriceRepositoryInterface;
+use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
+use App\Domain\Property\Repository\PropertyPlacementScopeSettingsRepositoryInterface;
 use App\Domain\Property\Repository\MetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
@@ -19,6 +24,7 @@ use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -112,6 +118,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
                     return new Envelope($message);
                 }
             },
+            $this->createPlacementService($propertyRepository),
         );
 
         $handler(new ApproveRevisionCommand(
@@ -296,5 +303,20 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
         $metroStationRepository->method('findAll')->willReturn([]);
 
         return new MetroProximityCalculator($metroStationRepository, $propertyMetroStationRepository);
+    }
+
+    private function createPlacementService(PropertyRepositoryInterface $propertyRepository): PropertyPlacementService
+    {
+        $userRepository = $this->createStub(UserRepositoryInterface::class);
+        $userRepository->method('findById')->willReturn(null);
+
+        return new PropertyPlacementService(
+            $propertyRepository,
+            $this->createStub(PropertyPlacementPurchaseRepositoryInterface::class),
+            $this->createStub(PropertyPlacementLevelPriceRepositoryInterface::class),
+            $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
+            $this->createStub(CityRepositoryInterface::class),
+            $userRepository,
+        );
     }
 }

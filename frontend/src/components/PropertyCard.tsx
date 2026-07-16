@@ -38,8 +38,7 @@ interface PropertyCardProps {
   reviewCount?: number | null;
   /** When false, skip fade-in on mount (reduces Safari flicker when parent re-renders after auth/rates). */
   animateEntrance?: boolean;
-  placementType?: string | null;
-  placementSlotRank?: number | null;
+  placementEffectiveLevel?: number | null;
 }
 
 const PropertyCard = ({
@@ -62,8 +61,7 @@ const PropertyCard = ({
   rating,
   reviewCount,
   animateEntrance = true,
-  placementType,
-  placementSlotRank,
+  placementEffectiveLevel,
 }: PropertyCardProps) => {
   const { data: user } = useUser();
   const { data: favoriteIds = [] } = useFavoriteIds();
@@ -86,7 +84,7 @@ const PropertyCard = ({
   const showRating = rating != null && rating > 0;
   const imageTypeBadge =
     typeLabel?.trim() || (propertyType ? PROPERTY_TYPE_NOMINATIVE_DAILY[propertyType] : undefined);
-  const topBadge = placementBadgeLabel(placementType, placementSlotRank);
+  const topBadge = placementBadgeLabel(placementEffectiveLevel);
 
   return (
     <Link href={href} className="block h-full">

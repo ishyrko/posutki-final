@@ -175,11 +175,6 @@ export const getPropertyStats = async (id: number, period: 7 | 30 | 90): Promise
     return response.data.data;
 };
 
-export const boostProperty = async (id: number): Promise<{ boostedAt: string }> => {
-    const response = await api.post<{ data: { boostedAt: string } }>(`/properties/${id}/boost`);
-    return response.data.data;
-};
-
 export const archiveProperty = async (id: number): Promise<{ archivedAt: string }> => {
     const response = await api.post<{ data: { archivedAt: string } }>(`/properties/${id}/archive`);
     return response.data.data;

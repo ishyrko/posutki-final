@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace App\Application\Service;
 
 use App\Domain\Property\Entity\Property;
+use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
 use App\Domain\Property\Entity\PropertyPlacementPurchase;
-use App\Domain\Property\Entity\PropertyPlacementSlot;
+use App\Domain\Property\Entity\PropertyPlacementScopeSettings;
+use App\Domain\Property\Enum\PropertyType;
+use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
-use App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface;
+use App\Domain\Property\Repository\PropertyPlacementLevelPriceRepositoryInterface;
+use App\Domain\Property\Repository\PropertyPlacementScopeSettingsRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
+use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Repository\UserRepositoryInterface;
 
@@ -18,7 +23,9 @@ final class PropertyPlacementService
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
-        private readonly PropertyPlacementSlotRepositoryInterface $slotRepository,
+        private readonly PropertyPlacementLevelPriceRepositoryInterface $levelPriceRepository,
+        private readonly PropertyPlacementScopeSettingsRepositoryInterface $scopeSettingsRepository,
+        private readonly CityRepositoryInterface $cityRepository,
         private readonly UserRepositoryInterface $userRepository,
     ) {
     }
@@ -28,28 +35,17 @@ final class PropertyPlacementService
         $now ??= new \DateTimeImmutable();
         $propertyId = $property->getId()->getValue();
 
-        $special = $this->purchaseRepository->findActiveSpecialByPropertyId($propertyId, $now);
-        $standard = $this->purchaseRepository->findActiveStandardByPropertyId($propertyId, $now);
-
-        $activeSpecial = null;
-        if ($special !== null) {
-            $slot = $special->getSlotId() !== null
-                ? $this->slotRepository->findById($special->getSlotId())
-                : null;
-            $activeSpecial = [
-                'slotRank' => $slot?->getRankFrom() ?? 9999,
-                'expiresAt' => $special->getExpiresAt() ?? $now,
+        $activeLevelPurchase = $this->purchaseRepository->findActiveLevelByPropertyId($propertyId, $now);
+        $activeLevel = null;
+        if ($activeLevelPurchase !== null && $activeLevelPurchase->getLevel() !== null && $activeLevelPurchase->getExpiresAt() !== null) {
+            $activeLevel = [
+                'level' => $activeLevelPurchase->getLevel(),
+                'expiresAt' => $activeLevelPurchase->getExpiresAt(),
             ];
         }
 
-        $activeStandard = null;
-        if ($standard !== null && $standard->getExpiresAt() !== null) {
-            $activeStandard = [
-                'expiresAt' => $standard->getExpiresAt(),
-            ];
-        }
-
-        $property->recomputePlacement($activeSpecial, $activeStandard, $now);
+        $maxLevel = $this->resolveMaxLevelForProperty($property);
+        $property->recomputePlacement($activeLevel, $now, $maxLevel);
         $this->propertyRepository->save($property);
     }
 
@@ -71,19 +67,30 @@ final class PropertyPlacementService
     ): void {
         $now ??= new \DateTimeImmutable();
 
-        if ($purchase->getSlotId() !== null) {
-            $slot = $this->slotRepository->findById($purchase->getSlotId());
-            if ($slot === null || !$slot->isActive()) {
-                throw new \App\Domain\Shared\Exception\DomainException('Слот размещения не найден или неактивен');
+        if ($purchase->isBoost()) {
+            $maxLevel = $this->resolveMaxLevelForProperty($property);
+            if ($property->getPlacementBaseLevel() >= $maxLevel) {
+                throw new DomainException('Буст недоступен: объявление уже на максимальном VIP-уровне для этой локации');
             }
-            $occupied = $this->purchaseRepository->countOccupiedForSlot($slot->getId() ?? 0, $now);
-            // Current purchase still counts as pending reservation — exclude it for capacity check after activation intent
-            // When activating, the purchase itself is still pending, so occupied includes it. Capacity must allow it.
-            if ($occupied > $slot->getCapacity()) {
-                throw new \App\Domain\Shared\Exception\DomainException('Нет свободных мест в выбранном диапазоне позиций');
+
+            $purchase->activate($adminId, $now);
+            $this->purchaseRepository->save($purchase);
+            $property->extendPlacementBoost($now);
+            $this->recomputeForProperty($property, $now);
+
+            return;
+        }
+
+        if ($purchase->getLevelPriceId() !== null) {
+            $levelPrice = $this->levelPriceRepository->findById($purchase->getLevelPriceId());
+            if ($levelPrice === null || !$levelPrice->isActive()) {
+                throw new DomainException('Тариф VIP-уровня не найден или неактивен');
             }
-            if ($occupied === $slot->getCapacity()) {
-                // OK — this purchase is the last reserved seat
+            if ($levelPrice->getCapacity() !== null) {
+                $occupied = $this->purchaseRepository->countOccupiedForLevelPrice($levelPrice->getId() ?? 0, $now);
+                if ($occupied > $levelPrice->getCapacity()) {
+                    throw new DomainException('Нет свободных мест на этом VIP-уровне');
+                }
             }
         }
 
@@ -92,18 +99,66 @@ final class PropertyPlacementService
         $this->recomputeForProperty($property, $now);
     }
 
-    public function getSlotOccupancy(PropertyPlacementSlot $slot, ?\DateTimeImmutable $now = null): int
+    public function getLevelPriceOccupancy(PropertyPlacementLevelPrice $levelPrice, ?\DateTimeImmutable $now = null): int
     {
-        $id = $slot->getId();
+        $id = $levelPrice->getId();
         if ($id === null) {
             return 0;
         }
 
-        return $this->purchaseRepository->countOccupiedForSlot($id, $now);
+        return $this->purchaseRepository->countOccupiedForLevelPrice($id, $now);
     }
 
     /**
-     * One free standard trial per account: true if the owner has not used it yet.
+     * Resolve the (propertyType, cityId|regionId) VIP scope settings for a property,
+     * or null if the location has no explicit configuration yet.
+     */
+    public function resolveScopeSettings(Property $property): ?PropertyPlacementScopeSettings
+    {
+        if ($property->getType() === PropertyType::House->value) {
+            $regionId = $this->resolveRegionId($property);
+            if ($regionId === null) {
+                return null;
+            }
+
+            return $this->scopeSettingsRepository->findActiveByRegionId($regionId);
+        }
+
+        return $this->scopeSettingsRepository->findActiveByCityId($property->getCityId());
+    }
+
+    /**
+     * The highest VIP level configurable for the property's city (apartments) or
+     * region (houses); defaults to the global maximum when not explicitly configured.
+     */
+    public function resolveMaxLevelForProperty(Property $property): int
+    {
+        return $this->resolveScopeSettings($property)?->getMaxLevel() ?? PropertyPlacementScopeSettings::DEFAULT_MAX_LEVEL;
+    }
+
+    public function resolveRegionId(Property $property): ?int
+    {
+        $city = $this->cityRepository->findById($property->getCityId());
+
+        return $city?->getRegionDistrict()?->getRegion()->getId();
+    }
+
+    /**
+     * @return PropertyPlacementLevelPrice[] ordered by level, for the property's scope
+     */
+    public function findLevelPricesForProperty(Property $property): array
+    {
+        if ($property->getType() === PropertyType::House->value) {
+            $regionId = $this->resolveRegionId($property);
+
+            return $regionId !== null ? $this->levelPriceRepository->findActiveByRegionId($regionId) : [];
+        }
+
+        return $this->levelPriceRepository->findActiveByCityId($property->getCityId());
+    }
+
+    /**
+     * One free VIP 1 trial per account: true if the owner has not used it yet.
      */
     public function shouldGrantFreeTrial(Property $property): bool
     {
@@ -116,7 +171,7 @@ final class PropertyPlacementService
     }
 
     /**
-     * Mark the owner account as having consumed the one-time free standard month.
+     * Mark the owner account as having consumed the one-time free VIP 1 month.
      * Call only after the trial was actually applied to a listing.
      */
     public function markFreePlacementTrialUsed(Property $property): void

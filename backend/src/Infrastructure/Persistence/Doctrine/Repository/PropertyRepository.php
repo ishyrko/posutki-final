@@ -66,18 +66,10 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
 
         $this->applyFilters($qb, $filters);
 
-        $todayStart = new \DateTimeImmutable('today');
-        $qb->addSelect('(CASE WHEN p.placementType = :placementSpecial THEN 2 WHEN p.placementType = :placementStandard THEN 1 ELSE 0 END) AS HIDDEN placementScore')
-            ->addSelect('(CASE WHEN p.boostedAt >= :boostTodayStart THEN 1 ELSE 0 END) AS HIDDEN boostScore')
-            ->setParameter('placementSpecial', 'special')
-            ->setParameter('placementStandard', 'standard')
-            ->setParameter('boostTodayStart', $todayStart);
+        $now = new \DateTimeImmutable();
+        $this->applyPlacementSort($qb, $now);
 
-        $qb->orderBy('placementScore', 'DESC')
-            ->addOrderBy('p.placementSlotRank', 'ASC')
-            ->addOrderBy('p.placementShuffleKey', 'ASC');
-
-        // Sorting (after placement / shuffle); free tier also uses boost as tie-breaker via boostScore before tertiary sort
+        // Sorting (after VIP level / boost / shuffle)
         $sortBy = $filters['sortBy'] ?? 'createdAt';
         $sortOrder = $filters['sortOrder'] ?? 'DESC';
         if (!in_array($sortOrder, ['ASC', 'DESC'], true)) {
@@ -93,14 +85,25 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
             default => 'createdAt',
         };
 
-        $qb->addOrderBy('boostScore', 'DESC')
-            ->addOrderBy('p.boostedAt', 'DESC')
-            ->addOrderBy('p.' . $sortField, $sortOrder);
+        $qb->addOrderBy('p.' . $sortField, $sortOrder);
 
         $qb->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
 
         return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * Catalog placement sort order: effective VIP level (desc) → active boost within the
+     * same level (desc) → rotation key (asc) so the same listings don't always show first.
+     */
+    private function applyPlacementSort(QueryBuilder $qb, \DateTimeImmutable $now): void
+    {
+        $qb->addSelect('(CASE WHEN p.placementBoostExpiresAt IS NOT NULL AND p.placementBoostExpiresAt > :placementNow THEN 1 ELSE 0 END) AS HIDDEN placementBoostActive')
+            ->setParameter('placementNow', $now)
+            ->orderBy('p.placementEffectiveLevel', 'DESC')
+            ->addOrderBy('placementBoostActive', 'DESC')
+            ->addOrderBy('p.placementShuffleKey', 'ASC');
     }
 
     public function findPublishedOlderThan(\DateTimeImmutable $date): array
@@ -389,18 +392,9 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
                 ->setParameter('type', $type);
         }
 
-        $todayStart = new \DateTimeImmutable('today');
-        $qb->addSelect('(CASE WHEN p.placementType = :placementSpecial THEN 2 WHEN p.placementType = :placementStandard THEN 1 ELSE 0 END) AS HIDDEN placementScore')
-            ->addSelect('(CASE WHEN p.boostedAt >= :boostTodayStart THEN 1 ELSE 0 END) AS HIDDEN boostScore')
-            ->setParameter('placementSpecial', 'special')
-            ->setParameter('placementStandard', 'standard')
-            ->setParameter('boostTodayStart', $todayStart)
-            ->orderBy('placementScore', 'DESC')
-            ->addOrderBy('p.placementSlotRank', 'ASC')
-            ->addOrderBy('p.placementShuffleKey', 'ASC')
-            ->addOrderBy('boostScore', 'DESC')
-            ->addOrderBy('p.boostedAt', 'DESC')
-            ->addOrderBy('p.createdAt', 'DESC')
+        $now = new \DateTimeImmutable();
+        $this->applyPlacementSort($qb, $now);
+        $qb->addOrderBy('p.createdAt', 'DESC')
             ->setMaxResults($limit);
 
         return $qb->getQuery()->getResult();
@@ -413,9 +407,7 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
     {
         return $this->createQueryBuilder('p')
             ->where('p.status = :status')
-            ->andWhere('p.placementType IN (:types)')
             ->setParameter('status', 'published')
-            ->setParameter('types', ['special', 'standard'])
             ->getQuery()
             ->getResult();
     }
@@ -430,8 +422,9 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         return $this->createQueryBuilder('p')
             ->where('p.status = :status')
             ->andWhere(
-                '(p.placementExpiresAt IS NOT NULL AND p.placementExpiresAt <= :now)
-                 OR (p.placementIsTrial = true AND p.freeTrialEndsAt IS NOT NULL AND p.freeTrialEndsAt <= :now)'
+                '(p.placementLevelExpiresAt IS NOT NULL AND p.placementLevelExpiresAt <= :now)
+                 OR (p.placementIsTrial = true AND p.freeTrialEndsAt IS NOT NULL AND p.freeTrialEndsAt <= :now)
+                 OR (p.placementBoostExpiresAt IS NOT NULL AND p.placementBoostExpiresAt <= :now)'
             )
             ->setParameter('status', 'published')
             ->setParameter('now', $now)

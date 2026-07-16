@@ -6,7 +6,7 @@ namespace App\Presentation\Admin\Controller;
 
 use App\Domain\Property\Enum\PropertyType;
 
-final class ApartmentPlacementStandardPriceCrudController extends AbstractPlacementStandardPriceCrudController
+final class ApartmentPlacementLevelPriceCrudController extends AbstractPlacementLevelPriceCrudController
 {
     protected function scopedPropertyType(): string
     {
@@ -15,11 +15,11 @@ final class ApartmentPlacementStandardPriceCrudController extends AbstractPlacem
 
     protected function entityLabelSingular(): string
     {
-        return 'Стандартное размещение (квартиры)';
+        return 'VIP-тариф (квартиры)';
     }
 
     protected function entityLabelPlural(): string
     {
-        return 'Стандартное размещение — квартиры';
+        return 'VIP-тарифы — квартиры';
     }
 }

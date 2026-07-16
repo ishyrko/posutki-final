@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Property\Entity;
 
 use App\Domain\Property\Enum\PlacementPurchaseStatus;
-use App\Domain\Property\Enum\PlacementPurchaseType;
+use App\Domain\Property\Enum\PlacementPurchaseKind;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
 use Doctrine\ORM\Mapping as ORM;
@@ -13,11 +13,12 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 #[ORM\Table(name: 'property_placement_purchases')]
 #[ORM\Index(columns: ['property_id', 'status'], name: 'idx_placement_purchases_property_status')]
-#[ORM\Index(columns: ['slot_id', 'status'], name: 'idx_placement_purchases_slot_status')]
+#[ORM\Index(columns: ['level_price_id', 'status'], name: 'idx_placement_purchases_level_price_status')]
 #[ORM\Index(columns: ['owner_id'], name: 'idx_placement_purchases_owner')]
 class PropertyPlacementPurchase
 {
     public const RESERVATION_HOURS = 48;
+    public const BOOST_HOURS = 24;
 
     /** @var list<int> */
     public const ALLOWED_DURATIONS = [1, 3, 6, 12];
@@ -34,13 +35,16 @@ class PropertyPlacementPurchase
     private Id $ownerId;
 
     #[ORM\Column(type: 'string', length: 20)]
-    private string $type;
+    private string $kind;
 
-    #[ORM\Column(type: 'integer', nullable: true, name: 'slot_id')]
-    private ?int $slotId = null;
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $level = null;
 
-    #[ORM\Column(type: 'integer', name: 'duration_months')]
-    private int $durationMonths;
+    #[ORM\Column(type: 'integer', nullable: true, name: 'level_price_id')]
+    private ?int $levelPriceId = null;
+
+    #[ORM\Column(type: 'integer', nullable: true, name: 'duration_months')]
+    private ?int $durationMonths = null;
 
     #[ORM\Column(type: 'integer', name: 'price_byn')]
     private int $priceByn;
@@ -72,25 +76,36 @@ class PropertyPlacementPurchase
     public function __construct(
         int $propertyId,
         Id $ownerId,
-        string $type,
-        int $durationMonths,
+        string $kind,
         int $priceByn,
         string $source,
-        ?int $slotId = null,
+        ?int $level = null,
+        ?int $levelPriceId = null,
+        ?int $durationMonths = null,
         ?\DateTimeImmutable $now = null,
     ) {
-        if (!in_array($type, PlacementPurchaseType::values(), true)) {
-            throw new DomainException('Неизвестный тип размещения');
+        if (!in_array($kind, PlacementPurchaseKind::values(), true)) {
+            throw new DomainException('Неизвестный тип покупки размещения');
         }
-        if (!in_array($durationMonths, self::ALLOWED_DURATIONS, true)) {
-            throw new DomainException('Допустимый срок: 1, 3, 6 или 12 месяцев');
+
+        if ($kind === PlacementPurchaseKind::Level->value) {
+            if ($level === null || $level < PropertyPlacementLevelPrice::MIN_LEVEL || $level > PropertyPlacementLevelPrice::MAX_LEVEL) {
+                throw new DomainException(sprintf(
+                    'Укажите VIP-уровень от %d до %d',
+                    PropertyPlacementLevelPrice::MIN_LEVEL,
+                    PropertyPlacementLevelPrice::MAX_LEVEL,
+                ));
+            }
+            if ($durationMonths === null || !in_array($durationMonths, self::ALLOWED_DURATIONS, true)) {
+                throw new DomainException('Допустимый срок: 1, 3, 6 или 12 месяцев');
+            }
+        } else {
+            if ($level !== null || $levelPriceId !== null) {
+                throw new DomainException('VIP-буст не привязан к конкретному уровню');
+            }
+            $durationMonths = null;
         }
-        if ($type === PlacementPurchaseType::Special->value && $slotId === null) {
-            throw new DomainException('Для спецразмещения нужно выбрать диапазон позиций');
-        }
-        if ($type === PlacementPurchaseType::Standard->value && $slotId !== null) {
-            throw new DomainException('Стандартное размещение не привязано к слоту');
-        }
+
         if ($priceByn < 0) {
             throw new DomainException('Цена не может быть отрицательной');
         }
@@ -98,8 +113,9 @@ class PropertyPlacementPurchase
         $now ??= new \DateTimeImmutable();
         $this->propertyId = $propertyId;
         $this->ownerId = $ownerId;
-        $this->type = $type;
-        $this->slotId = $slotId;
+        $this->kind = $kind;
+        $this->level = $level;
+        $this->levelPriceId = $levelPriceId;
         $this->durationMonths = $durationMonths;
         $this->priceByn = $priceByn;
         $this->status = PlacementPurchaseStatus::PendingPayment->value;
@@ -123,17 +139,22 @@ class PropertyPlacementPurchase
         return $this->ownerId;
     }
 
-    public function getType(): string
+    public function getKind(): string
     {
-        return $this->type;
+        return $this->kind;
     }
 
-    public function getSlotId(): ?int
+    public function getLevel(): ?int
     {
-        return $this->slotId;
+        return $this->level;
     }
 
-    public function getDurationMonths(): int
+    public function getLevelPriceId(): ?int
+    {
+        return $this->levelPriceId;
+    }
+
+    public function getDurationMonths(): ?int
     {
         return $this->durationMonths;
     }
@@ -188,22 +209,27 @@ class PropertyPlacementPurchase
         $this->propertyId = $propertyId;
     }
 
-    public function setType(string $type): void
+    public function setKind(string $kind): void
     {
-        if (!in_array($type, PlacementPurchaseType::values(), true)) {
-            throw new DomainException('Неизвестный тип размещения');
+        if (!in_array($kind, PlacementPurchaseKind::values(), true)) {
+            throw new DomainException('Неизвестный тип покупки размещения');
         }
-        $this->type = $type;
+        $this->kind = $kind;
     }
 
-    public function setSlotId(?int $slotId): void
+    public function setLevel(?int $level): void
     {
-        $this->slotId = $slotId;
+        $this->level = $level;
     }
 
-    public function setDurationMonths(int $durationMonths): void
+    public function setLevelPriceId(?int $levelPriceId): void
     {
-        if (!in_array($durationMonths, self::ALLOWED_DURATIONS, true)) {
+        $this->levelPriceId = $levelPriceId;
+    }
+
+    public function setDurationMonths(?int $durationMonths): void
+    {
+        if ($durationMonths !== null && !in_array($durationMonths, self::ALLOWED_DURATIONS, true)) {
             throw new DomainException('Допустимый срок: 1, 3, 6 или 12 месяцев');
         }
         $this->durationMonths = $durationMonths;
@@ -221,6 +247,11 @@ class PropertyPlacementPurchase
     {
         $value = $note !== null ? trim($note) : null;
         $this->note = $value === '' ? null : $value;
+    }
+
+    public function isBoost(): bool
+    {
+        return $this->kind === PlacementPurchaseKind::Boost->value;
     }
 
     public function isPendingPayment(): bool
@@ -253,7 +284,9 @@ class PropertyPlacementPurchase
         $now ??= new \DateTimeImmutable();
         $this->status = PlacementPurchaseStatus::Active->value;
         $this->activatedAt = $now;
-        $this->expiresAt = $now->modify('+' . $this->durationMonths . ' months');
+        $this->expiresAt = $this->isBoost()
+            ? $now->modify('+' . self::BOOST_HOURS . ' hours')
+            : $now->modify('+' . $this->durationMonths . ' months');
         $this->reservationExpiresAt = null;
         $this->activatedByAdminId = $adminId;
     }

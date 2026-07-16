@@ -6,9 +6,8 @@ namespace App\Application\Command\Payment\CreatePlacementPayment;
 
 use App\Domain\Payment\Entity\Payment;
 use App\Domain\Payment\Repository\PaymentRepositoryInterface;
-use App\Domain\Property\Enum\PlacementPurchaseType;
+use App\Domain\Property\Enum\PlacementPurchaseKind;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
-use App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
@@ -20,7 +19,6 @@ final class CreatePlacementPaymentHandler
     public function __construct(
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
         private readonly PropertyRepositoryInterface $propertyRepository,
-        private readonly PropertyPlacementSlotRepositoryInterface $slotRepository,
         private readonly PaymentRepositoryInterface $paymentRepository,
         private readonly BePaidGatewayClient $bePaidClient,
         private readonly string $frontendUrl,
@@ -67,19 +65,18 @@ final class CreatePlacementPaymentHandler
         $this->paymentRepository->save($payment);
 
         $property = $this->propertyRepository->findById(Id::fromInt($purchase->getPropertyId()));
-        $slot = $purchase->getSlotId() !== null
-            ? $this->slotRepository->findById($purchase->getSlotId())
-            : null;
 
-        $typeLabel = PlacementPurchaseType::tryFrom($purchase->getType())?->label() ?? $purchase->getType();
-        $slotPart = $slot !== null ? ', позиции ' . $slot->getLabel() : '';
-        $description = sprintf(
-            'Размещение объявления #%d: %s%s, %d мес.',
-            $purchase->getPropertyId(),
-            $typeLabel,
-            $slotPart,
-            $purchase->getDurationMonths(),
-        );
+        $kindLabel = PlacementPurchaseKind::tryFrom($purchase->getKind())?->label() ?? $purchase->getKind();
+        $levelPart = $purchase->getLevel() !== null ? sprintf(' (VIP %d)', $purchase->getLevel()) : '';
+        $description = $purchase->isBoost()
+            ? sprintf('Размещение объявления #%d: %s', $purchase->getPropertyId(), $kindLabel)
+            : sprintf(
+                'Размещение объявления #%d: %s%s, %d мес.',
+                $purchase->getPropertyId(),
+                $kindLabel,
+                $levelPart,
+                $purchase->getDurationMonths(),
+            );
 
         $frontendBase = rtrim($this->frontendUrl, '/');
         $purchasePath = sprintf('%s/kabinet/oplata/%d/', $frontendBase, $command->purchaseId);

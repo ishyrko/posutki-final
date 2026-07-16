@@ -50,8 +50,8 @@ function PurchaseRow({ purchase }: { purchase: PlacementPurchase }) {
                         )}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        {purchase.typeLabel}
-                        {purchase.slotLabel ? ` · позиции ${purchase.slotLabel}` : ''}
+                        {purchase.kindLabel}
+                        {purchase.level != null ? ` · VIP ${purchase.level}` : ''}
                         {' · '}
                         {formatDuration(purchase.durationMonths)}
                     </p>

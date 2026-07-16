@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence\Doctrine\Repository;
 
 use App\Domain\Property\Entity\PropertyPlacementPurchase;
+use App\Domain\Property\Enum\PlacementPurchaseKind;
 use App\Domain\Property\Enum\PlacementPurchaseStatus;
-use App\Domain\Property\Enum\PlacementPurchaseType;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -69,55 +69,37 @@ class PropertyPlacementPurchaseRepository extends ServiceEntityRepository implem
             ->getSingleScalarResult();
     }
 
-    public function findActiveSpecialByPropertyId(int $propertyId, ?\DateTimeImmutable $now = null): ?PropertyPlacementPurchase
+    public function findActiveLevelByPropertyId(int $propertyId, ?\DateTimeImmutable $now = null): ?PropertyPlacementPurchase
     {
         $now ??= new \DateTimeImmutable();
 
         return $this->createQueryBuilder('p')
             ->where('p.propertyId = :propertyId')
-            ->andWhere('p.type = :type')
+            ->andWhere('p.kind = :kind')
             ->andWhere('p.status = :status')
             ->andWhere('p.expiresAt > :now')
             ->setParameter('propertyId', $propertyId)
-            ->setParameter('type', PlacementPurchaseType::Special->value)
+            ->setParameter('kind', PlacementPurchaseKind::Level->value)
             ->setParameter('status', PlacementPurchaseStatus::Active->value)
             ->setParameter('now', $now)
-            ->orderBy('p.expiresAt', 'DESC')
+            ->orderBy('p.level', 'DESC')
+            ->addOrderBy('p.expiresAt', 'DESC')
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
     }
 
-    public function findActiveStandardByPropertyId(int $propertyId, ?\DateTimeImmutable $now = null): ?PropertyPlacementPurchase
-    {
-        $now ??= new \DateTimeImmutable();
-
-        return $this->createQueryBuilder('p')
-            ->where('p.propertyId = :propertyId')
-            ->andWhere('p.type = :type')
-            ->andWhere('p.status = :status')
-            ->andWhere('p.expiresAt > :now')
-            ->setParameter('propertyId', $propertyId)
-            ->setParameter('type', PlacementPurchaseType::Standard->value)
-            ->setParameter('status', PlacementPurchaseStatus::Active->value)
-            ->setParameter('now', $now)
-            ->orderBy('p.expiresAt', 'DESC')
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
-    public function countOccupiedForSlot(int $slotId, ?\DateTimeImmutable $now = null): int
+    public function countOccupiedForLevelPrice(int $levelPriceId, ?\DateTimeImmutable $now = null): int
     {
         $now ??= new \DateTimeImmutable();
 
         return (int) $this->createQueryBuilder('p')
             ->select('COUNT(p.id)')
-            ->where('p.slotId = :slotId')
+            ->where('p.levelPriceId = :levelPriceId')
             ->andWhere(
                 '(p.status = :active AND p.expiresAt > :now) OR (p.status = :pending AND p.reservationExpiresAt > :now)'
             )
-            ->setParameter('slotId', $slotId)
+            ->setParameter('levelPriceId', $levelPriceId)
             ->setParameter('active', PlacementPurchaseStatus::Active->value)
             ->setParameter('pending', PlacementPurchaseStatus::PendingPayment->value)
             ->setParameter('now', $now)

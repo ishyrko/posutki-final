@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace App\Application\Command\Property\CreatePlacementPurchase;
 
-use App\Domain\Property\Entity\PropertyPlacementPurchase;
-use App\Domain\Property\Enum\PlacementPurchaseType;
-use App\Domain\Property\Enum\PropertyType;
-use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Entity\Property;
-use App\Domain\Property\Entity\PropertyPlacementSlot;
-use App\Domain\Property\Entity\PropertyPlacementStandardPrice;
+use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
+use App\Domain\Property\Entity\PropertyPlacementPurchase;
+use App\Domain\Property\Enum\PlacementPurchaseKind;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
-use App\Domain\Property\Repository\PropertyPlacementSlotRepositoryInterface;
-use App\Domain\Property\Repository\PropertyPlacementStandardPriceRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\ConflictException;
 use App\Domain\Shared\Exception\DomainException;
@@ -24,9 +20,7 @@ final class CreatePlacementPurchaseHandler
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
-        private readonly PropertyPlacementSlotRepositoryInterface $slotRepository,
-        private readonly PropertyPlacementStandardPriceRepositoryInterface $standardPriceRepository,
-        private readonly CityRepositoryInterface $cityRepository,
+        private readonly PropertyPlacementService $placementService,
     ) {
     }
 
@@ -46,60 +40,22 @@ final class CreatePlacementPurchaseHandler
             throw new DomainException('Размещение можно купить только для опубликованного объявления');
         }
 
-        $type = $command->type;
-        if (!in_array($type, PlacementPurchaseType::values(), true)) {
-            throw new DomainException('Неизвестный тип размещения');
+        $kind = $command->kind;
+        if (!in_array($kind, PlacementPurchaseKind::values(), true)) {
+            throw new DomainException('Неизвестный тип покупки размещения');
         }
 
-        $slotId = $command->slotId;
-        $pricePerMonth = 0;
-
-        if ($type === PlacementPurchaseType::Special->value) {
-            if ($slotId === null) {
-                throw new DomainException('Выберите диапазон позиций');
-            }
-            $slot = $this->slotRepository->findById($slotId);
-            if ($slot === null || !$slot->isActive()) {
-                throw new DomainException('Диапазон позиций не найден');
-            }
-            $this->assertSlotMatchesProperty($slot, $property);
-            $occupied = $this->purchaseRepository->countOccupiedForSlot($slotId);
-            if ($occupied >= $slot->getCapacity()) {
-                throw new ConflictException('Нет свободных мест в выбранном диапазоне позиций');
-            }
-            $pricePerMonth = $slot->getPriceBynPerMonth();
-        } else {
-            $standard = $this->resolveStandardPrice($property);
-            if ($standard === null) {
-                throw new DomainException(
-                    $property->getType() === PropertyType::House->value
-                        ? 'Для области объявления ещё не задана цена стандартного размещения'
-                        : 'Для этого города ещё не задана цена стандартного размещения',
-                );
-            }
-            $pricePerMonth = $standard->getPriceBynPerMonth();
-            $slotId = null;
-        }
-
-        $totalPrice = $pricePerMonth * $command->durationMonths;
-
-        $purchase = new PropertyPlacementPurchase(
-            propertyId: $property->getId()->getValue(),
-            ownerId: $userId,
-            type: $type,
-            durationMonths: $command->durationMonths,
-            priceByn: $totalPrice,
-            source: 'self_service',
-            slotId: $slotId,
-        );
+        $purchase = $kind === PlacementPurchaseKind::Boost->value
+            ? $this->createBoostPurchase($property, $userId)
+            : $this->createLevelPurchase($property, $userId, $command);
 
         $this->purchaseRepository->save($purchase);
 
         return [
             'id' => $purchase->getId(),
             'propertyId' => $purchase->getPropertyId(),
-            'type' => $purchase->getType(),
-            'slotId' => $purchase->getSlotId(),
+            'kind' => $purchase->getKind(),
+            'level' => $purchase->getLevel(),
             'durationMonths' => $purchase->getDurationMonths(),
             'priceByn' => $purchase->getPriceByn(),
             'status' => $purchase->getStatus(),
@@ -108,41 +64,81 @@ final class CreatePlacementPurchaseHandler
         ];
     }
 
-    private function resolveStandardPrice(Property $property): ?PropertyPlacementStandardPrice
+    private function createLevelPurchase(Property $property, Id $userId, CreatePlacementPurchaseCommand $command): PropertyPlacementPurchase
     {
-        if ($property->getType() === PropertyType::House->value) {
-            $city = $this->cityRepository->findById($property->getCityId());
-            $regionId = $city?->getRegionDistrict()?->getRegion()->getId();
-            if ($regionId === null) {
-                return null;
-            }
-
-            return $this->standardPriceRepository->findActiveByRegionId($regionId);
+        $level = $command->level;
+        if (
+            $level === null
+            || $level < PropertyPlacementLevelPrice::MIN_LEVEL
+            || $level > PropertyPlacementLevelPrice::MAX_LEVEL
+        ) {
+            throw new DomainException(sprintf(
+                'Укажите VIP-уровень от %d до %d',
+                PropertyPlacementLevelPrice::MIN_LEVEL,
+                PropertyPlacementLevelPrice::MAX_LEVEL,
+            ));
         }
 
-        return $this->standardPriceRepository->findActiveByCityId($property->getCityId());
+        $durationMonths = $command->durationMonths;
+        if ($durationMonths === null || !in_array($durationMonths, PropertyPlacementPurchase::ALLOWED_DURATIONS, true)) {
+            throw new DomainException('Допустимый срок: 1, 3, 6 или 12 месяцев');
+        }
+
+        $levelPrice = $this->resolveLevelPrice($property, $level);
+        if ($levelPrice === null) {
+            throw new DomainException('Для этого VIP-уровня и локации тариф не задан');
+        }
+
+        if ($levelPrice->getCapacity() !== null) {
+            $occupied = $this->purchaseRepository->countOccupiedForLevelPrice($levelPrice->getId() ?? 0);
+            if ($occupied >= $levelPrice->getCapacity()) {
+                throw new ConflictException('Нет свободных мест на этом VIP-уровне');
+            }
+        }
+
+        $totalPrice = $levelPrice->getPriceBynPerMonth() * $durationMonths;
+
+        return new PropertyPlacementPurchase(
+            propertyId: $property->getId()->getValue(),
+            ownerId: $userId,
+            kind: PlacementPurchaseKind::Level->value,
+            priceByn: $totalPrice,
+            source: 'self_service',
+            level: $level,
+            levelPriceId: $levelPrice->getId(),
+            durationMonths: $durationMonths,
+        );
     }
 
-    private function assertSlotMatchesProperty(PropertyPlacementSlot $slot, Property $property): void
+    private function createBoostPurchase(Property $property, Id $userId): PropertyPlacementPurchase
     {
-        if ($property->getType() === PropertyType::House->value) {
-            if (!$slot->isForHouses()) {
-                throw new DomainException('Диапазон позиций предназначен для квартир');
-            }
-            $city = $this->cityRepository->findById($property->getCityId());
-            $regionId = $city?->getRegionDistrict()?->getRegion()->getId();
-            if ($regionId === null || $slot->getRegionId() !== $regionId) {
-                throw new DomainException('Диапазон позиций не относится к области объявления');
-            }
-
-            return;
+        $maxLevel = $this->placementService->resolveMaxLevelForProperty($property);
+        if ($property->getPlacementBaseLevel() >= $maxLevel) {
+            throw new DomainException('Буст недоступен: объявление уже на максимальном VIP-уровне для этой локации');
         }
 
-        if (!$slot->isForApartments()) {
-            throw new DomainException('Диапазон позиций предназначен для домов');
+        $settings = $this->placementService->resolveScopeSettings($property);
+        if ($settings === null) {
+            throw new DomainException('Для этой локации цена VIP-буста не задана');
         }
-        if ($slot->getCityId() !== $property->getCityId()) {
-            throw new DomainException('Диапазон позиций не относится к городу объявления');
+
+        return new PropertyPlacementPurchase(
+            propertyId: $property->getId()->getValue(),
+            ownerId: $userId,
+            kind: PlacementPurchaseKind::Boost->value,
+            priceByn: $settings->getBoostPriceByn(),
+            source: 'self_service',
+        );
+    }
+
+    private function resolveLevelPrice(Property $property, int $level): ?PropertyPlacementLevelPrice
+    {
+        foreach ($this->placementService->findLevelPricesForProperty($property) as $levelPrice) {
+            if ($levelPrice->getLevel() === $level) {
+                return $levelPrice;
+            }
         }
+
+        return null;
     }
 }

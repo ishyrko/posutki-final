@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace App\Application\DTO;
 
+use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
 use App\Domain\Property\Entity\PropertyPlacementPurchase;
-use App\Domain\Property\Entity\PropertyPlacementSlot;
+use App\Domain\Property\Enum\PlacementPurchaseKind;
 use App\Domain\Property\Enum\PlacementPurchaseStatus;
-use App\Domain\Property\Enum\PlacementPurchaseType;
 
 final class PlacementPurchaseDTO implements \JsonSerializable
 {
     public function __construct(
         public readonly int $id,
         public readonly int $propertyId,
-        public readonly string $type,
-        public readonly string $typeLabel,
-        public readonly ?int $slotId,
-        public readonly ?string $slotLabel,
-        public readonly int $durationMonths,
+        public readonly string $kind,
+        public readonly string $kindLabel,
+        public readonly ?int $level,
+        public readonly ?int $levelPriceId,
+        public readonly ?int $durationMonths,
         public readonly int $priceByn,
         public readonly string $status,
         public readonly string $statusLabel,
@@ -34,16 +34,16 @@ final class PlacementPurchaseDTO implements \JsonSerializable
 
     public static function fromEntity(
         PropertyPlacementPurchase $purchase,
-        ?PropertyPlacementSlot $slot = null,
+        ?PropertyPlacementLevelPrice $levelPrice = null,
         ?string $propertyTitle = null,
     ): self {
         return new self(
             id: (int) $purchase->getId(),
             propertyId: $purchase->getPropertyId(),
-            type: $purchase->getType(),
-            typeLabel: PlacementPurchaseType::tryFrom($purchase->getType())?->label() ?? $purchase->getType(),
-            slotId: $purchase->getSlotId(),
-            slotLabel: $slot?->getLabel(),
+            kind: $purchase->getKind(),
+            kindLabel: PlacementPurchaseKind::tryFrom($purchase->getKind())?->label() ?? $purchase->getKind(),
+            level: $purchase->getLevel() ?? $levelPrice?->getLevel(),
+            levelPriceId: $purchase->getLevelPriceId(),
             durationMonths: $purchase->getDurationMonths(),
             priceByn: $purchase->getPriceByn(),
             status: $purchase->getStatus(),
@@ -64,10 +64,10 @@ final class PlacementPurchaseDTO implements \JsonSerializable
             'id' => $this->id,
             'propertyId' => $this->propertyId,
             'propertyTitle' => $this->propertyTitle,
-            'type' => $this->type,
-            'typeLabel' => $this->typeLabel,
-            'slotId' => $this->slotId,
-            'slotLabel' => $this->slotLabel,
+            'kind' => $this->kind,
+            'kindLabel' => $this->kindLabel,
+            'level' => $this->level,
+            'levelPriceId' => $this->levelPriceId,
             'durationMonths' => $this->durationMonths,
             'priceByn' => $this->priceByn,
             'status' => $this->status,

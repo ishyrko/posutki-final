@@ -8,12 +8,18 @@ use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Shared\Exception\DomainException;
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * Per-city (apartments) / per-region (houses) VIP settings: the highest configurable
+ * VIP level and the price of a 24h VIP-boost.
+ */
 #[ORM\Entity]
-#[ORM\Table(name: 'property_placement_slots')]
-#[ORM\Index(columns: ['city_id', 'is_active'], name: 'idx_placement_slots_city_active')]
-#[ORM\Index(columns: ['region_id', 'is_active'], name: 'idx_placement_slots_region_active')]
-class PropertyPlacementSlot
+#[ORM\Table(name: 'property_placement_scope_settings')]
+#[ORM\UniqueConstraint(name: 'uniq_placement_scope_apartment_city', columns: ['property_type', 'city_id'])]
+#[ORM\UniqueConstraint(name: 'uniq_placement_scope_house_region', columns: ['property_type', 'region_id'])]
+class PropertyPlacementScopeSettings
 {
+    public const DEFAULT_MAX_LEVEL = 5;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -28,20 +34,11 @@ class PropertyPlacementSlot
     #[ORM\Column(type: 'integer', nullable: true, name: 'region_id')]
     private ?int $regionId = null;
 
-    #[ORM\Column(type: 'integer', name: 'rank_from')]
-    private int $rankFrom;
+    #[ORM\Column(type: 'integer', name: 'max_level', options: ['default' => self::DEFAULT_MAX_LEVEL])]
+    private int $maxLevel = self::DEFAULT_MAX_LEVEL;
 
-    #[ORM\Column(type: 'integer', name: 'rank_to')]
-    private int $rankTo;
-
-    #[ORM\Column(type: 'integer')]
-    private int $capacity;
-
-    #[ORM\Column(type: 'integer', name: 'price_byn_per_month')]
-    private int $priceBynPerMonth;
-
-    #[ORM\Column(type: 'integer', name: 'sort_order', options: ['default' => 0])]
-    private int $sortOrder = 0;
+    #[ORM\Column(type: 'integer', name: 'boost_price_byn')]
+    private int $boostPriceByn;
 
     #[ORM\Column(type: 'boolean', name: 'is_active', options: ['default' => true])]
     private bool $isActive = true;
@@ -50,10 +47,8 @@ class PropertyPlacementSlot
         string $propertyType,
         ?int $cityId,
         ?int $regionId,
-        int $rankFrom,
-        int $rankTo,
-        int $priceBynPerMonth,
-        int $sortOrder = 0,
+        int $maxLevel = self::DEFAULT_MAX_LEVEL,
+        int $boostPriceByn = 0,
         bool $isActive = true,
     ) {
         if (!in_array($propertyType, PropertyType::values(), true)) {
@@ -63,12 +58,9 @@ class PropertyPlacementSlot
         $this->propertyType = $propertyType;
         $this->cityId = $cityId !== null && $cityId > 0 ? $cityId : null;
         $this->regionId = $regionId !== null && $regionId > 0 ? $regionId : null;
-        $this->rankFrom = $rankFrom;
-        $this->rankTo = $rankTo;
-        $this->priceBynPerMonth = $priceBynPerMonth;
-        $this->sortOrder = $sortOrder;
+        $this->maxLevel = $maxLevel;
+        $this->boostPriceByn = $boostPriceByn;
         $this->isActive = $isActive;
-        $this->syncCapacityFromRanks();
     }
 
     public function getId(): ?int
@@ -110,51 +102,24 @@ class PropertyPlacementSlot
         $this->regionId = $regionId !== null && $regionId > 0 ? $regionId : null;
     }
 
-    public function getRankFrom(): int
+    public function getMaxLevel(): int
     {
-        return $this->rankFrom;
+        return $this->maxLevel;
     }
 
-    public function setRankFrom(int $rankFrom): void
+    public function setMaxLevel(int $maxLevel): void
     {
-        $this->rankFrom = $rankFrom;
-        $this->syncCapacityFromRanks();
+        $this->maxLevel = $maxLevel;
     }
 
-    public function getRankTo(): int
+    public function getBoostPriceByn(): int
     {
-        return $this->rankTo;
+        return $this->boostPriceByn;
     }
 
-    public function setRankTo(int $rankTo): void
+    public function setBoostPriceByn(int $boostPriceByn): void
     {
-        $this->rankTo = $rankTo;
-        $this->syncCapacityFromRanks();
-    }
-
-    public function getCapacity(): int
-    {
-        return $this->capacity;
-    }
-
-    public function getPriceBynPerMonth(): int
-    {
-        return $this->priceBynPerMonth;
-    }
-
-    public function setPriceBynPerMonth(int $priceBynPerMonth): void
-    {
-        $this->priceBynPerMonth = $priceBynPerMonth;
-    }
-
-    public function getSortOrder(): int
-    {
-        return $this->sortOrder;
-    }
-
-    public function setSortOrder(int $sortOrder): void
-    {
-        $this->sortOrder = $sortOrder;
+        $this->boostPriceByn = $boostPriceByn;
     }
 
     public function isActive(): bool
@@ -179,14 +144,12 @@ class PropertyPlacementSlot
 
     public function validate(): void
     {
-        if ($this->rankFrom < 1 || $this->rankTo < 1) {
-            throw new DomainException('Позиции должны быть не меньше 1');
+        if ($this->maxLevel < 1 || $this->maxLevel > PropertyPlacementLevelPrice::MAX_LEVEL) {
+            throw new DomainException(sprintf('Максимальный VIP-уровень должен быть от 1 до %d', PropertyPlacementLevelPrice::MAX_LEVEL));
         }
-        if ($this->rankFrom > $this->rankTo) {
-            throw new DomainException('Позиция «с» не может быть больше «по»');
+        if ($this->boostPriceByn < 0) {
+            throw new DomainException('Цена буста не может быть отрицательной');
         }
-
-        $this->syncCapacityFromRanks();
 
         if ($this->propertyType === PropertyType::Apartment->value) {
             if ($this->cityId === null) {
@@ -207,25 +170,5 @@ class PropertyPlacementSlot
                 throw new DomainException('Для домов город не указывается');
             }
         }
-    }
-
-    public function getLabel(): string
-    {
-        if ($this->rankFrom === $this->rankTo) {
-            return (string) $this->rankFrom;
-        }
-
-        return $this->rankFrom . '-' . $this->rankTo;
-    }
-
-    private function syncCapacityFromRanks(): void
-    {
-        if ($this->rankFrom < 1 || $this->rankTo < 1 || $this->rankFrom > $this->rankTo) {
-            $this->capacity = 0;
-
-            return;
-        }
-
-        $this->capacity = $this->rankTo - $this->rankFrom + 1;
     }
 }
