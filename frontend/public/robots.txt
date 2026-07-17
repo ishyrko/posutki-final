@@ -22,6 +22,7 @@ Disallow: /500
 
 Disallow: /preload/
 Disallow: /*/preload/
+Disallow: /*/preload
 
 Allow: /_next/static/
 Allow: /_next/image
