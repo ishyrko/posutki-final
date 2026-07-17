@@ -1,6 +1,6 @@
 import api from '@/lib/api';
 import type {
-    PlacementLevelPrice,
+    PlacementLevelsResponse,
     PlacementPurchase,
     PlacementPurchaseQuote,
     PlacementScopeSettings,
@@ -9,13 +9,15 @@ import type {
 
 export const getPlacementLevels = async (
     scope: PlacementTariffScope,
-): Promise<PlacementLevelPrice[]> => {
+): Promise<PlacementLevelsResponse> => {
     const params =
         scope.propertyType === 'house'
             ? { propertyType: 'house', regionId: scope.regionId }
             : { propertyType: 'apartment', cityId: scope.cityId };
 
-    const response = await api.get<{ data: PlacementLevelPrice[] }>('/placement/levels', { params });
+    const response = await api.get<{ data: PlacementLevelsResponse }>('/placement/levels', {
+        params,
+    });
     return response.data.data;
 };
 

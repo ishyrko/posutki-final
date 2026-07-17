@@ -451,6 +451,40 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         return array_map('intval', $rows);
     }
 
+    public function countPublishedByEffectiveLevel(
+        string $propertyType,
+        ?int $cityId = null,
+        ?int $regionId = null,
+    ): array {
+        $qb = $this->createQueryBuilder('p')
+            ->select('p.placementEffectiveLevel AS level, COUNT(p.id) AS cnt')
+            ->where('p.status = :status')
+            ->andWhere('p.type = :propertyType')
+            ->setParameter('status', 'published')
+            ->setParameter('propertyType', $propertyType)
+            ->groupBy('p.placementEffectiveLevel');
+
+        if ($cityId !== null && $cityId > 0) {
+            $qb->andWhere('p.cityId = :cityId')
+                ->setParameter('cityId', $cityId);
+        } elseif ($regionId !== null && $regionId > 0) {
+            $qb->innerJoin(City::class, 'c', 'WITH', 'c.id = p.cityId')
+                ->innerJoin('c.regionDistrict', 'rd')
+                ->innerJoin('rd.region', 'r')
+                ->andWhere('r.id = :regionId')
+                ->setParameter('regionId', $regionId);
+        } else {
+            return [];
+        }
+
+        $out = [];
+        foreach ($qb->getQuery()->getArrayResult() as $row) {
+            $out[(int) $row['level']] = (int) $row['cnt'];
+        }
+
+        return $out;
+    }
+
     public function delete(Property $property): void
     {
         $this->getEntityManager()->remove($property);

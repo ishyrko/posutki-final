@@ -75,9 +75,9 @@ class UserCrudController extends AbstractCrudController
         yield BooleanField::new('isPhoneVerified', 'Телефон подтвержден')
             ->renderAsSwitch(false);
 
-        yield BooleanField::new('hasUsedFreePlacementTrial', 'Бесплатный месяц использован')
+        yield BooleanField::new('hasUsedFreePlacementTrial', 'Бесплатный VIP 1 использован')
             ->renderAsSwitch(false)
-            ->setHelp('Один пробный месяц стандартного размещения на аккаунт');
+            ->setHelp('Один бесплатный VIP 1 на месяц на аккаунт');
 
         yield ArrayField::new('roles', 'Роли');
 

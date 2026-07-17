@@ -25,11 +25,14 @@ import { Property, formatAddress, isPropertyEditable } from '@/features/properti
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
 import { BuyPlacementDialog } from '@/features/placement/components/BuyPlacementDialog';
+import { usePlacementLevels } from '@/features/placement/hooks';
 import {
     FREE_PLACEMENT_LIMITS_HREF,
+    formatCatalogPositionRange,
     formatPlacementStatus,
     isPlacementBoostActive,
     placementBadgeLabel,
+    type PlacementTariffScope,
 } from '@/features/placement/types';
 import {
     Tooltip,
@@ -127,6 +130,42 @@ function ListingCard({
     const boostActive = isPlacementBoostActive(property.placementBoostExpiresAt);
     const vipBadge = placementBadgeLabel(property.placementEffectiveLevel);
     const { daysUntilDelete, canDelete, showDeleteButton } = getDeleteEligibility(property);
+
+    const isHouse = property.type === 'house';
+    const tariffScope = useMemo((): PlacementTariffScope | null => {
+        if (property.status !== 'published') {
+            return null;
+        }
+        if (isHouse) {
+            const regionId = property.address?.regionId;
+            return regionId && regionId > 0
+                ? { propertyType: 'house', regionId }
+                : null;
+        }
+        const cityId = property.address?.cityId;
+        return cityId && cityId > 0 ? { propertyType: 'apartment', cityId } : null;
+    }, [
+        property.status,
+        isHouse,
+        property.address?.cityId,
+        property.address?.regionId,
+    ]);
+    const locationLabel = isHouse
+        ? property.address?.regionName ?? 'области'
+        : property.address?.cityName ?? 'города';
+    const { data: placementLevelsData } = usePlacementLevels(tariffScope);
+    const placementLevels = placementLevelsData?.levels ?? [];
+    const freeTierBand = placementLevelsData?.freeTier;
+    const effectiveVipLevel = property.placementEffectiveLevel ?? property.placementBaseLevel ?? 0;
+    const catalogPositionHint = useMemo(() => {
+        if (effectiveVipLevel <= 0) {
+            return freeTierBand
+                ? formatCatalogPositionRange(freeTierBand, locationLabel)
+                : null;
+        }
+        const levelRow = placementLevels.find((item) => item.level === effectiveVipLevel);
+        return levelRow ? formatCatalogPositionRange(levelRow, locationLabel) : null;
+    }, [effectiveVipLevel, placementLevels, freeTierBand, locationLabel]);
 
     const imageBlock = (
         <>
@@ -250,6 +289,12 @@ function ListingCard({
                     {property.status === 'published' && (
                         <p className="mt-2 text-xs text-muted-foreground bg-muted/50 border border-border rounded-md px-2 py-1.5">
                             Размещение: {formatPlacementStatus(property)}
+                            {catalogPositionHint ? (
+                                <>
+                                    <br />
+                                    {catalogPositionHint}
+                                </>
+                            ) : null}
                         </p>
                     )}
                 </div>

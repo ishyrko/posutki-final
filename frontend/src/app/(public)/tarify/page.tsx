@@ -4,7 +4,7 @@ import { TariffsPageContent } from '@/features/placement/components/TariffsPageC
 export const metadata: Metadata = {
     title: 'Тарифы и стоимость размещения — Posutki.by',
     description:
-        'Спецразмещение и стандартное размещение объявлений на Posutki.by. Бесплатный пробный месяц для новых объявлений.',
+        'VIP-тарифы размещения объявлений на Posutki.by. Бесплатный VIP 1 на месяц для одного объявления на аккаунт.',
 };
 
 export default function TariffsPage() {

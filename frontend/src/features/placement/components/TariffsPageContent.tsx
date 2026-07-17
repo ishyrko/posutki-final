@@ -50,7 +50,8 @@ export function TariffsPageContent() {
         return selectedCityId ? { propertyType: 'apartment', cityId: selectedCityId } : null;
     }, [propertyType, selectedCityId, selectedRegionId]);
 
-    const { data: levels = [], isLoading: levelsLoading } = usePlacementLevels(tariffScope);
+    const { data: levelsData, isLoading: levelsLoading } = usePlacementLevels(tariffScope);
+    const levels = levelsData?.levels ?? [];
     const { data: scopeSettings } = usePlacementScope(tariffScope);
 
     const maxLevel = scopeSettings?.maxLevel ?? 5;
@@ -79,7 +80,7 @@ export function TariffsPageContent() {
             <p className="text-muted-foreground mb-8">
                 Чем выше VIP-уровень, тем выше объявление в каталоге. Внутри одного уровня объявления
                 ротируются — конкретная позиция не гарантируется. Один раз на аккаунт доступен
-                бесплатный пробный месяц VIP 1 для одного объявления.
+                бесплатный VIP 1 на месяц для одного объявления.
             </p>
 
             <div className="space-y-4 mb-10">
@@ -129,7 +130,7 @@ export function TariffsPageContent() {
                 >
                     <h2 className="font-semibold text-foreground mb-2">Бесплатное размещение</h2>
                     <p className="text-sm text-muted-foreground">
-                        После окончания пробного периода или оплаченного VIP объявление остаётся в
+                        После окончания бесплатного VIP 1 или оплаченного VIP объявление остаётся в
                         каталоге на бесплатном уровне с более низкой позицией. На публичной карточке
                         показываются не более {MAX_VISIBLE_PHOTOS_FREE_PLACEMENT} фотографий; видео,
                         Instagram и сайт скрыты. Все данные сохраняются и снова отображаются после
@@ -140,11 +141,12 @@ export function TariffsPageContent() {
                 <div className="rounded-xl border border-primary/30 bg-primary/5 p-5">
                     <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                         <Check className="w-4 h-4 text-primary" />
-                        Бесплатный пробный месяц VIP 1
+                        Бесплатный VIP 1 на месяц
                     </h2>
                     <p className="text-sm text-muted-foreground">
                         Один раз на аккаунт: после первой публикации одно объявление автоматически
-                        получает VIP 1 на 1 месяц. Остальные объявления сразу на бесплатном уровне.
+                        получает бесплатный VIP 1 на 1 месяц. Остальные объявления сразу на бесплатном
+                        уровне.
                     </p>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -29,8 +29,12 @@ import {
 } from '@/features/placement/hooks';
 import {
     calcBoostPriceByn,
+    canRenewPlacementLevel,
+    formatCatalogPositionRange,
     isPlacementBoostActive,
     PLACEMENT_DURATIONS,
+    renewalMonthsAvailable,
+    withListingInCatalogBand,
     type PlacementTariffScope,
 } from '@/features/placement/types';
 import { cn } from '@/lib/utils';
@@ -89,19 +93,47 @@ export function BuyPlacementDialog({
     const locationLabel = isHouse
         ? property.address?.regionName ?? 'области'
         : property.address?.cityName ?? 'города';
-    const { data: levels = [], isLoading: levelsLoading } = usePlacementLevels(tariffScope);
+    const { data: levelsData, isLoading: levelsLoading } = usePlacementLevels(tariffScope);
+    const levels = levelsData?.levels ?? [];
     const { data: scopeSettings } = usePlacementScope(tariffScope);
     const create = useCreatePlacementPurchase();
 
     const [level, setLevel] = useState<number | null>(null);
     const [durationMonths, setDurationMonths] = useState<number>(1);
 
-    const currentLevel = property.placementIsTrial ? 0 : property.placementBaseLevel ?? 0;
+    const currentLevel = property.placementBaseLevel ?? 0;
+    const effectiveLevel =
+        property.placementEffectiveLevel ?? property.placementBaseLevel ?? 0;
+    const renewalAllowed = canRenewPlacementLevel(property.placementLevelExpiresAt);
+    const renewalMonthsLeft = renewalMonthsAvailable(property.placementLevelExpiresAt);
 
     const selectedLevel = useMemo(
         () => levels.find((item) => item.level === level) ?? null,
         [levels, level],
     );
+
+    const durationOptions = useMemo(() => {
+        if (level != null && level === currentLevel && currentLevel > 0) {
+            return PLACEMENT_DURATIONS.filter((m) => m <= renewalMonthsLeft);
+        }
+        return [...PLACEMENT_DURATIONS];
+    }, [level, currentLevel, renewalMonthsLeft]);
+
+    useEffect(() => {
+        if (
+            durationOptions.length > 0 &&
+            !durationOptions.includes(durationMonths as (typeof PLACEMENT_DURATIONS)[number])
+        ) {
+            setDurationMonths(durationOptions[0]);
+        }
+    }, [durationOptions, durationMonths]);
+
+    const quoteEnabled =
+        open &&
+        mode === 'level' &&
+        level != null &&
+        !(level === currentLevel && currentLevel > 0 && !renewalAllowed) &&
+        durationOptions.length > 0;
 
     const {
         data: quote,
@@ -112,7 +144,7 @@ export function BuyPlacementDialog({
         property.id,
         mode === 'level' ? level : null,
         durationMonths,
-        open && mode === 'level',
+        quoteEnabled,
     );
 
     const maxLevel = scopeSettings?.maxLevel ?? 5;
@@ -123,6 +155,20 @@ export function BuyPlacementDialog({
         [baseLevel, maxLevel, levels],
     );
     const canBuyBoost = mode === 'boost' && baseLevel < maxLevel && boostPriceByn != null;
+    const boostTargetLevel = Math.min(baseLevel + 1, maxLevel);
+    const boostTargetLevelPrice = useMemo(
+        () => levels.find((item) => item.level === boostTargetLevel) ?? null,
+        [levels, boostTargetLevel],
+    );
+    const boostPositionHint = boostTargetLevelPrice
+        ? formatCatalogPositionRange(
+              withListingInCatalogBand(
+                  boostTargetLevelPrice,
+                  effectiveLevel === boostTargetLevel,
+              ),
+              locationLabel,
+          )
+        : null;
 
     const isUpgradeMode = quote?.mode === 'upgrade';
     const isRenewalMode = quote?.mode === 'renewal';
@@ -200,8 +246,9 @@ export function BuyPlacementDialog({
                             {property.title}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                            VIP-ротация не гарантирует фиксированное место, но показывает объявление
-                            выше более низких уровней.
+                            Внутри VIP-уровня объявления ротируются каждые 5 минут — фиксированное
+                            место не гарантируется. Диапазон мест ниже — по текущему составу каталога
+                            в {locationLabel}.
                         </p>
                     </div>
 
@@ -215,15 +262,26 @@ export function BuyPlacementDialog({
                                     Для {locationLabel} VIP-тарифы ещё не настроены.
                                 </p>
                             ) : (
-                                <div className="space-y-2 max-h-56 overflow-y-auto">
+                                <div className="space-y-2 max-h-72 overflow-y-auto">
                                     {levels.map((item) => {
                                         const full =
                                             item.available != null && item.available <= 0;
                                         const isDowngrade =
                                             currentLevel > 0 && item.level < currentLevel;
-                                        const disabled = full || isDowngrade;
                                         const isCurrentLevel = item.level === currentLevel;
+                                        const renewalBlocked =
+                                            isCurrentLevel && currentLevel > 0 && !renewalAllowed;
+                                        const disabled = full || isDowngrade || renewalBlocked;
                                         const isUpgrade = currentLevel > 0 && item.level > currentLevel;
+                                        const positionHint = !isDowngrade
+                                            ? formatCatalogPositionRange(
+                                                  withListingInCatalogBand(
+                                                      item,
+                                                      effectiveLevel === item.level,
+                                                  ),
+                                                  locationLabel,
+                                              )
+                                            : null;
 
                                         return (
                                             <button
@@ -243,7 +301,9 @@ export function BuyPlacementDialog({
                                                 <div>
                                                     <p className="font-medium text-foreground">
                                                         {item.label}
-                                                        {isCurrentLevel && currentLevel > 0 && (
+                                                        {isCurrentLevel &&
+                                                            currentLevel > 0 &&
+                                                            !renewalBlocked && (
                                                             <span className="ml-1.5 text-xs font-normal text-primary">
                                                                 · продление
                                                             </span>
@@ -257,12 +317,19 @@ export function BuyPlacementDialog({
                                                     <p className="text-xs text-muted-foreground">
                                                         {isDowngrade
                                                             ? 'Уровень ниже текущего недоступен'
-                                                            : full
-                                                              ? 'Нет свободных мест'
-                                                              : item.capacity != null
-                                                                ? `Осталось ${item.available} из ${item.capacity}`
-                                                                : 'Без ограничения по местам'}
+                                                            : renewalBlocked
+                                                              ? 'Продление недоступно: до конца VIP больше 11 месяцев (макс. 12 мес. от сегодня)'
+                                                              : full
+                                                                ? 'Нет свободных мест'
+                                                                : item.capacity != null
+                                                                  ? `Осталось ${item.available} из ${item.capacity}`
+                                                                  : 'Без ограничения по местам'}
                                                     </p>
+                                                    {positionHint && (
+                                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                                            {positionHint}
+                                                        </p>
+                                                    )}
                                                 </div>
                                                 <span className="font-semibold inline-flex items-baseline gap-1 shrink-0">
                                                     {item.priceBynPerMonth} <BynCurrencyMark />
@@ -292,11 +359,16 @@ export function BuyPlacementDialog({
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                         Временно повышает объявление на один VIP-уровень (до VIP{' '}
-                                        {Math.min(baseLevel + 1, maxLevel)}).
+                                        {boostTargetLevel}).
                                         {boostActive
                                             ? ' Новая покупка продлит текущий буст на 24 часа после его окончания.'
                                             : ''}
                                     </p>
+                                    {boostPositionHint && (
+                                        <p className="text-xs text-muted-foreground">
+                                            После буста: {boostPositionHint}
+                                        </p>
+                                    )}
                                 </>
                             ) : baseLevel >= maxLevel ? (
                                 <p className="text-muted-foreground">
@@ -323,18 +395,24 @@ export function BuyPlacementDialog({
                         </div>
                     )}
 
-                    {mode === 'level' && !isUpgradeMode && (
+                    {mode === 'level' && !isUpgradeMode && durationOptions.length > 0 && (
                         <div className="space-y-2">
                             <p className="text-sm font-medium text-foreground">Срок</p>
                             <Select
-                                value={String(durationMonths)}
+                                value={
+                                    durationOptions.includes(
+                                        durationMonths as (typeof PLACEMENT_DURATIONS)[number],
+                                    )
+                                        ? String(durationMonths)
+                                        : String(durationOptions[0])
+                                }
                                 onValueChange={(v) => setDurationMonths(Number(v))}
                             >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {PLACEMENT_DURATIONS.map((m) => (
+                                    {durationOptions.map((m) => (
                                         <SelectItem key={m} value={String(m)}>
                                             {m}{' '}
                                             {m === 1 ? 'месяц' : m < 5 ? 'месяца' : 'месяцев'}

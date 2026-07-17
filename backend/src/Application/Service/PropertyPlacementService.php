@@ -336,7 +336,7 @@ final class PropertyPlacementService
     }
 
     /**
-     * One free VIP 1 trial per account: true if the owner has not used it yet.
+     * One free VIP 1 month per account: true if the owner has not used it yet.
      */
     public function shouldGrantFreeTrial(Property $property): bool
     {
@@ -350,7 +350,7 @@ final class PropertyPlacementService
 
     /**
      * Mark the owner account as having consumed the one-time free VIP 1 month.
-     * Call only after the trial was actually applied to a listing.
+     * Call only after free VIP 1 was actually applied to a listing.
      */
     public function markFreePlacementTrialUsed(Property $property): void
     {
@@ -361,5 +361,55 @@ final class PropertyPlacementService
 
         $user->markFreePlacementTrialUsed();
         $this->userRepository->save($user);
+    }
+
+    /**
+     * Catalog position bands per VIP level from current published counts
+     * (higher effective levels occupy earlier positions; shuffle rotates within a level).
+     *
+     * @param array<int, int> $countsByEffectiveLevel effectiveLevel => published count
+     * @param list<int>       $levels                 VIP levels to describe (e.g. 1..5)
+     *
+     * @return array<int, array{from: int, to: int, count: int}>
+     */
+    public function catalogPositionBands(array $countsByEffectiveLevel, array $levels): array
+    {
+        if ($levels === []) {
+            return [];
+        }
+
+        $maxLevel = max($levels);
+        $aboveCap = 0;
+        foreach ($countsByEffectiveLevel as $effective => $count) {
+            if ($effective > $maxLevel) {
+                $aboveCap += $count;
+            }
+        }
+
+        $bands = [];
+        foreach ($levels as $level) {
+            $above = $aboveCap;
+            for ($higher = $level + 1; $higher <= $maxLevel; ++$higher) {
+                $above += $countsByEffectiveLevel[$higher] ?? 0;
+            }
+
+            $at = $countsByEffectiveLevel[$level] ?? 0;
+            if ($at > 0) {
+                $bands[$level] = [
+                    'from' => $above + 1,
+                    'to' => $above + $at,
+                    'count' => $at,
+                ];
+            } else {
+                // Empty level: a new listing would sit alone just after higher levels.
+                $bands[$level] = [
+                    'from' => $above + 1,
+                    'to' => $above + 1,
+                    'count' => 0,
+                ];
+            }
+        }
+
+        return $bands;
     }
 }

@@ -374,11 +374,11 @@ class PropertyCrudController extends AbstractCrudController
             ->hideOnForm()
             ->hideOnIndex();
 
-        yield BooleanField::new('placementIsTrial', 'Пробный период')
+        yield BooleanField::new('placementIsTrial', 'Бесплатный VIP 1')
             ->hideOnForm()
             ->hideOnIndex();
 
-        yield DateTimeField::new('freeTrialEndsAt', 'Конец триала')
+        yield DateTimeField::new('freeTrialEndsAt', 'Бесплатный VIP 1 до')
             ->hideOnForm()
             ->hideOnIndex();
     }

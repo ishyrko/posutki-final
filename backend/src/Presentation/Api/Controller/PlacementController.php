@@ -52,6 +52,11 @@ final class PlacementController extends AbstractController
             }
 
             $levelPrices = $this->levelPriceRepository->findActiveByRegionId($regionId);
+            $countsByLevel = $this->propertyRepository->countPublishedByEffectiveLevel(
+                $propertyType,
+                null,
+                $regionId,
+            );
         } else {
             $cityId = $request->query->getInt('cityId');
             if ($cityId <= 0) {
@@ -59,12 +64,39 @@ final class PlacementController extends AbstractController
             }
 
             $levelPrices = $this->levelPriceRepository->findActiveByCityId($cityId);
+            $countsByLevel = $this->propertyRepository->countPublishedByEffectiveLevel(
+                $propertyType,
+                $cityId,
+                null,
+            );
         }
 
-        return $this->json(ApiResponse::success(array_map(
-            fn (PropertyPlacementLevelPrice $levelPrice) => $this->levelPriceToArray($levelPrice),
+        $levels = array_map(
+            static fn (PropertyPlacementLevelPrice $levelPrice) => $levelPrice->getLevel(),
             $levelPrices,
-        )));
+        );
+        $bands = $this->placementService->catalogPositionBands(
+            $countsByLevel,
+            array_values(array_unique([...$levels, 0])),
+        );
+
+        $freeBand = $bands[0] ?? null;
+
+        return $this->json(ApiResponse::success([
+            'levels' => array_map(
+                function (PropertyPlacementLevelPrice $levelPrice) use ($bands) {
+                    $band = $bands[$levelPrice->getLevel()] ?? null;
+
+                    return $this->levelPriceToArray($levelPrice, $band);
+                },
+                $levelPrices,
+            ),
+            'freeTier' => [
+                'catalogPositionFrom' => $freeBand['from'] ?? null,
+                'catalogPositionTo' => $freeBand['to'] ?? null,
+                'catalogListingsAtLevel' => $freeBand['count'] ?? null,
+            ],
+        ]));
     }
 
     #[Route('/api/placement/scope', name: 'api_placement_scope', methods: ['GET'])]
@@ -287,9 +319,11 @@ final class PlacementController extends AbstractController
     }
 
     /**
+     * @param array{from: int, to: int, count: int}|null $catalogBand
+     *
      * @return array<string, mixed>
      */
-    private function levelPriceToArray(PropertyPlacementLevelPrice $levelPrice): array
+    private function levelPriceToArray(PropertyPlacementLevelPrice $levelPrice, ?array $catalogBand = null): array
     {
         $occupied = $this->placementService->getLevelPriceOccupancy($levelPrice);
         $capacity = $levelPrice->getCapacity();
@@ -305,6 +339,9 @@ final class PlacementController extends AbstractController
             'occupied' => $occupied,
             'available' => $capacity !== null ? max(0, $capacity - $occupied) : null,
             'priceBynPerMonth' => $levelPrice->getPriceBynPerMonth(),
+            'catalogPositionFrom' => $catalogBand['from'] ?? null,
+            'catalogPositionTo' => $catalogBand['to'] ?? null,
+            'catalogListingsAtLevel' => $catalogBand['count'] ?? null,
         ];
     }
 }

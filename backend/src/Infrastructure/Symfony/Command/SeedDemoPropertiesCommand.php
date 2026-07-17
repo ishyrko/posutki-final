@@ -107,7 +107,7 @@ final class SeedDemoPropertiesCommand extends Command
 
         $io->section('Clearing existing listings and related rows');
         $this->marketplaceDataPurger->purgeProperties($conn);
-        // Demo owner gets a fresh one-time trial for the first seeded listing.
+        // Demo owner gets a fresh one-time free VIP 1 for the first seeded listing.
         $conn->executeStatement(
             'UPDATE users SET has_used_free_placement_trial = 0 WHERE id = ?',
             [$ownerId],

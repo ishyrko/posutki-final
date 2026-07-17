@@ -25,6 +25,23 @@ export interface PlacementLevelPrice {
     occupied: number;
     available: number | null;
     priceBynPerMonth: number;
+    /** Current catalog band for this VIP level in the scope (1-based). */
+    catalogPositionFrom?: number | null;
+    catalogPositionTo?: number | null;
+    /** Published listings currently at this effective VIP level. */
+    catalogListingsAtLevel?: number | null;
+}
+
+/** Catalog band for free (effective level 0) listings in the same scope. */
+export interface PlacementFreeTierCatalogBand {
+    catalogPositionFrom: number | null;
+    catalogPositionTo: number | null;
+    catalogListingsAtLevel: number | null;
+}
+
+export interface PlacementLevelsResponse {
+    levels: PlacementLevelPrice[];
+    freeTier: PlacementFreeTierCatalogBand;
 }
 
 export interface PlacementScopeSettings {
@@ -64,6 +81,51 @@ export interface PlacementPurchaseQuote {
 }
 
 export const PLACEMENT_DURATIONS = [1, 3, 6, 12] as const;
+
+/** Max subscription horizon from today (renewal cannot push expiry past this). */
+export const PLACEMENT_MAX_HORIZON_MONTHS = 12;
+
+/**
+ * How many months can still be added on renewal before hitting the 12‑month-from-today cap.
+ * 0 → продление недоступно (текущий VIP уже дальше чем на 11 мес.).
+ */
+export function renewalMonthsAvailable(
+    expiresAt: string | null | undefined,
+    now: Date = new Date(),
+): number {
+    if (!expiresAt) {
+        return PLACEMENT_MAX_HORIZON_MONTHS;
+    }
+    const expires = new Date(expiresAt);
+    if (Number.isNaN(expires.getTime()) || expires <= now) {
+        return PLACEMENT_MAX_HORIZON_MONTHS;
+    }
+
+    const cap = new Date(now);
+    cap.setMonth(cap.getMonth() + PLACEMENT_MAX_HORIZON_MONTHS);
+    if (expires >= cap) {
+        return 0;
+    }
+
+    let months = 0;
+    const cursor = new Date(expires);
+    while (months < PLACEMENT_MAX_HORIZON_MONTHS) {
+        cursor.setMonth(cursor.getMonth() + 1);
+        if (cursor > cap) {
+            break;
+        }
+        months += 1;
+    }
+
+    return months;
+}
+
+export function canRenewPlacementLevel(
+    expiresAt: string | null | undefined,
+    now: Date = new Date(),
+): boolean {
+    return renewalMonthsAvailable(expiresAt, now) >= 1;
+}
 
 export function formatPlacementPurchasePeriod(
     purchase: Pick<PlacementPurchase, 'kind' | 'durationMonths'>,
@@ -158,13 +220,14 @@ export function formatPlacementStatus(property: {
           })
         : null;
 
+    // «Бесплатный» только пока VIP 1 ещё от разовой выдачи (не было платного продления/апгрейда).
     if (property.placementIsTrial && baseLevel === 1) {
-        const trialEnds = property.freeTrialEndsAt
+        const freeVip1Ends = property.freeTrialEndsAt
             ? new Date(property.freeTrialEndsAt).toLocaleDateString('ru-RU')
             : levelExpires;
-        return trialEnds
-            ? `VIP 1 (бесплатный пробный период до ${trialEnds})`
-            : 'VIP 1 (бесплатный пробный период)';
+        return freeVip1Ends
+            ? `Бесплатный VIP 1 до ${freeVip1Ends}`
+            : 'Бесплатный VIP 1';
     }
 
     if (baseLevel <= 0) {
@@ -201,7 +264,7 @@ export function placementLevelLabel(level: number): string {
     return `VIP ${level}`;
 }
 
-/** Public gallery size for free placement; VIP and trial show all photos. */
+/** Public gallery size for free placement; paid VIP and free VIP 1 show all photos. */
 export const MAX_VISIBLE_PHOTOS_FREE_PLACEMENT = 5;
 
 /** Tariffs page anchor describing free-tier limits (photos, video, Instagram, website). */
@@ -212,4 +275,71 @@ export function isPlacementBoostActive(placementBoostExpiresAt?: string | null):
         return false;
     }
     return new Date(placementBoostExpiresAt) > new Date();
+}
+
+/** Human-readable catalog band: random rotation every 5 minutes within positions. */
+export function formatCatalogPositionRange(
+    level: {
+        catalogPositionFrom?: number | null;
+        catalogPositionTo?: number | null;
+        catalogListingsAtLevel?: number | null;
+    },
+    locationLabel: string,
+): string | null {
+    const from = level.catalogPositionFrom;
+    const to = level.catalogPositionTo;
+    if (from == null || to == null || from < 1 || to < from) {
+        return null;
+    }
+
+    const places =
+        from === to ? `позиция ${from}` : `позиции от ${from} до ${to}`;
+    const emptyHint =
+        (level.catalogListingsAtLevel ?? 0) === 0 ? 'сейчас пусто, займёте ' : '';
+
+    return `На текущий момент: ${emptyHint}${places} (${locationLabel}) · ротация каждые 5 мин.`;
+}
+
+/**
+ * Adjust a catalog band for a listing that is about to join this level
+ * (buy / boost). If it is already at the level, the live band already includes it.
+ */
+export function withListingInCatalogBand(
+    band: {
+        catalogPositionFrom?: number | null;
+        catalogPositionTo?: number | null;
+        catalogListingsAtLevel?: number | null;
+    },
+    alreadyAtLevel: boolean,
+): {
+    catalogPositionFrom: number | null;
+    catalogPositionTo: number | null;
+    catalogListingsAtLevel: number | null;
+} {
+    const from = band.catalogPositionFrom ?? null;
+    const to = band.catalogPositionTo ?? null;
+    const count = band.catalogListingsAtLevel ?? null;
+
+    if (alreadyAtLevel || from == null || to == null) {
+        return {
+            catalogPositionFrom: from,
+            catalogPositionTo: to,
+            catalogListingsAtLevel: count,
+        };
+    }
+
+    if ((count ?? 0) === 0) {
+        // Empty level: API already gives the single prospective slot.
+        return {
+            catalogPositionFrom: from,
+            catalogPositionTo: to,
+            catalogListingsAtLevel: 1,
+        };
+    }
+
+    return {
+        catalogPositionFrom: from,
+        catalogPositionTo: to + 1,
+        catalogListingsAtLevel: (count ?? 0) + 1,
+    };
 }

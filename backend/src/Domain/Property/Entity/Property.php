@@ -915,7 +915,7 @@ class Property
     /**
      * Refresh placement fields from the property row itself (source of truth).
      * Does not read purchase/payment tables. Paid VIP expires by placementLevelExpiresAt;
-     * otherwise falls back to an active free trial, else free placement. Boost only affects effective level.
+     * otherwise falls back to an active free VIP 1, else free placement. Boost only affects effective level.
      */
     public function recomputePlacement(
         ?\DateTimeImmutable $now = null,
@@ -926,7 +926,7 @@ class Property
         $levelStillValid = $this->placementLevelExpiresAt !== null && $this->placementLevelExpiresAt > $now;
 
         if ($levelStillValid && $this->placementBaseLevel > 0) {
-            // Keep base level / expiry / trial flag as stored on the property.
+            // Keep base level / expiry / free-VIP-1 flag as stored on the property.
         } elseif ($this->freeTrialEndsAt !== null && $this->freeTrialEndsAt > $now) {
             $this->placementBaseLevel = 1;
             $this->placementLevelExpiresAt = $this->freeTrialEndsAt;
@@ -942,7 +942,7 @@ class Property
 
     /**
      * Recalculate only placementEffectiveLevel based on the current placementBoostExpiresAt.
-     * placementBaseLevel / trial state must not be changed here (boost purchases should not affect base VIP).
+     * placementBaseLevel / free-VIP-1 flag must not be changed here (boost purchases should not affect base VIP).
      */
     public function recomputePlacementBoostOnly(
         ?\DateTimeImmutable $now = null,
@@ -983,7 +983,7 @@ class Property
     }
 
     /**
-     * First publish placement: optional one-time free VIP 1 trial, otherwise free placement.
+     * First publish placement: optional one-time free VIP 1 month, otherwise free placement.
      */
     public function applyInitialPlacement(\DateTimeImmutable $from, bool $grantFreeTrial): void
     {
