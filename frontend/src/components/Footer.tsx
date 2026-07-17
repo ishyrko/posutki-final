@@ -7,6 +7,7 @@ import {
   withRegionalCatalogHref,
 } from "@/lib/region-header";
 import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
+import { COMPANY } from "@/lib/company";
 import Image from "next/image";
 
 const Footer = () => {
@@ -107,20 +108,60 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-primary-foreground/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-primary-foreground/40">
-            © {new Date().getFullYear()} posutki.by. Все права защищены.
-          </p>
-          <div className="flex gap-6 flex-wrap justify-center">
-            <Link href="/politika-konfidentsialnosti" className="text-sm text-primary-foreground/40 hover:text-primary-foreground/60 transition-colors">
-              Политика конфиденциальности
-            </Link>
-            <Link href="/usloviya-ispolzovaniya" className="text-sm text-primary-foreground/40 hover:text-primary-foreground/60 transition-colors">
-              Условия использования
-            </Link>
-            <Link href="/kontakty" className="text-sm text-primary-foreground/40 hover:text-primary-foreground/60 transition-colors">
-              Контакты
-            </Link>
+        <div className="border-t border-primary-foreground/10 pt-8 space-y-6">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-2xl space-y-1.5 text-sm leading-relaxed text-primary-foreground/50">
+              <p className="font-medium text-primary-foreground/70">{COMPANY.legalName}</p>
+              <p>
+                Дата гос. регистрации: {COMPANY.registeredAt}. УНП {COMPANY.unp}.{" "}
+                {COMPANY.registrationAuthority}
+              </p>
+              <p>{COMPANY.address}</p>
+              <p>
+                {COMPANY.workingHours}.{" "}
+                <a
+                  href={`mailto:${COMPANY.email}`}
+                  className="hover:text-primary-foreground/80 transition-colors"
+                >
+                  {COMPANY.email}
+                </a>
+                {", "}
+                <a
+                  href={`tel:${COMPANY.phone}`}
+                  className="hover:text-primary-foreground/80 transition-colors"
+                >
+                  {COMPANY.phoneDisplay}
+                </a>
+              </p>
+            </div>
+
+            <div className="shrink-0">
+              <Image
+                src="/brand/payment-systems.svg"
+                alt="Платёжные системы: Visa, Mastercard, Белкарт, bePaid, Google Pay"
+                width={927}
+                height={100}
+                className="h-11 w-auto max-w-full sm:h-14"
+                unoptimized
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-t border-primary-foreground/10 pt-6">
+            <p className="text-sm text-primary-foreground/40">
+              © {new Date().getFullYear()} posutki.by. Все права защищены.
+            </p>
+            <div className="flex gap-6 flex-wrap justify-center">
+              <Link href="/politika-konfidentsialnosti" className="text-sm text-primary-foreground/40 hover:text-primary-foreground/60 transition-colors">
+                Политика конфиденциальности
+              </Link>
+              <Link href="/usloviya-ispolzovaniya" className="text-sm text-primary-foreground/40 hover:text-primary-foreground/60 transition-colors">
+                Условия использования
+              </Link>
+              <Link href="/kontakty" className="text-sm text-primary-foreground/40 hover:text-primary-foreground/60 transition-colors">
+                Контакты
+              </Link>
+            </div>
           </div>
         </div>
       </div>
