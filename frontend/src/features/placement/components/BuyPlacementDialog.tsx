@@ -28,6 +28,7 @@ import {
     usePlacementScope,
 } from '@/features/placement/hooks';
 import {
+    calcBoostPriceByn,
     isPlacementBoostActive,
     PLACEMENT_DURATIONS,
     type PlacementTariffScope,
@@ -88,9 +89,7 @@ export function BuyPlacementDialog({
     const locationLabel = isHouse
         ? property.address?.regionName ?? 'области'
         : property.address?.cityName ?? 'города';
-    const { data: levels = [], isLoading: levelsLoading } = usePlacementLevels(
-        mode === 'level' ? tariffScope : null,
-    );
+    const { data: levels = [], isLoading: levelsLoading } = usePlacementLevels(tariffScope);
     const { data: scopeSettings } = usePlacementScope(tariffScope);
     const create = useCreatePlacementPurchase();
 
@@ -119,18 +118,18 @@ export function BuyPlacementDialog({
     const maxLevel = scopeSettings?.maxLevel ?? 5;
     const baseLevel = property.placementBaseLevel ?? 0;
     const boostActive = isPlacementBoostActive(property.placementBoostExpiresAt);
-    const canBuyBoost =
-        mode === 'boost' &&
-        baseLevel < maxLevel &&
-        scopeSettings?.boostPriceByn != null &&
-        scopeSettings.boostPriceByn >= 0;
+    const boostPriceByn = useMemo(
+        () => (baseLevel < maxLevel ? calcBoostPriceByn(baseLevel, levels) : null),
+        [baseLevel, maxLevel, levels],
+    );
+    const canBuyBoost = mode === 'boost' && baseLevel < maxLevel && boostPriceByn != null;
 
     const isUpgradeMode = quote?.mode === 'upgrade';
     const isRenewalMode = quote?.mode === 'renewal';
 
     const total =
         mode === 'boost'
-            ? scopeSettings?.boostPriceByn ?? null
+            ? boostPriceByn
             : quote != null
               ? quote.priceByn
               : selectedLevel != null
@@ -277,13 +276,15 @@ export function BuyPlacementDialog({
                                     <p className="inline-flex items-baseline gap-1">
                                         <span className="text-muted-foreground">Цена:</span>
                                         <span className="font-semibold text-foreground">
-                                            {scopeSettings?.boostPriceByn}
+                                            {boostPriceByn}
                                         </span>
                                         <BynCurrencyMark />
                                         <span className="text-muted-foreground">за 24 часа</span>
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                        Временно повышает объявление на один VIP-уровень (до VIP {maxLevel}).
+                                        Временно повышает объявление на один VIP-уровень (до VIP{' '}
+                                        {Math.min(baseLevel + 1, maxLevel)}). Цена = двойная разница
+                                        дневных тарифов текущего и следующего уровня.
                                         {boostActive
                                             ? ' Новая покупка продлит текущий буст на 24 часа после его окончания.'
                                             : ''}
@@ -294,9 +295,11 @@ export function BuyPlacementDialog({
                                     Буст недоступен: объявление уже на максимальном VIP-уровне для этой
                                     локации.
                                 </p>
+                            ) : levelsLoading ? (
+                                <p className="text-muted-foreground">Загрузка тарифов…</p>
                             ) : (
                                 <p className="text-muted-foreground">
-                                    Для {locationLabel} цена VIP-буста не задана.
+                                    Для {locationLabel} не задан тариф следующего VIP-уровня.
                                 </p>
                             )}
                         </div>

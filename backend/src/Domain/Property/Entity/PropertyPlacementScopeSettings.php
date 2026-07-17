@@ -9,8 +9,8 @@ use App\Domain\Shared\Exception\DomainException;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Per-city (apartments) / per-region (houses) VIP settings: the highest configurable
- * VIP level and the price of a 24h VIP-boost.
+ * Per-city (apartments) / per-region (houses) VIP settings: the highest configurable VIP level.
+ * Boost cost is derived from level tariffs (see PropertyPlacementService::quoteBoostPurchase).
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'property_placement_scope_settings')]
@@ -37,9 +37,6 @@ class PropertyPlacementScopeSettings
     #[ORM\Column(type: 'integer', name: 'max_level', options: ['default' => self::DEFAULT_MAX_LEVEL])]
     private int $maxLevel = self::DEFAULT_MAX_LEVEL;
 
-    #[ORM\Column(type: 'integer', name: 'boost_price_byn')]
-    private int $boostPriceByn;
-
     #[ORM\Column(type: 'boolean', name: 'is_active', options: ['default' => true])]
     private bool $isActive = true;
 
@@ -48,7 +45,6 @@ class PropertyPlacementScopeSettings
         ?int $cityId,
         ?int $regionId,
         int $maxLevel = self::DEFAULT_MAX_LEVEL,
-        int $boostPriceByn = 0,
         bool $isActive = true,
     ) {
         if (!in_array($propertyType, PropertyType::values(), true)) {
@@ -59,7 +55,6 @@ class PropertyPlacementScopeSettings
         $this->cityId = $cityId !== null && $cityId > 0 ? $cityId : null;
         $this->regionId = $regionId !== null && $regionId > 0 ? $regionId : null;
         $this->maxLevel = $maxLevel;
-        $this->boostPriceByn = $boostPriceByn;
         $this->isActive = $isActive;
     }
 
@@ -112,16 +107,6 @@ class PropertyPlacementScopeSettings
         $this->maxLevel = $maxLevel;
     }
 
-    public function getBoostPriceByn(): int
-    {
-        return $this->boostPriceByn;
-    }
-
-    public function setBoostPriceByn(int $boostPriceByn): void
-    {
-        $this->boostPriceByn = $boostPriceByn;
-    }
-
     public function isActive(): bool
     {
         return $this->isActive;
@@ -146,9 +131,6 @@ class PropertyPlacementScopeSettings
     {
         if ($this->maxLevel < 1 || $this->maxLevel > PropertyPlacementLevelPrice::MAX_LEVEL) {
             throw new DomainException(sprintf('Максимальный VIP-уровень должен быть от 1 до %d', PropertyPlacementLevelPrice::MAX_LEVEL));
-        }
-        if ($this->boostPriceByn < 0) {
-            throw new DomainException('Цена буста не может быть отрицательной');
         }
 
         if ($this->propertyType === PropertyType::Apartment->value) {

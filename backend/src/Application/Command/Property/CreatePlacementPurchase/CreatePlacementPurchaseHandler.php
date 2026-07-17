@@ -113,21 +113,11 @@ final class CreatePlacementPurchaseHandler
 
     private function createBoostPurchase(Property $property, Id $userId): PropertyPlacementPurchase
     {
-        $maxLevel = $this->placementService->resolveMaxLevelForProperty($property);
-        if ($property->getPlacementBaseLevel() >= $maxLevel) {
-            throw new DomainException('Буст недоступен: объявление уже на максимальном VIP-уровне для этой локации');
-        }
-
-        $settings = $this->placementService->resolveScopeSettings($property);
-        if ($settings === null) {
-            throw new DomainException('Для этой локации цена VIP-буста не задана');
-        }
-
         return new PropertyPlacementPurchase(
             propertyId: $property->getId()->getValue(),
             ownerId: $userId,
             kind: PlacementPurchaseKind::Boost->value,
-            priceByn: $settings->getBoostPriceByn(),
+            priceByn: $this->placementService->quoteBoostPurchase($property),
             source: 'self_service',
         );
     }

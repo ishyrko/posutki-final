@@ -102,6 +102,42 @@ final class PropertyPlacementService
     }
 
     /**
+     * VIP-boost (24h) price: twice the daily tariff gap between the current level and the next one.
+     * Daily rate is monthly price / 30. Level 0 (free) is treated as 0 BYN/month.
+     */
+    public function quoteBoostPurchase(Property $property): int
+    {
+        $currentLevel = $property->getPlacementBaseLevel();
+        $maxLevel = $this->resolveMaxLevelForProperty($property);
+
+        if ($currentLevel >= $maxLevel) {
+            throw new DomainException('Буст недоступен: объявление уже на максимальном VIP-уровне для этой локации');
+        }
+
+        $nextLevel = $currentLevel + 1;
+        $pricesByLevel = [];
+        foreach ($this->findLevelPricesForProperty($property) as $levelPrice) {
+            $pricesByLevel[$levelPrice->getLevel()] = $levelPrice->getPriceBynPerMonth();
+        }
+
+        if (!isset($pricesByLevel[$nextLevel])) {
+            throw new DomainException('Для следующего VIP-уровня тариф не задан');
+        }
+
+        $currentPricePerMonth = 0;
+        if ($currentLevel > 0) {
+            if (!isset($pricesByLevel[$currentLevel])) {
+                throw new DomainException('Для текущего VIP-уровня тариф не задан');
+            }
+            $currentPricePerMonth = $pricesByLevel[$currentLevel];
+        }
+
+        $dailyDiff = ($pricesByLevel[$nextLevel] - $currentPricePerMonth) / 30;
+
+        return max(0, (int) ceil($dailyDiff * 2));
+    }
+
+    /**
      * @return array{
      *     mode: 'new'|'renewal'|'upgrade',
      *     priceByn: int,

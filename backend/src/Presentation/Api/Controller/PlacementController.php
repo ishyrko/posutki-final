@@ -95,7 +95,6 @@ final class PlacementController extends AbstractController
             return $this->json(ApiResponse::success([
                 'propertyType' => $propertyType,
                 'maxLevel' => PropertyPlacementScopeSettings::DEFAULT_MAX_LEVEL,
-                'boostPriceByn' => null,
             ]));
         }
 
@@ -104,7 +103,6 @@ final class PlacementController extends AbstractController
             'cityId' => $settings->getCityId(),
             'regionId' => $settings->getRegionId(),
             'maxLevel' => $settings->getMaxLevel(),
-            'boostPriceByn' => $settings->getBoostPriceByn(),
         ]));
     }
 

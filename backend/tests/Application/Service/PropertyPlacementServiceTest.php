@@ -152,6 +152,74 @@ final class PropertyPlacementServiceTest extends TestCase
         self::assertEquals($expectedExpiresAt, $renewalPurchase->getExpiresAt());
     }
 
+    public function testQuoteBoostPurchaseIsTwiceDailyGapToNextLevel(): void
+    {
+        $ownerId = Id::fromInt(7);
+        $property = $this->createProperty($ownerId);
+        $this->setPlacementBaseLevel($property, 2);
+
+        $levelPrices = [
+            new PropertyPlacementLevelPrice('apartment', 1, null, 1, 49),
+            new PropertyPlacementLevelPrice('apartment', 1, null, 2, 119),
+            new PropertyPlacementLevelPrice('apartment', 1, null, 3, 159),
+        ];
+
+        $levelPriceRepository = $this->createMock(PropertyPlacementLevelPriceRepositoryInterface::class);
+        $levelPriceRepository->method('findActiveByCityId')->willReturn($levelPrices);
+
+        $scopeSettingsRepository = $this->createMock(PropertyPlacementScopeSettingsRepositoryInterface::class);
+        $scopeSettingsRepository->method('findActiveByCityId')->willReturn(null);
+
+        $service = new PropertyPlacementService(
+            $this->createStub(PropertyRepositoryInterface::class),
+            $this->createStub(PropertyPlacementPurchaseRepositoryInterface::class),
+            $levelPriceRepository,
+            $scopeSettingsRepository,
+            $this->createStub(CityRepositoryInterface::class),
+            $this->createStub(UserRepositoryInterface::class),
+        );
+
+        // (159 - 119) / 30 * 2 = 2.666... → ceil 3
+        self::assertSame(3, $service->quoteBoostPurchase($property));
+    }
+
+    public function testQuoteBoostPurchaseFromFreeLevelUsesZeroAsCurrentPrice(): void
+    {
+        $ownerId = Id::fromInt(7);
+        $property = $this->createProperty($ownerId);
+        $this->setPlacementBaseLevel($property, 0);
+
+        $levelPrices = [
+            new PropertyPlacementLevelPrice('apartment', 1, null, 1, 49),
+            new PropertyPlacementLevelPrice('apartment', 1, null, 2, 119),
+        ];
+
+        $levelPriceRepository = $this->createMock(PropertyPlacementLevelPriceRepositoryInterface::class);
+        $levelPriceRepository->method('findActiveByCityId')->willReturn($levelPrices);
+
+        $scopeSettingsRepository = $this->createMock(PropertyPlacementScopeSettingsRepositoryInterface::class);
+        $scopeSettingsRepository->method('findActiveByCityId')->willReturn(null);
+
+        $service = new PropertyPlacementService(
+            $this->createStub(PropertyRepositoryInterface::class),
+            $this->createStub(PropertyPlacementPurchaseRepositoryInterface::class),
+            $levelPriceRepository,
+            $scopeSettingsRepository,
+            $this->createStub(CityRepositoryInterface::class),
+            $this->createStub(UserRepositoryInterface::class),
+        );
+
+        // (49 - 0) / 30 * 2 = 3.266... → ceil 4
+        self::assertSame(4, $service->quoteBoostPurchase($property));
+    }
+
+    private function setPlacementBaseLevel(Property $property, int $level): void
+    {
+        $reflection = new \ReflectionProperty($property, 'placementBaseLevel');
+        $reflection->setAccessible(true);
+        $reflection->setValue($property, $level);
+    }
+
     private function createProperty(Id $ownerId): Property
     {
         $property = new Property(

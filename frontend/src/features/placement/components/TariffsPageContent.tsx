@@ -3,7 +3,11 @@
 import { useMemo, useState } from 'react';
 import { useCities, useRegions } from '@/features/create-listing/hooks';
 import { usePlacementLevels, usePlacementScope } from '@/features/placement/hooks';
-import type { PlacementPropertyType, PlacementTariffScope } from '@/features/placement/types';
+import {
+    calcBoostPriceByn,
+    type PlacementPropertyType,
+    type PlacementTariffScope,
+} from '@/features/placement/types';
 import { BynCurrencyMark } from '@/components/BynCurrency';
 import {
     Select,
@@ -47,6 +51,19 @@ export function TariffsPageContent() {
     const { data: levels = [], isLoading: levelsLoading } = usePlacementLevels(tariffScope);
     const { data: scopeSettings } = usePlacementScope(tariffScope);
 
+    const maxLevel = scopeSettings?.maxLevel ?? 5;
+    const boostPrices = useMemo(() => {
+        const rows: { from: number; to: number; priceByn: number }[] = [];
+        for (let from = 0; from < maxLevel; from += 1) {
+            const priceByn = calcBoostPriceByn(from, levels);
+            if (priceByn == null) {
+                continue;
+            }
+            rows.push({ from, to: from + 1, priceByn });
+        }
+        return rows;
+    }, [levels, maxLevel]);
+
     const locationLabel =
         propertyType === 'house'
             ? selectedRegion?.name ?? 'область'
@@ -75,17 +92,32 @@ export function TariffsPageContent() {
                 <div className="rounded-xl border border-border bg-card p-5 shadow-card">
                     <h2 className="font-semibold text-foreground mb-2">VIP-буст на 24 часа</h2>
                     <p className="text-sm text-muted-foreground mb-3">
-                        Временно повышает объявление на один VIP-уровень. На максимальном уровне буст
-                        недоступен.
+                        Временно повышает объявление на один VIP-уровень. Цена = двойная разница
+                        дневных тарифов текущего и следующего уровня (месячная цена ÷ 30). На
+                        максимальном уровне буст недоступен.
                     </p>
-                    {scopeSettings?.boostPriceByn != null ? (
-                        <p className="text-lg font-semibold text-foreground inline-flex items-baseline gap-1">
-                            {scopeSettings.boostPriceByn} <BynCurrencyMark />
-                            <span className="text-sm font-normal text-muted-foreground">/ 24 ч</span>
-                        </p>
+                    {boostPrices.length > 0 ? (
+                        <ul className="space-y-1.5 text-sm">
+                            {boostPrices.map((row) => (
+                                <li
+                                    key={`${row.from}-${row.to}`}
+                                    className="flex items-baseline justify-between gap-3"
+                                >
+                                    <span className="text-muted-foreground">
+                                        VIP {row.from} → {row.to}
+                                    </span>
+                                    <span className="font-semibold text-foreground inline-flex items-baseline gap-1">
+                                        {row.priceByn} <BynCurrencyMark />
+                                        <span className="text-xs font-normal text-muted-foreground">
+                                            / 24 ч
+                                        </span>
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
                     ) : (
                         <p className="text-sm text-muted-foreground">
-                            Для выбранной локации цена буста пока не задана.
+                            Для выбранной локации тарифы VIP-уровней пока не заданы.
                         </p>
                     )}
                 </div>

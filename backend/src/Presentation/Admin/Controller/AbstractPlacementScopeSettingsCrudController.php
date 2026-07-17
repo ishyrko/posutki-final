@@ -93,7 +93,6 @@ abstract class AbstractPlacementScopeSettingsCrudController extends AbstractCrud
         }
 
         yield IntegerField::new('maxLevel', 'Максимальный VIP-уровень');
-        yield IntegerField::new('boostPriceByn', 'Цена VIP-буста (24ч), BYN');
         yield BooleanField::new('isActive', 'Активна');
     }
 

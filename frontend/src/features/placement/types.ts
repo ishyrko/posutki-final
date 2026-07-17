@@ -32,7 +32,6 @@ export interface PlacementScopeSettings {
     cityId?: number | null;
     regionId?: number | null;
     maxLevel: number;
-    boostPriceByn: number | null;
 }
 
 export interface PlacementPurchase {
@@ -65,6 +64,28 @@ export interface PlacementPurchaseQuote {
 }
 
 export const PLACEMENT_DURATIONS = [1, 3, 6, 12] as const;
+
+/** 2 × daily tariff gap between current and next VIP level (monthly / 30), rounded up. */
+export function calcBoostPriceByn(
+    currentLevel: number,
+    levels: Array<{ level: number; priceBynPerMonth: number }>,
+): number | null {
+    const next = levels.find((item) => item.level === currentLevel + 1);
+    if (!next) {
+        return null;
+    }
+
+    let currentPrice = 0;
+    if (currentLevel > 0) {
+        const current = levels.find((item) => item.level === currentLevel);
+        if (!current) {
+            return null;
+        }
+        currentPrice = current.priceBynPerMonth;
+    }
+
+    return Math.max(0, Math.ceil((2 * (next.priceBynPerMonth - currentPrice)) / 30));
+}
 
 export function isPlacementPurchasePayable(purchase: PlacementPurchase): boolean {
     if (purchase.status !== 'pending_payment') {
