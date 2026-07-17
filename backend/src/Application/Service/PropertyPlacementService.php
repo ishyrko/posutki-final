@@ -173,7 +173,10 @@ final class PropertyPlacementService
         if ($currentLevel <= 0 || $currentExpiresAt === null) {
             return [
                 'mode' => 'new',
-                'priceByn' => $levelPrice->getPriceBynPerMonth() * $durationMonths,
+                'priceByn' => PropertyPlacementPurchase::priceForDuration(
+                    $levelPrice->getPriceBynPerMonth(),
+                    $durationMonths,
+                ),
                 'anchorPurchase' => null,
                 'expiresAtPreview' => $now->modify('+' . $durationMonths . ' months'),
             ];
@@ -198,7 +201,10 @@ final class PropertyPlacementService
 
             return [
                 'mode' => 'renewal',
-                'priceByn' => $levelPrice->getPriceBynPerMonth() * $durationMonths,
+                'priceByn' => PropertyPlacementPurchase::priceForDuration(
+                    $levelPrice->getPriceBynPerMonth(),
+                    $durationMonths,
+                ),
                 'anchorPurchase' => $anchor,
                 'expiresAtPreview' => $candidate,
             ];

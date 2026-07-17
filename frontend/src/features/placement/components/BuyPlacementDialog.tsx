@@ -30,8 +30,11 @@ import {
 import {
     calcBoostPriceByn,
     canRenewPlacementLevel,
+    calcPlacementLevelPriceByn,
     formatCatalogPositionRange,
+    formatPlacementDurationLabel,
     isPlacementBoostActive,
+    placementDurationDiscountPercent,
     PLACEMENT_DURATIONS,
     renewalMonthsAvailable,
     withListingInCatalogBand,
@@ -179,8 +182,19 @@ export function BuyPlacementDialog({
             : quote != null
               ? quote.priceByn
               : selectedLevel != null
-                ? selectedLevel.priceBynPerMonth * durationMonths
+                ? calcPlacementLevelPriceByn(
+                      selectedLevel.priceBynPerMonth,
+                      durationMonths,
+                  )
                 : null;
+
+    const priceBeforeDiscount =
+        mode === 'level' &&
+        !isUpgradeMode &&
+        selectedLevel != null &&
+        placementDurationDiscountPercent(durationMonths) > 0
+            ? selectedLevel.priceBynPerMonth * durationMonths
+            : null;
 
     const canSubmit =
         !create.isPending &&
@@ -414,8 +428,7 @@ export function BuyPlacementDialog({
                                 <SelectContent>
                                     {durationOptions.map((m) => (
                                         <SelectItem key={m} value={String(m)}>
-                                            {m}{' '}
-                                            {m === 1 ? 'месяц' : m < 5 ? 'месяца' : 'месяцев'}
+                                            {formatPlacementDurationLabel(m)}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -437,9 +450,23 @@ export function BuyPlacementDialog({
                     {total != null && !quoteError && (
                         <p className="text-sm text-foreground">
                             Итого:{' '}
+                            {priceBeforeDiscount != null &&
+                                priceBeforeDiscount > total &&
+                                !quoteLoading && (
+                                    <span className="mr-1.5 text-muted-foreground line-through font-normal inline-flex items-baseline gap-1">
+                                        {priceBeforeDiscount} <BynCurrencyMark />
+                                    </span>
+                                )}
                             <span className="font-bold inline-flex items-baseline gap-1">
                                 {quoteLoading ? '…' : total} {!quoteLoading && <BynCurrencyMark />}
                             </span>
+                            {priceBeforeDiscount != null &&
+                                priceBeforeDiscount > total &&
+                                !quoteLoading && (
+                                    <span className="ml-1.5 text-xs font-normal text-primary">
+                                        −{placementDurationDiscountPercent(durationMonths)}%
+                                    </span>
+                                )}
                             {isUpgradeMode && (
                                 <span className="block text-xs text-muted-foreground mt-1">
                                     Доплата за апгрейд до конца текущего срока

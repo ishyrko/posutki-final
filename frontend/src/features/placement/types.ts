@@ -82,6 +82,55 @@ export interface PlacementPurchaseQuote {
 
 export const PLACEMENT_DURATIONS = [1, 3, 6, 12] as const;
 
+/** Discount percent by VIP subscription duration (new / renewal). */
+export const PLACEMENT_DURATION_DISCOUNTS: Record<
+    (typeof PLACEMENT_DURATIONS)[number],
+    number
+> = {
+    1: 0,
+    3: 5,
+    6: 10,
+    12: 20,
+};
+
+export function placementDurationDiscountPercent(
+    durationMonths: number,
+): number {
+    if (!(PLACEMENT_DURATIONS as readonly number[]).includes(durationMonths)) {
+        return 0;
+    }
+    return PLACEMENT_DURATION_DISCOUNTS[
+        durationMonths as (typeof PLACEMENT_DURATIONS)[number]
+    ];
+}
+
+/** Full price for a VIP level period including duration discount. */
+export function calcPlacementLevelPriceByn(
+    priceBynPerMonth: number,
+    durationMonths: number,
+): number {
+    const base = priceBynPerMonth * durationMonths;
+    const discountPercent = placementDurationDiscountPercent(durationMonths);
+    if (discountPercent <= 0) {
+        return base;
+    }
+    return Math.round((base * (100 - discountPercent)) / 100);
+}
+
+export function formatPlacementDurationLabel(durationMonths: number): string {
+    const period =
+        durationMonths === 1
+            ? '1 месяц'
+            : durationMonths < 5
+              ? `${durationMonths} месяца`
+              : `${durationMonths} месяцев`;
+    const discount = placementDurationDiscountPercent(durationMonths);
+    if (discount <= 0) {
+        return period;
+    }
+    return `${period} (−${discount}%)`;
+}
+
 /** Max subscription horizon from today (renewal cannot push expiry past this). */
 export const PLACEMENT_MAX_HORIZON_MONTHS = 12;
 

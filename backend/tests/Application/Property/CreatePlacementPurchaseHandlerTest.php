@@ -43,7 +43,7 @@ final class CreatePlacementPurchaseHandlerTest extends TestCase
         ];
     }
 
-    public function testCreatesNewLevelPurchaseAtFullPriceWhenNoAnchor(): void
+    public function testCreatesNewLevelPurchaseWithDurationDiscountWhenNoAnchor(): void
     {
         $handler = $this->createHandler(anchor: null);
 
@@ -55,7 +55,8 @@ final class CreatePlacementPurchaseHandlerTest extends TestCase
             durationMonths: 3,
         ));
 
-        self::assertSame(147, $result['priceByn']);
+        // 49 * 3 = 147, −5% → round(139.65) = 140
+        self::assertSame(140, $result['priceByn']);
         self::assertSame(1, $result['level']);
         self::assertSame(3, $result['durationMonths']);
         self::assertSame(PlacementPurchaseStatus::PendingPayment->value, $result['status']);
@@ -85,7 +86,7 @@ final class CreatePlacementPurchaseHandlerTest extends TestCase
         ));
     }
 
-    public function testCreatesRenewalPurchaseWithFullPriceForAddedDuration(): void
+    public function testCreatesRenewalPurchaseWithDurationDiscountForAddedDuration(): void
     {
         $anchor = $this->createActiveAnchorPurchase(
             level: 2,
@@ -114,9 +115,30 @@ final class CreatePlacementPurchaseHandlerTest extends TestCase
             durationMonths: 3,
         ));
 
-        self::assertSame(357, $result['priceByn']);
+        // 119 * 3 = 357, −5% → round(339.15) = 339
+        self::assertSame(339, $result['priceByn']);
         self::assertNotNull($savedPurchase);
         self::assertSame(51, $savedPurchase->getBasePurchaseId());
+    }
+
+    public function testCreatesTwelveMonthPurchaseWithTwentyPercentDiscount(): void
+    {
+        // Fresh property gets free VIP 1 on publish; clear it so 12 months is a new purchase.
+        $this->setPropertyPlacement(level: 0, expiresAt: null);
+
+        $handler = $this->createHandler(anchor: null);
+
+        $result = $handler(new CreatePlacementPurchaseCommand(
+            propertyId: '10',
+            userId: (string) $this->ownerId->getValue(),
+            kind: PlacementPurchaseKind::Level->value,
+            level: 1,
+            durationMonths: 12,
+        ));
+
+        // 49 * 12 = 588, −20% → round(470.4) = 470
+        self::assertSame(470, $result['priceByn']);
+        self::assertSame(12, $result['durationMonths']);
     }
 
     public function testThrowsWhenRenewalExceedsTwelveMonthCap(): void

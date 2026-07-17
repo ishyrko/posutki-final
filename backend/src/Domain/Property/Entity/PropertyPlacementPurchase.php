@@ -23,6 +23,41 @@ class PropertyPlacementPurchase
     /** @var list<int> */
     public const ALLOWED_DURATIONS = [1, 3, 6, 12];
 
+    /**
+     * Discount percent by subscription duration (new purchase / renewal).
+     *
+     * @var array<int, int>
+     */
+    public const DURATION_DISCOUNTS = [
+        1 => 0,
+        3 => 5,
+        6 => 10,
+        12 => 20,
+    ];
+
+    public static function priceForDuration(int $priceBynPerMonth, int $durationMonths): int
+    {
+        if ($priceBynPerMonth < 0) {
+            throw new DomainException('Цена не может быть отрицательной');
+        }
+        if (!in_array($durationMonths, self::ALLOWED_DURATIONS, true)) {
+            throw new DomainException('Допустимый срок: 1, 3, 6 или 12 месяцев');
+        }
+
+        $base = $priceBynPerMonth * $durationMonths;
+        $discountPercent = self::DURATION_DISCOUNTS[$durationMonths] ?? 0;
+        if ($discountPercent <= 0) {
+            return $base;
+        }
+
+        return (int) round($base * (100 - $discountPercent) / 100);
+    }
+
+    public static function discountPercentForDuration(int $durationMonths): int
+    {
+        return self::DURATION_DISCOUNTS[$durationMonths] ?? 0;
+    }
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
