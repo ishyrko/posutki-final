@@ -66,10 +66,10 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
 
         $this->applyFilters($qb, $filters);
 
-        $now = new \DateTimeImmutable();
-        $this->applyPlacementSort($qb, $now);
+        $this->applyPlacementSort($qb);
 
-        // Sorting (after VIP level / boost / shuffle)
+        // User sort within the same effective VIP level (after shuffle). Skip createdAt —
+        // default catalog order is fully covered by the placement composite index.
         $sortBy = $filters['sortBy'] ?? 'createdAt';
         $sortOrder = $filters['sortOrder'] ?? 'DESC';
         if (!in_array($sortOrder, ['ASC', 'DESC'], true)) {
@@ -78,14 +78,12 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
 
         // API uses sortBy=price; DB stores comparable totals in price_byn / price_per_meter_byn
         $priceType = $filters['priceType'] ?? 'total';
-        $sortField = match ($sortBy) {
-            'area' => 'area',
-            'price' => $priceType === 'perMeter' ? 'pricePerMeterByn' : 'priceByn',
-            'createdAt' => 'createdAt',
-            default => 'createdAt',
-        };
-
-        $qb->addOrderBy('p.' . $sortField, $sortOrder);
+        if ($sortBy === 'area' || $sortBy === 'price') {
+            $sortField = $sortBy === 'area'
+                ? 'area'
+                : ($priceType === 'perMeter' ? 'pricePerMeterByn' : 'priceByn');
+            $qb->addOrderBy('p.' . $sortField, $sortOrder);
+        }
 
         $qb->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
@@ -94,16 +92,15 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
     }
 
     /**
-     * Catalog placement sort order: effective VIP level (desc) → active boost within the
-     * same level (desc) → rotation key (asc) so the same listings don't always show first.
+     * Catalog placement sort: effective VIP level → rotation key.
+     * Boost is already folded into placementEffectiveLevel (+1), so it must not appear here.
+     * Both columns DESC so MySQL 5.7 can satisfy ORDER BY via reverse index scan (no filesort).
+     * Shuffle direction is arbitrary: the key is random.
      */
-    private function applyPlacementSort(QueryBuilder $qb, \DateTimeImmutable $now): void
+    private function applyPlacementSort(QueryBuilder $qb): void
     {
-        $qb->addSelect('(CASE WHEN p.placementBoostExpiresAt IS NOT NULL AND p.placementBoostExpiresAt > :placementNow THEN 1 ELSE 0 END) AS HIDDEN placementBoostActive')
-            ->setParameter('placementNow', $now)
-            ->orderBy('p.placementEffectiveLevel', 'DESC')
-            ->addOrderBy('placementBoostActive', 'DESC')
-            ->addOrderBy('p.placementShuffleKey', 'ASC');
+        $qb->orderBy('p.placementEffectiveLevel', 'DESC')
+            ->addOrderBy('p.placementShuffleKey', 'DESC');
     }
 
     public function findPublishedOlderThan(\DateTimeImmutable $date): array
@@ -392,8 +389,7 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
                 ->setParameter('type', $type);
         }
 
-        $now = new \DateTimeImmutable();
-        $this->applyPlacementSort($qb, $now);
+        $this->applyPlacementSort($qb);
         $qb->addOrderBy('p.createdAt', 'DESC')
             ->setMaxResults($limit);
 

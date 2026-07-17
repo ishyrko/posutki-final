@@ -13,7 +13,10 @@ use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'properties')]
-#[ORM\Index(columns: ['city_id', 'deal_type', 'type', 'status'])]
+#[ORM\Index(
+    name: 'IDX_PROPERTIES_CATALOG_PLACEMENT',
+    columns: ['city_id', 'deal_type', 'type', 'status', 'placement_effective_level', 'placement_shuffle_key'],
+)]
 #[ORM\Index(columns: ['created_at'])]
 class Property
 {
@@ -166,8 +169,8 @@ class Property
     #[ORM\Column(type: 'integer', name: 'placement_effective_level', options: ['default' => 0])]
     private int $placementEffectiveLevel = 0;
 
-    #[ORM\Column(type: 'float', name: 'placement_shuffle_key', options: ['default' => 0])]
-    private float $placementShuffleKey = 0.0;
+    #[ORM\Column(type: 'integer', name: 'placement_shuffle_key', options: ['default' => 0])]
+    private int $placementShuffleKey = 0;
 
     #[ORM\Column(type: 'integer', name: 'price_byn', nullable: true)]
     private ?int $priceByn = null;
@@ -886,14 +889,14 @@ class Property
         return $this->placementEffectiveLevel;
     }
 
-    public function getPlacementShuffleKey(): float
+    public function getPlacementShuffleKey(): int
     {
         return $this->placementShuffleKey;
     }
 
-    public function reshufflePlacement(?float $key = null): void
+    public function reshufflePlacement(?int $key = null): void
     {
-        $this->placementShuffleKey = $key ?? (mt_rand() / mt_getrandmax());
+        $this->placementShuffleKey = $key ?? random_int(1, 2_147_483_647);
         $this->updatedAt = new \DateTimeImmutable();
     }
 
@@ -994,7 +997,7 @@ class Property
 
         $this->recomputePlacement($from);
 
-        if ($this->placementShuffleKey <= 0.0) {
+        if ($this->placementShuffleKey <= 0) {
             $this->reshufflePlacement();
         }
     }
