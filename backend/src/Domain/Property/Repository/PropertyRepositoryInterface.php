@@ -71,4 +71,17 @@ interface PropertyRepositoryInterface
         ?int $cityId = null,
         ?int $regionId = null,
     ): array;
+
+    /**
+     * How many listings currently hold the given base VIP level in a tariff scope.
+     * Counts published + moderation with a non-expired placement. Used for capacity.
+     */
+    public function countOccupiedAtBaseLevel(
+        string $propertyType,
+        int $level,
+        ?int $cityId = null,
+        ?int $regionId = null,
+        ?\DateTimeImmutable $now = null,
+        ?int $excludePropertyId = null,
+    ): int;
 }

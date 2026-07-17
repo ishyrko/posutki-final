@@ -63,7 +63,6 @@ final class PropertyPlacementServiceTest extends TestCase
         $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
         $purchaseRepository->method('findById')->with(50)->willReturn($anchor);
         $purchaseRepository->expects(self::exactly(2))->method('save');
-        $purchaseRepository->method('countOccupiedForLevelPrice')->willReturn(0);
 
         $levelPriceRepository = $this->createMock(PropertyPlacementLevelPriceRepositoryInterface::class);
         $levelPriceRepository->method('findById')->with(103)->willReturn($levelPrice);
@@ -128,7 +127,6 @@ final class PropertyPlacementServiceTest extends TestCase
         $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
         $purchaseRepository->method('findById')->with(60)->willReturn($anchor);
         $purchaseRepository->expects(self::exactly(2))->method('save');
-        $purchaseRepository->method('countOccupiedForLevelPrice')->willReturn(0);
 
         $levelPriceRepository = $this->createMock(PropertyPlacementLevelPriceRepositoryInterface::class);
         $levelPriceRepository->method('findById')->with(102)->willReturn($levelPrice);
@@ -182,7 +180,7 @@ final class PropertyPlacementServiceTest extends TestCase
             $this->createStub(UserRepositoryInterface::class),
         );
 
-        // (159 - 119) / 30 * 2 = 2.666... → ceil 3
+        // (159 - 119) / 30 * 2 = 2.666... ? ceil 3
         self::assertSame(3, $service->quoteBoostPurchase($property));
     }
 
@@ -212,7 +210,7 @@ final class PropertyPlacementServiceTest extends TestCase
             $this->createStub(UserRepositoryInterface::class),
         );
 
-        // (49 - 0) / 30 * 2 = 3.266... → ceil 4
+        // (49 - 0) / 30 * 2 = 3.266... ? ceil 4
         self::assertSame(4, $service->quoteBoostPurchase($property));
     }
 

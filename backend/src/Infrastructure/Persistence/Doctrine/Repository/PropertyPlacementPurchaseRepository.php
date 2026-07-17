@@ -89,24 +89,6 @@ class PropertyPlacementPurchaseRepository extends ServiceEntityRepository implem
             ->getOneOrNullResult();
     }
 
-    public function countOccupiedForLevelPrice(int $levelPriceId, ?\DateTimeImmutable $now = null): int
-    {
-        $now ??= new \DateTimeImmutable();
-
-        return (int) $this->createQueryBuilder('p')
-            ->select('COUNT(p.id)')
-            ->where('p.levelPriceId = :levelPriceId')
-            ->andWhere(
-                '(p.status = :active AND p.expiresAt > :now) OR (p.status = :pending AND p.reservationExpiresAt > :now)'
-            )
-            ->setParameter('levelPriceId', $levelPriceId)
-            ->setParameter('active', PlacementPurchaseStatus::Active->value)
-            ->setParameter('pending', PlacementPurchaseStatus::PendingPayment->value)
-            ->setParameter('now', $now)
-            ->getQuery()
-            ->getSingleScalarResult();
-    }
-
     public function findExpiredActive(?\DateTimeImmutable $now = null): array
     {
         $now ??= new \DateTimeImmutable();

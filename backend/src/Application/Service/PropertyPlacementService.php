@@ -80,8 +80,12 @@ final class PropertyPlacementService
                 throw new DomainException('Тариф VIP-уровня не найден или неактивен');
             }
             if ($levelPrice->getCapacity() !== null) {
-                $occupied = $this->purchaseRepository->countOccupiedForLevelPrice($levelPrice->getId() ?? 0, $now);
-                if ($occupied > $levelPrice->getCapacity()) {
+                $occupied = $this->getLevelPriceOccupancy(
+                    $levelPrice,
+                    $now,
+                    $property->getId()->getValue(),
+                );
+                if ($occupied >= $levelPrice->getCapacity()) {
                     throw new DomainException('Нет свободных мест на этом VIP-уровне');
                 }
             }
@@ -283,14 +287,19 @@ final class PropertyPlacementService
         return $diff->y * 12 + $diff->m;
     }
 
-    public function getLevelPriceOccupancy(PropertyPlacementLevelPrice $levelPrice, ?\DateTimeImmutable $now = null): int
-    {
-        $id = $levelPrice->getId();
-        if ($id === null) {
-            return 0;
-        }
-
-        return $this->purchaseRepository->countOccupiedForLevelPrice($id, $now);
+    public function getLevelPriceOccupancy(
+        PropertyPlacementLevelPrice $levelPrice,
+        ?\DateTimeImmutable $now = null,
+        ?int $excludePropertyId = null,
+    ): int {
+        return $this->propertyRepository->countOccupiedAtBaseLevel(
+            propertyType: $levelPrice->getPropertyType(),
+            level: $levelPrice->getLevel(),
+            cityId: $levelPrice->getCityId(),
+            regionId: $levelPrice->getRegionId(),
+            now: $now,
+            excludePropertyId: $excludePropertyId,
+        );
     }
 
     /**

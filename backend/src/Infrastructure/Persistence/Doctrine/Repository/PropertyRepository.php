@@ -479,6 +479,49 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         return $out;
     }
 
+    public function countOccupiedAtBaseLevel(
+        string $propertyType,
+        int $level,
+        ?int $cityId = null,
+        ?int $regionId = null,
+        ?\DateTimeImmutable $now = null,
+        ?int $excludePropertyId = null,
+    ): int {
+        $now ??= new \DateTimeImmutable();
+
+        $qb = $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->where('p.type = :propertyType')
+            ->andWhere('p.status IN (:statuses)')
+            ->andWhere('p.placementBaseLevel = :level')
+            ->andWhere('p.placementLevelExpiresAt IS NOT NULL')
+            ->andWhere('p.placementLevelExpiresAt > :now')
+            ->setParameter('propertyType', $propertyType)
+            ->setParameter('statuses', ['published', 'moderation'])
+            ->setParameter('level', $level)
+            ->setParameter('now', $now);
+
+        if ($cityId !== null && $cityId > 0) {
+            $qb->andWhere('p.cityId = :cityId')
+                ->setParameter('cityId', $cityId);
+        } elseif ($regionId !== null && $regionId > 0) {
+            $qb->innerJoin(City::class, 'c', 'WITH', 'c.id = p.cityId')
+                ->innerJoin('c.regionDistrict', 'rd')
+                ->innerJoin('rd.region', 'r')
+                ->andWhere('r.id = :regionId')
+                ->setParameter('regionId', $regionId);
+        } else {
+            return 0;
+        }
+
+        if ($excludePropertyId !== null && $excludePropertyId > 0) {
+            $qb->andWhere('p.id != :excludeId')
+                ->setParameter('excludeId', $excludePropertyId);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
     public function delete(Property $property): void
     {
         $this->getEntityManager()->remove($property);

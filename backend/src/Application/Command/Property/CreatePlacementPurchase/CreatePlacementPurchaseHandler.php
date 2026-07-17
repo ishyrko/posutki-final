@@ -90,7 +90,10 @@ final class CreatePlacementPurchaseHandler
         }
 
         if ($levelPrice->getCapacity() !== null) {
-            $occupied = $this->purchaseRepository->countOccupiedForLevelPrice($levelPrice->getId() ?? 0);
+            $occupied = $this->placementService->getLevelPriceOccupancy(
+                $levelPrice,
+                excludePropertyId: $property->getId()->getValue(),
+            );
             if ($occupied >= $levelPrice->getCapacity()) {
                 throw new ConflictException('Нет свободных мест на этом VIP-уровне');
             }

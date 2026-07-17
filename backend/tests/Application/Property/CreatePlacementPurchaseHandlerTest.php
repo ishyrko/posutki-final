@@ -235,7 +235,7 @@ final class CreatePlacementPurchaseHandlerTest extends TestCase
 
         $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
         $purchaseRepository->method('findActiveLevelByPropertyId')->willReturn($anchor);
-        $purchaseRepository->method('countOccupiedForLevelPrice')->willReturn(0);
+        $purchaseRepository->method('countPendingPaymentByOwnerId')->willReturn(0);
         if ($expectSave) {
             $purchaseRepository
                 ->expects(self::once())

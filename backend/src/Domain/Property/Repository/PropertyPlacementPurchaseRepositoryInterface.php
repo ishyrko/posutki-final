@@ -27,8 +27,6 @@ interface PropertyPlacementPurchaseRepositoryInterface
 
     public function findActiveLevelByPropertyId(int $propertyId, ?\DateTimeImmutable $now = null): ?PropertyPlacementPurchase;
 
-    public function countOccupiedForLevelPrice(int $levelPriceId, ?\DateTimeImmutable $now = null): int;
-
     /**
      * @return PropertyPlacementPurchase[]
      */
