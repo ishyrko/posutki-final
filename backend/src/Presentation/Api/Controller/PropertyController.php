@@ -82,7 +82,6 @@ class PropertyController extends AbstractController
             cityId: $request->query->getInt('cityId') ?: null,
             minPrice: $request->query->getInt('minPrice') ?: null,
             maxPrice: $request->query->getInt('maxPrice') ?: null,
-            priceType: $request->query->get('priceType', 'total'),
             currency: $request->query->get('currency'),
             minArea: $request->query->get('minArea') ? (float) $request->query->get('minArea') : null,
             maxArea: $request->query->get('maxArea') ? (float) $request->query->get('maxArea') : null,

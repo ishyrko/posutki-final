@@ -178,7 +178,6 @@ export interface PropertyStats {
     daily: PropertyStatsPoint[];
 }
 
-export type PriceType = 'total' | 'perMeter';
 export type Currency = 'BYN' | 'USD' | 'RUB';
 
 export interface PropertyFilters {
@@ -193,7 +192,6 @@ export interface PropertyFilters {
     cityId?: number;
     minPrice?: number;
     maxPrice?: number;
-    priceType?: PriceType;
     currency?: Currency;
     /** 1–3 точное число комнат, 4 — «четыре и более»; 3+ = 3 и 4; несколько — OR (`rooms=1,2,4` в API). */
     roomValues?: readonly number[];

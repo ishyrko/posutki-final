@@ -39,7 +39,7 @@ import PropertyMap, { type MapProperty } from "@/components/PropertyMap";
 import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { useMetroStations } from "@/features/metro/hooks";
 import type { NearbyMetroStation } from "@/features/metro/types";
-import { Property, formatAddress, type PriceType, type Currency } from "@/features/properties/types";
+import { Property, formatAddress, type Currency } from "@/features/properties/types";
 import { useCurrency } from "@/context/CurrencyContext";
 import type { ExchangeRates } from "@/features/properties/api";
 import {
@@ -261,7 +261,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const searchParams = useSearchParams();
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [priceType, setPriceType] = useState<PriceType>("total");
   const { selectedCurrency } = useCurrency();
   const [roomBuckets, setRoomBuckets] = useState<RoomBucket[]>([]);
   const [metroStationId, setMetroStationId] = useState("all");
@@ -278,7 +277,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     [listViewAvailable],
   );
   const [activeMarker, setActiveMarker] = useState<number | null>(null);
-  const isSaleDeal = false;
   const pageFromQuery = Number(searchParams.get("page") ?? "1");
   const validPageFromQuery = Number.isFinite(pageFromQuery) && pageFromQuery > 0 ? Math.floor(pageFromQuery) : 1;
   const [currentPage, setCurrentPage] = useState(validPageFromQuery);
@@ -410,12 +408,11 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     if (minPrice) f.minPrice = Number(minPrice);
     if (maxPrice) f.maxPrice = Number(maxPrice);
     if (guestsFromQuery !== null) f.guests = guestsFromQuery;
-    if (isSaleDeal && hasPriceFilter && priceType !== "total") f.priceType = priceType;
     if (hasPriceFilter) f.currency = selectedCurrency;
     if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     return f;
-  }, [viewMode, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, priceType, selectedCurrency, hasPriceFilter, isSaleDeal, sort]);
+  }, [viewMode, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort]);
 
   const { data, isLoading } = useProperties(filters);
   const { data: rates } = useExchangeRates();
@@ -501,7 +498,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const clearFilters = () => {
     setMinPrice("");
     setMaxPrice("");
-    setPriceType("total");
     setRoomBuckets([]);
     setMetroStationId("all");
     if (!nearMetroLanding) {
@@ -549,30 +545,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
             onChange={(e) => { setMaxPrice(e.target.value); resetToFirstPage(); }}
             className={cn(filterPriceNumberInput, "min-w-0 w-0 flex-1 basis-0")}
           />
-          {isSaleDeal && (
-            <div className="flex h-10 shrink-0 overflow-hidden rounded-lg border border-border">
-              <button
-                type="button"
-                onClick={() => setPriceType("total")}
-                className={cn(
-                  "cursor-pointer px-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
-                  priceType === "total" ? "bg-primary text-primary-foreground" : "bg-surface text-muted-foreground hover:bg-muted",
-                )}
-              >
-                всего
-              </button>
-              <button
-                type="button"
-                onClick={() => setPriceType("perMeter")}
-                className={cn(
-                  "cursor-pointer border-l border-border px-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
-                  priceType === "perMeter" ? "bg-primary text-primary-foreground" : "bg-surface text-muted-foreground hover:bg-muted",
-                )}
-              >
-                за м²
-              </button>
-            </div>
-          )}
         </div>
       </div>
 

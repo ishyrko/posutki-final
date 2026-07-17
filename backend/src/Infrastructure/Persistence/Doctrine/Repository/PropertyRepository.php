@@ -76,12 +76,9 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
             $sortOrder = 'DESC';
         }
 
-        // API uses sortBy=price; DB stores comparable totals in price_byn / price_per_meter_byn
-        $priceType = $filters['priceType'] ?? 'total';
+        // API uses sortBy=price; DB stores comparable totals in price_byn
         if ($sortBy === 'area' || $sortBy === 'price') {
-            $sortField = $sortBy === 'area'
-                ? 'area'
-                : ($priceType === 'perMeter' ? 'pricePerMeterByn' : 'priceByn');
+            $sortField = $sortBy === 'area' ? 'area' : 'priceByn';
             $qb->addOrderBy('p.' . $sortField, $sortOrder);
         }
 
@@ -165,16 +162,13 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
                 ->setParameter('excludeCitySlugs', array_values($filters['excludeCitySlugs']), ArrayParameterType::STRING);
         }
 
-        $priceType = $filters['priceType'] ?? 'total';
-        $priceField = $priceType === 'perMeter' ? 'p.pricePerMeterByn' : 'p.priceByn';
-
         if (isset($filters['minPriceByn'])) {
-            $qb->andWhere("{$priceField} >= :minPriceByn")
+            $qb->andWhere('p.priceByn >= :minPriceByn')
                 ->setParameter('minPriceByn', $filters['minPriceByn']);
         }
 
         if (isset($filters['maxPriceByn'])) {
-            $qb->andWhere("{$priceField} <= :maxPriceByn")
+            $qb->andWhere('p.priceByn <= :maxPriceByn')
                 ->setParameter('maxPriceByn', $filters['maxPriceByn']);
         }
 

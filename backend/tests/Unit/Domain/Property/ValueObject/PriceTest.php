@@ -23,24 +23,4 @@ final class PriceTest extends TestCase
 
         self::assertSame('123 456 BYN', $price->getFormatted());
     }
-
-    public function testCalculatePricePerMeterReturnsNewPrice(): void
-    {
-        $price = Price::fromAmount(300000, 'BYN');
-
-        $perMeter = $price->calculatePricePerMeter(50.0);
-
-        self::assertSame(6000, $perMeter->getAmount());
-        self::assertSame('BYN', $perMeter->getCurrency());
-    }
-
-    public function testCalculatePricePerMeterThrowsWhenAreaIsZero(): void
-    {
-        $price = Price::fromAmount(300000, 'BYN');
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Площадь должна быть больше нуля');
-
-        $price->calculatePricePerMeter(0.0);
-    }
 }

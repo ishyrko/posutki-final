@@ -175,9 +175,6 @@ class Property
     #[ORM\Column(type: 'integer', name: 'price_byn', nullable: true)]
     private ?int $priceByn = null;
 
-    #[ORM\Column(type: 'integer', name: 'price_per_meter_byn', nullable: true)]
-    private ?int $pricePerMeterByn = null;
-
     #[ORM\Column(type: 'integer')]
     private int $views = 0;
 
@@ -387,14 +384,6 @@ class Property
     public function setPriceByn(?int $priceByn): void
     {
         $this->priceByn = $priceByn;
-        $this->pricePerMeterByn = ($priceByn !== null && $this->area > 0)
-            ? (int) round($priceByn / $this->area)
-            : null;
-    }
-
-    public function getPricePerMeterByn(): ?int
-    {
-        return $this->pricePerMeterByn;
     }
 
     public function getViews(): int

@@ -35,16 +35,6 @@ final readonly class Price
         return number_format($this->amount, 0, '.', ' ') . ' ' . $this->currency;
     }
 
-    public function calculatePricePerMeter(float $area): self
-    {
-        if ($area <= 0) {
-            throw new \InvalidArgumentException('Площадь должна быть больше нуля');
-        }
-
-        $pricePerMeter = (int) round($this->amount / $area);
-        return new self($pricePerMeter, $this->currency);
-    }
-
     public function __toString(): string
     {
         return $this->getFormatted();

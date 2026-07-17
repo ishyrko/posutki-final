@@ -15,7 +15,6 @@ final class SearchPropertiesQuery
         public readonly ?int $cityId = null,
         public readonly ?int $minPrice = null,
         public readonly ?int $maxPrice = null,
-        public readonly string $priceType = 'total',  // 'total' | 'perMeter'
         public readonly ?string $currency = null,      // 'BYN' | 'USD' | 'RUB'
         public readonly ?float $minArea = null,
         public readonly ?float $maxArea = null,

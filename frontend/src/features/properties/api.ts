@@ -31,7 +31,6 @@ export const getProperties = async (filters: PropertyFilters = {}): Promise<Prop
         if (filters.cityId) params.append('cityId', filters.cityId.toString());
         if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
         if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
-        if (filters.priceType && filters.priceType !== 'total') params.append('priceType', filters.priceType);
         if (filters.currency) params.append('currency', filters.currency);
         if (filters.roomValues && filters.roomValues.length > 0) {
             params.append('rooms', filters.roomValues.join(','));

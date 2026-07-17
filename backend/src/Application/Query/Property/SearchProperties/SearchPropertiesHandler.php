@@ -83,7 +83,6 @@ final class SearchPropertiesHandler
         if ($query->maxPrice !== null) {
             $filters['maxPriceByn'] = (int) round($this->exchangeRateService->convertToByn($query->maxPrice, $filterCurrency));
         }
-        $filters['priceType'] = $query->priceType;
         if ($query->minArea !== null) {
             $filters['minArea'] = $query->minArea;
         }
