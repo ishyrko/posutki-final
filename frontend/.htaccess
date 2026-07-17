@@ -1,0 +1,29 @@
+# cPanel / Apache: block direct HTTP access to app internals.
+# Place in the Node.js Application root (same folder as package.json).
+# Public Next.js assets stay at /, /_next/*, /favicon.ico, etc. — do not put them under /public/ URLs.
+
+<IfModule mod_authz_core.c>
+  <FilesMatch "(?i)^(package(-lock)?\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|server\.js|Dockerfile|README\.md|components\.json|tsconfig\.json|jsconfig\.json|next-env\.d\.ts|next\.config\..+|postcss\.config\..+|tailwind\.config\..+|eslint\.config\..+|.*\.tsbuildinfo)$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+  <FilesMatch "(?i)^(package(-lock)?\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|server\.js|Dockerfile|README\.md|components\.json|tsconfig\.json|jsconfig\.json|next-env\.d\.ts|next\.config\..+|postcss\.config\..+|tailwind\.config\..+|eslint\.config\..+|.*\.tsbuildinfo)$">
+    Order allow,deny
+    Deny from all
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Source, dependencies, tooling, raw public/ tree
+  RewriteRule ^(?i)(node_modules|src|scripts|public)(/|$) - [F,L]
+
+  # Root config / entry files (if FilesMatch is skipped)
+  RewriteRule ^(?i)(package(-lock)?\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|server\.js|Dockerfile|README\.md|components\.json|tsconfig\.json|jsconfig\.json|next-env\.d\.ts|next\.config\..+|postcss\.config\..+|tailwind\.config\..+|eslint\.config\..+)$ - [F,L]
+
+  # Source / tooling extensions (do not match /_next/*.js)
+  RewriteRule \.(?i)(tsx?|mts|cts|mjs|cjs|tsbuildinfo)$ - [F,L]
+</IfModule>

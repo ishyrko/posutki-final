@@ -229,7 +229,6 @@ function propertyToListCard(p: Property, rates: ExchangeRates, metroFilterStatio
     propertyType: p.type,
     regionSlug: propertyUrlRegionSlug(p.address.regionName, p.address.citySlug, p.type),
     nearbyMetroStations: pickMetroStationsForCatalog(p.nearbyMetroStations ?? [], metroFilterStationId),
-    placementEffectiveLevel: p.placementEffectiveLevel,
   };
 }
 
@@ -986,11 +985,11 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                             propertyType={property.type}
                             regionSlug={propertyUrlRegionSlug(property.address.regionName, property.address.citySlug, property.type)}
                             typeLabel={property.typeLabel}
+                            showTypeBadge={!parsed.propertyType}
                             index={i}
                             animateEntrance={false}
                             rating={property.ratingAvg ?? null}
                             reviewCount={property.reviewCount ?? null}
-                            placementEffectiveLevel={property.placementEffectiveLevel}
                           />
                         );
                       })}

@@ -10,7 +10,6 @@ import { useUser } from "@/features/auth/hooks";
 import { useRouter } from "next/navigation";
 import { buildPropertyUrl } from "@/features/catalog/slugs";
 import { PROPERTY_TYPE_NOMINATIVE_DAILY } from "@/features/properties/property-deal-heading";
-import { placementBadgeLabel } from "@/features/placement/types";
 
 interface PropertyCardProps {
   id: number;
@@ -29,6 +28,8 @@ interface PropertyCardProps {
   maxGuests?: number | null;
   /** Подпись с бэка; иначе берётся из `propertyType`. */
   typeLabel?: string | null;
+  /** When false, hide the property-type badge (e.g. catalog already filtered by type). */
+  showTypeBadge?: boolean;
   index?: number;
   dealType?: string;
   propertyType?: string;
@@ -38,7 +39,6 @@ interface PropertyCardProps {
   reviewCount?: number | null;
   /** When false, skip fade-in on mount (reduces Safari flicker when parent re-renders after auth/rates). */
   animateEntrance?: boolean;
-  placementEffectiveLevel?: number | null;
 }
 
 const PropertyCard = ({
@@ -54,6 +54,7 @@ const PropertyCard = ({
   area,
   maxGuests,
   typeLabel,
+  showTypeBadge = true,
   index = 0,
   dealType,
   propertyType,
@@ -61,7 +62,6 @@ const PropertyCard = ({
   rating,
   reviewCount,
   animateEntrance = true,
-  placementEffectiveLevel,
 }: PropertyCardProps) => {
   const { data: user } = useUser();
   const { data: favoriteIds = [] } = useFavoriteIds();
@@ -82,9 +82,9 @@ const PropertyCard = ({
   const href = buildPropertyUrl(propertyType, id, regionSlug);
   const isDaily = dealType === "daily";
   const showRating = rating != null && rating > 0;
-  const imageTypeBadge =
-    typeLabel?.trim() || (propertyType ? PROPERTY_TYPE_NOMINATIVE_DAILY[propertyType] : undefined);
-  const topBadge = placementBadgeLabel(placementEffectiveLevel);
+  const imageTypeBadge = showTypeBadge
+    ? typeLabel?.trim() || (propertyType ? PROPERTY_TYPE_NOMINATIVE_DAILY[propertyType] : undefined)
+    : undefined;
 
   return (
     <Link href={href} className="block h-full">
@@ -103,18 +103,13 @@ const PropertyCard = ({
             loading="lazy"
           />
 
-          <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
-            {topBadge && (
-              <span className="px-2.5 py-1 rounded-full bg-amber-500 text-white text-xs font-bold shadow-sm">
-                {topBadge}
-              </span>
-            )}
-            {imageTypeBadge && (
+          {imageTypeBadge && (
+            <div className="absolute top-3 left-3">
               <span className="px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
                 {imageTypeBadge}
               </span>
-            )}
-          </div>
+            </div>
+          )}
 
           <button
             type="button"

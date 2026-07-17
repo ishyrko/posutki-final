@@ -132,14 +132,6 @@ export function formatPlacementStatus(property: {
     return basePart;
 }
 
-export function placementBadgeLabel(placementEffectiveLevel?: number | null): string | null {
-    const level = placementEffectiveLevel ?? 0;
-    if (level <= 0) {
-        return null;
-    }
-    return `VIP ${level}`;
-}
-
 export function isPlacementBoostActive(placementBoostExpiresAt?: string | null): boolean {
     if (!placementBoostExpiresAt) {
         return false;

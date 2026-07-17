@@ -12,7 +12,6 @@ import { useRouter } from "next/navigation";
 import { buildPropertyUrl } from "@/features/catalog/slugs";
 import { formatBynWithUsd } from "@/lib/currency";
 import { cn } from "@/lib/utils";
-import { placementBadgeLabel } from "@/features/placement/types";
 
 interface PropertyListCardProps {
   image: string;
@@ -38,7 +37,6 @@ interface PropertyListCardProps {
   nearbyMetroStations?: NearbyMetroStation[];
   /** When true, metro badges stay below the address (e.g. catalog "list + map" on desktop). */
   metroOnSeparateLine?: boolean;
-  placementEffectiveLevel?: number | null;
 }
 
 const lineColorClass = (line: number): string => {
@@ -78,10 +76,8 @@ const PropertyListCard = ({
   regionSlug,
   nearbyMetroStations = [],
   metroOnSeparateLine = false,
-  placementEffectiveLevel,
 }: PropertyListCardProps) => {
   const href = id ? buildPropertyUrl(propertyType, id, regionSlug) : `/property/${index}`;
-  const topBadge = placementBadgeLabel(placementEffectiveLevel);
   const { data: user } = useUser();
   const { data: favoriteIds = [] } = useFavoriteIds();
   const { mutate: toggleFavorite } = useToggleFavorite();
@@ -121,18 +117,13 @@ const PropertyListCard = ({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-          <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
-            {topBadge && (
-              <span className="px-2.5 py-1 rounded-full bg-amber-500 text-white text-xs font-bold shadow-sm">
-                {topBadge}
-              </span>
-            )}
-            {tag && (
+          {tag && (
+            <div className="absolute top-3 left-3">
               <span className="px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
                 {tag}
               </span>
-            )}
-          </div>
+            </div>
+          )}
 
           <button
             type="button"
