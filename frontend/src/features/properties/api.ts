@@ -2,6 +2,7 @@ import axios from 'axios';
 import api from '@/lib/api';
 import { Property, PropertyFilters, PropertyListResponse, PropertyStats, type Currency } from './types';
 import { getMockPropertiesResponse, getMockProperty } from './mock-data';
+import { clearLocalFavoriteIds, getLocalFavoriteIds } from '@/lib/favorites-storage';
 
 export type ExchangeRates = Record<Currency, number>;
 
@@ -150,6 +151,16 @@ export const getFavorites = async (page = 1, limit = 20): Promise<PropertyListRe
     } catch {
         return { data: [], meta: { total: 0, page, limit } };
     }
+};
+
+export const syncLocalFavoritesToServer = async (): Promise<void> => {
+    const ids = getLocalFavoriteIds();
+    if (ids.length === 0) {
+        return;
+    }
+
+    await Promise.allSettled(ids.map((id) => addFavorite(id)));
+    clearLocalFavoriteIds();
 };
 
 export const getMyProperties = async (page = 1, limit = 20): Promise<PropertyListResponse> => {

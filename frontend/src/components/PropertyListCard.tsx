@@ -7,8 +7,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { NearbyMetroStation } from "@/features/metro/types";
 import { useToggleFavorite, useFavoriteIds } from "@/features/properties/hooks";
-import { useUser } from "@/features/auth/hooks";
-import { useRouter } from "next/navigation";
 import { buildPropertyUrl } from "@/features/catalog/slugs";
 import { formatBynWithUsd } from "@/lib/currency";
 import { cn } from "@/lib/utils";
@@ -82,10 +80,8 @@ const PropertyListCard = ({
 }: PropertyListCardProps) => {
   const href = id ? buildPropertyUrl(propertyType, id, regionSlug) : `/property/${index}`;
   const topBadge = placementBadgeLabel(placementEffectiveLevel);
-  const { data: user } = useUser();
   const { data: favoriteIds = [] } = useFavoriteIds();
   const { mutate: toggleFavorite } = useToggleFavorite();
-  const router = useRouter();
   const isFavorited = id ? favoriteIds.includes(id) : false;
   const secondaryLine =
     secondaryPrice ??
@@ -95,10 +91,6 @@ const PropertyListCard = ({
     e.preventDefault();
     e.stopPropagation();
     if (!id) return;
-    if (!user) {
-      router.push('/login');
-      return;
-    }
     toggleFavorite({ propertyId: id, isFavorited });
   };
 

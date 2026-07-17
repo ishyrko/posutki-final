@@ -36,6 +36,7 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { BynCurrencyMark } from "@/components/BynCurrency";
 import type { Currency } from "@/features/properties/types";
 import { cn } from "@/lib/utils";
+import { useFavoriteIds } from "@/features/properties/hooks";
 
 interface MegaMenuSection {
   /** Пустой или отсутствует — колонка без подзаголовка (вторая колонка «Города»). */
@@ -174,6 +175,18 @@ function HeaderCurrencyStrip({ variant }: { variant: "desktopToolbar" | "mobileT
   );
 }
 
+function FavoritesCountBadge({ count }: { count: number }) {
+  if (count <= 0) {
+    return null;
+  }
+
+  return (
+    <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center leading-none pointer-events-none">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeMega, setActiveMega] = useState<string | null>(null);
@@ -187,6 +200,8 @@ const Header = () => {
     () => false,
   );
   const loggedIn = isMounted ? isAuthenticated() : false;
+  const { data: favoriteIds = [] } = useFavoriteIds();
+  const favoritesCount = favoriteIds.length;
   const regionSlug = useHeaderRegionSlug();
   const catalogPropertyType = useHeaderCatalogPropertyType();
   const megaMenuData = buildMegaMenu(regionSlug, catalogPropertyType);
@@ -253,9 +268,10 @@ const Header = () => {
 
         <div className="hidden md:flex items-center gap-2">
           <HeaderCurrencyStrip variant="desktopToolbar" />
-          <Link href="/kabinet/izbrannoe/">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+          <Link href="/izbrannoe/" className="relative inline-flex">
+            <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
               <Heart className="h-5 w-5" />
+              <FavoritesCountBadge count={favoritesCount} />
             </Button>
           </Link>
           {loggedIn ? (
@@ -400,10 +416,17 @@ const Header = () => {
             <div className="min-[580px]:hidden">
               <HeaderCurrencyStrip variant="drawer" />
             </div>
-            <Link href="/kabinet/izbrannoe/" onClick={() => setMobileOpen(false)}>
-              <Button variant="outline" size="sm" className="w-full gap-2 justify-center mb-2">
-                <Heart className="h-4 w-4" />
-                Избранное
+            <Link href="/izbrannoe/" onClick={() => setMobileOpen(false)}>
+              <Button variant="outline" size="sm" className="w-full justify-center mb-2">
+                <Heart className="h-4 w-4 mr-2" />
+                <span className="inline-flex items-center gap-1.5">
+                  <span>Избранное</span>
+                  {favoritesCount > 0 && (
+                    <span className="min-w-[1.25rem] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center shrink-0">
+                      {favoritesCount > 99 ? "99+" : favoritesCount}
+                    </span>
+                  )}
+                </span>
               </Button>
             </Link>
             {loggedIn ? (

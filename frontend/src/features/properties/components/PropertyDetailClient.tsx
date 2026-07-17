@@ -688,10 +688,6 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                     <button
                       type="button"
                       onClick={() => {
-                        if (!currentUser) {
-                          window.location.href = '/login';
-                          return;
-                        }
                         toggleFavorite({ propertyId: id, isFavorited });
                       }}
                       className={`p-2.5 rounded-xl transition-colors cursor-pointer ${

@@ -8,8 +8,6 @@ import type { ExchangeRates } from "../api";
 import { Property, formatAddress } from "../types";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "../price-display";
 import { useToggleFavorite, useFavoriteIds, useExchangeRates } from "../hooks";
-import { useUser } from "@/features/auth/hooks";
-import { useRouter } from "next/navigation";
 import { buildPropertyUrlFromRegionName } from "@/features/catalog/slugs";
 import { PriceDisplay } from "@/components/BynCurrency";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -35,10 +33,8 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
   const coverImage = images && images.length > 0
     ? (images[0].thumbnailUrl || images[0].url)
     : "/placeholder.svg";
-  const { data: user } = useUser();
   const { data: favoriteIds = [] } = useFavoriteIds();
   const { mutate: toggleFavorite } = useToggleFavorite();
-  const router = useRouter();
   const isFavorited = favoriteIds.includes(id);
   const href = buildPropertyUrlFromRegionName(type, id, address.regionName, address.citySlug);
 
@@ -57,10 +53,6 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!user) {
-      router.push('/login');
-      return;
-    }
     toggleFavorite({ propertyId: id, isFavorited });
   };
 

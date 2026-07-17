@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { setToken, navigateAfterAuth } from '@/lib/auth';
+import { syncLocalFavoritesToServer } from '@/features/properties/api';
 import { requestSmsCode, verifySmsCode } from './api';
 
 type UseVerifySmsCodeOptions = {
@@ -54,6 +55,10 @@ export const useVerifySmsCode = (options?: UseVerifySmsCodeOptions) => {
             setToken(token, refreshToken);
             queryClient.invalidateQueries({ queryKey: ['me'] });
             queryClient.invalidateQueries({ queryKey: ['phones'] });
+            void syncLocalFavoritesToServer().finally(() => {
+                queryClient.invalidateQueries({ queryKey: ['favorite-ids'] });
+                queryClient.invalidateQueries({ queryKey: ['favorites'] });
+            });
             toast.success('Вход выполнен');
             options?.onAuthenticated?.();
             if (options?.redirectAfter !== undefined) {

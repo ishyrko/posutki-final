@@ -14,7 +14,7 @@ import { formatUserDisplayName } from '@/features/profile/displayName';
 const navigation = [
     { name: 'Профиль', href: '/kabinet/profil', icon: User },
     { name: 'Мои объявления', mobileName: 'Объявления', href: '/kabinet/moi-obyavleniya/aktivnye', activePrefix: '/kabinet/moi-obyavleniya', icon: Home },
-    { name: 'Избранное', href: '/kabinet/izbrannoe', icon: Heart },
+    { name: 'Избранное', href: '/izbrannoe', icon: Heart },
     { name: 'Оплаты', href: '/kabinet/oplata', activePrefix: '/kabinet/oplata', icon: CreditCard, badgeKey: 'pendingPayments' as const },
     { name: 'Сообщения', href: '/kabinet/soobshcheniya', icon: MessageSquare, badgeKey: 'unread' as const },
 ];

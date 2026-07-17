@@ -6,8 +6,6 @@ import { Heart, MapPin, BedDouble, Bath, Star, Users } from "lucide-react";
 import Link from "next/link";
 import { formatBynWithUsd } from "@/lib/currency";
 import { useToggleFavorite, useFavoriteIds } from "@/features/properties/hooks";
-import { useUser } from "@/features/auth/hooks";
-import { useRouter } from "next/navigation";
 import { buildPropertyUrl } from "@/features/catalog/slugs";
 import { PROPERTY_TYPE_NOMINATIVE_DAILY } from "@/features/properties/property-deal-heading";
 import { placementBadgeLabel } from "@/features/placement/types";
@@ -66,19 +64,13 @@ const PropertyCard = ({
   animateEntrance = true,
   placementEffectiveLevel,
 }: PropertyCardProps) => {
-  const { data: user } = useUser();
   const { data: favoriteIds = [] } = useFavoriteIds();
   const { mutate: toggleFavorite } = useToggleFavorite();
-  const router = useRouter();
   const isFavorited = favoriteIds.includes(id);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!user) {
-      router.push("/login");
-      return;
-    }
     toggleFavorite({ propertyId: id, isFavorited });
   };
 

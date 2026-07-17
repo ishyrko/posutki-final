@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { login, register, googleLogin, getMe, logout as logoutApi, resetPassword, confirmResetPassword, LoginCredentials, RegisterCredentials, ResetPasswordData } from './api';
 import { setToken, removeToken, isAuthenticated, hasRefreshToken, navigateAfterAuth } from '@/lib/auth';
+import { syncLocalFavoritesToServer } from '@/features/properties/api';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -31,6 +32,13 @@ function getErrorMessage(error: unknown, fallback: string): string {
     return fallback;
 }
 
+function syncGuestFavoritesAfterAuth(queryClient: ReturnType<typeof useQueryClient>): void {
+    void syncLocalFavoritesToServer().finally(() => {
+        queryClient.invalidateQueries({ queryKey: ['favorite-ids'] });
+        queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    });
+}
+
 export const useLogin = (redirectAfter?: string) => {
     const queryClient = useQueryClient();
 
@@ -39,6 +47,7 @@ export const useLogin = (redirectAfter?: string) => {
         onSuccess: (data) => {
             setToken(data.token, data.refreshToken);
             queryClient.invalidateQueries({ queryKey: ['me'] });
+            syncGuestFavoritesAfterAuth(queryClient);
             toast.success('Вы успешно вошли');
             navigateAfterAuth(redirectAfter ?? '/kabinet/');
         },
@@ -111,6 +120,7 @@ export const useGoogleLogin = (redirectAfter?: string) => {
         onSuccess: (data) => {
             setToken(data.token, data.refreshToken);
             queryClient.invalidateQueries({ queryKey: ['me'] });
+            syncGuestFavoritesAfterAuth(queryClient);
             toast.success('Вход через Google выполнен');
             navigateAfterAuth(redirectAfter ?? '/kabinet/');
         },

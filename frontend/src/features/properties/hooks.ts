@@ -1,9 +1,18 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useSyncExternalStore } from 'react';
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, getFavorites, getExchangeRates, getPropertyStats, archiveProperty, unarchiveProperty, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock } from './api';
 import { Property, PropertyFilters, PropertyListResponse } from './types';
 import { isAuthenticated } from '@/lib/auth';
+import { useIsHydrated } from '@/hooks/useIsHydrated';
+import {
+    addLocalFavoriteId,
+    getLocalFavoriteIdsSnapshot,
+    getLocalFavoriteIdsServerSnapshot,
+    removeLocalFavoriteId,
+    subscribeLocalFavorites,
+} from '@/lib/favorites-storage';
 
 type UsePropertiesOptions = {
     /** SSR / dehydrated list — avoids treating data as stale at t=0 (immediate background refetch + flicker). */
@@ -62,13 +71,34 @@ export const useUpdateProperty = () => {
 };
 
 export const useFavoriteIds = () => {
-    return useQuery({
+    const isHydrated = useIsHydrated();
+    const authenticated = isHydrated && isAuthenticated();
+    const localIds = useSyncExternalStore(
+        subscribeLocalFavorites,
+        getLocalFavoriteIdsSnapshot,
+        getLocalFavoriteIdsServerSnapshot,
+    );
+    const serverQuery = useQuery({
         queryKey: ['favorite-ids'],
         queryFn: getFavoriteIds,
-        enabled: isAuthenticated(),
+        enabled: authenticated,
         retry: false,
         staleTime: 30_000,
     });
+
+    if (authenticated) {
+        return serverQuery;
+    }
+
+    return {
+        ...serverQuery,
+        data: isHydrated ? localIds : getLocalFavoriteIdsServerSnapshot(),
+        isLoading: false,
+        isFetching: false,
+        isSuccess: true,
+        isError: false,
+        status: 'success' as const,
+    };
 };
 
 export const useFavorites = (page = 1, limit = 20) => {
@@ -77,6 +107,77 @@ export const useFavorites = (page = 1, limit = 20) => {
         queryFn: () => getFavorites(page, limit),
         enabled: isAuthenticated(),
     });
+};
+
+export const useLocalFavoriteProperties = () => {
+    const isHydrated = useIsHydrated();
+    const favoriteIds = useSyncExternalStore(
+        subscribeLocalFavorites,
+        getLocalFavoriteIdsSnapshot,
+        getLocalFavoriteIdsServerSnapshot,
+    );
+    const effectiveIds = isHydrated ? favoriteIds : getLocalFavoriteIdsServerSnapshot();
+
+    const propertyQueries = useQueries({
+        queries: effectiveIds.map((id) => ({
+            queryKey: ['property', id],
+            queryFn: () => getProperty(id),
+            staleTime: 60_000,
+            enabled: isHydrated,
+        })),
+    });
+
+    const properties = useMemo(
+        () =>
+            propertyQueries
+                .map((query) => query.data)
+                .filter((property): property is Property => property != null),
+        [propertyQueries],
+    );
+
+    const isLoading =
+        isHydrated &&
+        effectiveIds.length > 0 &&
+        propertyQueries.some((query) => query.isLoading || query.isFetching);
+
+    return {
+        properties,
+        isLoading,
+        total: effectiveIds.length,
+    };
+};
+
+export const useFavoritesPage = (page = 1, limit = 20) => {
+    const isHydrated = useIsHydrated();
+    const authenticated = isHydrated && isAuthenticated();
+    const serverFavorites = useQuery({
+        queryKey: ['favorites', page, limit],
+        queryFn: () => getFavorites(page, limit),
+        enabled: authenticated,
+    });
+    const localFavorites = useLocalFavoriteProperties();
+
+    if (!isHydrated) {
+        return {
+            properties: [] as Property[],
+            isLoading: false,
+            total: 0,
+        };
+    }
+
+    if (authenticated) {
+        return {
+            properties: serverFavorites.data?.data ?? [],
+            isLoading: serverFavorites.isLoading,
+            total: serverFavorites.data?.data.length ?? 0,
+        };
+    }
+
+    return {
+        properties: localFavorites.properties,
+        isLoading: localFavorites.isLoading,
+        total: localFavorites.total,
+    };
 };
 
 export const useExchangeRates = () => {
@@ -91,6 +192,15 @@ export const useToggleFavorite = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({ propertyId, isFavorited }: { propertyId: number; isFavorited: boolean }) => {
+            if (!isAuthenticated()) {
+                if (isFavorited) {
+                    removeLocalFavoriteId(propertyId);
+                } else {
+                    addLocalFavoriteId(propertyId);
+                }
+                return;
+            }
+
             if (isFavorited) {
                 await removeFavorite(propertyId);
             } else {
@@ -98,6 +208,10 @@ export const useToggleFavorite = () => {
             }
         },
         onMutate: async ({ propertyId, isFavorited }) => {
+            if (!isAuthenticated()) {
+                return {};
+            }
+
             await queryClient.cancelQueries({ queryKey: ['favorite-ids'] });
             const previous = queryClient.getQueryData<number[]>(['favorite-ids']);
             queryClient.setQueryData<number[]>(['favorite-ids'], (old = []) =>
@@ -106,11 +220,19 @@ export const useToggleFavorite = () => {
             return { previous };
         },
         onError: (_err, _vars, context) => {
+            if (!isAuthenticated()) {
+                return;
+            }
+
             if (context?.previous) {
                 queryClient.setQueryData(['favorite-ids'], context.previous);
             }
         },
         onSettled: () => {
+            if (!isAuthenticated()) {
+                return;
+            }
+
             queryClient.invalidateQueries({ queryKey: ['favorite-ids'] });
             queryClient.invalidateQueries({ queryKey: ['favorites'] });
         },
