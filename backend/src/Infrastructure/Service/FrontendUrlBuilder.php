@@ -38,6 +38,11 @@ final readonly class FrontendUrlBuilder
         return $this->base() . '/kabinet/';
     }
 
+    public function myListings(): string
+    {
+        return $this->base() . '/kabinet/moi-obyavleniya/aktivnye/';
+    }
+
     public function messages(): string
     {
         return $this->base() . '/kabinet/soobshcheniya/';

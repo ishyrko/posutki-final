@@ -56,6 +56,16 @@ interface PropertyRepositoryInterface
     public function findWithExpiredPlacement(?\DateTimeImmutable $now = null): array;
 
     /**
+     * Published listings whose VIP level expires within the given window and have not been reminded yet.
+     *
+     * @return Property[]
+     */
+    public function findWithPlacementLevelExpiringSoon(
+        \DateTimeImmutable $now,
+        \DateTimeImmutable $until,
+    ): array;
+
+    /**
      * @return int[] city ids that have at least one listing of the given property type
      */
     public function findCityIdsWithListings(string $propertyType): array;

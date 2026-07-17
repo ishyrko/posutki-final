@@ -54,4 +54,38 @@ final readonly class PlacementMailer
 
         $this->mailer->send($email);
     }
+
+    public function sendVipExpiringSoon(
+        Property $property,
+        User $owner,
+        string $propertyUrl,
+        string $listingsUrl,
+        string $dashboardUrl,
+    ): void {
+        $ownerEmail = $owner->getEmail()?->getValue();
+        if ($ownerEmail === null) {
+            return;
+        }
+
+        $expiresAt = $property->getPlacementLevelExpiresAt();
+        $level = $property->getPlacementBaseLevel();
+        $html = $this->twig->render('email/placement/vip_expiring_soon.html.twig', [
+            'owner' => $owner,
+            'property' => $property,
+            'level' => $level,
+            'isTrial' => $property->isPlacementIsTrial(),
+            'propertyUrl' => $propertyUrl,
+            'listingsUrl' => $listingsUrl,
+            'dashboardUrl' => $dashboardUrl,
+            'expiresAtFormatted' => $expiresAt?->format('d.m.Y H:i'),
+        ]);
+
+        $email = (new Email())
+            ->from($this->mailerFrom)
+            ->to($ownerEmail)
+            ->subject('VIP истекает завтра — ' . $property->getTitle())
+            ->html($html);
+
+        $this->mailer->send($email);
+    }
 }

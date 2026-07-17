@@ -3,3 +3,4 @@
 0 * * * * cd /var/www/backend && php bin/console app:sync-external-calendars --no-interaction
 */5 * * * * cd /var/www/backend && php bin/console app:reshuffle-placement --no-interaction
 0 * * * * cd /var/www/backend && php bin/console app:expire-property-placements --no-interaction
+0 * * * * cd /var/www/backend && php bin/console app:notify-vip-expiring-soon --no-interaction

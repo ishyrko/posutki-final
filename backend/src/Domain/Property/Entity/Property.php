@@ -157,6 +157,10 @@ class Property
     #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'placement_level_expires_at')]
     private ?\DateTimeImmutable $placementLevelExpiresAt = null;
 
+    /** Set when the “VIP expires in 24h” email was sent for the current expiry. */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'placement_level_expiry_reminded_at')]
+    private ?\DateTimeImmutable $placementLevelExpiryRemindedAt = null;
+
     #[ORM\Column(type: 'boolean', name: 'placement_is_trial', options: ['default' => false])]
     private bool $placementIsTrial = false;
 
@@ -851,6 +855,18 @@ class Property
         return $this->placementLevelExpiresAt;
     }
 
+    public function getPlacementLevelExpiryRemindedAt(): ?\DateTimeImmutable
+    {
+        return $this->placementLevelExpiryRemindedAt;
+    }
+
+    public function markPlacementLevelExpiryReminded(?\DateTimeImmutable $now = null): void
+    {
+        $now ??= new \DateTimeImmutable();
+        $this->placementLevelExpiryRemindedAt = $now;
+        $this->updatedAt = $now;
+    }
+
     public function isPlacementIsTrial(): bool
     {
         return $this->placementIsTrial;
@@ -917,6 +933,9 @@ class Property
         if ($levelStillValid && $this->placementBaseLevel > 0) {
             // Keep base level / expiry / free-VIP-1 flag as stored on the property.
         } elseif ($this->freeTrialEndsAt !== null && $this->freeTrialEndsAt > $now) {
+            if ($this->placementLevelExpiresAt?->getTimestamp() !== $this->freeTrialEndsAt->getTimestamp()) {
+                $this->placementLevelExpiryRemindedAt = null;
+            }
             $this->placementBaseLevel = 1;
             $this->placementLevelExpiresAt = $this->freeTrialEndsAt;
             $this->placementIsTrial = true;
@@ -924,6 +943,7 @@ class Property
             $this->placementBaseLevel = 0;
             $this->placementLevelExpiresAt = null;
             $this->placementIsTrial = false;
+            $this->placementLevelExpiryRemindedAt = null;
         }
 
         $this->recomputePlacementBoostOnly($now, $maxLevel);
@@ -968,6 +988,7 @@ class Property
         $this->placementBaseLevel = $level;
         $this->placementLevelExpiresAt = $expiresAt;
         $this->placementIsTrial = false;
+        $this->placementLevelExpiryRemindedAt = null;
         $this->recomputePlacementBoostOnly($now, $maxLevel);
     }
 

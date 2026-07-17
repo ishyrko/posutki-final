@@ -422,6 +422,27 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
             ->getResult();
     }
 
+    /**
+     * @return Property[]
+     */
+    public function findWithPlacementLevelExpiringSoon(
+        \DateTimeImmutable $now,
+        \DateTimeImmutable $until,
+    ): array {
+        return $this->createQueryBuilder('p')
+            ->where('p.status = :status')
+            ->andWhere('p.placementBaseLevel > 0')
+            ->andWhere('p.placementLevelExpiresAt IS NOT NULL')
+            ->andWhere('p.placementLevelExpiresAt > :now')
+            ->andWhere('p.placementLevelExpiresAt <= :until')
+            ->andWhere('p.placementLevelExpiryRemindedAt IS NULL')
+            ->setParameter('status', 'published')
+            ->setParameter('now', $now)
+            ->setParameter('until', $until)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function countByOwner(string $ownerId): int
     {
         return (int) $this->createQueryBuilder('p')
