@@ -5,6 +5,7 @@ import { useCities, useRegions } from '@/features/create-listing/hooks';
 import { usePlacementLevels, usePlacementScope } from '@/features/placement/hooks';
 import {
     calcBoostPriceByn,
+    MAX_VISIBLE_PHOTOS_FREE_PLACEMENT,
     type PlacementPropertyType,
     type PlacementTariffScope,
 } from '@/features/placement/types';
@@ -125,7 +126,10 @@ export function TariffsPageContent() {
                     <h2 className="font-semibold text-foreground mb-2">Бесплатное размещение (VIP 0)</h2>
                     <p className="text-sm text-muted-foreground">
                         После окончания пробного периода или оплаченного VIP объявление остаётся в
-                        каталоге на бесплатном уровне с ограничениями и более низкой позицией.
+                        каталоге на бесплатном уровне с более низкой позицией. На публичной карточке
+                        показываются не более {MAX_VISIBLE_PHOTOS_FREE_PLACEMENT} фотографий; видео,
+                        Instagram и сайт скрыты. Все данные сохраняются и снова отображаются после
+                        перехода на VIP.
                     </p>
                 </div>
 

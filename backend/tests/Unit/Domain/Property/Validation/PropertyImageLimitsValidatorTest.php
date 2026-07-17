@@ -38,4 +38,24 @@ final class PropertyImageLimitsValidatorTest extends TestCase
 
         PropertyImageLimitsValidator::assertValid(PropertyType::House->value, 31);
     }
+
+    public function testVisibleForFreePlacementCapsAtFive(): void
+    {
+        $images = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+
+        self::assertSame(
+            ['a', 'b', 'c', 'd', 'e'],
+            PropertyImageLimitsValidator::visibleForPlacement($images, 0),
+        );
+        self::assertSame(
+            $images,
+            PropertyImageLimitsValidator::visibleForPlacement($images, 1),
+        );
+    }
+
+    public function testAllowsExtraMediaOnlyWithVip(): void
+    {
+        self::assertFalse(PropertyImageLimitsValidator::allowsExtraMedia(0));
+        self::assertTrue(PropertyImageLimitsValidator::allowsExtraMedia(1));
+    }
 }

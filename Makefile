@@ -8,7 +8,7 @@ test-unit:
 
 test-functional:
 	docker compose exec php sh -lc "cd /var/www/backend && composer test:functional"
-.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo admin-user frontend-install frontend-dev frontend-build frontend-build-cpanel frontend-build-cpanel-prod frontend-build-cpanel-verify-3g frontend-export-cpanel frontend-cpanel-clean clean exchange-rates sync-metro-proximity sync-calendars prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-sync-calendars prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
+.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo admin-user frontend-install frontend-dev frontend-build frontend-build-cpanel frontend-build-cpanel-prod frontend-build-cpanel-verify-3g frontend-export-cpanel frontend-cpanel-clean clean exchange-rates sync-metro-proximity sync-calendars reshuffle-placement prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-sync-calendars prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
 
 PROD_ENV_FILE = .env.prod
 CPANEL_ENV_FILE = .env.cpanel
@@ -93,6 +93,10 @@ sync-metro-proximity: ## Recalculate metro proximity for all properties
 sync-calendars: ## Sync external iCal calendars for all properties
 	@echo "${GREEN}Syncing external calendars...${RESET}"
 	docker-compose exec php php bin/console app:sync-external-calendars --no-interaction
+
+reshuffle-placement: ## Reshuffle VIP rotation order within the same VIP level
+	@echo "${GREEN}Reshuffling placement order (app:reshuffle-placement)...${RESET}"
+	docker-compose exec php sh -lc "cd /var/www/backend && php bin/console app:reshuffle-placement"
 
 backend-cache-clear: ## Clear backend cache
 	docker-compose exec php php bin/console cache:clear

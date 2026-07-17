@@ -73,6 +73,7 @@ final class GetMyPropertiesHandler
                     $this->favoriteRepository->countByProperty($property->getId()),
                     null,
                     $contact,
+                    includeAllImages: true,
                 );
             },
             $properties

@@ -10,6 +10,7 @@ import { useUser } from "@/features/auth/hooks";
 import { useRouter } from "next/navigation";
 import { buildPropertyUrl } from "@/features/catalog/slugs";
 import { PROPERTY_TYPE_NOMINATIVE_DAILY } from "@/features/properties/property-deal-heading";
+import { placementBadgeLabel } from "@/features/placement/types";
 
 interface PropertyCardProps {
   id: number;
@@ -39,6 +40,7 @@ interface PropertyCardProps {
   reviewCount?: number | null;
   /** When false, skip fade-in on mount (reduces Safari flicker when parent re-renders after auth/rates). */
   animateEntrance?: boolean;
+  placementEffectiveLevel?: number | null;
 }
 
 const PropertyCard = ({
@@ -62,6 +64,7 @@ const PropertyCard = ({
   rating,
   reviewCount,
   animateEntrance = true,
+  placementEffectiveLevel,
 }: PropertyCardProps) => {
   const { data: user } = useUser();
   const { data: favoriteIds = [] } = useFavoriteIds();
@@ -85,6 +88,7 @@ const PropertyCard = ({
   const imageTypeBadge = showTypeBadge
     ? typeLabel?.trim() || (propertyType ? PROPERTY_TYPE_NOMINATIVE_DAILY[propertyType] : undefined)
     : undefined;
+  const topBadge = placementBadgeLabel(placementEffectiveLevel);
 
   return (
     <Link href={href} className="block h-full">
@@ -103,13 +107,18 @@ const PropertyCard = ({
             loading="lazy"
           />
 
-          {imageTypeBadge && (
-            <div className="absolute top-3 left-3">
+          <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+            {topBadge && (
+              <span className="px-2.5 py-1 rounded-full bg-amber-500 text-white text-xs font-bold shadow-sm">
+                {topBadge}
+              </span>
+            )}
+            {imageTypeBadge && (
               <span className="px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
                 {imageTypeBadge}
               </span>
-            </div>
-          )}
+            )}
+          </div>
 
           <button
             type="button"

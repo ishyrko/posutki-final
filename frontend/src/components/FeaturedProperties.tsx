@@ -114,6 +114,7 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
                 animateEntrance={false}
                 rating={property.ratingAvg ?? null}
                 reviewCount={property.reviewCount ?? null}
+                placementEffectiveLevel={property.placementEffectiveLevel}
               />
             );
             })}

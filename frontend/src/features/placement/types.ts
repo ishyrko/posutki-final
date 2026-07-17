@@ -185,6 +185,17 @@ export function formatPlacementStatus(property: {
     return basePart;
 }
 
+export function placementBadgeLabel(placementEffectiveLevel?: number | null): string | null {
+    const level = placementEffectiveLevel ?? 0;
+    if (level <= 0) {
+        return null;
+    }
+    return `VIP ${level}`;
+}
+
+/** Public gallery size for free placement (VIP 0); VIP and trial show all photos. */
+export const MAX_VISIBLE_PHOTOS_FREE_PLACEMENT = 5;
+
 export function isPlacementBoostActive(placementBoostExpiresAt?: string | null): boolean {
     if (!placementBoostExpiresAt) {
         return false;

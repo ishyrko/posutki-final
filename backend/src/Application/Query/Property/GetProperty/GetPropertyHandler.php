@@ -172,6 +172,7 @@ final class GetPropertyHandler
             $reviewAggregate['count'],
             $viewerReview,
             $this->propertyCalendarAggregator->getCalendarLastUpdatedAt($property),
+            includeAllImages: $isOwner,
         );
     }
 }

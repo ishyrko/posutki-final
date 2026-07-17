@@ -9,6 +9,7 @@ use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\Street;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\DealType;
+use App\Domain\Property\Validation\PropertyImageLimitsValidator;
 
 final class PropertyDTO implements \JsonSerializable
 {
@@ -116,6 +117,7 @@ final class PropertyDTO implements \JsonSerializable
         int $reviewCount = 0,
         ?array $viewerReview = null,
         ?\DateTimeImmutable $calendarLastUpdatedAt = null,
+        bool $includeAllImages = false,
     ): self {
         $district = $city->getRegionDistrict();
         $region = $district?->getRegion();
@@ -126,6 +128,20 @@ final class PropertyDTO implements \JsonSerializable
         $contactName = $ownerContact['name'] ?? null;
         $ownerTelegram = $ownerContact['telegram'] ?? null;
         $ownerHasEmail = (bool) ($ownerContact['hasEmail'] ?? false);
+
+        $images = $property->getImages();
+        $instagramUrl = $property->getInstagramUrl();
+        $websiteUrl = $property->getWebsiteUrl();
+        $videoUrl = $property->getVideoUrl();
+        if (!$includeAllImages) {
+            $level = $property->getPlacementEffectiveLevel();
+            $images = PropertyImageLimitsValidator::visibleForPlacement($images, $level);
+            if (!PropertyImageLimitsValidator::allowsExtraMedia($level)) {
+                $instagramUrl = null;
+                $websiteUrl = null;
+                $videoUrl = null;
+            }
+        }
 
         return new self(
             id: $property->getId()->getValue(),
@@ -177,7 +193,7 @@ final class PropertyDTO implements \JsonSerializable
             regionName: $region?->getName(),
             latitude: $property->getCoordinates()->getLatitude(),
             longitude: $property->getCoordinates()->getLongitude(),
-            images: $property->getImages(),
+            images: $images,
             amenities: $property->getAmenities(),
             status: $property->getStatus(),
             moderationComment: $property->getModerationComment(),
@@ -205,9 +221,9 @@ final class PropertyDTO implements \JsonSerializable
             placementIsTrial: $property->isPlacementIsTrial(),
             freeTrialEndsAt: $property->getFreeTrialEndsAt(),
             additionalServices: $property->getAdditionalServices(),
-            instagramUrl: $property->getInstagramUrl(),
-            websiteUrl: $property->getWebsiteUrl(),
-            videoUrl: $property->getVideoUrl(),
+            instagramUrl: $instagramUrl,
+            websiteUrl: $websiteUrl,
+            videoUrl: $videoUrl,
             externalCalendarUrls: $property->getExternalCalendarUrls(),
             ratingAvg: $ratingAvg,
             reviewCount: $reviewCount,
