@@ -13,6 +13,10 @@ import {
     usePlacementPurchase,
     usePropertyPlacementPurchases,
 } from '@/features/placement/hooks';
+import {
+    formatPlacementPurchasePeriod,
+    formatPlacementPurchaseSummary,
+} from '@/features/placement/types';
 import { cn } from '@/lib/utils';
 
 function getApiErrorMessage(error: unknown, fallback: string): string {
@@ -177,23 +181,12 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
                             {purchase.level != null ? ` · VIP ${purchase.level}` : ''}
                         </dd>
                     </div>
-                    {purchase.durationMonths != null && (
+                    {formatPlacementPurchasePeriod(purchase) != null && (
                         <div>
                             <dt className="text-muted-foreground">Срок</dt>
                             <dd className="font-medium text-foreground">
-                                {purchase.durationMonths}{' '}
-                                {purchase.durationMonths === 1
-                                    ? 'месяц'
-                                    : purchase.durationMonths < 5
-                                      ? 'месяца'
-                                      : 'месяцев'}
+                                {formatPlacementPurchasePeriod(purchase)}
                             </dd>
-                        </div>
-                    )}
-                    {purchase.kind === 'boost' && (
-                        <div>
-                            <dt className="text-muted-foreground">Срок</dt>
-                            <dd className="font-medium text-foreground">24 часа</dd>
                         </div>
                     )}
                     <div>
@@ -269,9 +262,7 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
                                             {new Date(item.createdAt).toLocaleDateString('ru-RU')}
                                         </td>
                                         <td className="py-3 text-foreground">
-                                            {item.kindLabel}
-                                            {item.level != null ? ` (VIP ${item.level})` : ''},{' '}
-                                            {item.durationMonths} мес.
+                                            {formatPlacementPurchaseSummary(item)}
                                         </td>
                                         <td className="py-3 text-right font-medium">
                                             <span className="inline-flex items-baseline gap-1 justify-end">

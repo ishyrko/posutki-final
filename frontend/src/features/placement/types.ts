@@ -65,6 +65,38 @@ export interface PlacementPurchaseQuote {
 
 export const PLACEMENT_DURATIONS = [1, 3, 6, 12] as const;
 
+export function formatPlacementPurchasePeriod(
+    purchase: Pick<PlacementPurchase, 'kind' | 'durationMonths'>,
+): string | null {
+    if (purchase.kind === 'boost') {
+        return '24 часа';
+    }
+    if (purchase.durationMonths == null) {
+        return null;
+    }
+    if (purchase.durationMonths === 1) {
+        return '1 месяц';
+    }
+    if (purchase.durationMonths < 5) {
+        return `${purchase.durationMonths} месяца`;
+    }
+    return `${purchase.durationMonths} месяцев`;
+}
+
+export function formatPlacementPurchaseSummary(
+    purchase: Pick<PlacementPurchase, 'kind' | 'kindLabel' | 'level' | 'durationMonths'>,
+): string {
+    let summary = purchase.kindLabel;
+    if (purchase.level != null) {
+        summary += ` (VIP ${purchase.level})`;
+    }
+    const period = formatPlacementPurchasePeriod(purchase);
+    if (purchase.kind === 'level' && period != null) {
+        summary += `, ${period}`;
+    }
+    return summary;
+}
+
 /** 2 × daily tariff gap between current and next VIP level (monthly / 30), rounded up. */
 export function calcBoostPriceByn(
     currentLevel: number,

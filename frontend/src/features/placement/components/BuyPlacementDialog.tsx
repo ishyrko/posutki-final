@@ -189,13 +189,22 @@ export function BuyPlacementDialog({
                     <DialogTitle>
                         {mode === 'boost' ? 'Купить VIP-буст на 24 часа' : 'Купить VIP-размещение'}
                     </DialogTitle>
-                    <DialogDescription>
-                        {property.title}. VIP-ротация не гарантирует фиксированное место, но показывает
-                        объявление выше более низких уровней.
+                    <DialogDescription className="sr-only">
+                        {property.title}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 py-2">
+                    <div className="rounded-lg border border-border bg-muted/40 px-3 py-2.5">
+                        <p className="text-sm font-medium text-foreground leading-snug">
+                            {property.title}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            VIP-ротация не гарантирует фиксированное место, но показывает объявление
+                            выше более низких уровней.
+                        </p>
+                    </div>
+
                     {mode === 'level' && (
                         <div className="space-y-2">
                             <p className="text-sm font-medium text-foreground">VIP-уровень</p>
@@ -283,8 +292,7 @@ export function BuyPlacementDialog({
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                         Временно повышает объявление на один VIP-уровень (до VIP{' '}
-                                        {Math.min(baseLevel + 1, maxLevel)}). Цена = двойная разница
-                                        дневных тарифов текущего и следующего уровня.
+                                        {Math.min(baseLevel + 1, maxLevel)}).
                                         {boostActive
                                             ? ' Новая покупка продлит текущий буст на 24 часа после его окончания.'
                                             : ''}

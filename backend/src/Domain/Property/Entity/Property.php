@@ -910,23 +910,20 @@ class Property
     }
 
     /**
-     * Recalculate the base VIP level from the active level-purchase (or the one-time
-     * free trial), and the effective level considering an active boost capped at
-     * $maxLevel for the property's scope.
-     *
-     * @param array{level: int, expiresAt: \DateTimeImmutable}|null $activeLevelPurchase
+     * Refresh placement fields from the property row itself (source of truth).
+     * Does not read purchase/payment tables. Paid VIP expires by placementLevelExpiresAt;
+     * otherwise falls back to an active free trial, else VIP 0. Boost only affects effective level.
      */
     public function recomputePlacement(
-        ?array $activeLevelPurchase,
         ?\DateTimeImmutable $now = null,
         ?int $maxLevel = null,
     ): void {
         $now ??= new \DateTimeImmutable();
 
-        if ($activeLevelPurchase !== null) {
-            $this->placementBaseLevel = $activeLevelPurchase['level'];
-            $this->placementLevelExpiresAt = $activeLevelPurchase['expiresAt'];
-            $this->placementIsTrial = false;
+        $levelStillValid = $this->placementLevelExpiresAt !== null && $this->placementLevelExpiresAt > $now;
+
+        if ($levelStillValid && $this->placementBaseLevel > 0) {
+            // Keep base level / expiry / trial flag as stored on the property.
         } elseif ($this->freeTrialEndsAt !== null && $this->freeTrialEndsAt > $now) {
             $this->placementBaseLevel = 1;
             $this->placementLevelExpiresAt = $this->freeTrialEndsAt;
@@ -937,18 +934,49 @@ class Property
             $this->placementIsTrial = false;
         }
 
+        $this->recomputePlacementBoostOnly($now, $maxLevel);
+    }
+
+    /**
+     * Recalculate only placementEffectiveLevel based on the current placementBoostExpiresAt.
+     * placementBaseLevel / trial state must not be changed here (boost purchases should not affect base VIP).
+     */
+    public function recomputePlacementBoostOnly(
+        ?\DateTimeImmutable $now = null,
+        ?int $maxLevel = null,
+    ): void {
+        $now ??= new \DateTimeImmutable();
+
         if (!$this->isPlacementBoostActive($now)) {
             $this->placementBoostExpiresAt = null;
+            $this->placementEffectiveLevel = $this->placementBaseLevel;
+            $this->updatedAt = $now;
+
+            return;
         }
 
-        if ($this->placementBoostExpiresAt !== null) {
-            $cap = $maxLevel !== null ? max($maxLevel, $this->placementBaseLevel) : PropertyPlacementLevelPrice::MAX_LEVEL;
-            $this->placementEffectiveLevel = min($this->placementBaseLevel + 1, $cap);
-        } else {
-            $this->placementEffectiveLevel = $this->placementBaseLevel;
-        }
+        $cap = $maxLevel !== null ? max($maxLevel, $this->placementBaseLevel) : PropertyPlacementLevelPrice::MAX_LEVEL;
+        $this->placementEffectiveLevel = min($this->placementBaseLevel + 1, $cap);
 
         $this->updatedAt = $now;
+    }
+
+    /**
+     * Apply a paid VIP level purchase onto the property row (source of truth).
+     * Purchase records may mirror expiresAt for history, but runtime state lives here.
+     */
+    public function applyLevelPlacement(
+        int $level,
+        \DateTimeImmutable $expiresAt,
+        ?\DateTimeImmutable $now = null,
+        ?int $maxLevel = null,
+    ): void {
+        $now ??= new \DateTimeImmutable();
+
+        $this->placementBaseLevel = $level;
+        $this->placementLevelExpiresAt = $expiresAt;
+        $this->placementIsTrial = false;
+        $this->recomputePlacementBoostOnly($now, $maxLevel);
     }
 
     /**
@@ -964,7 +992,7 @@ class Property
             $this->freeTrialEndsAt = $from->modify('+1 month');
         }
 
-        $this->recomputePlacement(null, $from);
+        $this->recomputePlacement($from);
 
         if ($this->placementShuffleKey <= 0.0) {
             $this->reshufflePlacement();

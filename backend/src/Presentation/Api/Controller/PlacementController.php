@@ -152,13 +152,19 @@ final class PlacementController extends AbstractController
         }
 
         $quote = $this->placementService->quoteLevelPurchase($property, $levelPrice, $durationMonths);
-        $anchor = $quote['anchorPurchase'];
+
+        $currentLevel = $property->getPlacementBaseLevel();
+        $currentExpiresAt = $property->getPlacementLevelExpiresAt();
+        if ($currentLevel <= 0 || $currentExpiresAt === null) {
+            $currentLevel = null;
+            $currentExpiresAt = null;
+        }
 
         return $this->json(ApiResponse::success([
             'mode' => $quote['mode'],
             'priceByn' => $quote['priceByn'],
-            'currentLevel' => $anchor?->getLevel(),
-            'currentExpiresAt' => $anchor?->getExpiresAt()?->format('c'),
+            'currentLevel' => $currentLevel,
+            'currentExpiresAt' => $currentExpiresAt?->format('c'),
             'targetExpiresAt' => $quote['expiresAtPreview']?->format('c'),
         ]));
     }

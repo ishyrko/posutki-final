@@ -92,9 +92,8 @@ export function TariffsPageContent() {
                 <div className="rounded-xl border border-border bg-card p-5 shadow-card">
                     <h2 className="font-semibold text-foreground mb-2">VIP-буст на 24 часа</h2>
                     <p className="text-sm text-muted-foreground mb-3">
-                        Временно повышает объявление на один VIP-уровень. Цена = двойная разница
-                        дневных тарифов текущего и следующего уровня (месячная цена ÷ 30). На
-                        максимальном уровне буст недоступен.
+                        Временно повышает объявление на один VIP-уровень. На максимальном уровне буст
+                        недоступен.
                     </p>
                     {boostPrices.length > 0 ? (
                         <ul className="space-y-1.5 text-sm">

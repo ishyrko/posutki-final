@@ -6,18 +6,8 @@ import { CreditCard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BynCurrencyMark } from '@/components/BynCurrency';
 import { useMyPlacementPurchases } from '@/features/placement/hooks';
-import { isPlacementPurchasePayable, type PlacementPurchase } from '@/features/placement/types';
+import { isPlacementPurchasePayable, formatPlacementPurchaseSummary, type PlacementPurchase } from '@/features/placement/types';
 import { cn } from '@/lib/utils';
-
-function formatDuration(months: number): string {
-    if (months === 1) {
-        return '1 месяц';
-    }
-    if (months < 5) {
-        return `${months} месяца`;
-    }
-    return `${months} месяцев`;
-}
 
 function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString('ru-RU', {
@@ -50,11 +40,7 @@ function PurchaseRow({ purchase }: { purchase: PlacementPurchase }) {
                         )}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        {purchase.kindLabel}
-                        {purchase.level != null ? ` · VIP ${purchase.level}` : ''}
-                        {purchase.durationMonths != null
-                            ? ` · ${formatDuration(purchase.durationMonths)}`
-                            : ''}
+                        {formatPlacementPurchaseSummary(purchase)}
                     </p>
                     <p className="text-xs text-muted-foreground">
                         Создана {formatDate(purchase.createdAt)}

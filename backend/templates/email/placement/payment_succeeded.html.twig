@@ -38,6 +38,8 @@
       <p class="details-row"><strong>Тип:</strong> {{ kindLabel }}{% if purchase.level %} · VIP {{ purchase.level }}{% endif %}</p>
       {% if purchase.durationMonths %}
       <p class="details-row"><strong>Срок:</strong> {{ purchase.durationMonths }} мес.</p>
+      {% elseif purchase.kind == 'boost' %}
+      <p class="details-row"><strong>Срок:</strong> 24 часа</p>
       {% endif %}
       <p class="details-row"><strong>Сумма:</strong> {{ purchase.priceByn }} BYN</p>
       {% if expiresAtFormatted %}

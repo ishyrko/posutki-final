@@ -30,6 +30,7 @@ final class PropertyPlacementServiceTest extends TestCase
         $property = $this->createProperty($ownerId);
         $now = new \DateTimeImmutable('2026-07-16 12:00:00');
         $anchorExpiresAt = $now->modify('+2 months');
+        $this->setPlacementState($property, level: 2, expiresAt: $anchorExpiresAt);
 
         $anchor = new PropertyPlacementPurchase(
             propertyId: 10,
@@ -62,7 +63,6 @@ final class PropertyPlacementServiceTest extends TestCase
         $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
         $purchaseRepository->method('findById')->with(50)->willReturn($anchor);
         $purchaseRepository->expects(self::exactly(2))->method('save');
-        $purchaseRepository->method('findActiveLevelByPropertyId')->willReturn($upgradePurchase);
         $purchaseRepository->method('countOccupiedForLevelPrice')->willReturn(0);
 
         $levelPriceRepository = $this->createMock(PropertyPlacementLevelPriceRepositoryInterface::class);
@@ -86,6 +86,7 @@ final class PropertyPlacementServiceTest extends TestCase
         self::assertSame(PlacementPurchaseStatus::Active->value, $upgradePurchase->getStatus());
         self::assertEquals($anchorExpiresAt, $upgradePurchase->getExpiresAt());
         self::assertSame(3, $property->getPlacementBaseLevel());
+        self::assertEquals($anchorExpiresAt, $property->getPlacementLevelExpiresAt());
     }
 
     public function testActivatePurchaseExtendsAnchorExpiryOnRenewal(): void
@@ -94,6 +95,7 @@ final class PropertyPlacementServiceTest extends TestCase
         $property = $this->createProperty($ownerId);
         $now = new \DateTimeImmutable('2026-07-16 12:00:00');
         $anchorExpiresAt = $now->modify('+3 months');
+        $this->setPlacementState($property, level: 2, expiresAt: $anchorExpiresAt);
 
         $anchor = new PropertyPlacementPurchase(
             propertyId: 10,
@@ -126,7 +128,6 @@ final class PropertyPlacementServiceTest extends TestCase
         $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
         $purchaseRepository->method('findById')->with(60)->willReturn($anchor);
         $purchaseRepository->expects(self::exactly(2))->method('save');
-        $purchaseRepository->method('findActiveLevelByPropertyId')->willReturn($renewalPurchase);
         $purchaseRepository->method('countOccupiedForLevelPrice')->willReturn(0);
 
         $levelPriceRepository = $this->createMock(PropertyPlacementLevelPriceRepositoryInterface::class);
@@ -150,6 +151,8 @@ final class PropertyPlacementServiceTest extends TestCase
 
         self::assertSame(PlacementPurchaseStatus::Superseded->value, $anchor->getStatus());
         self::assertEquals($expectedExpiresAt, $renewalPurchase->getExpiresAt());
+        self::assertSame(2, $property->getPlacementBaseLevel());
+        self::assertEquals($expectedExpiresAt, $property->getPlacementLevelExpiresAt());
     }
 
     public function testQuoteBoostPurchaseIsTwiceDailyGapToNextLevel(): void
@@ -213,11 +216,63 @@ final class PropertyPlacementServiceTest extends TestCase
         self::assertSame(4, $service->quoteBoostPurchase($property));
     }
 
+    public function testActivateBoostKeepsExistingBaseLevelFromProperty(): void
+    {
+        $ownerId = Id::fromInt(7);
+        $property = $this->createProperty($ownerId);
+        $now = new \DateTimeImmutable('2026-07-17 10:00:00');
+
+        // The base VIP is stored on the property row and must not be recomputed on boost activation.
+        $this->setPlacementBaseLevel($property, 1);
+
+        $boostPurchase = new PropertyPlacementPurchase(
+            propertyId: 10,
+            ownerId: $ownerId,
+            kind: PlacementPurchaseKind::Boost->value,
+            priceByn: 4,
+            source: 'self_service',
+        );
+
+        $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
+        $purchaseRepository->expects(self::once())->method('save')->with($boostPurchase);
+        $purchaseRepository->expects(self::never())->method('findActiveLevelByPropertyId');
+
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository->expects(self::once())->method('save')->with($property);
+
+        $service = new PropertyPlacementService(
+            $propertyRepository,
+            $purchaseRepository,
+            $this->createStub(PropertyPlacementLevelPriceRepositoryInterface::class),
+            $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
+            $this->createStub(CityRepositoryInterface::class),
+            $this->createStub(UserRepositoryInterface::class),
+        );
+
+        $service->activatePurchase($boostPurchase, $property, null, $now);
+
+        self::assertSame(1, $property->getPlacementBaseLevel());
+        self::assertSame(2, $property->getPlacementEffectiveLevel());
+    }
+
     private function setPlacementBaseLevel(Property $property, int $level): void
     {
         $reflection = new \ReflectionProperty($property, 'placementBaseLevel');
         $reflection->setAccessible(true);
         $reflection->setValue($property, $level);
+    }
+
+    private function setPlacementState(Property $property, int $level, \DateTimeImmutable $expiresAt): void
+    {
+        $this->setPlacementBaseLevel($property, $level);
+
+        $expiresReflection = new \ReflectionProperty($property, 'placementLevelExpiresAt');
+        $expiresReflection->setAccessible(true);
+        $expiresReflection->setValue($property, $expiresAt);
+
+        $effectiveReflection = new \ReflectionProperty($property, 'placementEffectiveLevel');
+        $effectiveReflection->setAccessible(true);
+        $effectiveReflection->setValue($property, $level);
     }
 
     private function createProperty(Id $ownerId): Property

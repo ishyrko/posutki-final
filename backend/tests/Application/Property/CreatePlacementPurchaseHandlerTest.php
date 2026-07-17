@@ -69,6 +69,7 @@ final class CreatePlacementPurchaseHandlerTest extends TestCase
             expiresAt: new \DateTimeImmutable('+2 months'),
             id: 50,
         );
+        $this->setPropertyPlacement(level: 3, expiresAt: $anchor->getExpiresAt());
 
         $handler = $this->createHandler(anchor: $anchor, expectSave: false);
 
@@ -92,6 +93,7 @@ final class CreatePlacementPurchaseHandlerTest extends TestCase
             expiresAt: new \DateTimeImmutable('+3 months'),
             id: 51,
         );
+        $this->setPropertyPlacement(level: 2, expiresAt: $anchor->getExpiresAt());
 
         $savedPurchase = null;
         $handler = $this->createHandler(
@@ -125,6 +127,7 @@ final class CreatePlacementPurchaseHandlerTest extends TestCase
             expiresAt: new \DateTimeImmutable('+10 months'),
             id: 52,
         );
+        $this->setPropertyPlacement(level: 2, expiresAt: $anchor->getExpiresAt());
 
         $handler = $this->createHandler(anchor: $anchor, expectSave: false);
 
@@ -149,6 +152,7 @@ final class CreatePlacementPurchaseHandlerTest extends TestCase
             expiresAt: $anchorExpiresAt,
             id: 53,
         );
+        $this->setPropertyPlacement(level: 2, expiresAt: $anchorExpiresAt);
 
         $savedPurchase = null;
         $handler = $this->createHandler(
@@ -331,5 +335,20 @@ final class CreatePlacementPurchaseHandlerTest extends TestCase
         $idReflection->setValue($purchase, $id);
 
         return $purchase;
+    }
+
+    private function setPropertyPlacement(int $level, ?\DateTimeImmutable $expiresAt): void
+    {
+        $baseReflection = new \ReflectionProperty($this->property, 'placementBaseLevel');
+        $baseReflection->setAccessible(true);
+        $baseReflection->setValue($this->property, $level);
+
+        $expiresReflection = new \ReflectionProperty($this->property, 'placementLevelExpiresAt');
+        $expiresReflection->setAccessible(true);
+        $expiresReflection->setValue($this->property, $expiresAt);
+
+        $effectiveReflection = new \ReflectionProperty($this->property, 'placementEffectiveLevel');
+        $effectiveReflection->setAccessible(true);
+        $effectiveReflection->setValue($this->property, $level);
     }
 }
