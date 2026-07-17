@@ -6,7 +6,6 @@ import { usePlacementLevels, usePlacementScope } from '@/features/placement/hook
 import {
     calcBoostPriceByn,
     MAX_VISIBLE_PHOTOS_FREE_PLACEMENT,
-    placementLevelLabel,
     type PlacementPropertyType,
     type PlacementTariffScope,
 } from '@/features/placement/types';
@@ -54,19 +53,6 @@ export function TariffsPageContent() {
     const levels = levelsData?.levels ?? [];
     const { data: scopeSettings } = usePlacementScope(tariffScope);
 
-    const maxLevel = scopeSettings?.maxLevel ?? 5;
-    const boostPrices = useMemo(() => {
-        const rows: { from: number; to: number; priceByn: number }[] = [];
-        for (let from = 0; from < maxLevel; from += 1) {
-            const priceByn = calcBoostPriceByn(from, levels);
-            if (priceByn == null) {
-                continue;
-            }
-            rows.push({ from, to: from + 1, priceByn });
-        }
-        return rows;
-    }, [levels, maxLevel]);
-
     const locationLabel =
         propertyType === 'house'
             ? selectedRegion?.name ?? 'область'
@@ -110,34 +96,11 @@ export function TariffsPageContent() {
 
                 <div className="rounded-xl border border-border bg-card p-5 shadow-card">
                     <h2 className="font-semibold text-foreground mb-2">VIP-буст на 24 часа</h2>
-                    <p className="text-sm text-muted-foreground mb-3">
-                        Временно повышает объявление на один VIP-уровень. На максимальном уровне буст
+                    <p className="text-sm text-muted-foreground">
+                        Временно повышает объявление на один VIP-уровень. Стоимость зависит от города
+                        (или области для домов) и указана в таблице цен. На максимальном уровне буст
                         недоступен.
                     </p>
-                    {boostPrices.length > 0 ? (
-                        <ul className="space-y-1.5 text-sm">
-                            {boostPrices.map((row) => (
-                                <li
-                                    key={`${row.from}-${row.to}`}
-                                    className="flex items-baseline justify-between gap-3"
-                                >
-                                    <span className="text-muted-foreground">
-                                        {placementLevelLabel(row.from)} → {placementLevelLabel(row.to)}
-                                    </span>
-                                    <span className="font-semibold text-foreground inline-flex items-baseline gap-1">
-                                        {row.priceByn} <BynCurrencyMark />
-                                        <span className="text-xs font-normal text-muted-foreground">
-                                            / 24 ч
-                                        </span>
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">
-                            Для выбранной локации тарифы VIP-уровней пока не заданы.
-                        </p>
-                    )}
                 </div>
 
                 <div
@@ -214,9 +177,7 @@ export function TariffsPageContent() {
                         <tr className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
                             <th className="text-left py-3 px-4 font-medium">Уровень</th>
                             <th className="text-right py-3 px-4 font-medium">Цена</th>
-                            <th className="text-right py-3 px-4 font-medium hidden sm:table-cell">
-                                Места
-                            </th>
+                            <th className="text-right py-3 px-4 font-medium">Буст / 24 ч</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -235,26 +196,35 @@ export function TariffsPageContent() {
                                 </td>
                             </tr>
                         ) : (
-                            levels.map((item) => (
-                                <tr key={item.id} className="border-b border-border last:border-0">
-                                    <td className="py-3 px-4 text-foreground font-medium">
-                                        {item.label}
-                                    </td>
-                                    <td className="py-3 px-4 text-right font-semibold text-foreground">
-                                        <span className="inline-flex items-baseline gap-1 justify-end">
-                                            {item.priceBynPerMonth} <BynCurrencyMark />
-                                            <span className="text-xs font-normal text-muted-foreground">
-                                                /мес
+                            levels.map((item) => {
+                                const boostPriceByn = calcBoostPriceByn(item.level - 1, levels);
+                                return (
+                                    <tr key={item.id} className="border-b border-border last:border-0">
+                                        <td className="py-3 px-4 text-foreground font-medium">
+                                            {item.label}
+                                        </td>
+                                        <td className="py-3 px-4 text-right font-semibold text-foreground">
+                                            <span className="inline-flex items-baseline gap-1 justify-end">
+                                                {item.priceBynPerMonth} <BynCurrencyMark />
+                                                <span className="text-xs font-normal text-muted-foreground">
+                                                    /мес
+                                                </span>
                                             </span>
-                                        </span>
-                                    </td>
-                                    <td className="py-3 px-4 text-right text-muted-foreground hidden sm:table-cell">
-                                        {item.capacity != null
-                                            ? `${item.occupied} / ${item.capacity}`
-                                            : 'без лимита'}
-                                    </td>
-                                </tr>
-                            ))
+                                        </td>
+                                        <td className="py-3 px-4 text-right font-semibold text-foreground">
+                                            {boostPriceByn != null ? (
+                                                <span className="inline-flex items-baseline gap-1 justify-end">
+                                                    {boostPriceByn} <BynCurrencyMark />
+                                                </span>
+                                            ) : (
+                                                <span className="font-normal text-muted-foreground">
+                                                    —
+                                                </span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>
