@@ -65,7 +65,7 @@ const Footer = () => {
             <h4 className="font-display font-semibold text-primary-foreground mb-4 text-sm">Владельцам</h4>
             <ul className="space-y-2.5">
               {[
-                { label: "Разместить жильё", link: "listing" as const },
+                { label: "Разместить жильё бесплатно", link: "listing" as const },
                 { label: "Тарифы", href: "/tarify/" },
                 { label: "Личный кабинет", href: "/kabinet/" },
               ].map((item) => (

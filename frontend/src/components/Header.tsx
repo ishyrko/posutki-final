@@ -269,8 +269,12 @@ const Header = () => {
         <div className="hidden md:flex items-center gap-2">
           <HeaderCurrencyStrip variant="desktopToolbar" />
           <Link href="/izbrannoe/" className="relative inline-flex">
-            <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
-              <Heart className="h-5 w-5" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative h-10 w-10 text-muted-foreground hover:text-foreground [&_svg]:!size-6"
+            >
+              <Heart />
               <FavoritesCountBadge count={favoritesCount} />
             </Button>
           </Link>
