@@ -12,7 +12,7 @@ final class PropertyImageLimitsValidator
     public const MIN = 3;
     public const MAX_APARTMENT = 20;
     public const MAX_HOUSE = 30;
-    /** Max photos shown publicly for free placement (VIP 0). */
+    /** Max photos shown publicly for free placement. */
     public const MAX_VISIBLE_FREE_PLACEMENT = 5;
 
     public static function maxForType(string $propertyType): int

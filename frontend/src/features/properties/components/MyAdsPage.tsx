@@ -25,7 +25,18 @@ import { Property, formatAddress, isPropertyEditable } from '@/features/properti
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
 import { BuyPlacementDialog } from '@/features/placement/components/BuyPlacementDialog';
-import { formatPlacementStatus, isPlacementBoostActive } from '@/features/placement/types';
+import {
+    FREE_PLACEMENT_LIMITS_HREF,
+    formatPlacementStatus,
+    isPlacementBoostActive,
+    placementBadgeLabel,
+} from '@/features/placement/types';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export type MyAdsStatus = 'published' | 'moderation' | 'rejected' | 'inactive';
 
@@ -114,6 +125,7 @@ function ListingCard({
         property.address?.citySlug,
     );
     const boostActive = isPlacementBoostActive(property.placementBoostExpiresAt);
+    const vipBadge = placementBadgeLabel(property.placementEffectiveLevel);
     const { daysUntilDelete, canDelete, showDeleteButton } = getDeleteEligibility(property);
 
     const imageBlock = (
@@ -168,14 +180,41 @@ function ListingCard({
                                     {property.title}
                                 </span>
                             )}
-                            <span className={`inline-flex mt-2 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${statusConfig.className}`}>
-                                {statusConfig.label}
-                            </span>
-                            {property.pendingRevisionStatus === 'pending' && (
-                                <span className="inline-flex mt-2 ml-2 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-blue-100 text-blue-800">
-                                    Изменения на проверке
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                                <span className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${statusConfig.className}`}>
+                                    {statusConfig.label}
                                 </span>
-                            )}
+                                {vipBadge ? (
+                                    <span className="inline-flex text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap bg-amber-500 text-white">
+                                        {vipBadge}
+                                    </span>
+                                ) : property.status === 'published' ? (
+                                    <TooltipProvider delayDuration={300}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-muted text-muted-foreground">
+                                                    Бесплатно
+                                                    <Link
+                                                        href={FREE_PLACEMENT_LIMITS_HREF}
+                                                        className="underline underline-offset-2 hover:text-foreground transition-colors"
+                                                    >
+                                                        с ограничениями
+                                                    </Link>
+                                                </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="bottom" className="max-w-xs text-center">
+                                                Ограничения бесплатного размещения (фото, видео, Instagram,
+                                                сайт) описаны на странице тарифов
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                ) : null}
+                                {property.pendingRevisionStatus === 'pending' && (
+                                    <span className="inline-flex text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-blue-100 text-blue-800">
+                                        Изменения на проверке
+                                    </span>
+                                )}
+                            </div>
                         </div>
                         <div className="text-lg font-bold text-foreground whitespace-nowrap sm:text-right space-y-0.5">
                             <div><PriceInByn amount={primaryAmount} /></div>

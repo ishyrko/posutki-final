@@ -912,7 +912,7 @@ class Property
     /**
      * Refresh placement fields from the property row itself (source of truth).
      * Does not read purchase/payment tables. Paid VIP expires by placementLevelExpiresAt;
-     * otherwise falls back to an active free trial, else VIP 0. Boost only affects effective level.
+     * otherwise falls back to an active free trial, else free placement. Boost only affects effective level.
      */
     public function recomputePlacement(
         ?\DateTimeImmutable $now = null,
@@ -980,7 +980,7 @@ class Property
     }
 
     /**
-     * First publish placement: optional one-time free VIP 1 trial, otherwise free tier (VIP 0).
+     * First publish placement: optional one-time free VIP 1 trial, otherwise free placement.
      */
     public function applyInitialPlacement(\DateTimeImmutable $from, bool $grantFreeTrial): void
     {

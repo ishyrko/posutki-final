@@ -6,6 +6,7 @@ import { usePlacementLevels, usePlacementScope } from '@/features/placement/hook
 import {
     calcBoostPriceByn,
     MAX_VISIBLE_PHOTOS_FREE_PLACEMENT,
+    placementLevelLabel,
     type PlacementPropertyType,
     type PlacementTariffScope,
 } from '@/features/placement/types';
@@ -104,7 +105,7 @@ export function TariffsPageContent() {
                                     className="flex items-baseline justify-between gap-3"
                                 >
                                     <span className="text-muted-foreground">
-                                        VIP {row.from} → {row.to}
+                                        {placementLevelLabel(row.from)} → {placementLevelLabel(row.to)}
                                     </span>
                                     <span className="font-semibold text-foreground inline-flex items-baseline gap-1">
                                         {row.priceByn} <BynCurrencyMark />
@@ -122,8 +123,11 @@ export function TariffsPageContent() {
                     )}
                 </div>
 
-                <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-                    <h2 className="font-semibold text-foreground mb-2">Бесплатное размещение (VIP 0)</h2>
+                <div
+                    id="besplatnoe"
+                    className="rounded-xl border border-border bg-card p-5 shadow-card scroll-mt-24"
+                >
+                    <h2 className="font-semibold text-foreground mb-2">Бесплатное размещение</h2>
                     <p className="text-sm text-muted-foreground">
                         После окончания пробного периода или оплаченного VIP объявление остаётся в
                         каталоге на бесплатном уровне с более низкой позицией. На публичной карточке

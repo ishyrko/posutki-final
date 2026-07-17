@@ -193,8 +193,19 @@ export function placementBadgeLabel(placementEffectiveLevel?: number | null): st
     return `VIP ${level}`;
 }
 
-/** Public gallery size for free placement (VIP 0); VIP and trial show all photos. */
+/** User-facing label for a placement level (free tier has no VIP number). */
+export function placementLevelLabel(level: number): string {
+    if (level <= 0) {
+        return 'Бесплатно';
+    }
+    return `VIP ${level}`;
+}
+
+/** Public gallery size for free placement; VIP and trial show all photos. */
 export const MAX_VISIBLE_PHOTOS_FREE_PLACEMENT = 5;
+
+/** Tariffs page anchor describing free-tier limits (photos, video, Instagram, website). */
+export const FREE_PLACEMENT_LIMITS_HREF = '/tarify/#besplatnoe';
 
 export function isPlacementBoostActive(placementBoostExpiresAt?: string | null): boolean {
     if (!placementBoostExpiresAt) {
