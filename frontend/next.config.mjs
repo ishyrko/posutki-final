@@ -8,6 +8,7 @@ const lowMemoryBuild = process.env.NEXT_LOW_MEMORY_BUILD === "1";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   trailingSlash: true,
+  poweredByHeader: false,
   /** Shared hosting (cPanel, ≤3 GB RAM): single worker, lower webpack peak RSS. */
   ...(lowMemoryBuild
     ? {
