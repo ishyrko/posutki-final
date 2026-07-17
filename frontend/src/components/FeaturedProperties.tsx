@@ -36,7 +36,7 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
       dealType: "daily" as const,
       types: [...RESIDENTIAL_PROPERTY_TYPES],
       limit: 4,
-      sortBy: "createdAt" as const,
+      sortBy: "publishedAt" as const,
       sortOrder: "DESC" as const,
     }),
     [effectiveRegionSlug],

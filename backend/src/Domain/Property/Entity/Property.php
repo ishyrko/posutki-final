@@ -1531,11 +1531,12 @@ class Property
         $isFirstPublish = $this->publishedAt === null;
         $this->status = 'published';
         $this->moderationComment = null;
-        $this->publishedAt = $now;
-        $this->archivedAt = null;
+        // Keep the original first-publication timestamp on re-approve after archive/edit.
         if ($isFirstPublish) {
+            $this->publishedAt = $now;
             $this->applyInitialPlacement($now, $grantFreeTrial);
         }
+        $this->archivedAt = null;
         $this->updatedAt = $now;
     }
 

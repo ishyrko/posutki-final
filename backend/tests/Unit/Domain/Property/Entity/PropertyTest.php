@@ -93,6 +93,21 @@ final class PropertyTest extends TestCase
         self::assertNull($property->getArchivedAt());
     }
 
+    public function testReApproveKeepsFirstPublishedAt(): void
+    {
+        $property = $this->createProperty();
+        $property->publish();
+        $property->approve();
+        $firstPublishedAt = $property->getPublishedAt();
+        self::assertNotNull($firstPublishedAt);
+
+        $property->archive();
+        $property->publish();
+        $property->approve();
+
+        self::assertEquals($firstPublishedAt, $property->getPublishedAt());
+    }
+
     public function testDeleteMarksPropertyAsDeleted(): void
     {
         $property = $this->createProperty();

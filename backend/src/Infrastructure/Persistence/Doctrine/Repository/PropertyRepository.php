@@ -66,20 +66,26 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
 
         $this->applyFilters($qb, $filters);
 
-        $this->applyPlacementSort($qb);
-
-        // User sort within the same effective VIP level (after shuffle). Skip createdAt —
-        // default catalog order is fully covered by the placement composite index.
         $sortBy = $filters['sortBy'] ?? 'createdAt';
         $sortOrder = $filters['sortOrder'] ?? 'DESC';
         if (!in_array($sortOrder, ['ASC', 'DESC'], true)) {
             $sortOrder = 'DESC';
         }
 
-        // API uses sortBy=price; DB stores comparable totals in price_byn
-        if ($sortBy === 'area' || $sortBy === 'price') {
-            $sortField = $sortBy === 'area' ? 'area' : 'priceByn';
-            $qb->addOrderBy('p.' . $sortField, $sortOrder);
+        // Recency by first publication — skip VIP/shuffle (homepage «Свежие объявления»).
+        if ($sortBy === 'publishedAt') {
+            $qb->orderBy('p.publishedAt', $sortOrder)
+                ->addOrderBy('p.id', $sortOrder);
+        } else {
+            $this->applyPlacementSort($qb);
+
+            // User sort within the same effective VIP level (after shuffle). Skip createdAt —
+            // default catalog order is fully covered by the placement composite index.
+            // API uses sortBy=price; DB stores comparable totals in price_byn
+            if ($sortBy === 'area' || $sortBy === 'price') {
+                $sortField = $sortBy === 'area' ? 'area' : 'priceByn';
+                $qb->addOrderBy('p.' . $sortField, $sortOrder);
+            }
         }
 
         $qb->setFirstResult(($page - 1) * $limit)

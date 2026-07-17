@@ -10,7 +10,7 @@ export async function fetchFeaturedPropertiesForHome(regionSlug: string): Promis
     const params = new URLSearchParams();
     params.set("limit", "4");
     params.set("types", [...RESIDENTIAL_PROPERTY_TYPES].join(","));
-    params.set("sortBy", "createdAt");
+    params.set("sortBy", "publishedAt");
     params.set("sortOrder", "DESC");
     params.set("regionSlug", regionSlug);
     params.set("dealType", "daily");
