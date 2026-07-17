@@ -77,9 +77,22 @@ export function TariffsPageContent() {
             <h1 className="font-display text-3xl font-bold text-foreground mb-3">
                 VIP-тарифы размещения
             </h1>
+
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-4 mb-5">
+                <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                    <Check className="w-4 h-4 text-primary" />
+                    Бесплатный VIP 1 на месяц
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                    Один раз на аккаунт: после первой публикации одно объявление автоматически
+                    получает бесплатный VIP 1 на 1 месяц. Остальные объявления сразу на бесплатном
+                    уровне.
+                </p>
+            </div>
+
             <p className="text-muted-foreground mb-8">
                 Чем выше VIP-уровень, тем выше объявление в каталоге. Внутри одного уровня объявления
-                ротируются — конкретная позиция не гарантируется. Один раз на аккаунт доступен
+                ротируются случайным образом каждые 5 минут. Один раз на аккаунт доступен
                 бесплатный VIP 1 на месяц для одного объявления. При оплате на 3, 6 или 12 месяцев
                 действует скидка 5%, 10% и 20%.
             </p>
@@ -138,18 +151,6 @@ export function TariffsPageContent() {
                         показываются не более {MAX_VISIBLE_PHOTOS_FREE_PLACEMENT} фотографий; видео,
                         Instagram и сайт скрыты. Все данные сохраняются и снова отображаются после
                         перехода на VIP.
-                    </p>
-                </div>
-
-                <div className="rounded-xl border border-primary/30 bg-primary/5 p-5">
-                    <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                        <Check className="w-4 h-4 text-primary" />
-                        Бесплатный VIP 1 на месяц
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                        Один раз на аккаунт: после первой публикации одно объявление автоматически
-                        получает бесплатный VIP 1 на 1 месяц. Остальные объявления сразу на бесплатном
-                        уровне.
                     </p>
                 </div>
             </div>
