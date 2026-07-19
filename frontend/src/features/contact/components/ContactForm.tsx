@@ -64,7 +64,7 @@ export function ContactForm() {
             transition={{ duration: 0.4 }}
             className="mx-auto max-w-3xl text-center"
         >
-            <h1 className="mb-3 font-display text-3xl font-bold text-foreground">Обратная связь</h1>
+            <h2 className="mb-3 font-display text-2xl font-bold text-foreground">Обратная связь</h2>
             <p className="mb-8 text-muted-foreground">
                 Напишите нам, если нужна помощь по объявлениям или работе сервиса.
             </p>

@@ -6,6 +6,8 @@ export const COMPANY = {
   registrationAuthority: "Минский горисполком",
   address: "г. Минск, ул. Кальварийская, 4, кв. 101",
   workingHours: "Пн–Пт 10:00–18:00",
+  supportOnline: "круглосуточно",
+  supportDaysOff: "Сб–Вс",
   email: "info@posutki.by",
   phone: "+375333556699",
   phoneDisplay: "+375 (33) 355-66-99",
