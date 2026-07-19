@@ -17,8 +17,40 @@ import { Separator } from '@/components/ui/separator';
 import { PhoneAuthPanel } from '@/features/sms-auth/components/PhoneAuthPanel';
 import { GoogleMark } from './GoogleMark';
 import { AuthBrandLogo } from './AuthBrandLogo';
+import { toast } from 'sonner';
 
 type RegisterMethod = 'email' | 'phone';
+
+function RegisterConsentField({
+    id,
+    checked,
+    onCheckedChange,
+}: {
+    id: string;
+    checked: boolean;
+    onCheckedChange: (checked: boolean) => void;
+}) {
+    return (
+        <div className="flex items-start gap-2">
+            <Checkbox
+                id={id}
+                checked={checked}
+                onCheckedChange={(v) => onCheckedChange(v === true)}
+                className="mt-0.5"
+            />
+            <label htmlFor={id} className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                Подтверждаю{' '}
+                <Link href="/soglasie-na-obrabotku-personalnyh-dannyh/" className="text-primary hover:underline">
+                    согласие на обработку персональных данных
+                </Link>{' '}
+                и ознакомление с{' '}
+                <Link href="/politika-konfidentsialnosti/" className="text-primary hover:underline">
+                    политикой конфиденциальности
+                </Link>
+            </label>
+        </div>
+    );
+}
 
 const registerUiSchema = z.object({
     fullName: z.string().min(1, 'Укажите имя и фамилию'),
@@ -100,11 +132,24 @@ export function RegisterForm() {
                             <p className="text-muted-foreground text-sm mt-1">Присоединяйтесь к сервису посуточной аренды</p>
                         </div>
 
+                        <RegisterConsentField
+                            id="agree-register"
+                            checked={agreed}
+                            onCheckedChange={setAgreed}
+                        />
+
                         <Button
                             type="button"
                             variant="outline"
-                            className="w-full h-12 text-sm font-medium gap-3"
-                            onClick={triggerGoogleLogin}
+                            className="w-full h-12 text-sm font-medium gap-3 mt-4"
+                            disabled={!agreed}
+                            onClick={() => {
+                                if (!agreed) {
+                                    toast.error('Подтвердите согласие на обработку персональных данных');
+                                    return;
+                                }
+                                triggerGoogleLogin();
+                            }}
                         >
                             <GoogleMark className="w-5 h-5" />
                             Зарегистрироваться через Google
@@ -201,24 +246,6 @@ export function RegisterForm() {
                                         <p className="text-destructive text-xs">{form.formState.errors.password.message}</p>
                                     )}
                                 </div>
-                                <div className="flex items-start gap-2">
-                                    <Checkbox
-                                        id="agree-email"
-                                        checked={agreed}
-                                        onCheckedChange={(v) => setAgreed(v === true)}
-                                        className="mt-0.5"
-                                    />
-                                    <label htmlFor="agree-email" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
-                                        Я согласен с{' '}
-                                        <Link href="/politika-konfidentsialnosti/" className="text-primary hover:underline">
-                                            Политикой конфиденциальности
-                                        </Link>{' '}
-                                        и{' '}
-                                        <Link href="/usloviya-ispolzovaniya/" className="text-primary hover:underline">
-                                            условиями использования
-                                        </Link>
-                                    </label>
-                                </div>
                                 <Button type="submit" disabled={!agreed || isPending} className="w-full h-11">
                                     {isPending ? 'Загрузка...' : 'Создать аккаунт'}
                                 </Button>
@@ -228,29 +255,6 @@ export function RegisterForm() {
                                 key="register-phone"
                                 redirectAfter="/kabinet/"
                                 consentAccepted={agreed}
-                                consentSlot={
-                                    <div className="flex items-start gap-2">
-                                        <Checkbox
-                                            id="agree-phone"
-                                            checked={agreed}
-                                            onCheckedChange={(v) => setAgreed(v === true)}
-                                            className="mt-0.5"
-                                        />
-                                        <label
-                                            htmlFor="agree-phone"
-                                            className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
-                                        >
-                                            Я согласен с{' '}
-                                            <Link href="/politika-konfidentsialnosti/" className="text-primary hover:underline">
-                                                Политикой конфиденциальности
-                                            </Link>{' '}
-                                            и{' '}
-                                            <Link href="/usloviya-ispolzovaniya/" className="text-primary hover:underline">
-                                                условиями использования
-                                            </Link>
-                                        </label>
-                                    </div>
-                                }
                             />
                         )}
 

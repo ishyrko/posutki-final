@@ -6,15 +6,15 @@ import StaticPageLayoutClient from "@/features/staticPages/StaticPageLayoutClien
 
 export const revalidate = false;
 
-const SLUG = "politika-obrabotki-personalnyh-dannyh";
+const SLUG = "soglasie-na-obrabotku-personalnyh-dannyh";
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = await fetchStaticPage(SLUG);
   if (!page) {
     return {
-      title: "Политика обработки персональных данных | Посутки.by",
+      title: "Согласие на обработку персональных данных | Посутки.by",
       description:
-        "Порядок обработки персональных данных пользователей сервиса Posutki.by.",
+        "Согласие субъекта персональных данных на обработку данных при использовании Posutki.by.",
     };
   }
   return {
@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function PersonalDataPolicyPage() {
+export default async function PersonalDataConsentPage() {
   const page = await fetchStaticPage(SLUG);
   if (!page) {
     notFound();
