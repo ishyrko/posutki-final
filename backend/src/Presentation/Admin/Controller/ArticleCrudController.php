@@ -275,8 +275,9 @@ class ArticleCrudController extends AbstractCrudController
             ->setFormTypeOption('attr', [
                 'class' => 'ea-article-content-rte form-control',
                 'rows' => 16,
+                'data-upload-scope' => 'articles',
             ])
-            ->setHelp('Форматирование текста, заголовки, списки и ссылки. На сайте контент показывается как HTML.')
+            ->setHelp('Форматирование текста, заголовки, списки, ссылки и изображения. Картинки загружаются на сервер, оптимизируются и на сайте показываются на всю ширину блока.')
             ->hideOnIndex();
 
         yield AssociationField::new('category', 'Категория');

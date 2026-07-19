@@ -71,7 +71,7 @@ function ArticleBody({
   if (sanitizedHtml) {
     return (
       <div
-        className="prose prose-lg max-w-none text-foreground/90 leading-relaxed [&_a]:text-primary [&_a]:underline"
+        className="prose prose-lg max-w-none text-foreground/90 leading-relaxed [&_a]:text-primary [&_a]:underline [&_img]:!my-6 [&_img]:!block [&_img]:!h-auto [&_img]:!w-full [&_img]:rounded-lg"
         dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
       />
     );

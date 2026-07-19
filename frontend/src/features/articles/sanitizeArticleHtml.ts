@@ -13,6 +13,7 @@ const articleSanitizeOptions: IOptions = {
     div: ["class"],
     h2: ["class"],
     p: ["class"],
+    img: ["src", "alt", "loading"],
   },
 };
 

@@ -110,10 +110,11 @@ class StaticPageCrudController extends AbstractCrudController
 
         yield TextareaField::new('content', 'Контент')
             ->setFormTypeOption('attr', [
-                'class' => 'ea-article-content-rte form-control',
+                'class' => 'ea-static-page-content-rte form-control',
                 'rows' => 16,
+                'data-upload-scope' => 'static-pages',
             ])
-            ->setHelp('Форматирование текста, заголовки, списки и ссылки. На сайте контент показывается как HTML.')
+            ->setHelp('Форматирование текста, заголовки, списки, ссылки и изображения. Картинки загружаются на сервер, оптимизируются и на сайте показываются на всю ширину блока.')
             ->hideOnIndex();
 
         yield TextField::new('metaTitle', 'Meta title')

@@ -59,7 +59,7 @@
       if (!btn || !btn.form) {
         return;
       }
-      if (!btn.form.querySelector("textarea.ea-article-content-rte")) {
+      if (!btn.form.querySelector("textarea.ea-article-content-rte, textarea.ea-static-page-content-rte")) {
         return;
       }
       triggerSaveAll();
@@ -76,13 +76,25 @@
       return;
     }
 
-    document.querySelectorAll("textarea.ea-article-content-rte").forEach(function (el) {
+    document.querySelectorAll("textarea.ea-article-content-rte, textarea.ea-static-page-content-rte").forEach(function (el) {
       if (el.getAttribute("data-tinymce-initialized")) {
         return;
       }
       el.setAttribute("data-tinymce-initialized", "1");
 
-      tinymce.init({
+      var uploadScope = el.getAttribute("data-upload-scope");
+      var enableImages = uploadScope === "articles" || uploadScope === "static-pages";
+      var plugins = enableImages ? "lists link autolink paste image" : "lists link autolink paste";
+      var toolbar = enableImages
+        ? "undo redo | blocks | bold italic underline strikethrough | bullist numlist | link image | removeformat"
+        : "undo redo | blocks | bold italic underline strikethrough | bullist numlist | link | removeformat";
+      var contentStyle =
+        "body{font-family:system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6;}" +
+        (enableImages
+          ? " img{display:block;width:100%;max-width:100%;height:auto;margin:1.5rem 0;border-radius:0.5rem;}"
+          : "");
+
+      var editorConfig = {
         target: el,
         height: 480,
         menubar: false,
@@ -94,13 +106,11 @@
         convert_urls: false,
         relative_urls: false,
         /** Rich paste from Word/HTML, not plain-text only */
-        plugins: "lists link autolink paste",
+        plugins: plugins,
         paste_as_text: false,
-        toolbar:
-          "undo redo | blocks | bold italic underline strikethrough | bullist numlist | link | removeformat",
+        toolbar: toolbar,
         block_formats: "Paragraph=p; Heading 2=h2; Heading 3=h3",
-        content_style:
-          "body{font-family:system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6;}",
+        content_style: contentStyle,
         setup: function (editor) {
           function syncToTextarea() {
             editor.save();
@@ -126,10 +136,73 @@
             }
           });
 
+          if (enableImages) {
+            editor.on("ObjectResized", function (e) {
+              if (e.target && e.target.nodeName === "IMG") {
+                editor.dom.setAttribs(e.target, { width: null, height: null, style: null });
+              }
+            });
+
+            editor.on("SetContent", function () {
+              editor.getBody().querySelectorAll("img").forEach(function (img) {
+                editor.dom.setAttribs(img, { width: null, height: null, style: null });
+              });
+            });
+          }
+
           editor.on("change blur keyup Undo Redo", syncToTextarea);
           editor.on("init", syncToTextarea);
         },
-      });
+      };
+
+      if (enableImages) {
+        editorConfig.automatic_uploads = true;
+        editorConfig.image_dimensions = false;
+        editorConfig.images_upload_credentials = true;
+        editorConfig.images_upload_handler = function (blobInfo, progress) {
+          return new Promise(function (resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            xhr.withCredentials = true;
+            xhr.open("POST", "/admin/upload/image");
+            xhr.upload.onprogress = function (event) {
+              if (event.lengthComputable) {
+                progress((event.loaded / event.total) * 100);
+              }
+            };
+            xhr.onload = function () {
+              if (xhr.status < 200 || xhr.status >= 300) {
+                reject("Ошибка загрузки (HTTP " + xhr.status + ")");
+                return;
+              }
+
+              var json;
+              try {
+                json = JSON.parse(xhr.responseText);
+              } catch (parseError) {
+                reject("Некорректный ответ сервера");
+                return;
+              }
+
+              if (!json || typeof json.location !== "string") {
+                reject((json && json.error) || "Не удалось загрузить изображение");
+                return;
+              }
+
+              resolve(json.location);
+            };
+            xhr.onerror = function () {
+              reject("Ошибка сети при загрузке");
+            };
+
+            var formData = new FormData();
+            formData.append("file", blobInfo.blob(), blobInfo.filename());
+            formData.append("scope", uploadScope);
+            xhr.send(formData);
+          });
+        };
+      }
+
+      tinymce.init(editorConfig);
     });
   }
 

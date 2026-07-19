@@ -13,6 +13,7 @@ class FileUploader
     private const SCOPE_ARTICLES = 'articles';
     private const SCOPE_AVATARS = 'avatars';
     private const SCOPE_PROPERTIES = 'properties';
+    private const SCOPE_STATIC_PAGES = 'static-pages';
     private const MAX_DIMENSION = 1920;
     private const THUMB_MAX_DIMENSION = 640;
     private const AVATAR_MAX_DIMENSION = 256;
@@ -324,6 +325,7 @@ class FileUploader
             self::SCOPE_ARTICLES => self::SCOPE_ARTICLES,
             self::SCOPE_AVATARS => self::SCOPE_AVATARS,
             self::SCOPE_PROPERTIES => self::SCOPE_PROPERTIES,
+            self::SCOPE_STATIC_PAGES => self::SCOPE_STATIC_PAGES,
             default => throw new \InvalidArgumentException('Недопустимая область загрузки'),
         };
     }

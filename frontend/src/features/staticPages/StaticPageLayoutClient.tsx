@@ -31,7 +31,7 @@ export default function StaticPageLayoutClient({
           className="space-y-8 rounded-xl border border-border bg-card p-6 shadow-card md:p-10"
         >
           <div
-            className="prose prose-sm max-w-none prose-neutral prose-headings:font-semibold prose-p:text-muted-foreground prose-li:text-muted-foreground dark:prose-invert [&_a]:text-primary [&_a]:underline"
+            className="prose prose-sm max-w-none prose-neutral prose-headings:font-semibold prose-p:text-muted-foreground prose-li:text-muted-foreground dark:prose-invert [&_a]:text-primary [&_a]:underline [&_img]:!my-6 [&_img]:!block [&_img]:!h-auto [&_img]:!w-full [&_img]:rounded-lg"
             dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
           />
         </motion.div>
