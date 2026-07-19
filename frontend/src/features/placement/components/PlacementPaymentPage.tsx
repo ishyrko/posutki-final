@@ -203,7 +203,7 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
                 <div className="flex items-center gap-3 p-3 rounded-lg border border-border mb-5">
                     <CreditCard className="w-5 h-5 text-muted-foreground" />
                     <div className="flex-1">
-                        <p className="text-sm font-medium text-foreground">Банковская карта, ЕРИП и другие способы</p>
+                        <p className="text-sm font-medium text-foreground">Банковская карта онлайн</p>
                         <p className="text-xs text-muted-foreground">
                             Безопасная страница оплаты bePaid
                         </p>

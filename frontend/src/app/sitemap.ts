@@ -39,8 +39,20 @@ function staticEntries(now: Date): Entry[] {
     { url: "/o-nas/", changeFrequency: "yearly", priority: 0.4 },
     { url: "/kontakty/", changeFrequency: "yearly", priority: 0.5 },
     { url: "/razmestit/", changeFrequency: "yearly", priority: 0.4 },
+    { url: "/tarify/", changeFrequency: "yearly", priority: 0.4 },
+    { url: "/oplata/", changeFrequency: "yearly", priority: 0.4 },
+    {
+      url: "/integratsiya-s-realty-calendar/",
+      changeFrequency: "yearly",
+      priority: 0.4,
+    },
     {
       url: "/politika-konfidentsialnosti/",
+      changeFrequency: "yearly",
+      priority: 0.2,
+    },
+    {
+      url: "/publichnaya-oferta/",
       changeFrequency: "yearly",
       priority: 0.2,
     },
