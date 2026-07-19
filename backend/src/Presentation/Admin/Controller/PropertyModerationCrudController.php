@@ -11,8 +11,10 @@ use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Event\PropertyApprovedEvent;
 use App\Domain\Property\Event\PropertyRejectedEvent;
+use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
+use App\Domain\Property\Repository\StreetRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Doctrine\ORM\QueryBuilder;
@@ -40,6 +42,8 @@ final class PropertyModerationCrudController extends PropertyCrudController
         PropertyRepositoryInterface $propertyRepository,
         PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
         AdminUrlGenerator $adminUrlGenerator,
+        CityRepositoryInterface $cityRepository,
+        StreetRepositoryInterface $streetRepository,
         private readonly CommandBusInterface $commandBus,
         private readonly MessageBusInterface $notificationBus,
         private readonly PropertyPlacementService $placementService,
@@ -49,6 +53,8 @@ final class PropertyModerationCrudController extends PropertyCrudController
             $propertyRepository,
             $propertyMetroStationRepository,
             $adminUrlGenerator,
+            $cityRepository,
+            $streetRepository,
         );
     }
 

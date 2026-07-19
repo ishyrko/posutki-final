@@ -8,8 +8,10 @@ use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\SellerType;
+use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
+use App\Domain\Property\Repository\StreetRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -17,8 +19,10 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
+use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
 use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
+use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use LogicException;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
@@ -31,6 +35,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
+use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -42,6 +47,8 @@ class PropertyCrudController extends AbstractCrudController
         protected readonly PropertyRepositoryInterface $propertyRepository,
         protected readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
         protected readonly AdminUrlGenerator $adminUrlGenerator,
+        protected readonly CityRepositoryInterface $cityRepository,
+        protected readonly StreetRepositoryInterface $streetRepository,
     ) {
     }
 
@@ -103,6 +110,16 @@ class PropertyCrudController extends AbstractCrudController
         return $this->redirectToPropertyEdit($property, $this->resolveControllerFqcn($context));
     }
 
+    public function createEditFormBuilder(EntityDto $entityDto, KeyValueStore $formOptions, AdminContext $context): FormBuilderInterface
+    {
+        $entity = $entityDto->getInstance();
+        if ($entity instanceof Property) {
+            $this->enrichAdminAddressLabels($entity);
+        }
+
+        return parent::createEditFormBuilder($entityDto, $formOptions, $context);
+    }
+
     public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
         if ($entityInstance instanceof Property && $entityInstance->getPriceCurrency() === 'BYN') {
@@ -122,11 +139,20 @@ class PropertyCrudController extends AbstractCrudController
 
         yield TextField::new('title', 'Заголовок');
 
+        yield IntegerField::new('cityId', 'Город')
+            ->hideOnForm()
+            ->formatValue(function ($value, Property $property): string {
+                $city = $this->cityRepository->findById($property->getCityId());
+
+                return $city !== null ? $city->getName() : ('#' . $property->getCityId());
+            });
+
         yield ChoiceField::new('type', 'Тип')
             ->setChoices(PropertyType::choices());
 
         yield ChoiceField::new('dealType', 'Сделка')
-            ->setChoices(DealType::choices());
+            ->setChoices(DealType::choices())
+            ->hideOnIndex();
 
         yield ChoiceField::new('sellerType', 'Тип продавца')
             ->setChoices([
@@ -252,11 +278,23 @@ class PropertyCrudController extends AbstractCrudController
         yield FormField::addTab('Адрес и контакты');
 
         yield IntegerField::new('cityId', 'ID города')
-            ->hideOnIndex();
+            ->hideOnIndex()
+            ->setColumns(4);
+
+        yield TextField::new('adminCityName', 'Город')
+            ->onlyOnForms()
+            ->setDisabled()
+            ->setColumns(8);
 
         yield IntegerField::new('streetId', 'ID улицы (справочник)')
             ->hideOnIndex()
+            ->setColumns(4)
             ->setHelp('Если задан, свободное название улицы игнорируется.');
+
+        yield TextField::new('adminStreetName', 'Улица (справочник)')
+            ->onlyOnForms()
+            ->setDisabled()
+            ->setColumns(8);
 
         yield TextField::new('streetName', 'Улица (свободный ввод)')
             ->hideOnIndex();
@@ -446,6 +484,26 @@ class PropertyCrudController extends AbstractCrudController
         } catch (LogicException) {
             return $this->resolvePropertyFromRequest($request);
         }
+    }
+
+    private function enrichAdminAddressLabels(Property $property): void
+    {
+        $city = $this->cityRepository->findById($property->getCityId());
+        $property->setAdminCityName(
+            $city !== null ? $city->getName() : sprintf('не найден (id %d)', $property->getCityId()),
+        );
+
+        $streetId = $property->getStreetId();
+        if ($streetId === null) {
+            $property->setAdminStreetName('—');
+
+            return;
+        }
+
+        $street = $this->streetRepository->findById($streetId);
+        $property->setAdminStreetName(
+            $street !== null ? $street->getName() : sprintf('не найдена (id %d)', $streetId),
+        );
     }
 
     private function resolvePropertyFromRequest(Request $request): ?Property

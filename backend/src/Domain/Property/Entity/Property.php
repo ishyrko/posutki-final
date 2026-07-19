@@ -1496,6 +1496,30 @@ class Property
         return implode("\n", $this->images);
     }
 
+    private ?string $adminCityName = null;
+
+    private ?string $adminStreetName = null;
+
+    public function getAdminCityName(): ?string
+    {
+        return $this->adminCityName;
+    }
+
+    public function setAdminCityName(?string $adminCityName): void
+    {
+        $this->adminCityName = $adminCityName;
+    }
+
+    public function getAdminStreetName(): ?string
+    {
+        return $this->adminStreetName;
+    }
+
+    public function setAdminStreetName(?string $adminStreetName): void
+    {
+        $this->adminStreetName = $adminStreetName;
+    }
+
     public function getAmenitiesDisplay(): string
     {
         return implode(', ', $this->amenities);
