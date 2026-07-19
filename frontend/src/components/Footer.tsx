@@ -155,6 +155,9 @@ const Footer = () => {
               <Link href="/politika-konfidentsialnosti" className="text-sm text-primary-foreground/40 hover:text-primary-foreground/60 transition-colors">
                 Политика конфиденциальности
               </Link>
+              <Link href="/politika-obrabotki-personalnyh-dannyh" className="text-sm text-primary-foreground/40 hover:text-primary-foreground/60 transition-colors">
+                Обработка персональных данных
+              </Link>
               <Link href="/usloviya-ispolzovaniya" className="text-sm text-primary-foreground/40 hover:text-primary-foreground/60 transition-colors">
                 Условия использования
               </Link>

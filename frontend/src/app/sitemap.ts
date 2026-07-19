@@ -45,6 +45,11 @@ function staticEntries(now: Date): Entry[] {
       priority: 0.2,
     },
     {
+      url: "/politika-obrabotki-personalnyh-dannyh/",
+      changeFrequency: "yearly",
+      priority: 0.2,
+    },
+    {
       url: "/usloviya-ispolzovaniya/",
       changeFrequency: "yearly",
       priority: 0.2,
