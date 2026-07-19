@@ -1,6 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { notFound } from 'next/navigation';
+import { useUser } from '@/features/auth/hooks';
+import { canAccessPlacementCommerce } from '@/features/placement/access';
 import { useCities, useRegions } from '@/features/create-listing/hooks';
 import { usePlacementLevels, usePlacementScope } from '@/features/placement/hooks';
 import {
@@ -21,6 +24,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check } from 'lucide-react';
 
 export function TariffsPageContent() {
+    const { data: user, isLoading: userLoading } = useUser();
     const [propertyType, setPropertyType] = useState<PlacementPropertyType>('apartment');
     const { data: cities = [], isLoading: citiesLoading } = useCities();
     const { data: regions = [], isLoading: regionsLoading } = useRegions();
@@ -57,6 +61,14 @@ export function TariffsPageContent() {
         propertyType === 'house'
             ? selectedRegion?.name ?? 'область'
             : selectedCity?.name ?? 'город';
+
+    if (userLoading) {
+        return null;
+    }
+
+    if (!canAccessPlacementCommerce(user?.id)) {
+        notFound();
+    }
 
     return (
         <div className="mx-auto max-w-3xl">

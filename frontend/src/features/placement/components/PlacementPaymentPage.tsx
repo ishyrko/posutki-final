@@ -2,11 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowLeft, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BynCurrencyMark } from '@/components/BynCurrency';
+import { useUser } from '@/features/auth/hooks';
+import { canAccessPlacementCommerce } from '@/features/placement/access';
 import {
     useConfirmPlacementPayment,
     useCreatePlacementPayment,
@@ -40,6 +43,7 @@ function getApiErrorMessage(error: unknown, fallback: string): string {
 export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { data: user, isLoading: userLoading } = useUser();
     const returnStatus = searchParams.get('status');
     const checkoutToken = searchParams.get('token');
     const isSuccessReturn =
@@ -122,6 +126,14 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
         returnStatus,
         router,
     ]);
+
+    if (userLoading) {
+        return null;
+    }
+
+    if (!canAccessPlacementCommerce(user?.id)) {
+        notFound();
+    }
 
     if (isLoading) {
         return (

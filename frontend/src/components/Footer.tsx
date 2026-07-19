@@ -9,9 +9,13 @@ import {
 import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
 import { COMPANY } from "@/lib/company";
 import Image from "next/image";
+import { useUser } from "@/features/auth/hooks";
+import { canAccessPlacementCommerce } from "@/features/placement/access";
 
 const Footer = () => {
   const regionSlug = useHeaderRegionSlug();
+  const { data: user } = useUser();
+  const showPlacementCommerce = canAccessPlacementCommerce(user?.id);
   const homeHref =
     regionSlug === HEADER_REGION_MINSK_SLUG
       ? "/"
@@ -66,7 +70,7 @@ const Footer = () => {
             <ul className="space-y-2.5">
               {[
                 { label: "Разместить жильё бесплатно", link: "listing" as const },
-                { label: "Тарифы", href: "/tarify/" },
+                ...(showPlacementCommerce ? [{ label: "Тарифы", href: "/tarify/" }] : []),
                 { label: "Оплата", href: "/oplata/" },
                 { label: "Интеграция с RealtyCalendar", href: "/integratsiya-s-realty-calendar/" },
                 { label: "Личный кабинет", href: "/kabinet/" },
