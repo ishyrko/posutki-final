@@ -121,7 +121,7 @@ frontend-dev: ## Start frontend development server
 	docker-compose exec frontend npm run dev
 
 frontend-build: ## Build frontend for production
-	docker-compose exec frontend npm run build
+	docker-compose exec -e NODE_ENV=production frontend npm run build
 
 define verify_cpanel_next
 	@test -f frontend/$(1)/BUILD_ID || (echo "Missing frontend/$(1)/BUILD_ID" && exit 1)

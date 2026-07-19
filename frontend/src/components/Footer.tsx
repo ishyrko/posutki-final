@@ -158,6 +158,9 @@ const Footer = () => {
               <Link href="/usloviya-ispolzovaniya" className="text-sm text-primary-foreground/40 hover:text-primary-foreground/60 transition-colors">
                 Условия использования
               </Link>
+              <Link href="/publichnaya-oferta" className="text-sm text-primary-foreground/40 hover:text-primary-foreground/60 transition-colors">
+                Публичная оферта
+              </Link>
               <Link href="/kontakty" className="text-sm text-primary-foreground/40 hover:text-primary-foreground/60 transition-colors">
                 Контакты
               </Link>
