@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Clock, ArrowLeft, Tag, Calendar } from "lucide-react";
 import Link from "next/link";
+import { RichContentHtml } from "@/components/RichContentHtml";
 import { Article } from "@/features/articles/types";
 import { estimateArticleReadMinutes } from "@/features/articles/articleHtmlUtils";
 import { ARTICLE_FALLBACK_IMAGE } from "@/features/articles/articleCardDisplay";
@@ -70,9 +71,9 @@ function ArticleBody({
 }) {
   if (sanitizedHtml) {
     return (
-      <div
-        className="prose prose-lg max-w-none text-foreground/90 leading-relaxed [&_a]:text-primary [&_a]:underline [&_img]:!my-6 [&_img]:!block [&_img]:!h-auto [&_img]:!w-full [&_img]:rounded-lg"
-        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+      <RichContentHtml
+        html={sanitizedHtml}
+        className="prose prose-lg max-w-none text-foreground/90 leading-relaxed [&_a]:text-primary [&_a]:underline"
       />
     );
   }

@@ -15,11 +15,14 @@ class FileUploader
     private const SCOPE_PROPERTIES = 'properties';
     private const SCOPE_STATIC_PAGES = 'static-pages';
     private const MAX_DIMENSION = 1920;
+    private const CONTENT_MAX_DIMENSION = 2560;
     private const THUMB_MAX_DIMENSION = 640;
     private const AVATAR_MAX_DIMENSION = 256;
     private const AVATAR_THUMB_MAX_DIMENSION = 96;
     private const JPEG_QUALITY = 84;
     private const WEBP_QUALITY = 82;
+    private const CONTENT_JPEG_QUALITY = 92;
+    private const CONTENT_WEBP_QUALITY = 92;
     private const THUMB_WEBP_QUALITY = 78;
     private const THUMB_JPEG_QUALITY = 76;
 
@@ -35,7 +38,7 @@ class FileUploader
         $this->ensureUploadDirectoryIsReady($targetDirectory);
 
         $mimeType = $file->getMimeType();
-        $outputFormat = $this->determineOutputFormat();
+        $outputFormat = $this->determineOutputFormat($normalizedScope, $mimeType);
         $baseName = $this->generateStorageBaseName();
         $fileName = $baseName . '.' . $outputFormat;
         $targetPath = $targetDirectory . '/' . $fileName;
@@ -45,8 +48,12 @@ class FileUploader
             $file->move($targetDirectory, $fileName);
             $maxDimension = $this->getMaxDimensionForScope($normalizedScope);
             $thumbMaxDimension = $this->getThumbMaxDimensionForScope($normalizedScope);
-            $this->optimizeImage($targetPath, $mimeType, $outputFormat, $maxDimension);
-            $this->createThumbnail($targetPath, $outputFormat, $thumbMaxDimension);
+            if ($this->canUseOriginalWithoutReencode($targetPath, $mimeType, $outputFormat, $maxDimension)) {
+                $this->createThumbnail($targetPath, $outputFormat, $thumbMaxDimension);
+            } else {
+                $this->optimizeImage($targetPath, $mimeType, $outputFormat, $maxDimension, $normalizedScope);
+                $this->createThumbnail($targetPath, $outputFormat, $thumbMaxDimension);
+            }
         } catch (FileException $e) {
             throw new \RuntimeException('Failed to upload file: ' . $e->getMessage());
         }
@@ -81,7 +88,7 @@ class FileUploader
             return null;
         }
 
-        $outputFormat = $this->determineOutputFormat();
+        $outputFormat = $this->determineOutputFormat(self::SCOPE_ARTICLES, $mimeType);
         $dir = dirname($fullPath);
         $baseName = pathinfo($fullPath, PATHINFO_FILENAME);
         $canonicalPath = $dir . '/' . $baseName . '.' . $outputFormat;
@@ -96,11 +103,11 @@ class FileUploader
             if ($oldThumb !== null && is_file($oldThumb)) {
                 @unlink($oldThumb);
             }
-            if (!$this->transformImage($fullPath, $mimeType, $canonicalPath, $outputFormat)) {
+            if (!$this->transformImage($fullPath, $mimeType, $canonicalPath, $outputFormat, self::CONTENT_MAX_DIMENSION, self::SCOPE_ARTICLES)) {
                 return null;
             }
             @unlink($fullPath);
-        } elseif (!$this->transformImage($fullPath, $mimeType, $canonicalPath, $outputFormat)) {
+        } elseif (!$this->transformImage($fullPath, $mimeType, $canonicalPath, $outputFormat, self::CONTENT_MAX_DIMENSION, self::SCOPE_ARTICLES)) {
             return null;
         }
 
@@ -144,8 +151,12 @@ class FileUploader
         }
     }
 
-    private function determineOutputFormat(): string
+    private function determineOutputFormat(string $scope, string $originalMimeType): string
     {
+        if ($this->isContentScope($scope) && $originalMimeType === 'image/jpeg') {
+            return 'jpg';
+        }
+
         // Prefer WebP when GD supports encoding it: better compression with similar visual quality.
         return function_exists('imagewebp') ? 'webp' : 'jpg';
     }
@@ -155,8 +166,33 @@ class FileUploader
         string $originalMimeType,
         string $outputFormat,
         int $maxDimension = self::MAX_DIMENSION,
+        string $scope = self::SCOPE_PROPERTIES,
     ): void {
-        $this->transformImage($path, $originalMimeType, $path, $outputFormat, $maxDimension);
+        $this->transformImage($path, $originalMimeType, $path, $outputFormat, $maxDimension, $scope);
+    }
+
+    private function canUseOriginalWithoutReencode(
+        string $path,
+        string $originalMimeType,
+        string $outputFormat,
+        int $maxDimension,
+    ): bool {
+        $imageInfo = @getimagesize($path);
+        if ($imageInfo === false) {
+            return false;
+        }
+
+        $width = (int) ($imageInfo[0] ?? 0);
+        $height = (int) ($imageInfo[1] ?? 0);
+        if ($width <= 0 || $height <= 0 || $width > $maxDimension || $height > $maxDimension) {
+            return false;
+        }
+
+        return match ($outputFormat) {
+            'webp' => $originalMimeType === 'image/webp',
+            'jpg' => $originalMimeType === 'image/jpeg',
+            default => false,
+        };
     }
 
     /**
@@ -168,6 +204,7 @@ class FileUploader
         string $destinationPath,
         string $outputFormat,
         int $maxDimension = self::MAX_DIMENSION,
+        string $scope = self::SCOPE_PROPERTIES,
     ): bool {
         $image = $this->loadImageResource($sourcePath, $originalMimeType);
         if ($image === false) {
@@ -192,9 +229,12 @@ class FileUploader
             imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
             imagedestroy($image);
             $image = $resized;
+        } elseif ($originalMimeType === 'image/png' || $originalMimeType === 'image/webp') {
+            imagealphablending($image, false);
+            imagesavealpha($image, true);
         }
 
-        $this->writeImageToOutputFormat($image, $destinationPath, $outputFormat);
+        $this->writeImageToOutputFormat($image, $destinationPath, $outputFormat, $scope);
 
         return true;
     }
@@ -212,13 +252,13 @@ class FileUploader
         };
     }
 
-    private function writeImageToOutputFormat(\GdImage $image, string $destinationPath, string $outputFormat): void
+    private function writeImageToOutputFormat(\GdImage $image, string $destinationPath, string $outputFormat, string $scope = self::SCOPE_PROPERTIES): void
     {
         if ($outputFormat === 'webp') {
-            imagewebp($image, $destinationPath, self::WEBP_QUALITY);
+            imagewebp($image, $destinationPath, $this->getWebpQualityForScope($scope));
         } else {
             imageinterlace($image, true);
-            imagejpeg($image, $destinationPath, self::JPEG_QUALITY);
+            imagejpeg($image, $destinationPath, $this->getJpegQualityForScope($scope));
         }
 
         imagedestroy($image);
@@ -332,7 +372,30 @@ class FileUploader
 
     private function getMaxDimensionForScope(string $scope): int
     {
-        return $scope === self::SCOPE_AVATARS ? self::AVATAR_MAX_DIMENSION : self::MAX_DIMENSION;
+        if ($scope === self::SCOPE_AVATARS) {
+            return self::AVATAR_MAX_DIMENSION;
+        }
+
+        if ($this->isContentScope($scope)) {
+            return self::CONTENT_MAX_DIMENSION;
+        }
+
+        return self::MAX_DIMENSION;
+    }
+
+    private function getWebpQualityForScope(string $scope): int
+    {
+        return $this->isContentScope($scope) ? self::CONTENT_WEBP_QUALITY : self::WEBP_QUALITY;
+    }
+
+    private function getJpegQualityForScope(string $scope): int
+    {
+        return $this->isContentScope($scope) ? self::CONTENT_JPEG_QUALITY : self::JPEG_QUALITY;
+    }
+
+    private function isContentScope(string $scope): bool
+    {
+        return $scope === self::SCOPE_ARTICLES || $scope === self::SCOPE_STATIC_PAGES;
     }
 
     private function getThumbMaxDimensionForScope(string $scope): int
