@@ -72,7 +72,7 @@ const Footer = () => {
                 { label: "Разместить жильё бесплатно", link: "listing" as const },
                 ...(showPlacementCommerce ? [{ label: "Тарифы", href: "/tarify/" }] : []),
                 { label: "Оплата", href: "/oplata/" },
-                { label: "Интеграция с RealtyCalendar", href: "/integratsiya-s-realty-calendar/" },
+                { label: "Интеграция с Realty Calendar", href: "/integratsiya-s-realty-calendar/" },
                 { label: "Личный кабинет", href: "/kabinet/" },
               ].map((item) => (
                 <li key={item.label}>

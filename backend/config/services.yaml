@@ -394,6 +394,8 @@ services:
 
     App\Application\Service\ArticleContentPersistNormalizer: ~
 
+    App\Application\Service\StaticPageContentPersistNormalizer: ~
+
     App\Infrastructure\Recaptcha\RecaptchaVerifier:
         arguments:
             $enabled: '%app.recaptcha.enabled%'

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Admin\Controller;
 
+use App\Application\Service\StaticPageContentPersistNormalizer;
 use App\Domain\Shared\ValueObject\Slug;
 use App\Domain\StaticPage\Entity\StaticPage;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
@@ -17,6 +18,11 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class StaticPageCrudController extends AbstractCrudController
 {
+    public function __construct(
+        private readonly StaticPageContentPersistNormalizer $staticPageContentPersistNormalizer,
+    ) {
+    }
+
     public static function getEntityFqcn(): string
     {
         return StaticPage::class;
@@ -58,6 +64,10 @@ class StaticPageCrudController extends AbstractCrudController
             $entityInstance->setSlugFromString($formData['slugText']);
         }
 
+        if ($entityInstance instanceof StaticPage) {
+            $this->staticPageContentPersistNormalizer->normalize($entityInstance);
+        }
+
         parent::persistEntity($entityManager, $entityInstance);
     }
 
@@ -68,6 +78,10 @@ class StaticPageCrudController extends AbstractCrudController
 
         if ($entityInstance instanceof StaticPage && isset($formData['slugText']) && $formData['slugText'] !== '') {
             $entityInstance->setSlugFromString($formData['slugText']);
+        }
+
+        if ($entityInstance instanceof StaticPage) {
+            $this->staticPageContentPersistNormalizer->normalize($entityInstance);
         }
 
         parent::updateEntity($entityManager, $entityInstance);

@@ -40,58 +40,55 @@ export function RichContentHtml({ html, className }: RichContentHtmlProps) {
       return undefined;
     }
 
-    const imgElements = Array.from(container.querySelectorAll("img"));
-    const validImages: Array<{ el: HTMLImageElement; index: number }> = [];
-    const imageUrls: string[] = [];
+    const collectImageUrls = (): string[] =>
+      Array.from(container.querySelectorAll("img"))
+        .map((img) => img.getAttribute("src")?.trim() || "")
+        .filter((src) => src !== "");
 
-    imgElements.forEach((img) => {
+    const openFromImage = (img: HTMLImageElement) => {
       const src = img.getAttribute("src")?.trim();
       if (!src) {
         return;
       }
 
-      validImages.push({ el: img, index: imageUrls.length });
-      imageUrls.push(src);
-    });
-
-    const handlers: Array<{
-      el: HTMLImageElement;
-      onClick: () => void;
-      onKeyDown: (event: KeyboardEvent) => void;
-    }> = [];
-
-    validImages.forEach(({ el, index }) => {
-      el.classList.add("cursor-zoom-in");
-      el.setAttribute("role", "button");
-      el.setAttribute("tabindex", "0");
-      if (!el.getAttribute("aria-label")) {
-        el.setAttribute(
-          "aria-label",
-          el.getAttribute("alt")?.trim() || "Открыть изображение",
-        );
+      const imageUrls = collectImageUrls();
+      const index = imageUrls.indexOf(src);
+      if (index === -1) {
+        return;
       }
 
-      const onClick = () => openLightbox(index, imageUrls);
-      const onKeyDown = (event: KeyboardEvent) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onClick();
-        }
-      };
+      openLightbox(index, imageUrls);
+    };
 
-      el.addEventListener("click", onClick);
-      el.addEventListener("keydown", onKeyDown);
-      handlers.push({ el, onClick, onKeyDown });
-    });
+    const onClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLImageElement) || !container.contains(target)) {
+        return;
+      }
+
+      openFromImage(target);
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLImageElement) || !container.contains(target)) {
+        return;
+      }
+
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+
+      event.preventDefault();
+      openFromImage(target);
+    };
+
+    container.addEventListener("click", onClick);
+    container.addEventListener("keydown", onKeyDown);
 
     return () => {
-      handlers.forEach(({ el, onClick, onKeyDown }) => {
-        el.removeEventListener("click", onClick);
-        el.removeEventListener("keydown", onKeyDown);
-        el.classList.remove("cursor-zoom-in");
-        el.removeAttribute("role");
-        el.removeAttribute("tabindex");
-      });
+      container.removeEventListener("click", onClick);
+      container.removeEventListener("keydown", onKeyDown);
     };
   }, [html, openLightbox]);
 
@@ -130,7 +127,7 @@ export function RichContentHtml({ html, className }: RichContentHtmlProps) {
       <div
         ref={containerRef}
         className={cn(
-          "[&_img]:!my-6 [&_img]:!block [&_img]:!h-auto [&_img]:!w-full [&_img]:rounded-lg [&_img]:transition-opacity [&_img]:hover:opacity-95",
+          "[&_img]:!my-6 [&_img]:!block [&_img]:!h-auto [&_img]:!w-full [&_img]:cursor-zoom-in [&_img]:rounded-lg [&_img]:transition-opacity [&_img]:hover:opacity-95",
           className,
         )}
         dangerouslySetInnerHTML={{ __html: html }}
