@@ -9,7 +9,7 @@ use DOMNode;
 use DOMXPath;
 
 /**
- * Reduces common typographic patterns often produced by LLMs (em dashes, stray spaces, NBSP).
+ * Reduces common typographic patterns often produced by LLMs (em dashes, curly quotes, stray spaces, NBSP).
  * HTML path only mutates text nodes; script/style/pre/code subtrees are left unchanged.
  */
 final class ArticleTextSanitizer
@@ -40,8 +40,7 @@ final class ArticleTextSanitizer
         }
 
         if ($loaded === false) {
-            // DOM unavailable: still strip em dashes (rare in valid article HTML; avoids silent no-op).
-            return str_replace("\u{2014}", "\u{2013}", $html);
+            return $this->normalizeTypography($html);
         }
 
         $root = $dom->getElementById('article-sanitize-root');
@@ -52,7 +51,7 @@ final class ArticleTextSanitizer
         }
 
         if ($root === null) {
-            return str_replace("\u{2014}", "\u{2013}", $html);
+            return $this->normalizeTypography($html);
         }
 
         $this->sanitizeTextNodesUnder($root);
@@ -65,11 +64,31 @@ final class ArticleTextSanitizer
         return $out;
     }
 
+    private function applyHtmlTextNodeRules(string $text): string
+    {
+        if ($text === '') {
+            return $text;
+        }
+
+        if (preg_match('/^\s+$/u', $text) !== 0) {
+            return preg_match('/[ \x{00A0}]/u', $text) === 1 ? ' ' : '';
+        }
+
+        return $this->normalizeTypography($text);
+    }
+
     /**
      * @internal Used by migrations to keep rules in one place
      */
     public function applyPlainTextRules(string $text): string
     {
+        return trim($this->normalizeTypography($text));
+    }
+
+    private function normalizeTypography(string $text): string
+    {
+        $text = $this->normalizeQuotes($text);
+
         // NBSP (byte sequence and character) to regular space
         $text = str_replace(["\xc2\xa0", "\u{00A0}"], ' ', $text);
 
@@ -84,9 +103,30 @@ final class ArticleTextSanitizer
         }
 
         // Collapse runs of ASCII spaces (avoid merging intentional newlines in short fields)
-        $text = (string) preg_replace('/ {2,}/u', ' ', $text);
+        return (string) preg_replace('/ {2,}/u', ' ', $text);
+    }
 
-        return trim($text);
+    private function normalizeQuotes(string $text): string
+    {
+        return str_replace(
+            [
+                "\u{201C}", "\u{201D}",
+                "\u{201E}", "\u{201F}",
+                "\u{00AB}", "\u{00BB}",
+                "\u{2018}", "\u{2019}",
+                "\u{201A}", "\u{201B}",
+                "\u{2039}", "\u{203A}",
+            ],
+            [
+                '"', '"',
+                '"', '"',
+                '"', '"',
+                "'", "'",
+                "'", "'",
+                "'", "'",
+            ],
+            $text,
+        );
     }
 
     private function sanitizeTextNodesUnder(DOMNode $node): void
@@ -96,7 +136,7 @@ final class ArticleTextSanitizer
                 return;
             }
 
-            $node->nodeValue = $this->applyPlainTextRules($node->nodeValue ?? '');
+            $node->nodeValue = $this->applyHtmlTextNodeRules($node->nodeValue ?? '');
 
             return;
         }
