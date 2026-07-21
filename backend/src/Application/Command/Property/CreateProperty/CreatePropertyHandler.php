@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Command\Property\CreateProperty;
 
 use App\Domain\Property\Entity\Property;
+use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Event\PropertySubmittedForModerationEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Validation\DailyRentDetailsValidator;
@@ -38,6 +39,9 @@ final class CreatePropertyHandler
     {
         DealConditionsValidator::assertValid($command->dealConditions, $command->dealType, $command->type);
         PaymentMethodsValidator::assertValid($command->paymentMethods);
+        $effectiveMinStayDays = $command->dealType === DealType::Daily->value
+            ? ($command->minStayDays ?? 1)
+            : null;
         DailyRentDetailsValidator::assertValid(
             dealType: $command->dealType,
             propertyType: $command->type,
@@ -46,6 +50,7 @@ final class CreatePropertyHandler
             dailyDoubleBeds: $command->dailyDoubleBeds,
             checkInTime: $command->checkInTime,
             checkOutTime: $command->checkOutTime,
+            minStayDays: $effectiveMinStayDays,
         );
         RoomDealDetailsValidator::assertValid(
             dealType: $command->dealType,
@@ -108,6 +113,7 @@ final class CreatePropertyHandler
             sellerType: $command->sellerType,
             roomsInDeal: $command->roomsInDeal,
             roomsArea: $command->roomsArea,
+            minStayDays: $effectiveMinStayDays,
         );
         $property->publish();
         $property->setWeekendPriceNegotiable($command->weekendPriceNegotiable);

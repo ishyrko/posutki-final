@@ -11,6 +11,7 @@ import {
   LogIn, LogOut, UserCheck, Sunrise, Wallet,
 } from "lucide-react";
 import { LISTING_AMENITY_GROUPS } from "@/features/create-listing/listing-amenity-groups";
+import { formatMinStayDays } from "@/features/create-listing/validation";
 import { PAYMENT_METHOD_LABELS, type PaymentMethodId } from "@/features/properties/payment-methods";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -505,6 +506,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
     (property.specifications.maxDailyGuests != null) ||
     (property.specifications.dailySingleBeds != null) ||
     (property.specifications.dailyDoubleBeds != null) ||
+    (property.specifications.minStayDays != null && property.specifications.minStayDays > 1) ||
     (property.specifications.dealConditions?.length ?? 0) > 0
   );
 
@@ -807,6 +809,17 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                           Максимум гостей
                         </span>
                         <span className="text-sm font-semibold text-foreground">{property.specifications.maxDailyGuests}</span>
+                      </div>
+                    )}
+                    {property.specifications.minStayDays != null && property.specifications.minStayDays > 1 && (
+                      <div className="flex items-center justify-between px-4 py-3 border-t border-border/40">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="w-4 h-4 text-primary/70" />
+                          Минимальный срок проживания
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">
+                          {formatMinStayDays(property.specifications.minStayDays)}
+                        </span>
                       </div>
                     )}
                     {property.specifications.dailySingleBeds != null && (

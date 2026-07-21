@@ -56,6 +56,7 @@ export interface CreatePropertyPayload {
     dailyDoubleBeds?: number;
     checkInTime?: string;
     checkOutTime?: string;
+    minStayDays?: number;
     building: string;
     block?: string;
     cityId: number;
@@ -115,6 +116,7 @@ export interface ListingFormData {
     dailyDoubleBeds: string;
     checkInTime: string;
     checkOutTime: string;
+    minStayDays: string;
     yearBuilt: string;
     renovation: string;
     balcony: string;

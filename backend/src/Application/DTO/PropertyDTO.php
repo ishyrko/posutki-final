@@ -47,6 +47,7 @@ final class PropertyDTO implements \JsonSerializable
         public readonly ?int $dailyDoubleBeds,
         public readonly ?string $checkInTime,
         public readonly ?string $checkOutTime,
+        public readonly ?int $minStayDays,
         public readonly string $building,
         public readonly ?string $block,
         public readonly int $cityId,
@@ -177,6 +178,7 @@ final class PropertyDTO implements \JsonSerializable
             dailyDoubleBeds: $property->getDailyDoubleBeds(),
             checkInTime: $property->getCheckInTime(),
             checkOutTime: $property->getCheckOutTime(),
+            minStayDays: $property->getMinStayDays(),
             building: $property->getAddress()->getBuilding(),
             block: $property->getAddress()->getBlock(),
             cityId: $property->getCityId(),
@@ -284,6 +286,7 @@ final class PropertyDTO implements \JsonSerializable
                 'dailyDoubleBeds' => $this->dailyDoubleBeds,
                 'checkInTime' => $this->checkInTime,
                 'checkOutTime' => $this->checkOutTime,
+                'minStayDays' => $this->minStayDays,
             ],
             'coordinates' => [
                 'latitude' => $this->latitude,

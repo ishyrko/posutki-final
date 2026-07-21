@@ -84,6 +84,7 @@ readonly class ApproveRevisionHandler
             dailyDoubleBeds: array_key_exists('dailyDoubleBeds', $data) ? (int) $data['dailyDoubleBeds'] : $property->getDailyDoubleBeds(),
             checkInTime: isset($data['checkInTime']) ? (string) $data['checkInTime'] : $property->getCheckInTime(),
             checkOutTime: isset($data['checkOutTime']) ? (string) $data['checkOutTime'] : $property->getCheckOutTime(),
+            minStayDays: isset($data['minStayDays']) ? (int) $data['minStayDays'] : ($property->getMinStayDays() ?? 1),
         );
         $effectiveRoomsInDeal = isset($data['roomsInDeal']) ? (int) $data['roomsInDeal'] : $property->getRoomsInDeal();
         $effectiveRoomsArea = isset($data['roomsArea']) ? (float) $data['roomsArea'] : $property->getRoomsArea();
@@ -130,6 +131,7 @@ readonly class ApproveRevisionHandler
             dailyDoubleBeds: array_key_exists('dailyDoubleBeds', $data) ? (int) $data['dailyDoubleBeds'] : null,
             checkInTime: isset($data['checkInTime']) ? (string) $data['checkInTime'] : null,
             checkOutTime: isset($data['checkOutTime']) ? (string) $data['checkOutTime'] : null,
+            minStayDays: isset($data['minStayDays']) ? (int) $data['minStayDays'] : null,
             address: $address,
             cityId: isset($data['cityId']) ? (int) $data['cityId'] : null,
             streetId: array_key_exists('streetId', $data) && $data['streetId'] !== null ? (int) $data['streetId'] : null,

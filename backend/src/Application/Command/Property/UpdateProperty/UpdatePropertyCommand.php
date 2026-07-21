@@ -35,6 +35,7 @@ readonly class UpdatePropertyCommand
         public ?int $dailyDoubleBeds = null,
         public ?string $checkInTime = null,
         public ?string $checkOutTime = null,
+        public ?int $minStayDays = null,
         public ?string $building = null,
         public ?string $block = null,
         public ?int $cityId = null,

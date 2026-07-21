@@ -79,6 +79,7 @@ import {
     ROOMS_MIN,
     DAILY_BEDS_MAX,
     MAX_DAILY_GUESTS,
+    MAX_MIN_STAY_DAYS,
     MIN_DAILY_PRICE_BYN,
     TITLE_MAX_LENGTH,
     TITLE_MIN_LENGTH,
@@ -156,6 +157,7 @@ interface EditFormData {
     dailyDoubleBeds: string;
     checkInTime: string;
     checkOutTime: string;
+    minStayDays: string;
     floor: string;
     totalFloors: string;
     yearBuilt: string;
@@ -245,6 +247,11 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
                   : '0',
         checkInTime: revisionData?.checkInTime ?? property.specifications.checkInTime ?? '',
         checkOutTime: revisionData?.checkOutTime ?? property.specifications.checkOutTime ?? '',
+        minStayDays: revisionData?.minStayDays != null
+            ? String(revisionData.minStayDays)
+            : property.specifications.minStayDays != null
+                ? String(property.specifications.minStayDays)
+                : '1',
         floor: String(revisionData?.floor ?? property.specifications.floor ?? ''),
         totalFloors: String(revisionData?.totalFloors ?? property.specifications.totalFloors ?? ''),
         yearBuilt: String(revisionData?.yearBuilt ?? property.specifications.yearBuilt ?? ''),
@@ -535,6 +542,7 @@ export default function EditPropertyPage() {
         const maxDailyGuests = Number(form.maxDailyGuests);
         const dailySingleBeds = Number(form.dailySingleBeds);
         const dailyDoubleBeds = Number(form.dailyDoubleBeds);
+        const minStayDays = form.minStayDays.trim() === '' ? 1 : Number(form.minStayDays);
         const price = Number(form.price);
 
         const titleValidationError = getTitleFieldError(form.title);
@@ -683,6 +691,10 @@ export default function EditPropertyPage() {
                 toast.error('Время выезда должно быть в формате ЧЧ:ММ');
                 return;
             }
+            if (!Number.isFinite(minStayDays) || minStayDays < 1 || minStayDays > MAX_MIN_STAY_DAYS) {
+                toast.error(`Минимальный срок: от 1 до ${MAX_MIN_STAY_DAYS} суток`);
+                return;
+            }
         }
         const priceError = getDailyPriceFieldError(form.price);
         if (priceError) {
@@ -759,6 +771,7 @@ export default function EditPropertyPage() {
                 dailyDoubleBeds: form.dealType === 'daily' ? dailyDoubleBeds : undefined,
                 checkInTime: form.dealType === 'daily' && form.checkInTime ? form.checkInTime : undefined,
                 checkOutTime: form.dealType === 'daily' && form.checkOutTime ? form.checkOutTime : undefined,
+                minStayDays: form.dealType === 'daily' ? minStayDays : undefined,
                 building: form.building.trim(),
                 block: form.block.trim() || undefined,
                 cityId: form.cityId ?? undefined,
@@ -1155,7 +1168,7 @@ export default function EditPropertyPage() {
 
                         {form.dealType === 'daily' && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="sm:col-span-2">
+                                <div>
                                     <Label className="text-foreground">Максимальное число гостей *</Label>
                                     <Input
                                         type="number"
@@ -1165,6 +1178,19 @@ export default function EditPropertyPage() {
                                         step={1}
                                         value={form.maxDailyGuests}
                                         onChange={(e) => update('maxDailyGuests', e.target.value)}
+                                        className="mt-1.5"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="text-foreground">Минимальное количество суток *</Label>
+                                    <Input
+                                        type="number"
+                                        inputMode="numeric"
+                                        min={1}
+                                        max={MAX_MIN_STAY_DAYS}
+                                        step={1}
+                                        value={form.minStayDays}
+                                        onChange={(e) => update('minStayDays', e.target.value)}
                                         className="mt-1.5"
                                     />
                                 </div>

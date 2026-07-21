@@ -106,6 +106,9 @@ class Property
     #[ORM\Column(type: 'string', length: 5, nullable: true, name: 'check_out_time')]
     private ?string $checkOutTime = null;
 
+    #[ORM\Column(type: 'integer', nullable: true, name: 'min_stay_days')]
+    private ?int $minStayDays = null;
+
     #[ORM\Column(type: 'address')]
     private Address $address;
 
@@ -266,6 +269,7 @@ class Property
         ?string $instagramUrl = null,
         ?string $websiteUrl = null,
         ?string $videoUrl = null,
+        ?int $minStayDays = null,
     ) {
         $this->ownerId = $ownerId;
         $this->type = $type;
@@ -307,6 +311,7 @@ class Property
         $this->instagramUrl = $instagramUrl;
         $this->websiteUrl = $websiteUrl;
         $this->videoUrl = $videoUrl;
+        $this->minStayDays = $minStayDays;
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
         $this->revisions = new ArrayCollection();
@@ -696,6 +701,7 @@ class Property
             'dailyDoubleBeds' => 'Двуспальных кроватей',
             'checkInTime' => 'Время заезда',
             'checkOutTime' => 'Время выезда',
+            'minStayDays' => 'Минимум суток для заселения',
             'building' => 'Дом',
             'block' => 'Корпус',
             'cityId' => 'Город',
@@ -767,6 +773,7 @@ class Property
             'dailyDoubleBeds' => $this->dailyDoubleBeds,
             'checkInTime' => $this->checkInTime,
             'checkOutTime' => $this->checkOutTime,
+            'minStayDays' => $this->minStayDays,
             'building' => $this->address->getBuilding(),
             'block' => $this->address->getBlock(),
             'cityId' => $this->cityId,
@@ -1117,6 +1124,11 @@ class Property
         return $this->checkOutTime;
     }
 
+    public function getMinStayDays(): ?int
+    {
+        return $this->minStayDays;
+    }
+
     public function getAddress(): Address
     {
         return $this->address;
@@ -1354,6 +1366,12 @@ class Property
     public function setCheckOutTime(?string $checkOutTime): void
     {
         $this->checkOutTime = $checkOutTime;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function setMinStayDays(?int $minStayDays): void
+    {
+        $this->minStayDays = $minStayDays;
         $this->updatedAt = new \DateTimeImmutable();
     }
 
@@ -1641,6 +1659,7 @@ class Property
         ?int $dailyDoubleBeds = null,
         ?string $checkInTime = null,
         ?string $checkOutTime = null,
+        ?int $minStayDays = null,
         ?Address $address = null,
         ?int $cityId = null,
         ?int $streetId = null,
@@ -1683,6 +1702,7 @@ class Property
         if ($dailyDoubleBeds !== null) $this->dailyDoubleBeds = $dailyDoubleBeds;
         if ($checkInTime !== null) $this->checkInTime = $checkInTime;
         if ($checkOutTime !== null) $this->checkOutTime = $checkOutTime;
+        if ($minStayDays !== null) $this->minStayDays = $minStayDays;
         if ($address !== null) $this->address = $address;
         if ($cityId !== null) $this->cityId = $cityId;
         if ($streetId !== null || $streetName !== null) {
@@ -1700,6 +1720,7 @@ class Property
             $this->dailyDoubleBeds = null;
             $this->checkInTime = null;
             $this->checkOutTime = null;
+            $this->minStayDays = null;
             $this->sellerType = null;
         }
 

@@ -84,6 +84,7 @@ export interface Property {
         dailyDoubleBeds?: number;
         checkInTime?: string;
         checkOutTime?: string;
+        minStayDays?: number;
         building?: string;
         block?: string;
         cityId?: number;
@@ -132,6 +133,7 @@ export interface Property {
         dailyDoubleBeds?: number | null;
         checkInTime?: string | null;
         checkOutTime?: string | null;
+        minStayDays?: number | null;
     };
     images: PropertyImage[];
     /** Удобства (id строк), приходят с API на чтение и уходят при обновлении. */

@@ -9,6 +9,8 @@ use App\Domain\Shared\Exception\DomainException;
 
 final class DailyRentDetailsValidator
 {
+    public const int MAX_MIN_STAY_DAYS = 90;
+
     public static function assertValid(
         string $dealType,
         string $propertyType,
@@ -17,6 +19,7 @@ final class DailyRentDetailsValidator
         ?int $dailyDoubleBeds,
         ?string $checkInTime,
         ?string $checkOutTime,
+        ?int $minStayDays = null,
     ): void {
         if ($dealType === DealType::Daily->value) {
             if ($maxDailyGuests === null || $maxDailyGuests <= 0) {
@@ -24,6 +27,12 @@ final class DailyRentDetailsValidator
             }
             if ($maxDailyGuests > 20) {
                 throw new DomainException('Максимум 20 гостей для посуточной аренды');
+            }
+            $effectiveMinStay = $minStayDays ?? 1;
+            if ($effectiveMinStay < 1 || $effectiveMinStay > self::MAX_MIN_STAY_DAYS) {
+                throw new DomainException(
+                    sprintf('Минимальный срок проживания: от 1 до %d суток', self::MAX_MIN_STAY_DAYS),
+                );
             }
             $single = $dailySingleBeds ?? 0;
             $double = $dailyDoubleBeds ?? 0;

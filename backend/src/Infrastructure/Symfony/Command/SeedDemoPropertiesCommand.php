@@ -522,6 +522,7 @@ final class SeedDemoPropertiesCommand extends Command
             'dailyDoubleBeds' => $doubleBeds,
             'checkInTime' => $checkIn,
             'checkOutTime' => $checkOut,
+            'minStayDays' => 1 + ($index % 3),
             'roomsInDeal' => $roomsInDeal,
             'roomsArea' => $roomsArea,
             'amenities' => $amenities,
@@ -593,6 +594,7 @@ final class SeedDemoPropertiesCommand extends Command
             contactName: null,
             roomsInDeal: $spec['roomsInDeal'],
             roomsArea: $spec['roomsArea'],
+            minStayDays: $spec['minStayDays'] ?? 1,
         );
     }
 }

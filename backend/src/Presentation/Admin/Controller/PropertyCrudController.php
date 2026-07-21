@@ -275,6 +275,9 @@ class PropertyCrudController extends AbstractCrudController
         yield TextField::new('checkOutTime', 'Время выезда (ЧЧ:ММ)')
             ->hideOnIndex();
 
+        yield IntegerField::new('minStayDays', 'Минимум суток для заселения')
+            ->hideOnIndex();
+
         yield FormField::addTab('Адрес и контакты');
 
         yield IntegerField::new('cityId', 'ID города')

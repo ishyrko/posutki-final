@@ -81,6 +81,7 @@ import {
     ROOMS_MIN,
     DAILY_BEDS_MAX,
     MAX_DAILY_GUESTS,
+    MAX_MIN_STAY_DAYS,
     MIN_DAILY_PRICE_BYN,
     TITLE_MAX_LENGTH,
     TITLE_MIN_LENGTH,
@@ -195,6 +196,7 @@ const INITIAL_FORM: ListingFormData = {
     dailyDoubleBeds: '0',
     checkInTime: '',
     checkOutTime: '',
+    minStayDays: '1',
     yearBuilt: '',
     renovation: '',
     balcony: '',
@@ -558,6 +560,10 @@ export function CreateListingForm() {
                     if (form.checkOutTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkOutTime)) {
                         errs.checkOutTime = 'Формат времени: ЧЧ:ММ';
                     }
+                    const minStay = form.minStayDays.trim() === '' ? 1 : Number(form.minStayDays);
+                    if (!Number.isFinite(minStay) || minStay < 1 || minStay > MAX_MIN_STAY_DAYS) {
+                        errs.minStayDays = `От 1 до ${MAX_MIN_STAY_DAYS} суток`;
+                    }
                 }
                 if (!form.price) errs.price = 'Укажите цену';
                 else {
@@ -638,6 +644,8 @@ export function CreateListingForm() {
                         && Number(form.dailySingleBeds) >= 0
                         && Number(form.dailyDoubleBeds) >= 0
                         && Number(form.dailySingleBeds) + Number(form.dailyDoubleBeds) >= 1
+                        && Number(form.minStayDays || 1) >= 1
+                        && Number(form.minStayDays || 1) <= MAX_MIN_STAY_DAYS
                     ))
                 );
             default: return false;
@@ -772,6 +780,9 @@ export function CreateListingForm() {
                 : undefined,
             checkOutTime: form.dealType === 'daily' && form.checkOutTime
                 ? form.checkOutTime
+                : undefined,
+            minStayDays: form.dealType === 'daily'
+                ? Number(form.minStayDays || 1)
                 : undefined,
             building: form.building.trim(),
             block: form.block.trim() || undefined,
@@ -1758,7 +1769,7 @@ export function CreateListingForm() {
                                     <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                         <h2 className="font-display text-lg font-semibold text-foreground">Посуточная аренда</h2>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                            <div className="sm:col-span-2">
+                                            <div>
                                                 <label className={labelClass}>
                                                     <Users className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
                                                     Максимум гостей *
@@ -1775,6 +1786,21 @@ export function CreateListingForm() {
                                                     className={cn(inputClass, errors.maxDailyGuests ? 'border-destructive' : '')}
                                                 />
                                                 <FieldError field="maxDailyGuests" />
+                                            </div>
+                                            <div>
+                                                <label className={labelClass}>Минимальное количество суток *</label>
+                                                <input
+                                                    type="number"
+                                                    inputMode="numeric"
+                                                    min={1}
+                                                    max={MAX_MIN_STAY_DAYS}
+                                                    step={1}
+                                                    value={form.minStayDays}
+                                                    onChange={(e) => update('minStayDays', e.target.value)}
+                                                    placeholder="1"
+                                                    className={cn(inputClass, errors.minStayDays ? 'border-destructive' : '')}
+                                                />
+                                                <FieldError field="minStayDays" />
                                             </div>
                                             <NumericPillRow
                                                 label={

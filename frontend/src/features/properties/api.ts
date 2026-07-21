@@ -101,6 +101,7 @@ export interface UpdatePropertyPayload {
     dailyDoubleBeds?: number;
     checkInTime?: string;
     checkOutTime?: string;
+    minStayDays?: number;
     building?: string;
     block?: string;
     cityId?: number;

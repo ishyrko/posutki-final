@@ -38,6 +38,7 @@ final class CreatePropertyCommand
         public readonly ?int $dailyDoubleBeds = null,
         public readonly ?string $checkInTime = null,
         public readonly ?string $checkOutTime = null,
+        public readonly ?int $minStayDays = null,
         public readonly ?int $streetId = null,
         public readonly ?string $streetName = null,
         public readonly ?string $block = null,

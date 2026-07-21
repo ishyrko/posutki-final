@@ -9,6 +9,23 @@ export const ROOMS_MAX = 50;
 export const DAILY_BEDS_MAX = 50;
 /** Максимум гостей для посуточной аренды (главная, подача, редактирование, API). */
 export const MAX_DAILY_GUESTS = 20;
+export const MAX_MIN_STAY_DAYS = 90;
+
+export function formatMinStayDays(count: number): string {
+    const abs = Math.abs(count);
+    const mod100 = abs % 100;
+    const mod10 = abs % 10;
+    if (mod100 > 10 && mod100 < 20) {
+        return `${count} суток`;
+    }
+    if (mod10 > 1 && mod10 < 5) {
+        return `${count} суток`;
+    }
+    if (mod10 === 1) {
+        return `${count} сутки`;
+    }
+    return `${count} суток`;
+}
 /** Минимальная цена за сутки для квартиры и дома (согласовано с API). */
 export const MIN_DAILY_PRICE_BYN = 10;
 export const BATHROOMS_MIN = 0;

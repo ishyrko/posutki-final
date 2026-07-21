@@ -68,6 +68,9 @@ readonly class UpdatePropertyHandler
             PaymentMethodsValidator::assertValid($command->paymentMethods);
         }
         $effectiveLandArea = $command->landArea ?? $property->getLandArea();
+        $effectiveMinStayDays = $effectiveDealType === 'daily'
+            ? ($command->minStayDays ?? $property->getMinStayDays() ?? 1)
+            : null;
         DailyRentDetailsValidator::assertValid(
             dealType: $effectiveDealType,
             propertyType: $effectiveType,
@@ -76,6 +79,7 @@ readonly class UpdatePropertyHandler
             dailyDoubleBeds: $command->dailyDoubleBeds ?? $property->getDailyDoubleBeds(),
             checkInTime: $command->checkInTime ?? $property->getCheckInTime(),
             checkOutTime: $command->checkOutTime ?? $property->getCheckOutTime(),
+            minStayDays: $effectiveMinStayDays,
         );
         $effectiveRoomsInDeal = $command->roomsInDeal ?? $property->getRoomsInDeal();
         $effectiveRoomsArea = $command->roomsArea ?? $property->getRoomsArea();
@@ -173,6 +177,7 @@ readonly class UpdatePropertyHandler
             dailyDoubleBeds: $command->dailyDoubleBeds,
             checkInTime: $command->checkInTime,
             checkOutTime: $command->checkOutTime,
+            minStayDays: $command->minStayDays,
             address: $address,
             cityId: $command->cityId,
             streetId: $command->streetId,
@@ -264,6 +269,7 @@ readonly class UpdatePropertyHandler
             'dailyDoubleBeds' => $property->getDailyDoubleBeds(),
             'checkInTime' => $property->getCheckInTime(),
             'checkOutTime' => $property->getCheckOutTime(),
+            'minStayDays' => $property->getMinStayDays(),
             'building' => $property->getAddress()->getBuilding(),
             'block' => $property->getAddress()->getBlock(),
             'cityId' => $property->getCityId(),
@@ -311,6 +317,7 @@ readonly class UpdatePropertyHandler
             'dailyDoubleBeds' => $command->dailyDoubleBeds ?? $property->getDailyDoubleBeds(),
             'checkInTime' => $command->checkInTime ?? $property->getCheckInTime(),
             'checkOutTime' => $command->checkOutTime ?? $property->getCheckOutTime(),
+            'minStayDays' => $command->minStayDays ?? $property->getMinStayDays(),
             'building' => $command->building ?? $property->getAddress()->getBuilding(),
             'block' => $command->block ?? $property->getAddress()->getBlock(),
             'cityId' => $command->cityId ?? $property->getCityId(),
@@ -378,6 +385,7 @@ readonly class UpdatePropertyHandler
             'dailyDoubleBeds' => $command->dailyDoubleBeds,
             'checkInTime' => $command->checkInTime,
             'checkOutTime' => $command->checkOutTime,
+            'minStayDays' => $command->minStayDays,
             'building' => $command->building,
             'block' => $command->block,
             'cityId' => $command->cityId,

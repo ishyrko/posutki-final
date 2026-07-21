@@ -127,6 +127,13 @@ class UpdatePropertyRequest
     )]
     public ?string $checkOutTime = null;
 
+    #[Assert\Range(
+        min: 1,
+        max: 90,
+        notInRangeMessage: 'Минимальный срок: от {{ min }} до {{ max }} суток'
+    )]
+    public ?int $minStayDays = null;
+
     public ?string $building = null;
 
     public ?string $block = null;
