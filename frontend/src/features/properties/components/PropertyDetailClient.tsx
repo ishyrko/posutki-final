@@ -20,6 +20,7 @@ import { notFound, usePathname } from "next/navigation";
 import { useHasAuthToken } from "@/hooks/useHasAuthToken";
 import { useProperty, useFavoriteIds, useToggleFavorite, useExchangeRates } from "@/features/properties/hooks";
 import { trackPhoneView } from "@/features/properties/api";
+import { trackPropertyContactEvent } from "@/lib/gtag";
 import { useSendMessage } from "@/features/messages/hooks";
 import { useUser } from "@/features/auth/hooks";
 import { formatAddress, Property } from "@/features/properties/types";
@@ -1103,6 +1104,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                       onClick={() => {
                         if (!hasContactPhones) return;
                         void trackPhoneView(property.id);
+                        trackPropertyContactEvent("show_phone", property);
                         setPhoneRevealed(true);
                       }}
                     >
@@ -1124,7 +1126,10 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                               className="min-w-0 flex-1 basis-0 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 border-0 h-11"
                               asChild
                             >
-                              <a href={phoneToTelHref(entry.phone)}>
+                              <a
+                                href={phoneToTelHref(entry.phone)}
+                                onClick={() => trackPropertyContactEvent("click_phone", property)}
+                              >
                                 <Phone className="w-4 h-4 shrink-0" />
                                 <span className="truncate">{entry.phone}</span>
                               </a>
@@ -1144,6 +1149,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       aria-label="Написать в Viber"
+                                      onClick={() => trackPropertyContactEvent("click_viber", property)}
                                     >
                                       <ViberIcon className="h-7 w-7" />
                                     </a>
@@ -1161,6 +1167,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       aria-label="Написать в WhatsApp"
+                                      onClick={() => trackPropertyContactEvent("click_whatsapp", property)}
                                     >
                                       <WhatsAppIcon className="!h-7 !w-7" />
                                     </a>
@@ -1178,6 +1185,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       aria-label="Написать в Telegram"
+                                      onClick={() => trackPropertyContactEvent("click_telegram", property)}
                                     >
                                       <TelegramIcon className="!h-7 !w-7" />
                                     </a>
