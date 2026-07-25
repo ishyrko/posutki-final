@@ -217,7 +217,11 @@ function GalleryGridThumb({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function PropertyDetailClient({ id, initialProperty }: PropertyDetailClientProps) {
-  const { data: property, isLoading, isError } = useProperty(id, { initialData: initialProperty });
+  const ssrFetchedAtRef = useRef(Date.now());
+  const { data: property, isLoading, isError } = useProperty(id, {
+    initialData: initialProperty,
+    initialDataUpdatedAt: ssrFetchedAtRef.current,
+  });
   const { selectedCurrency } = useCurrency();
   const { data: rates } = useExchangeRates();
   const exchangeRates: ExchangeRates = useMemo(

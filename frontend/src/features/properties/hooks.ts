@@ -39,15 +39,26 @@ export const useProperties = (filters: PropertyFilters = {}, options?: UseProper
 };
 
 type UsePropertyOptions = {
+    /** SSR payload — avoids loading state on first paint. */
     initialData?: Property;
+    /** Set once per mount (e.g. useRef(Date.now())) — do not pass a new timestamp every render. */
+    initialDataUpdatedAt?: number;
 };
 
 export const useProperty = (id: number, options: UsePropertyOptions = {}) => {
+    const hasInitial = options.initialData !== undefined;
     return useQuery({
         queryKey: ['property', id],
         queryFn: () => getProperty(id),
         enabled: id > 0,
-        initialData: options.initialData,
+        ...(hasInitial
+            ? {
+                  initialData: options.initialData,
+                  ...(options.initialDataUpdatedAt !== undefined
+                      ? { initialDataUpdatedAt: options.initialDataUpdatedAt }
+                      : {}),
+              }
+            : {}),
     });
 };
 
