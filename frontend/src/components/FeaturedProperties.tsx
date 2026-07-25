@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import type { PropertyListResponse } from "@/features/properties/types";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
@@ -26,6 +26,7 @@ interface FeaturedPropertiesProps {
 }
 
 const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesProps) => {
+  const ssrFetchedAtRef = useRef(Date.now());
   /** Главная `/` не передаёт регион с сервера — берём тот же slug, что и шапка (по умолчанию Минская область). */
   const headerRegionSlug = useHeaderRegionSlug();
   const effectiveRegionSlug = regionSlug ?? headerRegionSlug;
@@ -47,7 +48,9 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
     : buildCatalogUrl({ propertyType: "apartment" });
   const { data, isLoading } = useProperties(
     featuredFilters,
-    featuredInitial ? { initialData: featuredInitial } : undefined,
+    featuredInitial
+      ? { initialData: featuredInitial, initialDataUpdatedAt: ssrFetchedAtRef.current }
+      : undefined,
   );
   const { selectedCurrency } = useCurrency();
   const { data: rates } = useExchangeRates();
