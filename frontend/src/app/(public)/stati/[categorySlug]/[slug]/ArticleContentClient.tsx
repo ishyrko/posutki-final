@@ -113,7 +113,7 @@ export default function ArticleContentClient({
   return (
     <div className="min-h-screen bg-background pt-10 pb-16">
       <div className="container mx-auto px-4">
-        <article className="max-w-3xl mx-auto">
+        <article>
           <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mb-8">
             <Link
               href={article.categorySlug ? `/stati/${article.categorySlug}/` : "/stati/"}
