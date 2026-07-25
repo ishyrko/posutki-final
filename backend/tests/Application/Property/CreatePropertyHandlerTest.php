@@ -98,7 +98,7 @@ final class CreatePropertyHandlerTest extends TestCase
 
         $handler = new CreatePropertyHandler(
             $propertyRepository,
-            $this->createUserRepository(verified: false),
+            $this->createUserRepository(phoneVerified: false),
             $exchangeRateService,
             $metroCalculator,
             $notificationBus,
@@ -110,17 +110,48 @@ final class CreatePropertyHandlerTest extends TestCase
         $handler($this->createValidCommand());
     }
 
-    private function createUserRepository(bool $verified = true): UserRepositoryInterface
+    public function testCreateWithoutVerifiedEmailThrowsDomainException(): void
+    {
+        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
+        $metroCalculator = $this->createMetroCalculator();
+        $notificationBus = $this->createStub(MessageBusInterface::class);
+        $exchangeRateService = $this->createExchangeRateService();
+
+        $handler = new CreatePropertyHandler(
+            $propertyRepository,
+            $this->createUserRepository(emailVerified: false),
+            $exchangeRateService,
+            $metroCalculator,
+            $notificationBus,
+        );
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Для подачи объявления необходимо указать и подтвердить email в профиле');
+
+        $handler($this->createValidCommand());
+    }
+
+    private function createUserRepository(bool $phoneVerified = true, bool $emailVerified = true): UserRepositoryInterface
     {
         $userRepository = $this->createStub(UserRepositoryInterface::class);
-        $user = $verified
-            ? User::registerViaPhone('+375291112233')
-            : User::register(
+        if ($phoneVerified) {
+            $user = User::registerViaPhone('+375291112233');
+        } else {
+            $user = User::register(
                 Email::fromString('creator@example.com'),
                 'hashed-password',
                 'First',
                 'Last',
             );
+        }
+
+        if ($emailVerified) {
+            $emailReflection = new \ReflectionProperty($user, 'email');
+            $emailReflection->setAccessible(true);
+            $emailReflection->setValue($user, Email::fromString('creator@example.com'));
+            $user->verify();
+        }
+
         $userRepository
             ->method('findById')
             ->willReturn($user);

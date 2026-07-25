@@ -71,6 +71,9 @@ final class CreatePropertyHandler
         if ($user === null || !$user->isPhoneVerified()) {
             throw new DomainException('Для подачи объявления необходимо подтвердить телефон в профиле');
         }
+        if ($user->getEmail() === null || !$user->isVerified()) {
+            throw new DomainException('Для подачи объявления необходимо указать и подтвердить email в профиле');
+        }
 
         $price = Price::fromAmount($command->priceAmount, $command->priceCurrency);
         $address = Address::create($command->building, $command->block);

@@ -229,6 +229,8 @@ export function CreateListingForm() {
     const [sessionReady, setSessionReady] = useState(false);
     const { data: user, isLoading: userLoading, isError: userError } = useUser();
     const hasVerifiedPhone = isMounted && Boolean(user?.isPhoneVerified);
+    const hasVerifiedEmail = isMounted && Boolean(user?.email && user?.isVerified);
+    const canSubmitListing = hasVerifiedPhone && hasVerifiedEmail;
 
     useEffect(() => {
         setIsMounted(true);
@@ -398,8 +400,14 @@ export function CreateListingForm() {
 
         switch (s) {
             case 1:
-                if (isAuthenticated() && !userLoading && !hasVerifiedPhone) {
-                    profileGateError = 'Подтвердите телефон в профиле для подачи объявлений';
+                if (isAuthenticated() && !userLoading) {
+                    if (!hasVerifiedPhone && !hasVerifiedEmail) {
+                        profileGateError = 'Подтвердите телефон и email в профиле для подачи объявлений';
+                    } else if (!hasVerifiedPhone) {
+                        profileGateError = 'Подтвердите телефон в профиле для подачи объявлений';
+                    } else if (!hasVerifiedEmail) {
+                        profileGateError = 'Укажите и подтвердите email в профиле для подачи объявлений';
+                    }
                 }
                 if (!form.propertyType) {
                     errs.propertyType = 'Выберите тип объекта';
@@ -576,7 +584,7 @@ export function CreateListingForm() {
         setErrors(errs);
         setProfileGateError(profileGateError);
         return Object.keys(errs).length === 0 && !profileGateError;
-    }, [form, hasVerifiedPhone, userLoading]);
+    }, [form, hasVerifiedPhone, hasVerifiedEmail, userLoading]);
 
     const canProceed = useCallback((): boolean => {
         switch (step) {
@@ -585,7 +593,7 @@ export function CreateListingForm() {
                     form.propertyType
                     && isAllowedDailyPropertyType(form.propertyType)
                     && !userLoading
-                    && hasVerifiedPhone
+                    && canSubmitListing
                 );
             case 2:
                 return !!(
@@ -650,7 +658,7 @@ export function CreateListingForm() {
                 );
             default: return false;
         }
-    }, [step, form, hasVerifiedPhone, userLoading]);
+    }, [step, form, canSubmitListing, userLoading]);
 
     const geocodeAddress = useCallback(async () => {
         const parts = [form.cityName, form.streetName, form.building, form.block].filter(Boolean);
@@ -1028,19 +1036,28 @@ export function CreateListingForm() {
                                     </p>
                                 </div>
 
-                                {isMounted && !userLoading && !hasVerifiedPhone && (
+                                {isMounted && !userLoading && !canSubmitListing && (
                                     <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
                                         <div className="space-y-1">
                                             <h3 className="font-semibold text-foreground">
-                                                Подтверждение телефона
+                                                Подтверждение контактов
                                             </h3>
                                             <p className="text-sm text-muted-foreground max-w-xl">
-                                                Для подачи объявлений необходимо подтвердить хотя бы один телефон в профиле.
+                                                Для подачи объявлений необходимо подтвердить телефон и email в профиле.
                                             </p>
                                         </div>
 
+                                        <ul className="text-sm text-muted-foreground space-y-1">
+                                            <li className={hasVerifiedPhone ? 'text-foreground' : 'text-amber-700 dark:text-amber-400'}>
+                                                {hasVerifiedPhone ? '✓' : '•'} Телефон {hasVerifiedPhone ? 'подтверждён' : 'не подтверждён'}
+                                            </li>
+                                            <li className={hasVerifiedEmail ? 'text-foreground' : 'text-amber-700 dark:text-amber-400'}>
+                                                {hasVerifiedEmail ? '✓' : '•'} Email {hasVerifiedEmail ? 'подтверждён' : 'не подтверждён'}
+                                            </li>
+                                        </ul>
+
                                         <p className="text-sm text-amber-700 dark:text-amber-400">
-                                            {profileGateError ?? 'Подтвердите телефон в профиле, чтобы продолжить.'}{' '}
+                                            {profileGateError ?? 'Завершите подтверждение контактов в профиле, чтобы продолжить.'}{' '}
                                             <Link href="/kabinet/profil" className="font-medium underline underline-offset-2">
                                                 Открыть профиль
                                             </Link>
