@@ -3,11 +3,12 @@ import { rmSync } from "node:fs";
 import path from "node:path";
 
 /**
- * CloudLinux ulimit -v: heap + SWC + webpack peak должны влезать в ~2–3 GB VM.
- * При ENOMEM уменьшайте CPANEL_BUILD_HEAP_MB (не ниже 1024).
+ * CloudLinux ulimit -v (часто 4 GB): heap V8 + SWC + webpack должны влезать в VM.
+ * «JavaScript heap out of memory» → увеличьте CPANEL_BUILD_HEAP_MB (до 2816).
+ * «memory allocation» / native OOM → уменьшите heap (от 1536).
  */
-const heapMb = Number.parseInt(process.env.CPANEL_BUILD_HEAP_MB ?? "1536", 10);
-const heapClamped = Math.min(Math.max(Number.isFinite(heapMb) ? heapMb : 1536, 1024), 2048);
+const heapMb = Number.parseInt(process.env.CPANEL_BUILD_HEAP_MB ?? "2048", 10);
+const heapClamped = Math.min(Math.max(Number.isFinite(heapMb) ? heapMb : 2048, 1024), 2816);
 
 /** Defaults for cPanel / CloudLinux (virtual memory limit + low RSS). */
 const DEFAULT_NODE_OPTIONS = [
@@ -31,9 +32,7 @@ function mergeNodeOptions(existing) {
 
 process.env.NEXT_TELEMETRY_DISABLED = "1";
 process.env.NEXT_LOW_MEMORY_BUILD = "1";
-if (process.env.CPANEL_BUILD_NO_WEBPACK_CACHE !== "0") {
-  process.env.CPANEL_BUILD_NO_WEBPACK_CACHE = "1";
-}
+process.env.UV_THREADPOOL_SIZE = process.env.UV_THREADPOOL_SIZE ?? "1";
 process.env.NODE_OPTIONS = mergeNodeOptions(process.env.NODE_OPTIONS);
 console.log(`[build:low-memory] NODE_OPTIONS=${process.env.NODE_OPTIONS}`);
 console.log(
@@ -59,11 +58,11 @@ const result = spawnSync("npx", ["next", "build", "--webpack"], {
 
 if ((result.status ?? 1) !== 0) {
   console.error(
-    "[build:low-memory] Сборка не удалась. При «memory allocation» на CloudLinux попробуйте env:\n" +
-      "  CPANEL_BUILD_HEAP_MB=1280  (или 1024)\n" +
+    "[build:low-memory] Сборка не удалась. Подстройте heap под текст ошибки:\n" +
+      "  «JavaScript heap out of memory» → CPANEL_BUILD_HEAP_MB=2560 (или 2816)\n" +
+      "  «memory allocation» / native OOM → CPANEL_BUILD_HEAP_MB=1792 (или 1536)\n" +
       "  CPANEL_BUILD_CLEAN=1\n" +
-      "  CPANEL_BUILD_NO_WEBPACK_CACHE=1\n" +
-      "Либо соберите локально: make frontend-build-cpanel-prod и залейте frontend/.next",
+      "Либо: make frontend-build-cpanel-prod и залейте frontend/.next",
   );
 }
 

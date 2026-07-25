@@ -20,7 +20,7 @@ const nextConfig = {
           webpackMemoryOptimizations: true,
           /** Off on shared hosting: second Node process doubles virtual-memory pressure (CloudLinux ulimit -v). */
           webpackBuildWorker: false,
-          optimizePackageImports: ["lucide-react", "date-fns", "framer-motion"],
+          optimizePackageImports: ["lucide-react", "date-fns"],
         },
       }
     : {}),
@@ -40,6 +40,11 @@ const nextConfig = {
     };
     if (lowMemoryBuild) {
       config.parallelism = 1;
+      config.optimization = {
+        ...config.optimization,
+        /** Scope hoisting spikes webpack RSS on large graphs (CloudLinux). */
+        concatenateModules: false,
+      };
       if (process.env.CPANEL_BUILD_NO_WEBPACK_CACHE === "1") {
         config.cache = false;
       }
