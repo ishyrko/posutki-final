@@ -8,13 +8,11 @@ use App\Application\DTO\ArticleDTO;
 use App\Domain\Article\Repository\ArticleRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
 use App\Domain\Shared\ValueObject\Slug;
-use Psr\Log\LoggerInterface;
 
 readonly class GetArticleHandler
 {
     public function __construct(
         private ArticleRepositoryInterface $articleRepository,
-        private LoggerInterface $logger,
     ) {
     }
 
@@ -30,16 +28,6 @@ readonly class GetArticleHandler
 
         if (!$article) {
             return null;
-        }
-
-        try {
-            $article->incrementViews();
-            $this->articleRepository->save($article);
-        } catch (\Throwable $e) {
-            $this->logger->error('Failed to persist article view increment', [
-                'message' => $e->getMessage(),
-                'articleId' => $article->getId()->getValue(),
-            ]);
         }
 
         return ArticleDTO::fromEntity($article);

@@ -25,6 +25,13 @@ export const getArticleBySlug = async (slug: string): Promise<Article> => {
     return response.data.data;
 };
 
+export const trackArticleView = async (slug: string): Promise<{ views: number }> => {
+    const response = await api.post<{ data: { views: number } }>(
+        `/articles/${encodeURIComponent(slug)}/view`,
+    );
+    return response.data.data;
+};
+
 export const getCategoryBySlug = async (slug: string): Promise<ArticleCategory> => {
     const response = await api.get<{ data: ArticleCategory }>(`/article-categories/${slug}`);
     return response.data.data;

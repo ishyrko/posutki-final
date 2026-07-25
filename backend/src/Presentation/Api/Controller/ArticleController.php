@@ -12,6 +12,8 @@ use App\Application\Query\Article\GetArticle\GetArticleQuery;
 use App\Application\Query\Article\SearchArticles\SearchArticlesQuery;
 use App\Application\Command\CommandBusInterface;
 use App\Application\Query\QueryBusInterface;
+use App\Domain\Article\Repository\ArticleRepositoryInterface;
+use App\Domain\Shared\ValueObject\Slug;
 use App\Presentation\Api\Request\CreateArticleRequest;
 use App\Presentation\Api\Request\UpdateArticleRequest;
 use App\Presentation\Api\Response\ApiResponse;
@@ -29,6 +31,7 @@ class ArticleController extends AbstractController
     public function __construct(
         private readonly CommandBusInterface $commandBus,
         private readonly QueryBusInterface $queryBus,
+        private readonly ArticleRepositoryInterface $articleRepository,
     ) {
     }
 
@@ -85,6 +88,26 @@ class ArticleController extends AbstractController
 
         return $this->json(
             ApiResponse::success($article)
+        );
+    }
+
+    #[Route('/{slug}/view', name: 'track_view', methods: ['POST'])]
+    public function trackView(string $slug): JsonResponse
+    {
+        $article = $this->articleRepository->findBySlug(Slug::fromString($slug));
+
+        if ($article === null) {
+            return $this->json(
+                ApiResponse::error('Статья не найдена', 404),
+                404
+            );
+        }
+
+        $article->incrementViews();
+        $this->articleRepository->save($article);
+
+        return $this->json(
+            ApiResponse::success(['views' => $article->getViews()])
         );
     }
 

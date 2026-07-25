@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, ArrowLeft, Tag, Calendar } from "lucide-react";
 import Link from "next/link";
@@ -7,6 +8,7 @@ import { RichContentHtml } from "@/components/RichContentHtml";
 import { Article } from "@/features/articles/types";
 import { estimateArticleReadMinutes } from "@/features/articles/articleHtmlUtils";
 import { ARTICLE_FALLBACK_IMAGE } from "@/features/articles/articleCardDisplay";
+import { trackArticleView } from "@/features/articles/api";
 import { resolveArticleThumbnailUrl } from "@/features/articles/image";
 
 type ArticleContentClientProps = {
@@ -88,6 +90,25 @@ export default function ArticleContentClient({
   const content = typeof article.content === "string" ? article.content : "";
   const tags = Array.isArray(article.tags) ? article.tags : [];
   const readTime = estimateArticleReadMinutes(content);
+  const [views, setViews] = useState(article.views ?? 0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    trackArticleView(article.slug)
+      .then((result) => {
+        if (!cancelled) {
+          setViews(result.views);
+        }
+      })
+      .catch(() => {
+        // View tracking is best-effort; the article remains readable.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [article.slug]);
 
   return (
     <div className="min-h-screen bg-background pt-10 pb-16">
@@ -125,7 +146,7 @@ export default function ArticleContentClient({
                 <Clock className="w-4 h-4" />
                 {readTime} мин чтения
               </span>
-              {Number(article.views) > 0 && <span>{article.views} просмотров</span>}
+              {views > 0 && <span>{views} просмотров</span>}
             </div>
           </motion.header>
 
