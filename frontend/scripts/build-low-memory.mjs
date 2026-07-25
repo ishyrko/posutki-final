@@ -3,12 +3,19 @@ import { rmSync } from "node:fs";
 import path from "node:path";
 
 /**
- * CloudLinux ulimit -v (часто 4 GB): heap V8 + SWC + webpack должны влезать в VM.
- * «JavaScript heap out of memory» → увеличьте CPANEL_BUILD_HEAP_MB (до 2816).
- * «memory allocation» / native OOM → уменьшите heap (от 1536).
+ * CloudLinux ulimit -v (часто 4 GB): heap V8 + mmap нативных .node (SWC, Oxide) в одном адресном пространстве.
+ * 2560+ → SWC «Cannot allocate memory» (mmap). 1536 → webpack «heap out of memory».
+ * Для 4 GB LVE: 1920–2048. «heap out of memory» → +128; native/SWC mmap → −128.
  */
 const heapMb = Number.parseInt(process.env.CPANEL_BUILD_HEAP_MB ?? "2048", 10);
-const heapClamped = Math.min(Math.max(Number.isFinite(heapMb) ? heapMb : 2048, 1024), 2816);
+const heapClamped = Math.min(Math.max(Number.isFinite(heapMb) ? heapMb : 2048, 1024), 2400);
+
+if (Number.isFinite(heapMb) && heapMb > 2400) {
+  console.warn(
+    `[build:low-memory] CPANEL_BUILD_HEAP_MB=${heapMb} > 2400 — clamped to ${heapClamped}. ` +
+      "На 4 GB LVE большой heap блокирует загрузку SWC (mmap).",
+  );
+}
 
 /** Defaults for cPanel / CloudLinux (virtual memory limit + low RSS). */
 const DEFAULT_NODE_OPTIONS = [
@@ -58,11 +65,11 @@ const result = spawnSync("npx", ["next", "build", "--webpack"], {
 
 if ((result.status ?? 1) !== 0) {
   console.error(
-    "[build:low-memory] Сборка не удалась. Подстройте heap под текст ошибки:\n" +
-      "  «JavaScript heap out of memory» → CPANEL_BUILD_HEAP_MB=2560 (или 2816)\n" +
-      "  «memory allocation» / native OOM → CPANEL_BUILD_HEAP_MB=1792 (или 1536)\n" +
+    "[build:low-memory] Сборка не удалась. На 4 GB LVE рабочий диапазон heap: 1920–2048.\n" +
+      "  SWC «Cannot allocate memory» / failed to map segment → heap слишком большой (не 2560+), попробуйте 2048 или 1920\n" +
+      "  «JavaScript heap out of memory» → 2048 или 2176 (не выше 2400)\n" +
       "  CPANEL_BUILD_CLEAN=1\n" +
-      "Либо: make frontend-build-cpanel-prod и залейте frontend/.next",
+      "Надёжно: make frontend-build-cpanel-prod локально → залить frontend/.next",
   );
 }
 
