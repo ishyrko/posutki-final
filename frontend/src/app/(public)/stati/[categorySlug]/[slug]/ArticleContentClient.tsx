@@ -9,7 +9,7 @@ import { Article } from "@/features/articles/types";
 import { estimateArticleReadMinutes } from "@/features/articles/articleHtmlUtils";
 import { ARTICLE_FALLBACK_IMAGE } from "@/features/articles/articleCardDisplay";
 import { trackArticleView } from "@/features/articles/api";
-import { resolveArticleThumbnailUrl } from "@/features/articles/image";
+import { resolveArticleImageUrl } from "@/features/articles/image";
 
 type ArticleContentClientProps = {
   article: Article;
@@ -159,7 +159,7 @@ export default function ArticleContentClient({
             <div className="aspect-[16/9] rounded-2xl overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={resolveArticleThumbnailUrl(article.coverImage) || ARTICLE_FALLBACK_IMAGE}
+                src={resolveArticleImageUrl(article.coverImage) || ARTICLE_FALLBACK_IMAGE}
                 alt={article.title}
                 className="w-full h-full object-cover"
               />

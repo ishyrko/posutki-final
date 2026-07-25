@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { Article } from "@/features/articles/types";
 import { ARTICLE_FALLBACK_IMAGE } from "@/features/articles/articleCardDisplay";
-import { resolveArticleThumbnailUrl } from "@/features/articles/image";
+import { resolveArticleImageUrl } from "@/features/articles/image";
 import { fetchPublicApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { sanitizeArticleHtml } from "@/features/articles/sanitizeArticleHtml";
 import ArticleContentClient from "./ArticleContentClient";
@@ -78,7 +78,7 @@ export async function generateMetadata({
     openGraph: {
       title: article.title,
       description: article.excerpt || `Статья о недвижимости: ${article.title}`,
-      images: [{ url: resolveArticleThumbnailUrl(article.coverImage) || ARTICLE_FALLBACK_IMAGE }],
+      images: [{ url: resolveArticleImageUrl(article.coverImage) || ARTICLE_FALLBACK_IMAGE }],
       type: "article",
     },
   };
