@@ -14,6 +14,18 @@ import {
     subscribeLocalFavorites,
 } from '@/lib/favorites-storage';
 import { getOrCreateVisitorId } from '@/lib/view-tracking';
+import { trackPropertyEngagementEvent } from '@/lib/gtag';
+
+type FavoriteAnalyticsContext = {
+    type?: string;
+    address?: { cityName?: string };
+};
+
+type ToggleFavoriteParams = {
+    propertyId: number;
+    isFavorited: boolean;
+    property?: FavoriteAnalyticsContext;
+};
 
 type UsePropertiesOptions = {
     /** SSR / dehydrated list — avoids treating data as stale at t=0 (immediate background refetch + flicker). */
@@ -203,7 +215,15 @@ export const useExchangeRates = () => {
 export const useToggleFavorite = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ propertyId, isFavorited }: { propertyId: number; isFavorited: boolean }) => {
+        mutationFn: async ({ propertyId, isFavorited, property }: ToggleFavoriteParams) => {
+            if (!isFavorited) {
+                trackPropertyEngagementEvent('add_to_favorites', {
+                    id: propertyId,
+                    type: property?.type ?? 'unknown',
+                    address: property?.address,
+                });
+            }
+
             if (!isAuthenticated()) {
                 const visitorId = getOrCreateVisitorId();
                 if (isFavorited) {

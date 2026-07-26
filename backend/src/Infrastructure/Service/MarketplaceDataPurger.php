@@ -22,6 +22,7 @@ final class MarketplaceDataPurger
     private const PROPERTY_TABLES = [
         'messages',
         'conversations',
+        'favorite_add_events',
         'favorites',
         'reviews',
         'property_daily_stats',

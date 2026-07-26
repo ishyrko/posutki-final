@@ -53,7 +53,11 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleFavorite({ propertyId: id, isFavorited });
+    toggleFavorite({
+      propertyId: id,
+      isFavorited,
+      property: { type, address: { cityName: address.cityName } },
+    });
   };
 
   return (

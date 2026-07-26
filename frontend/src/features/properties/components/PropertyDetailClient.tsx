@@ -714,7 +714,14 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                     <button
                       type="button"
                       onClick={() => {
-                        toggleFavorite({ propertyId: id, isFavorited });
+                        toggleFavorite({
+                          propertyId: id,
+                          isFavorited,
+                          property: {
+                            type: property.type,
+                            address: { cityName: property.address?.cityName },
+                          },
+                        });
                       }}
                       className={`p-2.5 rounded-xl transition-colors cursor-pointer ${
                         isFavorited

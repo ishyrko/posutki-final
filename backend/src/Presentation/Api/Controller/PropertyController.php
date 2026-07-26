@@ -24,7 +24,7 @@ use App\Application\Query\QueryBusInterface;
 use App\Application\Service\ContentViewTracker;
 use App\Application\Service\PropertyCalendarAggregator;
 use App\Domain\BookingInquiry\Repository\BookingInquiryRepositoryInterface;
-use App\Domain\Favorite\Repository\FavoriteRepositoryInterface;
+use App\Domain\Favorite\Repository\FavoriteAddEventRepositoryInterface;
 use App\Domain\Message\Repository\MessageRepositoryInterface;
 use App\Domain\Property\Repository\PropertyDailyStatRepositoryInterface;
 use App\Domain\Property\Enum\PropertyType;
@@ -51,7 +51,7 @@ class PropertyController extends AbstractController
         private readonly QueryBusInterface $queryBus,
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyDailyStatRepositoryInterface $propertyDailyStatRepository,
-        private readonly FavoriteRepositoryInterface $favoriteRepository,
+        private readonly FavoriteAddEventRepositoryInterface $favoriteAddEventRepository,
         private readonly MessageRepositoryInterface $messageRepository,
         private readonly BookingInquiryRepositoryInterface $bookingInquiryRepository,
         private readonly PropertyCalendarAggregator $propertyCalendarAggregator,
@@ -545,7 +545,7 @@ class PropertyController extends AbstractController
         $period = in_array($requestedPeriod, [7, 30, 90], true) ? $requestedPeriod : 30;
 
         $dailyPropertyStats = $this->propertyDailyStatRepository->findByPropertyAndPeriod($property->getId()->getValue(), $period);
-        $dailyFavoritesStats = $this->favoriteRepository->findDailyCountsByProperty(Id::fromString($id), $period);
+        $dailyFavoritesStats = $this->favoriteAddEventRepository->findDailyCountsByProperty(Id::fromString($id), $period);
         $dailyMessagesStats = $this->messageRepository->findDailyReceivedCountsByProperty($property->getId()->getValue(), $period);
         $dailyBookingInquiriesStats = $this->bookingInquiryRepository->findDailyCountsByProperty($property->getId()->getValue(), $period);
 

@@ -9,6 +9,7 @@ use App\Application\Command\Favorite\SyncVisitorFavorites\SyncVisitorFavoritesHa
 use App\Application\Command\Favorite\TrackAnonymousFavorite\TrackAnonymousFavoriteCommand;
 use App\Application\Command\Favorite\TrackAnonymousFavorite\TrackAnonymousFavoriteHandler;
 use App\Domain\Favorite\Entity\Favorite;
+use App\Domain\Favorite\Repository\FavoriteAddEventRepositoryInterface;
 use App\Domain\Favorite\Repository\FavoriteRepositoryInterface;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
@@ -34,10 +35,15 @@ final class AnonymousFavoriteHandlersTest extends TestCase
                 && $favorite->getUserId() === null
                 && $favorite->getPropertyId()->getValue() === 10));
 
+        $favoriteAddEventRepository = $this->createMock(FavoriteAddEventRepositoryInterface::class);
+        $favoriteAddEventRepository->expects(self::once())
+            ->method('record')
+            ->with($propertyId);
+
         $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
         $propertyRepository->method('findById')->with($propertyId)->willReturn($property);
 
-        $handler = new TrackAnonymousFavoriteHandler($favoriteRepository, $propertyRepository);
+        $handler = new TrackAnonymousFavoriteHandler($favoriteRepository, $favoriteAddEventRepository, $propertyRepository);
         $handler(new TrackAnonymousFavoriteCommand('visitor-1', '10'));
     }
 
@@ -51,10 +57,13 @@ final class AnonymousFavoriteHandlersTest extends TestCase
         $favoriteRepository->method('findByVisitorAndProperty')->willReturn($this->createMock(Favorite::class));
         $favoriteRepository->expects(self::never())->method('save');
 
+        $favoriteAddEventRepository = $this->createMock(FavoriteAddEventRepositoryInterface::class);
+        $favoriteAddEventRepository->expects(self::never())->method('record');
+
         $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
         $propertyRepository->method('findById')->willReturn($property);
 
-        $handler = new TrackAnonymousFavoriteHandler($favoriteRepository, $propertyRepository);
+        $handler = new TrackAnonymousFavoriteHandler($favoriteRepository, $favoriteAddEventRepository, $propertyRepository);
         $handler(new TrackAnonymousFavoriteCommand('visitor-1', '10'));
     }
 

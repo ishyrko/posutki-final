@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Command\Favorite\AddFavorite;
 
 use App\Domain\Favorite\Entity\Favorite;
+use App\Domain\Favorite\Repository\FavoriteAddEventRepositoryInterface;
 use App\Domain\Favorite\Repository\FavoriteRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
@@ -13,6 +14,7 @@ readonly class AddFavoriteHandler
 {
     public function __construct(
         private FavoriteRepositoryInterface $favoriteRepository,
+        private FavoriteAddEventRepositoryInterface $favoriteAddEventRepository,
         private PropertyRepositoryInterface $propertyRepository,
     ) {
     }
@@ -34,5 +36,6 @@ readonly class AddFavoriteHandler
 
         $favorite = Favorite::forUser($userId, $propertyId);
         $this->favoriteRepository->save($favorite);
+        $this->favoriteAddEventRepository->record($propertyId);
     }
 }

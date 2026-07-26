@@ -133,6 +133,9 @@ services:
     App\Domain\Favorite\Repository\FavoriteRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\FavoriteRepository
 
+    App\Domain\Favorite\Repository\FavoriteAddEventRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\FavoriteAddEventRepository
+
     App\Domain\Exchange\Repository\ExchangeRateRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\ExchangeRateRepository
 

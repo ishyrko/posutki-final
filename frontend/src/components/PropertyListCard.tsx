@@ -87,7 +87,11 @@ const PropertyListCard = ({
     e.preventDefault();
     e.stopPropagation();
     if (!id) return;
-    toggleFavorite({ propertyId: id, isFavorited });
+    toggleFavorite({
+      propertyId: id,
+      isFavorited,
+      property: propertyType ? { type: propertyType } : undefined,
+    });
   };
 
   return (

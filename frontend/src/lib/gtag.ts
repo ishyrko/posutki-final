@@ -41,7 +41,8 @@ export type PropertyContactEvent =
 
 export type PropertyEngagementEvent =
     | 'send_owner_message'
-    | 'submit_booking_inquiry';
+    | 'submit_booking_inquiry'
+    | 'add_to_favorites';
 
 type PropertyAnalyticsContext = {
     id: number;

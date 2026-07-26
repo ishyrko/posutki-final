@@ -68,7 +68,11 @@ const PropertyCard = ({
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleFavorite({ propertyId: id, isFavorited });
+    toggleFavorite({
+      propertyId: id,
+      isFavorited,
+      property: propertyType ? { type: propertyType } : undefined,
+    });
   };
 
   const href = buildPropertyUrl(propertyType, id, regionSlug);

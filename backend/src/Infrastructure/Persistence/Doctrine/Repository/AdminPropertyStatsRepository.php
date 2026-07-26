@@ -67,7 +67,7 @@ final class AdminPropertyStatsRepository implements AdminPropertyStatsRepository
         $rows = $this->connection()->executeQuery(
             'SELECT DATE(f.created_at) AS stat_date,
                     COUNT(f.id) AS stat_count
-             FROM favorites f
+             FROM favorite_add_events f
              INNER JOIN properties p ON p.id = f.property_id'
             . $joinSql .
             ' WHERE f.created_at >= :startDate

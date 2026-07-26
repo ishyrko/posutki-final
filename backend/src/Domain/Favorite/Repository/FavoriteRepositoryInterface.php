@@ -28,9 +28,4 @@ interface FavoriteRepositoryInterface
     public function countByUser(Id $userId): int;
 
     public function countByProperty(Id $propertyId): int;
-
-    /**
-     * @return array<int, array{date:string, count:int}>
-     */
-    public function findDailyCountsByProperty(Id $propertyId, int $days): array;
 }
