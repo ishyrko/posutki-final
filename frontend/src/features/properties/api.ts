@@ -3,6 +3,7 @@ import api from '@/lib/api';
 import { Property, PropertyFilters, PropertyListResponse, PropertyStats, type Currency } from './types';
 import { getMockPropertiesResponse, getMockProperty } from './mock-data';
 import { clearLocalFavoriteIds, getLocalFavoriteIds } from '@/lib/favorites-storage';
+import { getOrCreateVisitorId } from '@/lib/view-tracking';
 
 export type ExchangeRates = Record<Currency, number>;
 
@@ -141,6 +142,14 @@ export const removeFavorite = async (propertyId: number): Promise<void> => {
     await api.delete(`/favorites/${propertyId}`);
 };
 
+export const trackAnonymousFavorite = async (propertyId: number, visitorId: string): Promise<void> => {
+    await api.post(`/favorites/${propertyId}/visitor`, { visitorId });
+};
+
+export const removeAnonymousFavorite = async (propertyId: number, visitorId: string): Promise<void> => {
+    await api.delete(`/favorites/${propertyId}/visitor`, { data: { visitorId } });
+};
+
 export const getFavorites = async (page = 1, limit = 20): Promise<PropertyListResponse> => {
     try {
         const response = await api.get<{ data: Property[] }>(`/favorites?page=${page}&limit=${limit}`);
@@ -155,12 +164,15 @@ export const getFavorites = async (page = 1, limit = 20): Promise<PropertyListRe
 };
 
 export const syncLocalFavoritesToServer = async (): Promise<void> => {
-    const ids = getLocalFavoriteIds();
-    if (ids.length === 0) {
+    const propertyIds = getLocalFavoriteIds();
+    if (propertyIds.length === 0) {
         return;
     }
 
-    await Promise.allSettled(ids.map((id) => addFavorite(id)));
+    await api.post('/favorites/sync-visitor', {
+        visitorId: getOrCreateVisitorId(),
+        propertyIds,
+    });
     clearLocalFavoriteIds();
 };
 

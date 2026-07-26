@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Application\Command\Favorite\AddFavorite;
+namespace App\Application\Command\Favorite\TrackAnonymousFavorite;
 
 use App\Domain\Favorite\Entity\Favorite;
 use App\Domain\Favorite\Repository\FavoriteRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
 
-readonly class AddFavoriteHandler
+readonly class TrackAnonymousFavoriteHandler
 {
     public function __construct(
         private FavoriteRepositoryInterface $favoriteRepository,
@@ -17,22 +17,20 @@ readonly class AddFavoriteHandler
     ) {
     }
 
-    public function __invoke(AddFavoriteCommand $command): void
+    public function __invoke(TrackAnonymousFavoriteCommand $command): void
     {
-        $userId = Id::fromString($command->userId);
+        $visitorId = Favorite::normalizeVisitorId($command->visitorId);
         $propertyId = Id::fromString($command->propertyId);
 
         $property = $this->propertyRepository->findById($propertyId);
-        if (!$property) {
+        if ($property === null || $property->getStatus() !== 'published') {
             throw new \InvalidArgumentException('Объявление не найдено');
         }
 
-        $existing = $this->favoriteRepository->findByUserAndProperty($userId, $propertyId);
-        if ($existing) {
+        if ($this->favoriteRepository->findByVisitorAndProperty($visitorId, $propertyId) !== null) {
             return;
         }
 
-        $favorite = Favorite::forUser($userId, $propertyId);
-        $this->favoriteRepository->save($favorite);
+        $this->favoriteRepository->save(Favorite::forVisitor($visitorId, $propertyId));
     }
 }

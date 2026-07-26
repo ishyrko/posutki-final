@@ -380,6 +380,15 @@ services:
     App\Application\Command\Favorite\RemoveFavorite\RemoveFavoriteHandler:
         tags: [ { name: messenger.message_handler, bus: command.bus } ]
 
+    App\Application\Command\Favorite\TrackAnonymousFavorite\TrackAnonymousFavoriteHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\Favorite\RemoveAnonymousFavorite\RemoveAnonymousFavoriteHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\Favorite\SyncVisitorFavorites\SyncVisitorFavoritesHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
     # Favorite Query Handlers
     App\Application\Query\Favorite\GetFavorites\GetFavoritesHandler:
         tags: [ { name: messenger.message_handler, bus: query.bus } ]

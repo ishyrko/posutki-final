@@ -77,4 +77,34 @@ final class GetAdminPropertyStatsOverviewHandlerTest extends TestCase
         self::assertSame(30, $result['period']);
         self::assertNull($result['propertyType']);
     }
+
+    public function testSupportsTodayAndYesterdayPeriods(): void
+    {
+        $today = (new \DateTimeImmutable('today'))->format('Y-m-d');
+        $yesterday = (new \DateTimeImmutable('today'))->modify('-1 day')->format('Y-m-d');
+
+        $repository = $this->createMock(AdminPropertyStatsRepositoryInterface::class);
+        $repository->method('findAggregatedDailyStats')->willReturn([
+            ['date' => $today, 'views' => 4, 'phoneViews' => 1],
+            ['date' => $yesterday, 'views' => 6, 'phoneViews' => 2],
+        ]);
+        $repository->method('findAggregatedDailyFavorites')->willReturn([]);
+        $repository->method('findAggregatedDailyReceivedMessages')->willReturn([]);
+        $repository->method('findAggregatedDailyBookingInquiries')->willReturn([]);
+        $repository->method('countProperties')->willReturn(0);
+
+        $handler = new GetAdminPropertyStatsOverviewHandler($repository);
+
+        $todayResult = $handler(new GetAdminPropertyStatsOverviewQuery(period: 0, propertyType: null, cityId: null));
+        self::assertSame(0, $todayResult['period']);
+        self::assertCount(1, $todayResult['daily']);
+        self::assertSame($today, $todayResult['daily'][0]['date']);
+        self::assertSame(4, $todayResult['totals']['views']);
+
+        $yesterdayResult = $handler(new GetAdminPropertyStatsOverviewQuery(period: -1, propertyType: null, cityId: null));
+        self::assertSame(-1, $yesterdayResult['period']);
+        self::assertCount(1, $yesterdayResult['daily']);
+        self::assertSame($yesterday, $yesterdayResult['daily'][0]['date']);
+        self::assertSame(6, $yesterdayResult['totals']['views']);
+    }
 }

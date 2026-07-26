@@ -2,7 +2,7 @@
 
 import { useMemo, useSyncExternalStore } from 'react';
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, getFavorites, getExchangeRates, getPropertyStats, archiveProperty, unarchiveProperty, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock } from './api';
+import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, trackAnonymousFavorite, removeAnonymousFavorite, getFavorites, getExchangeRates, getPropertyStats, archiveProperty, unarchiveProperty, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock } from './api';
 import { Property, PropertyFilters, PropertyListResponse } from './types';
 import { isAuthenticated } from '@/lib/auth';
 import { useIsHydrated } from '@/hooks/useIsHydrated';
@@ -13,6 +13,7 @@ import {
     removeLocalFavoriteId,
     subscribeLocalFavorites,
 } from '@/lib/favorites-storage';
+import { getOrCreateVisitorId } from '@/lib/view-tracking';
 
 type UsePropertiesOptions = {
     /** SSR / dehydrated list — avoids treating data as stale at t=0 (immediate background refetch + flicker). */
@@ -204,10 +205,17 @@ export const useToggleFavorite = () => {
     return useMutation({
         mutationFn: async ({ propertyId, isFavorited }: { propertyId: number; isFavorited: boolean }) => {
             if (!isAuthenticated()) {
+                const visitorId = getOrCreateVisitorId();
                 if (isFavorited) {
                     removeLocalFavoriteId(propertyId);
+                    if (visitorId) {
+                        void removeAnonymousFavorite(propertyId, visitorId).catch(() => {});
+                    }
                 } else {
                     addLocalFavoriteId(propertyId);
+                    if (visitorId) {
+                        void trackAnonymousFavorite(propertyId, visitorId).catch(() => {});
+                    }
                 }
                 return;
             }

@@ -15,6 +15,10 @@ interface FavoriteRepositoryInterface
 
     public function findByUserAndProperty(Id $userId, Id $propertyId): ?Favorite;
 
+    public function findByVisitorAndProperty(string $visitorId, Id $propertyId): ?Favorite;
+
+    public function deleteByVisitorAndProperty(string $visitorId, Id $propertyId): void;
+
     /** @return int[] Property IDs */
     public function findPropertyIdsByUser(Id $userId): array;
 

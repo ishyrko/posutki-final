@@ -27,11 +27,8 @@ final class GetAdminPropertyStatsOverviewHandler
      */
     public function __invoke(GetAdminPropertyStatsOverviewQuery $query): array
     {
-        $period = in_array($query->period, [7, 30, 90], true) ? $query->period : 30;
+        [$startDate, $endDate, $periodDays, $period] = $this->resolvePeriod($query->period);
         $propertyType = $this->normalizePropertyType($query->propertyType);
-
-        $endDate = (new \DateTimeImmutable('today'))->setTime(0, 0);
-        $startDate = $endDate->modify(sprintf('-%d days', max(0, $period - 1)));
 
         $dailyPropertyStats = $this->adminPropertyStatsRepository->findAggregatedDailyStats(
             $startDate,
@@ -63,7 +60,7 @@ final class GetAdminPropertyStatsOverviewHandler
         );
 
         $dailyByDate = [];
-        for ($day = 0; $day < $period; $day++) {
+        for ($day = 0; $day < $periodDays; $day++) {
             $date = $startDate->modify(sprintf('+%d days', $day))->format('Y-m-d');
             $dailyByDate[$date] = [
                 'date' => $date,
@@ -140,6 +137,26 @@ final class GetAdminPropertyStatsOverviewHandler
         return match ($propertyType) {
             PropertyType::Apartment->value, PropertyType::House->value => $propertyType,
             default => null,
+        };
+    }
+
+    /**
+     * @return array{
+     *     0: \DateTimeImmutable,
+     *     1: \DateTimeImmutable,
+     *     2: int,
+     *     3: int
+     * }
+     */
+    private function resolvePeriod(int $period): array
+    {
+        $today = (new \DateTimeImmutable('today'))->setTime(0, 0);
+
+        return match ($period) {
+            0 => [$today, $today, 1, 0],
+            -1 => [$today->modify('-1 day'), $today->modify('-1 day'), 1, -1],
+            7, 30, 90 => [$today->modify(sprintf('-%d days', $period - 1)), $today, $period, $period],
+            default => [$today->modify('-29 days'), $today, 30, 30],
         };
     }
 }

@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace App\Presentation\Api\Controller;
 
 use App\Application\Command\Favorite\AddFavorite\AddFavoriteCommand;
+use App\Application\Command\Favorite\RemoveAnonymousFavorite\RemoveAnonymousFavoriteCommand;
 use App\Application\Command\Favorite\RemoveFavorite\RemoveFavoriteCommand;
+use App\Application\Command\Favorite\SyncVisitorFavorites\SyncVisitorFavoritesCommand;
+use App\Application\Command\Favorite\TrackAnonymousFavorite\TrackAnonymousFavoriteCommand;
 use App\Application\Query\Favorite\GetFavorites\GetFavoritesQuery;
 use App\Application\Query\Favorite\GetFavoriteIds\GetFavoriteIdsQuery;
 use App\Application\Command\CommandBusInterface;
 use App\Application\Query\QueryBusInterface;
+use App\Presentation\Api\Request\SyncVisitorFavoritesRequest;
+use App\Presentation\Api\Request\VisitorFavoriteRequest;
 use App\Presentation\Api\Response\ApiResponse;
 use App\Domain\User\Entity\User;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -62,7 +67,48 @@ class FavoriteController extends AbstractController
         return $this->json(ApiResponse::success($ids));
     }
 
-    #[Route('/{propertyId}', name: 'add', methods: ['POST'])]
+    #[Route('/sync-visitor', name: 'sync_visitor', methods: ['POST'])]
+    public function syncVisitor(SyncVisitorFavoritesRequest $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $this->commandBus->dispatch(new SyncVisitorFavoritesCommand(
+            userId: (string) $user->getId()->getValue(),
+            visitorId: (string) $request->visitorId,
+            propertyIds: $request->propertyIds,
+        ));
+
+        return $this->json(ApiResponse::success(['message' => 'Избранное синхронизировано']));
+    }
+
+    #[Route('/{propertyId}/visitor', name: 'add_visitor', methods: ['POST'], requirements: ['propertyId' => '\d+'])]
+    public function addVisitor(string $propertyId, VisitorFavoriteRequest $request): JsonResponse
+    {
+        $this->commandBus->dispatch(new TrackAnonymousFavoriteCommand(
+            visitorId: (string) $request->visitorId,
+            propertyId: $propertyId,
+        ));
+
+        return $this->json(
+            ApiResponse::success(['message' => 'Добавлено в избранное']),
+            Response::HTTP_CREATED,
+        );
+    }
+
+    #[Route('/{propertyId}/visitor', name: 'remove_visitor', methods: ['DELETE'], requirements: ['propertyId' => '\d+'])]
+    public function removeVisitor(string $propertyId, VisitorFavoriteRequest $request): JsonResponse
+    {
+        $this->commandBus->dispatch(new RemoveAnonymousFavoriteCommand(
+            visitorId: (string) $request->visitorId,
+            propertyId: $propertyId,
+        ));
+
+        return $this->json(ApiResponse::success(['message' => 'Удалено из избранного']));
+    }
+
+    #[Route('/{propertyId}', name: 'add', methods: ['POST'], requirements: ['propertyId' => '\d+'])]
     public function add(string $propertyId, #[CurrentUser] ?User $user): JsonResponse
     {
         if (!$user) {
@@ -82,7 +128,7 @@ class FavoriteController extends AbstractController
         );
     }
 
-    #[Route('/{propertyId}', name: 'remove', methods: ['DELETE'])]
+    #[Route('/{propertyId}', name: 'remove', methods: ['DELETE'], requirements: ['propertyId' => '\d+'])]
     public function remove(string $propertyId, #[CurrentUser] ?User $user): JsonResponse
     {
         if (!$user) {

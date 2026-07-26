@@ -29,6 +29,29 @@ class FavoriteRepository extends ServiceEntityRepository implements FavoriteRepo
         $this->getEntityManager()->flush();
     }
 
+    public function findByVisitorAndProperty(string $visitorId, Id $propertyId): ?Favorite
+    {
+        $visitorId = Favorite::normalizeVisitorId($visitorId);
+
+        return $this->createQueryBuilder('f')
+            ->where('f.visitorId = :visitorId')
+            ->andWhere('f.propertyId = :propertyId')
+            ->setParameter('visitorId', $visitorId)
+            ->setParameter('propertyId', $propertyId->getValue())
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function deleteByVisitorAndProperty(string $visitorId, Id $propertyId): void
+    {
+        $favorite = $this->findByVisitorAndProperty($visitorId, $propertyId);
+        if ($favorite === null) {
+            return;
+        }
+
+        $this->delete($favorite);
+    }
+
     public function findByUserAndProperty(Id $userId, Id $propertyId): ?Favorite
     {
         return $this->createQueryBuilder('f')
