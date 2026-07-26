@@ -1,3 +1,5 @@
+import { trackYmGoal } from '@/lib/metrika';
+
 type GtagCommand = 'config' | 'set' | 'event' | 'js';
 
 type GtagParams = Record<string, string | number | boolean | undefined>;
@@ -21,11 +23,13 @@ function cleanParams(params?: GtagParams): GtagParams | undefined {
 }
 
 export function trackGaEvent(eventName: string, params?: GtagParams): void {
-    if (typeof window === 'undefined' || typeof window.gtag !== 'function') {
-        return;
+    const cleaned = cleanParams(params);
+
+    if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+        window.gtag('event', eventName, cleaned);
     }
 
-    window.gtag('event', eventName, cleanParams(params));
+    trackYmGoal(eventName, cleaned);
 }
 
 export type PropertyContactEvent =
