@@ -21,7 +21,7 @@ import { useHasAuthToken } from "@/hooks/useHasAuthToken";
 import { useProperty, useFavoriteIds, useToggleFavorite, useExchangeRates } from "@/features/properties/hooks";
 import { trackPhoneView, trackPropertyView } from "@/features/properties/api";
 import { trackViewOnce } from "@/lib/view-tracking";
-import { trackPropertyContactEvent } from "@/lib/gtag";
+import { trackPropertyContactEvent, trackPropertyEngagementEvent } from "@/lib/gtag";
 import { useSendMessage } from "@/features/messages/hooks";
 import { useUser } from "@/features/auth/hooks";
 import { formatAddress, Property } from "@/features/properties/types";
@@ -1281,7 +1281,11 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                                 sendMessageMutation.mutate(
                                   { text: messageText, propertyId: id },
                                   {
-                                    onSuccess: () => { setMessageSent(true); setMessageText(""); },
+                                    onSuccess: () => {
+                                      trackPropertyEngagementEvent("send_owner_message", property);
+                                      setMessageSent(true);
+                                      setMessageText("");
+                                    },
                                   }
                                 );
                               }}

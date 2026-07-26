@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -48,6 +49,7 @@ import {
     isCalendarRecentlyActive,
 } from '@/features/properties/property-calendar-utils';
 import { useCurrency } from '@/context/CurrencyContext';
+import { trackPropertyEngagementEvent } from '@/lib/gtag';
 import {
     bookingInquirySchema,
     BookingInquiryFormData,
@@ -162,6 +164,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
             { ...data, recaptchaToken: recaptchaToken ?? '' },
             {
                 onSuccess: () => {
+                    trackPropertyEngagementEvent('submit_booking_inquiry', property);
                     setSubmitted(true);
                     form.reset(defaultValues);
                     setRecaptchaToken(null);
@@ -190,6 +193,9 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                         <DialogTitle className="text-center text-xl font-display">
                             Заявка на бронирование
                         </DialogTitle>
+                        <DialogDescription className="sr-only">
+                            Форма заявки на бронирование объекта {addressStr}
+                        </DialogDescription>
                     </DialogHeader>
 
                     {submitted ? (

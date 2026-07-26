@@ -39,19 +39,34 @@ export type PropertyContactEvent =
     | 'click_viber'
     | 'click_telegram';
 
-type PropertyContactContext = {
+export type PropertyEngagementEvent =
+    | 'send_owner_message'
+    | 'submit_booking_inquiry';
+
+type PropertyAnalyticsContext = {
     id: number;
     type: string;
     address?: { cityName?: string };
 };
 
-export function trackPropertyContactEvent(
-    eventName: PropertyContactEvent,
-    property: PropertyContactContext,
-): void {
+function trackPropertyEvent(eventName: string, property: PropertyAnalyticsContext): void {
     trackGaEvent(eventName, {
         property_id: property.id,
         city: property.address?.cityName,
         property_type: property.type,
     });
+}
+
+export function trackPropertyContactEvent(
+    eventName: PropertyContactEvent,
+    property: PropertyAnalyticsContext,
+): void {
+    trackPropertyEvent(eventName, property);
+}
+
+export function trackPropertyEngagementEvent(
+    eventName: PropertyEngagementEvent,
+    property: PropertyAnalyticsContext,
+): void {
+    trackPropertyEvent(eventName, property);
 }
