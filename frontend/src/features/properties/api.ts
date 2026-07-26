@@ -181,6 +181,17 @@ export const trackPhoneView = async (id: number): Promise<void> => {
     await api.post(`/properties/${id}/phone-view`);
 };
 
+export const trackPropertyView = async (
+    id: number,
+    visitorId: string,
+): Promise<{ views: number; counted: boolean }> => {
+    const response = await api.post<{ data: { views: number; counted: boolean } }>(
+        `/properties/${id}/view`,
+        { visitorId },
+    );
+    return response.data.data;
+};
+
 export const getPropertyStats = async (id: number, period: 7 | 30 | 90): Promise<PropertyStats> => {
     const response = await api.get<{ data: PropertyStats }>(`/properties/${id}/stats?period=${period}`);
     return response.data.data;

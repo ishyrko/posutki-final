@@ -15,7 +15,6 @@ use App\Domain\Property\Repository\{
     StreetRepositoryInterface,
     MetroStationRepositoryInterface,
     PropertyMetroStationRepositoryInterface,
-    PropertyDailyStatRepositoryInterface
 };
 use App\Domain\Review\Repository\ReviewRepositoryInterface;
 use App\Domain\User\Repository\UserBusinessProfileRepositoryInterface;
@@ -32,7 +31,6 @@ final class GetPropertyHandler
         private readonly StreetRepositoryInterface $streetRepository,
         private readonly MetroStationRepositoryInterface $metroStationRepository,
         private readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
-        private readonly PropertyDailyStatRepositoryInterface $propertyDailyStatRepository,
         private readonly UserIndividualProfileRepositoryInterface $userIndividualProfileRepository,
         private readonly UserBusinessProfileRepositoryInterface $userBusinessProfileRepository,
         private readonly PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
@@ -69,12 +67,6 @@ final class GetPropertyHandler
         $street = null;
         if ($property->getStreetId() !== null) {
             $street = $this->streetRepository->findById($property->getStreetId());
-        }
-
-        if (!in_array($property->getStatus(), ['archived', 'deleted'], true)) {
-            $property->incrementViews();
-            $this->propertyRepository->save($property);
-            $this->propertyDailyStatRepository->upsertView($property->getId()->getValue(), new \DateTimeImmutable());
         }
 
         $propertyMetroStations = $this->propertyMetroStationRepository->findByPropertyIds([$property->getId()->getValue()]);

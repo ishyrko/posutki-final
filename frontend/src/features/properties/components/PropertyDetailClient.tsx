@@ -19,7 +19,8 @@ import Link from "next/link";
 import { notFound, usePathname } from "next/navigation";
 import { useHasAuthToken } from "@/hooks/useHasAuthToken";
 import { useProperty, useFavoriteIds, useToggleFavorite, useExchangeRates } from "@/features/properties/hooks";
-import { trackPhoneView } from "@/features/properties/api";
+import { trackPhoneView, trackPropertyView } from "@/features/properties/api";
+import { trackViewOnce } from "@/lib/view-tracking";
 import { trackPropertyContactEvent } from "@/lib/gtag";
 import { useSendMessage } from "@/features/messages/hooks";
 import { useUser } from "@/features/auth/hooks";
@@ -256,6 +257,24 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   const [messageSent, setMessageSent] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   const sendMessageMutation = useSendMessage();
+
+  useEffect(() => {
+    if (!property) {
+      return;
+    }
+
+    const isListingOwner =
+      currentUser?.id != null &&
+      property.ownerId != null &&
+      Number(currentUser.id) === Number(property.ownerId);
+    if (isListingOwner) {
+      return;
+    }
+
+    void trackViewOnce(`property:${property.id}`, (visitorId) =>
+      trackPropertyView(property.id, visitorId),
+    );
+  }, [property, currentUser?.id]);
 
   const mainImageSrc =
     property?.images?.[0]?.url ??

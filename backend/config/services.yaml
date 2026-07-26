@@ -85,6 +85,9 @@ services:
     App\Domain\Property\Repository\PropertyDailyStatRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyDailyStatRepository
 
+    App\Domain\Analytics\Repository\ContentViewDedupRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\ContentViewDedupRepository
+
     App\Domain\Property\Repository\AdminPropertyStatsRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\AdminPropertyStatsRepository
 

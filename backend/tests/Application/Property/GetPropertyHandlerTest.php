@@ -13,7 +13,6 @@ use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\MetroStationRepositoryInterface;
-use App\Domain\Property\Repository\PropertyDailyStatRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyAvailabilityBlockRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
@@ -37,7 +36,7 @@ final class GetPropertyHandlerTest extends TestCase
         $property->setStatus('published');
         $property->archive();
 
-        $handler = $this->createHandler($property, expectSave: false);
+        $handler = $this->createHandler($property);
 
         $this->expectException(NotFoundException::class);
         $this->expectExceptionMessage('Объявление не найдено');
@@ -51,7 +50,7 @@ final class GetPropertyHandlerTest extends TestCase
         $property->setStatus('published');
         $property->archive();
 
-        $handler = $this->createHandler($property, expectSave: false);
+        $handler = $this->createHandler($property);
         $dto = $handler(new GetPropertyQuery('20', '4'));
 
         self::assertSame(20, $dto->id);
@@ -63,7 +62,7 @@ final class GetPropertyHandlerTest extends TestCase
         $property = $this->createProperty(ownerId: 4);
         $property->delete();
 
-        $handler = $this->createHandler($property, expectSave: false);
+        $handler = $this->createHandler($property);
         $dto = $handler(new GetPropertyQuery('20', '4'));
 
         self::assertSame(20, $dto->id);
@@ -81,15 +80,11 @@ final class GetPropertyHandlerTest extends TestCase
         self::assertSame('draft', $dto->status);
     }
 
-    private function createHandler(Property $property, bool $expectSave = true): GetPropertyHandler
+    private function createHandler(Property $property): GetPropertyHandler
     {
         $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
         $propertyRepository->method('findById')->willReturn($property);
-        if ($expectSave) {
-            $propertyRepository->expects(self::once())->method('save');
-        } else {
-            $propertyRepository->expects(self::never())->method('save');
-        }
+        $propertyRepository->expects(self::never())->method('save');
 
         $city = new City();
         $nameReflection = new \ReflectionProperty($city, 'name');
@@ -110,13 +105,6 @@ final class GetPropertyHandlerTest extends TestCase
         $propertyMetroStationRepository->method('findByPropertyIds')->willReturn([]);
         $metroStationRepository = $this->createStub(MetroStationRepositoryInterface::class);
         $metroStationRepository->method('findByIds')->willReturn([]);
-
-        $propertyDailyStatRepository = $this->createMock(PropertyDailyStatRepositoryInterface::class);
-        if ($expectSave) {
-            $propertyDailyStatRepository->expects(self::once())->method('upsertView');
-        } else {
-            $propertyDailyStatRepository->expects(self::never())->method('upsertView');
-        }
 
         $userIndividualProfileRepository = $this->createStub(UserIndividualProfileRepositoryInterface::class);
         $userBusinessProfileRepository = $this->createStub(UserBusinessProfileRepositoryInterface::class);
@@ -144,7 +132,6 @@ final class GetPropertyHandlerTest extends TestCase
             $streetRepository,
             $metroStationRepository,
             $propertyMetroStationRepository,
-            $propertyDailyStatRepository,
             $userIndividualProfileRepository,
             $userBusinessProfileRepository,
             $ownerContactResolver,

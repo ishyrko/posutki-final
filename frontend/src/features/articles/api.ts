@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { trackViewOnce } from '@/lib/view-tracking';
 import { Article, ArticleCategory, ArticleFilters } from './types';
 
 export const getArticleCategories = async (): Promise<ArticleCategory[]> => {
@@ -25,11 +26,17 @@ export const getArticleBySlug = async (slug: string): Promise<Article> => {
     return response.data.data;
 };
 
-export const trackArticleView = async (slug: string): Promise<{ views: number }> => {
-    const response = await api.post<{ data: { views: number } }>(
-        `/articles/${encodeURIComponent(slug)}/view`,
+export const trackArticleView = async (
+    slug: string,
+): Promise<{ views: number; counted: boolean } | null> => {
+    return trackViewOnce(`article:${slug}`, (visitorId) =>
+        api
+            .post<{ data: { views: number; counted: boolean } }>(
+                `/articles/${encodeURIComponent(slug)}/view`,
+                { visitorId },
+            )
+            .then((response) => response.data.data),
     );
-    return response.data.data;
 };
 
 export const getCategoryBySlug = async (slug: string): Promise<ArticleCategory> => {

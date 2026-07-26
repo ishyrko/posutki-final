@@ -14,7 +14,9 @@ use App\Application\Command\CommandBusInterface;
 use App\Application\Query\QueryBusInterface;
 use App\Domain\Article\Repository\ArticleRepositoryInterface;
 use App\Domain\Shared\ValueObject\Slug;
+use App\Application\Service\ContentViewTracker;
 use App\Presentation\Api\Request\CreateArticleRequest;
+use App\Presentation\Api\Request\TrackContentViewRequest;
 use App\Presentation\Api\Request\UpdateArticleRequest;
 use App\Presentation\Api\Response\ApiResponse;
 use App\Domain\User\Entity\User;
@@ -32,6 +34,7 @@ class ArticleController extends AbstractController
         private readonly CommandBusInterface $commandBus,
         private readonly QueryBusInterface $queryBus,
         private readonly ArticleRepositoryInterface $articleRepository,
+        private readonly ContentViewTracker $contentViewTracker,
     ) {
     }
 
@@ -92,8 +95,12 @@ class ArticleController extends AbstractController
     }
 
     #[Route('/{slug}/view', name: 'track_view', methods: ['POST'])]
-    public function trackView(string $slug): JsonResponse
-    {
+    public function trackView(
+        string $slug,
+        TrackContentViewRequest $request,
+        #[CurrentUser] ?User $user,
+        Request $httpRequest,
+    ): JsonResponse {
         $article = $this->articleRepository->findBySlug(Slug::fromString($slug));
 
         if ($article === null) {
@@ -103,11 +110,16 @@ class ArticleController extends AbstractController
             );
         }
 
-        $article->incrementViews();
-        $this->articleRepository->save($article);
+        $viewerUserId = $user !== null ? (string) $user->getId()->getValue() : null;
+        $result = $this->contentViewTracker->trackArticle(
+            $article,
+            $viewerUserId,
+            $request->visitorId,
+            $httpRequest->headers->get('User-Agent'),
+        );
 
         return $this->json(
-            ApiResponse::success(['views' => $article->getViews()])
+            ApiResponse::success($result)
         );
     }
 

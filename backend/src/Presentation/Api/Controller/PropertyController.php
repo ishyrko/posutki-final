@@ -21,6 +21,7 @@ use App\Application\Query\Property\GetProperty\GetPropertyQuery;
 use App\Application\Query\Property\SearchProperties\SearchPropertiesQuery;
 use App\Application\Command\CommandBusInterface;
 use App\Application\Query\QueryBusInterface;
+use App\Application\Service\ContentViewTracker;
 use App\Application\Service\PropertyCalendarAggregator;
 use App\Domain\BookingInquiry\Repository\BookingInquiryRepositoryInterface;
 use App\Domain\Favorite\Repository\FavoriteRepositoryInterface;
@@ -31,6 +32,7 @@ use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
 use App\Presentation\Api\Request\CreatePropertyRequest;
+use App\Presentation\Api\Request\TrackContentViewRequest;
 use App\Presentation\Api\Request\UpdatePropertyRequest;
 use App\Presentation\Api\Response\ApiResponse;
 use App\Domain\User\Entity\User;
@@ -53,6 +55,7 @@ class PropertyController extends AbstractController
         private readonly MessageRepositoryInterface $messageRepository,
         private readonly BookingInquiryRepositoryInterface $bookingInquiryRepository,
         private readonly PropertyCalendarAggregator $propertyCalendarAggregator,
+        private readonly ContentViewTracker $contentViewTracker,
     ) {
     }
 
@@ -479,6 +482,33 @@ class PropertyController extends AbstractController
             'exportToken' => $token,
             'exportUrl' => $request->getSchemeAndHttpHost() . '/ical/' . $token . '.ics',
         ]));
+    }
+
+    #[Route('/{id}/view', name: 'track_view', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function trackView(
+        string $id,
+        TrackContentViewRequest $request,
+        #[CurrentUser] ?User $user,
+        Request $httpRequest,
+    ): JsonResponse {
+        $property = $this->propertyRepository->findById(Id::fromString($id));
+        if ($property === null) {
+            throw new DomainException('Объявление не найдено');
+        }
+
+        if ($property->getStatus() !== 'published') {
+            return $this->json(ApiResponse::error('Объявление не найдено', 404), 404);
+        }
+
+        $viewerUserId = $user !== null ? (string) $user->getId()->getValue() : null;
+        $result = $this->contentViewTracker->trackProperty(
+            $property,
+            $viewerUserId,
+            $request->visitorId,
+            $httpRequest->headers->get('User-Agent'),
+        );
+
+        return $this->json(ApiResponse::success($result));
     }
 
     #[Route('/{id}/phone-view', name: 'phone_view', methods: ['POST'], requirements: ['id' => '\d+'])]

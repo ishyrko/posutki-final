@@ -79,6 +79,7 @@ security:
         - { path: ^/api/address, roles: PUBLIC_ACCESS }
         - { path: ^/api/cities, roles: PUBLIC_ACCESS }
         - { path: ^/api/metro, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/properties/[0-9]+/view$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/properties/[0-9a-f-]+/phone-view$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/properties/\d+/availability, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/api/properties/\d+/calendar/export-token, roles: IS_AUTHENTICATED_FULLY, methods: [POST] }

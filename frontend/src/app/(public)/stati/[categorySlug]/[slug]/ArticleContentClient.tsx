@@ -97,7 +97,7 @@ export default function ArticleContentClient({
 
     trackArticleView(article.slug)
       .then((result) => {
-        if (!cancelled) {
+        if (!cancelled && result) {
           setViews(result.views);
         }
       })
