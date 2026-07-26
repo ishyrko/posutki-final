@@ -67,8 +67,8 @@ export default {
         },
       },
       fontFamily: {
-        display: ["Montserrat", "system-ui", "sans-serif"],
-        body: ["Inter", "system-ui", "sans-serif"],
+        display: ["var(--font-display)"],
+        body: ["var(--font-body)"],
       },
       boxShadow: {
         card: "var(--shadow-card)",

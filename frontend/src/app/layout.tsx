@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { getSiteOrigin } from "@/lib/site-url";
+import { inter } from "@/lib/fonts";
 import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 import { Toaster } from "@/components/ui/sonner";
@@ -55,7 +56,7 @@ export default function RootLayout({
   `;
 
   return (
-    <html lang="ru">
+    <html lang="ru" className={inter.variable}>
       <head>
         <Script
           id="performance-measure-guard"
