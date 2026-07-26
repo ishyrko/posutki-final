@@ -22,4 +22,9 @@ interface BookingInquiryRepositoryInterface
     public function countUnreadByOwnerId(string $ownerId): int;
 
     public function markAllAsReadByOwnerId(string $ownerId): void;
+
+    /**
+     * @return array<int, array{date: string, count: int}>
+     */
+    public function findDailyCountsByProperty(int $propertyId, int $days): array;
 }

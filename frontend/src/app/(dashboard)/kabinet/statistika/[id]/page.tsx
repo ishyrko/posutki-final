@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, BarChart3, Eye, Heart, Phone } from 'lucide-react';
+import { ArrowLeft, BarChart3, CalendarCheck, Eye, Heart, MessageSquare, Phone } from 'lucide-react';
 import { ResponsiveContainer, CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis, Legend, BarChart, Bar } from 'recharts';
 import { usePropertyStats } from '@/features/properties/hooks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,12 +62,12 @@ export default function PropertyStatsPage() {
             </div>
 
             {isLoading && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {[1, 2, 3].map((i) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[1, 2, 3, 4, 5].map((i) => (
                         <div key={i} className="h-28 rounded-xl border border-border bg-card animate-pulse" />
                     ))}
-                    <div className="md:col-span-3 h-80 rounded-xl border border-border bg-card animate-pulse" />
-                    <div className="md:col-span-3 h-80 rounded-xl border border-border bg-card animate-pulse" />
+                    <div className="sm:col-span-2 lg:col-span-3 h-80 rounded-xl border border-border bg-card animate-pulse" />
+                    <div className="sm:col-span-2 lg:col-span-3 h-80 rounded-xl border border-border bg-card animate-pulse" />
                 </div>
             )}
 
@@ -81,7 +81,7 @@ export default function PropertyStatsPage() {
 
             {!isLoading && !isError && data && (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <Card>
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground inline-flex items-center gap-2">
@@ -115,6 +115,28 @@ export default function PropertyStatsPage() {
                                 <p className="text-3xl font-bold">{data.totals.favorites}</p>
                             </CardContent>
                         </Card>
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground inline-flex items-center gap-2">
+                                    <MessageSquare className="h-4 w-4" />
+                                    Сообщения
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-3xl font-bold">{data.totals.messages}</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="sm:col-span-2 lg:col-span-1">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground inline-flex items-center gap-2">
+                                    <CalendarCheck className="h-4 w-4" />
+                                    Заявки на бронирование
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-3xl font-bold">{data.totals.bookingInquiries}</p>
+                            </CardContent>
+                        </Card>
                     </div>
 
                     <Card>
@@ -142,7 +164,7 @@ export default function PropertyStatsPage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Контакты и избранное по дням</CardTitle>
+                            <CardTitle>Обращения и избранное по дням</CardTitle>
                         </CardHeader>
                         <CardContent className="min-w-0">
                             <div className="w-full min-w-0">
@@ -154,6 +176,8 @@ export default function PropertyStatsPage() {
                                         <Tooltip />
                                         <Legend />
                                         <Bar dataKey="phoneViews" fill="hsl(var(--primary))" name="Показы телефона" />
+                                        <Bar dataKey="messages" fill="#7c3aed" name="Сообщения" />
+                                        <Bar dataKey="bookingInquiries" fill="#059669" name="Заявки на бронирование" />
                                         <Bar dataKey="favorites" fill="#475569" name="В избранном" />
                                     </BarChart>
                                 </ResponsiveContainer>

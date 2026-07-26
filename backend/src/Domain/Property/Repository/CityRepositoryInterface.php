@@ -17,4 +17,7 @@ interface CityRepositoryInterface
 
     /** @return City[] */
     public function searchByName(string $query, ?int $districtId = null, int $limit = 20): array;
+
+    /** @return City[] */
+    public function findAllOrderedByName(): array;
 }

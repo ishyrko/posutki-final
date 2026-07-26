@@ -22,7 +22,9 @@ use App\Application\Query\Property\SearchProperties\SearchPropertiesQuery;
 use App\Application\Command\CommandBusInterface;
 use App\Application\Query\QueryBusInterface;
 use App\Application\Service\PropertyCalendarAggregator;
+use App\Domain\BookingInquiry\Repository\BookingInquiryRepositoryInterface;
 use App\Domain\Favorite\Repository\FavoriteRepositoryInterface;
+use App\Domain\Message\Repository\MessageRepositoryInterface;
 use App\Domain\Property\Repository\PropertyDailyStatRepositoryInterface;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
@@ -48,6 +50,8 @@ class PropertyController extends AbstractController
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyDailyStatRepositoryInterface $propertyDailyStatRepository,
         private readonly FavoriteRepositoryInterface $favoriteRepository,
+        private readonly MessageRepositoryInterface $messageRepository,
+        private readonly BookingInquiryRepositoryInterface $bookingInquiryRepository,
         private readonly PropertyCalendarAggregator $propertyCalendarAggregator,
     ) {
     }
@@ -512,6 +516,8 @@ class PropertyController extends AbstractController
 
         $dailyPropertyStats = $this->propertyDailyStatRepository->findByPropertyAndPeriod($property->getId()->getValue(), $period);
         $dailyFavoritesStats = $this->favoriteRepository->findDailyCountsByProperty(Id::fromString($id), $period);
+        $dailyMessagesStats = $this->messageRepository->findDailyReceivedCountsByProperty($property->getId()->getValue(), $period);
+        $dailyBookingInquiriesStats = $this->bookingInquiryRepository->findDailyCountsByProperty($property->getId()->getValue(), $period);
 
         $today = new \DateTimeImmutable('today');
         $startDate = $today->modify(sprintf('-%d days', $period - 1));
@@ -519,7 +525,14 @@ class PropertyController extends AbstractController
 
         for ($day = 0; $day < $period; $day++) {
             $date = $startDate->modify(sprintf('+%d days', $day))->format('Y-m-d');
-            $dailyByDate[$date] = ['date' => $date, 'views' => 0, 'phoneViews' => 0, 'favorites' => 0];
+            $dailyByDate[$date] = [
+                'date' => $date,
+                'views' => 0,
+                'phoneViews' => 0,
+                'favorites' => 0,
+                'messages' => 0,
+                'bookingInquiries' => 0,
+            ];
         }
 
         foreach ($dailyPropertyStats as $row) {
@@ -541,11 +554,31 @@ class PropertyController extends AbstractController
             $dailyByDate[$date]['favorites'] = (int) $row['count'];
         }
 
+        foreach ($dailyMessagesStats as $row) {
+            $date = $row['date'];
+            if (!isset($dailyByDate[$date])) {
+                continue;
+            }
+
+            $dailyByDate[$date]['messages'] = (int) $row['count'];
+        }
+
+        foreach ($dailyBookingInquiriesStats as $row) {
+            $date = $row['date'];
+            if (!isset($dailyByDate[$date])) {
+                continue;
+            }
+
+            $dailyByDate[$date]['bookingInquiries'] = (int) $row['count'];
+        }
+
         $daily = array_values($dailyByDate);
         $totals = [
             'views' => array_sum(array_column($daily, 'views')),
             'phoneViews' => array_sum(array_column($daily, 'phoneViews')),
             'favorites' => array_sum(array_column($daily, 'favorites')),
+            'messages' => array_sum(array_column($daily, 'messages')),
+            'bookingInquiries' => array_sum(array_column($daily, 'bookingInquiries')),
         ];
 
         return $this->json(ApiResponse::success([

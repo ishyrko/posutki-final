@@ -52,4 +52,12 @@ class CityRepository extends ServiceEntityRepository implements CityRepositoryIn
             ->getQuery()
             ->getResult();
     }
+
+    public function findAllOrderedByName(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->orderBy('c.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

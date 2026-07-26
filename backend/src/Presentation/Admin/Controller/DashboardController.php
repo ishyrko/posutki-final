@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Presentation\Admin\Controller;
 
+use App\Application\Query\Property\GetAdminPropertyStatsOverview\GetAdminPropertyStatsOverviewHandler;
+use App\Application\Query\Property\GetAdminPropertyStatsOverview\GetAdminPropertyStatsOverviewQuery;
 use App\Domain\Article\Entity\Article;
 use App\Domain\Article\Entity\ArticleCategory;
 use App\Domain\StaticPage\Entity\StaticPage;
@@ -15,12 +17,13 @@ use App\Domain\Property\Entity\PropertyPlacementPurchase;
 use App\Domain\Property\Entity\PropertyPlacementScopeSettings;
 use App\Domain\Review\Entity\Review;
 use App\Domain\Property\Entity\Street;
+use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\User\Entity\User;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
-use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
@@ -28,11 +31,43 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 class DashboardController extends AbstractDashboardController
 {
+    public function __construct(
+        private readonly GetAdminPropertyStatsOverviewHandler $adminPropertyStatsOverviewHandler,
+        private readonly CityRepositoryInterface $cityRepository,
+        private readonly RequestStack $requestStack,
+    ) {
+    }
+
     public function index(): Response
     {
-        $adminUrlGenerator = $this->container->get(AdminUrlGenerator::class);
+        $request = $this->requestStack->getCurrentRequest();
+        $period = $request?->query->getInt('period', 30) ?? 30;
+        $type = $request?->query->getString('type') ?? '';
+        $cityIdRaw = $request?->query->get('cityId');
+        $cityId = is_numeric($cityIdRaw) ? (int) $cityIdRaw : null;
 
-        return $this->redirect($adminUrlGenerator->setController(PropertyCrudController::class)->generateUrl());
+        $stats = ($this->adminPropertyStatsOverviewHandler)(new GetAdminPropertyStatsOverviewQuery(
+            period: $period,
+            propertyType: $type !== '' ? $type : null,
+            cityId: $cityId,
+        ));
+
+        $selectedCityName = null;
+        if ($cityId !== null) {
+            $selectedCity = $this->cityRepository->findById($cityId);
+            $selectedCityName = $selectedCity?->getName();
+        }
+
+        return $this->render('admin/stats_dashboard.html.twig', [
+            'stats' => $stats,
+            'cities' => $this->cityRepository->findAllOrderedByName(),
+            'selectedCityName' => $selectedCityName,
+            'filters' => [
+                'period' => $stats['period'],
+                'type' => $stats['propertyType'] ?? '',
+                'cityId' => $stats['cityId'] ?? '',
+            ],
+        ]);
     }
 
     #[Route('/admin/login', name: 'admin_login')]
@@ -73,7 +108,7 @@ class DashboardController extends AbstractDashboardController
 
     public function configureMenuItems(): iterable
     {
-        yield MenuItem::linkToDashboard('Главная', 'fa fa-home');
+        yield MenuItem::linkToDashboard('Статистика', 'fa fa-chart-line');
 
         yield MenuItem::section('Контент');
         yield MenuItem::linkToCrud('Объявления', 'fa fa-building', Property::class);

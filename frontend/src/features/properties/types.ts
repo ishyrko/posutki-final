@@ -164,6 +164,8 @@ export interface PropertyStatsPoint {
     views: number;
     phoneViews: number;
     favorites: number;
+    messages: number;
+    bookingInquiries: number;
 }
 
 export interface PropertyStats {
@@ -176,6 +178,8 @@ export interface PropertyStats {
         views: number;
         phoneViews: number;
         favorites: number;
+        messages: number;
+        bookingInquiries: number;
     };
     daily: PropertyStatsPoint[];
 }

@@ -16,4 +16,11 @@ interface MessageRepositoryInterface
     public function countByConversation(string $conversationId): int;
 
     public function markAllReadInConversation(string $conversationId, string $readByUserId): void;
+
+    /**
+     * Incoming messages to property owner, grouped by day.
+     *
+     * @return array<int, array{date: string, count: int}>
+     */
+    public function findDailyReceivedCountsByProperty(int $propertyId, int $days): array;
 }
