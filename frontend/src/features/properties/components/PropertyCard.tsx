@@ -60,55 +60,57 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
     });
   };
 
+  const favoriteLabel = isFavorited ? "Убрать из избранного" : "Добавить в избранное";
+
   return (
-    <Link href={href}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: index * 0.1 }}
-        className="group bg-card rounded-2xl overflow-hidden border border-border/50 hover:border-primary/20 hover:shadow-card-hover transition-all duration-500"
-      >
-        {/* Image Container */}
-        <div className="relative aspect-[4/3] overflow-hidden">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      className="group bg-card rounded-2xl overflow-hidden border border-border/50 hover:border-primary/20 hover:shadow-card-hover transition-all duration-500"
+    >
+      <div className="relative aspect-[4/3] overflow-hidden">
+        <Link href={href} className="block w-full h-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={coverImage}
             alt={title}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
+        </Link>
 
-          <div className="absolute top-4 left-4">
-            <span className="px-3 py-1 rounded-full bg-primary text-white text-[10px] font-bold uppercase tracking-wider shadow-primary">
-              {property.typeLabel ?? PROPERTY_TYPE_NOMINATIVE_DAILY[type] ?? type}
-            </span>
-          </div>
-
-          {/* Favorite Button */}
-          <button
-            type="button"
-            onClick={handleFavoriteClick}
-            className={`absolute top-4 right-4 p-2 rounded-full backdrop-blur-md border transition-all duration-300 cursor-pointer ${
-              isFavorited
-                ? 'bg-primary border-primary text-white'
-                : 'bg-white/10 border-white/20 text-white hover:bg-primary hover:border-primary'
-            }`}
-          >
-            <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
-          </button>
-
-          {/* Price Tag */}
-          <div className="absolute bottom-4 left-4">
-            <div className="px-4 py-2 rounded-xl bg-dark-bg/80 backdrop-blur-md border border-white/10 text-white">
-              <span className="text-lg font-bold font-display">
-                <PriceDisplay amount={primaryAmount} currency={primaryCurrency} />
-              </span>
-              <span className="block text-xs font-normal opacity-85 mt-0.5">{priceSecondary}</span>
-            </div>
-          </div>
+        <div className="pointer-events-none absolute top-4 left-4">
+          <span className="px-3 py-1 rounded-full bg-primary text-white text-[10px] font-bold uppercase tracking-wider shadow-primary">
+            {property.typeLabel ?? PROPERTY_TYPE_NOMINATIVE_DAILY[type] ?? type}
+          </span>
         </div>
 
-        {/* Content */}
-        <div className="p-5">
+        <button
+          type="button"
+          onClick={handleFavoriteClick}
+          aria-label={favoriteLabel}
+          aria-pressed={isFavorited}
+          className={`absolute top-4 right-4 z-10 p-2 rounded-full backdrop-blur-md border transition-all duration-300 cursor-pointer ${
+            isFavorited
+              ? 'bg-primary border-primary text-white'
+              : 'bg-white/10 border-white/20 text-white hover:bg-primary hover:border-primary'
+          }`}
+        >
+          <Heart aria-hidden="true" className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+          <span className="sr-only">{favoriteLabel}</span>
+        </button>
+
+        <div className="pointer-events-none absolute bottom-4 left-4">
+          <div className="px-4 py-2 rounded-xl bg-dark-bg/80 backdrop-blur-md border border-white/10 text-white">
+            <span className="text-lg font-bold font-display">
+              <PriceDisplay amount={primaryAmount} currency={primaryCurrency} />
+            </span>
+            <span className="block text-xs font-normal opacity-85 mt-0.5">{priceSecondary}</span>
+          </div>
+        </div>
+      </div>
+
+      <Link href={href} className="block p-5">
           <div className="flex justify-between items-start mb-2">
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
@@ -155,8 +157,7 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
               </span>
             </div>
           </div>
-        </div>
-      </motion.div>
-    </Link>
+      </Link>
+    </motion.div>
   );
 };

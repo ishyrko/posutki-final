@@ -272,9 +272,10 @@ const Header = () => {
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Избранное"
               className="relative h-10 w-10 text-muted-foreground hover:text-foreground [&_svg]:!size-6"
             >
-              <Heart />
+              <Heart aria-hidden="true" />
               <FavoritesCountBadge count={favoritesCount} />
             </Button>
           </Link>

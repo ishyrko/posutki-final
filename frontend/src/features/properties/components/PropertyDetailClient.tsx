@@ -723,20 +723,23 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                           },
                         });
                       }}
+                      aria-label={isFavorited ? "Убрать из избранного" : "Добавить в избранное"}
+                      aria-pressed={isFavorited}
                       className={`p-2.5 rounded-xl transition-colors cursor-pointer ${
                         isFavorited
                           ? 'bg-primary/10 hover:bg-primary/20'
                           : 'bg-muted hover:bg-muted/80'
                       }`}
                     >
-                      <Heart className={`w-5 h-5 ${isFavorited ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
+                      <Heart aria-hidden="true" className={`w-5 h-5 ${isFavorited ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
                     </button>
                     <button
                       type="button"
                       onClick={() => { void handleShare(); }}
+                      aria-label="Поделиться объявлением"
                       className="p-2.5 rounded-xl bg-muted hover:bg-muted/80 transition-colors cursor-pointer"
                     >
-                      <Share2 className="w-5 h-5 text-muted-foreground" />
+                      <Share2 aria-hidden="true" className="w-5 h-5 text-muted-foreground" />
                     </button>
                   </div>
                 </div>

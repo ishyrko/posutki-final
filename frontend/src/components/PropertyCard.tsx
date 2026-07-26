@@ -82,15 +82,17 @@ const PropertyCard = ({
     ? typeLabel?.trim() || (propertyType ? PROPERTY_TYPE_NOMINATIVE_DAILY[propertyType] : undefined)
     : undefined;
 
+  const favoriteLabel = isFavorited ? "Убрать из избранного" : "Добавить в избранное";
+
   return (
-    <Link href={href} className="block h-full">
-      <motion.div
-        initial={animateEntrance ? { opacity: 0, y: 20 } : false}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: Math.min(index, 12) * 0.1, duration: 0.5 }}
-        className="group h-full flex flex-col rounded-xl overflow-hidden bg-card shadow-card hover:shadow-card-hover transition-all duration-300 cursor-pointer"
-      >
-        <div className="relative aspect-[4/3] overflow-hidden">
+    <motion.div
+      initial={animateEntrance ? { opacity: 0, y: 20 } : false}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index, 12) * 0.1, duration: 0.5 }}
+      className="group h-full flex flex-col rounded-xl overflow-hidden bg-card shadow-card hover:shadow-card-hover transition-all duration-300"
+    >
+      <div className="relative aspect-[4/3] overflow-hidden">
+        <Link href={href} className="block w-full h-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={image}
@@ -98,27 +100,31 @@ const PropertyCard = ({
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
+        </Link>
 
-          <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
-            {imageTypeBadge && (
-              <span className="px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-                {imageTypeBadge}
-              </span>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={handleFavoriteClick}
-            className={`absolute top-3 right-3 w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors z-10 cursor-pointer ${
-              isFavorited ? "bg-primary text-white" : "bg-card/80 hover:bg-card text-foreground/70"
-            }`}
-          >
-            <Heart className={`w-4 h-4 ${isFavorited ? "fill-current" : ""}`} />
-          </button>
+        <div className="pointer-events-none absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+          {imageTypeBadge && (
+            <span className="px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+              {imageTypeBadge}
+            </span>
+          )}
         </div>
 
-        <div className="p-4 flex flex-col flex-1">
+        <button
+          type="button"
+          onClick={handleFavoriteClick}
+          aria-label={favoriteLabel}
+          aria-pressed={isFavorited}
+          className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors cursor-pointer ${
+            isFavorited ? "bg-primary text-white" : "bg-card/80 hover:bg-card text-foreground/70"
+          }`}
+        >
+          <Heart aria-hidden="true" className={`w-4 h-4 ${isFavorited ? "fill-current" : ""}`} />
+          <span className="sr-only">{favoriteLabel}</span>
+        </button>
+      </div>
+
+      <Link href={href} className="block p-4 flex flex-col flex-1">
           <div className="flex items-start justify-between gap-2 mb-1">
             <h3 className="font-display font-semibold text-base text-foreground leading-tight line-clamp-2 min-h-[2.5rem]">
               {title}
@@ -178,9 +184,8 @@ const PropertyCard = ({
           {isDaily && secondaryPrice && (
             <span className="text-xs text-muted-foreground mt-0.5">{secondaryPrice}</span>
           )}
-        </div>
-      </motion.div>
-    </Link>
+      </Link>
+    </motion.div>
   );
 };
 

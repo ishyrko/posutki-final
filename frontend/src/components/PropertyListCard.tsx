@@ -94,6 +94,8 @@ const PropertyListCard = ({
     });
   };
 
+  const favoriteLabel = isFavorited ? "Убрать из избранного" : "Добавить в избранное";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -101,41 +103,44 @@ const PropertyListCard = ({
       transition={{ delay: Math.min(index, 12) * 0.05, duration: 0.4 }}
       className="group bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300"
     >
-      <Link href={href} className="flex flex-col sm:flex-row">
-        {/* Image */}
+      <div className="flex flex-col sm:flex-row">
         <div className="relative sm:w-80 md:w-96 flex-shrink-0 aspect-[4/3] sm:aspect-auto sm:h-auto overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={image}
-            alt={title}
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <Link href={href} className="absolute inset-0 block sm:static sm:h-full">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={image}
+              alt={title}
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-          <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
-            {tag && (
-              <span className="px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
-                {tag}
-              </span>
-            )}
-          </div>
+            <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+              {tag && (
+                <span className="px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+                  {tag}
+                </span>
+              )}
+            </div>
+          </Link>
 
           <button
             type="button"
             onClick={handleFavoriteClick}
-            className={`absolute top-3 right-3 w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors cursor-pointer ${
+            aria-label={favoriteLabel}
+            aria-pressed={isFavorited}
+            className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors cursor-pointer ${
               isFavorited
                 ? 'bg-primary text-white'
                 : 'bg-card/80 hover:bg-card text-foreground/70'
             }`}
           >
-            <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+            <Heart aria-hidden="true" className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+            <span className="sr-only">{favoriteLabel}</span>
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
+        <Link href={href} className="flex flex-1 flex-col justify-between min-w-0 p-5">
           <div>
             <div className="flex items-start justify-between gap-4 mb-2">
               <h3 className="text-xl font-display font-bold text-foreground min-w-0 flex-1 line-clamp-2">
@@ -227,8 +232,8 @@ const PropertyListCard = ({
               Подробнее <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
-        </div>
-      </Link>
+        </Link>
+      </div>
     </motion.div>
   );
 };
