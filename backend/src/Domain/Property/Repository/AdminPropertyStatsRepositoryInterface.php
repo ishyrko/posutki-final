@@ -14,6 +14,7 @@ interface AdminPropertyStatsRepositoryInterface
         \DateTimeImmutable $endDate,
         ?string $propertyType,
         ?int $cityId,
+        ?int $regionId = null,
     ): array;
 
     /**
@@ -24,6 +25,7 @@ interface AdminPropertyStatsRepositoryInterface
         \DateTimeImmutable $endDate,
         ?string $propertyType,
         ?int $cityId,
+        ?int $regionId = null,
     ): array;
 
     /**
@@ -36,6 +38,7 @@ interface AdminPropertyStatsRepositoryInterface
         \DateTimeImmutable $endDate,
         ?string $propertyType,
         ?int $cityId,
+        ?int $regionId = null,
     ): array;
 
     /**
@@ -46,7 +49,8 @@ interface AdminPropertyStatsRepositoryInterface
         \DateTimeImmutable $endDate,
         ?string $propertyType,
         ?int $cityId,
+        ?int $regionId = null,
     ): array;
 
-    public function countProperties(?string $propertyType, ?int $cityId): int;
+    public function countProperties(?string $propertyType, ?int $cityId, ?int $regionId = null): int;
 }

@@ -20,16 +20,18 @@ final class AdminPropertyStatsRepository implements AdminPropertyStatsRepository
         \DateTimeImmutable $endDate,
         ?string $propertyType,
         ?int $cityId,
+        ?int $regionId = null,
     ): array {
-        [$filterSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId);
+        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId, $regionId);
 
         $rows = $this->connection()->executeQuery(
             'SELECT s.stat_date AS stat_date,
                     SUM(s.views) AS views,
                     SUM(s.phone_views) AS phone_views
              FROM property_daily_stats s
-             INNER JOIN properties p ON p.id = s.property_id
-             WHERE s.stat_date >= :startDate
+             INNER JOIN properties p ON p.id = s.property_id'
+            . $joinSql .
+            ' WHERE s.stat_date >= :startDate
                AND s.stat_date <= :endDate'
             . $filterSql .
             ' GROUP BY s.stat_date
@@ -58,15 +60,17 @@ final class AdminPropertyStatsRepository implements AdminPropertyStatsRepository
         \DateTimeImmutable $endDate,
         ?string $propertyType,
         ?int $cityId,
+        ?int $regionId = null,
     ): array {
-        [$filterSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId);
+        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId, $regionId);
 
         $rows = $this->connection()->executeQuery(
             'SELECT DATE(f.created_at) AS stat_date,
                     COUNT(f.id) AS stat_count
              FROM favorites f
-             INNER JOIN properties p ON p.id = f.property_id
-             WHERE f.created_at >= :startDate
+             INNER JOIN properties p ON p.id = f.property_id'
+            . $joinSql .
+            ' WHERE f.created_at >= :startDate
                AND f.created_at <= :endDate'
             . $filterSql .
             ' GROUP BY DATE(f.created_at)
@@ -94,16 +98,18 @@ final class AdminPropertyStatsRepository implements AdminPropertyStatsRepository
         \DateTimeImmutable $endDate,
         ?string $propertyType,
         ?int $cityId,
+        ?int $regionId = null,
     ): array {
-        [$filterSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId);
+        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId, $regionId);
 
         $rows = $this->connection()->executeQuery(
             'SELECT DATE(m.created_at) AS stat_date,
                     COUNT(m.id) AS stat_count
              FROM messages m
              INNER JOIN conversations c ON c.id = m.conversation_id
-             INNER JOIN properties p ON p.id = c.property_id
-             WHERE m.created_at >= :startDate
+             INNER JOIN properties p ON p.id = c.property_id'
+            . $joinSql .
+            ' WHERE m.created_at >= :startDate
                AND m.created_at <= :endDate
                AND m.sender_id != c.seller_id'
             . $filterSql .
@@ -132,15 +138,17 @@ final class AdminPropertyStatsRepository implements AdminPropertyStatsRepository
         \DateTimeImmutable $endDate,
         ?string $propertyType,
         ?int $cityId,
+        ?int $regionId = null,
     ): array {
-        [$filterSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId);
+        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId, $regionId);
 
         $rows = $this->connection()->executeQuery(
             'SELECT DATE(b.created_at) AS stat_date,
                     COUNT(b.id) AS stat_count
              FROM booking_inquiries b
-             INNER JOIN properties p ON p.id = b.property_id
-             WHERE b.created_at >= :startDate
+             INNER JOIN properties p ON p.id = b.property_id'
+            . $joinSql .
+            ' WHERE b.created_at >= :startDate
                AND b.created_at <= :endDate'
             . $filterSql .
             ' GROUP BY DATE(b.created_at)
@@ -163,39 +171,52 @@ final class AdminPropertyStatsRepository implements AdminPropertyStatsRepository
         );
     }
 
-    public function countProperties(?string $propertyType, ?int $cityId): int
+    public function countProperties(?string $propertyType, ?int $cityId, ?int $regionId = null): int
     {
-        [$filterSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId, '');
+        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId, $regionId, '');
 
         return (int) $this->connection()->executeQuery(
-            'SELECT COUNT(p.id) FROM properties p WHERE 1 = 1' . $filterSql,
+            'SELECT COUNT(p.id) FROM properties p' . $joinSql . ' WHERE 1 = 1' . $filterSql,
             $filterParams,
         )->fetchOne();
     }
 
     /**
-     * @return array{0: string, 1: array<string, mixed>}
+     * @return array{0: string, 1: string, 2: array<string, mixed>}
      */
-    private function buildPropertyFilterSql(?string $propertyType, ?int $cityId, string $alias = 'p'): array
-    {
+    private function buildPropertyFilterSql(
+        ?string $propertyType,
+        ?int $cityId,
+        ?int $regionId,
+        string $alias = 'p',
+    ): array {
+        $tableAlias = $alias !== '' ? $alias : 'p';
         $conditions = [];
         $params = [];
+        $joinSql = '';
 
         if ($propertyType !== null) {
-            $conditions[] = sprintf('%s.type = :propertyType', $alias !== '' ? $alias : 'p');
+            $conditions[] = sprintf('%s.type = :propertyType', $tableAlias);
             $params['propertyType'] = $propertyType;
         }
 
         if ($cityId !== null) {
-            $conditions[] = sprintf('%s.city_id = :cityId', $alias !== '' ? $alias : 'p');
+            $conditions[] = sprintf('%s.city_id = :cityId', $tableAlias);
             $params['cityId'] = $cityId;
+        } elseif ($regionId !== null) {
+            $joinSql = sprintf(
+                ' INNER JOIN cities _stats_city ON _stats_city.id = %s.city_id'
+                . ' INNER JOIN region_districts _stats_rd ON _stats_rd.id = _stats_city.region_district_id'
+                . ' INNER JOIN regions _stats_region ON _stats_region.id = _stats_rd.region_id',
+                $tableAlias,
+            );
+            $conditions[] = '_stats_region.id = :regionId';
+            $params['regionId'] = $regionId;
         }
 
-        if ($conditions === []) {
-            return ['', []];
-        }
+        $filterSql = $conditions === [] ? '' : ' AND ' . implode(' AND ', $conditions);
 
-        return [' AND ' . implode(' AND ', $conditions), $params];
+        return [$filterSql, $joinSql, $params];
     }
 
     private function connection(): Connection

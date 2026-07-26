@@ -17,7 +17,10 @@ use App\Domain\Property\Entity\PropertyPlacementPurchase;
 use App\Domain\Property\Entity\PropertyPlacementScopeSettings;
 use App\Domain\Review\Entity\Review;
 use App\Domain\Property\Entity\Street;
+use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Domain\Property\Repository\PropertyRepositoryInterface;
+use App\Domain\Property\Repository\RegionRepositoryInterface;
 use App\Domain\User\Entity\User;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
@@ -34,6 +37,8 @@ class DashboardController extends AbstractDashboardController
     public function __construct(
         private readonly GetAdminPropertyStatsOverviewHandler $adminPropertyStatsOverviewHandler,
         private readonly CityRepositoryInterface $cityRepository,
+        private readonly RegionRepositoryInterface $regionRepository,
+        private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly RequestStack $requestStack,
     ) {
     }
@@ -45,11 +50,23 @@ class DashboardController extends AbstractDashboardController
         $type = $request?->query->getString('type') ?? '';
         $cityIdRaw = $request?->query->get('cityId');
         $cityId = is_numeric($cityIdRaw) ? (int) $cityIdRaw : null;
+        $regionIdRaw = $request?->query->get('regionId');
+        $regionId = is_numeric($regionIdRaw) ? (int) $regionIdRaw : null;
+
+        if ($type === PropertyType::Apartment->value) {
+            $regionId = null;
+        } elseif ($type === PropertyType::House->value) {
+            $cityId = null;
+        } else {
+            $cityId = null;
+            $regionId = null;
+        }
 
         $stats = ($this->adminPropertyStatsOverviewHandler)(new GetAdminPropertyStatsOverviewQuery(
             period: $period,
             propertyType: $type !== '' ? $type : null,
             cityId: $cityId,
+            regionId: $regionId,
         ));
 
         $selectedCityName = null;
@@ -58,16 +75,46 @@ class DashboardController extends AbstractDashboardController
             $selectedCityName = $selectedCity?->getName();
         }
 
+        $selectedRegionName = null;
+        if ($regionId !== null) {
+            $selectedRegion = $this->regionRepository->findById($regionId);
+            $selectedRegionName = $selectedRegion?->getName();
+        }
+
         return $this->render('admin/stats_dashboard.html.twig', [
             'stats' => $stats,
-            'cities' => $this->cityRepository->findAllOrderedByName(),
+            'apartmentCities' => $this->findCitiesWithApartmentListings(),
+            'houseRegions' => $this->regionRepository->findAll(),
             'selectedCityName' => $selectedCityName,
+            'selectedRegionName' => $selectedRegionName,
             'filters' => [
                 'period' => $stats['period'],
                 'type' => $stats['propertyType'] ?? '',
                 'cityId' => $stats['cityId'] ?? '',
+                'regionId' => $stats['regionId'] ?? '',
             ],
         ]);
+    }
+
+    /**
+     * @return City[]
+     */
+    private function findCitiesWithApartmentListings(): array
+    {
+        $cities = [];
+        foreach ($this->propertyRepository->findCityIdsWithListings(PropertyType::Apartment->value) as $cityId) {
+            $city = $this->cityRepository->findById($cityId);
+            if ($city !== null) {
+                $cities[] = $city;
+            }
+        }
+
+        usort(
+            $cities,
+            static fn(City $a, City $b): int => strnatcasecmp($a->getName(), $b->getName()),
+        );
+
+        return $cities;
     }
 
     #[Route('/admin/login', name: 'admin_login')]
@@ -111,7 +158,8 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToDashboard('Статистика', 'fa fa-chart-line');
 
         yield MenuItem::section('Контент');
-        yield MenuItem::linkToCrud('Объявления', 'fa fa-building', Property::class);
+        yield MenuItem::linkToCrud('Объявления', 'fa fa-building', Property::class)
+            ->setController(PropertyCrudController::class);
         yield MenuItem::linkToCrud('Модерация объявлений', 'fa fa-shield', Property::class)
             ->setController(PropertyModerationCrudController::class);
         yield MenuItem::linkToCrud('Модерация отзывов', 'fa fa-star', Review::class)

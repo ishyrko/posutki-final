@@ -472,6 +472,22 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         return array_map('intval', $rows);
     }
 
+    public function findRegionIdsWithListings(string $propertyType): array
+    {
+        $rows = $this->createQueryBuilder('p')
+            ->select('DISTINCT r.id')
+            ->innerJoin(City::class, 'c', 'WITH', 'c.id = p.cityId')
+            ->innerJoin('c.regionDistrict', 'rd')
+            ->innerJoin('rd.region', 'r')
+            ->where('p.type = :propertyType')
+            ->setParameter('propertyType', $propertyType)
+            ->orderBy('r.id', 'ASC')
+            ->getQuery()
+            ->getSingleColumnResult();
+
+        return array_map('intval', $rows);
+    }
+
     public function countPublishedByEffectiveLevel(
         string $propertyType,
         ?int $cityId = null,

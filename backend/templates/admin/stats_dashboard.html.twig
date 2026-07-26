@@ -17,10 +17,17 @@
             <option value="house" {% if filters.type == 'house' %}selected{% endif %}>Дома</option>
         </select>
 
-        <select name="cityId" class="form-select form-select-sm" style="min-width:220px; max-width:320px;" onchange="this.form.submit()">
+        <select name="cityId" class="form-select form-select-sm" style="min-width:220px; max-width:320px;" onchange="this.form.submit()" {% if filters.type != 'apartment' %}hidden{% endif %}>
             <option value="" {% if filters.cityId is empty %}selected{% endif %}>Вся Беларусь</option>
-            {% for city in cities %}
+            {% for city in apartmentCities %}
                 <option value="{{ city.id }}" {% if filters.cityId == city.id %}selected{% endif %}>{{ city.name }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="regionId" class="form-select form-select-sm" style="min-width:220px; max-width:320px;" onchange="this.form.submit()" {% if filters.type != 'house' %}hidden{% endif %}>
+            <option value="" {% if filters.regionId is empty %}selected{% endif %}>Вся Беларусь</option>
+            {% for region in houseRegions %}
+                <option value="{{ region.id }}" {% if filters.regionId == region.id %}selected{% endif %}>{{ region.name }}</option>
             {% endfor %}
         </select>
         </form>
@@ -28,7 +35,7 @@
         <p class="text-secondary mb-4">
             Агрегированная статистика по
             {% if filters.type == 'apartment' %}квартирам{% elseif filters.type == 'house' %}домам{% else %}всем объявлениям{% endif %}
-            {% if selectedCityName %}в г. {{ selectedCityName }}{% else %}по всей Беларуси{% endif %}
+            {% if selectedCityName %}в г. {{ selectedCityName }}{% elseif selectedRegionName %}в {{ selectedRegionName }}{% else %}по всей Беларуси{% endif %}
             за последние {{ stats.period }} дн.
             <span class="text-muted">· {{ stats.propertiesCount }} объявл.</span>
         </p>

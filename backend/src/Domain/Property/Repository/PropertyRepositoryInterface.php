@@ -71,6 +71,11 @@ interface PropertyRepositoryInterface
     public function findCityIdsWithListings(string $propertyType): array;
 
     /**
+     * @return int[] region ids that have at least one listing of the given property type
+     */
+    public function findRegionIdsWithListings(string $propertyType): array;
+
+    /**
      * Published listings grouped by placement_effective_level for a tariff scope.
      * Apartments: filter by cityId. Houses: filter by regionId (via city → district → region).
      *

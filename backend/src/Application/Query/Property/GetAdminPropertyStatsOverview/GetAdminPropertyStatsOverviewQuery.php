@@ -10,6 +10,7 @@ final class GetAdminPropertyStatsOverviewQuery
         public readonly int $period,
         public readonly ?string $propertyType,
         public readonly ?int $cityId,
+        public readonly ?int $regionId = null,
     ) {
     }
 }

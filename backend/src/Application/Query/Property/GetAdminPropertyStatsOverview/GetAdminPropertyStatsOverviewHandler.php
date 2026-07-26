@@ -19,6 +19,7 @@ final class GetAdminPropertyStatsOverviewHandler
      *     period: int,
      *     propertyType: ?string,
      *     cityId: ?int,
+     *     regionId: ?int,
      *     propertiesCount: int,
      *     totals: array{views: int, phoneViews: int, favorites: int, messages: int, bookingInquiries: int},
      *     daily: array<int, array{date: string, views: int, phoneViews: int, favorites: int, messages: int, bookingInquiries: int}>
@@ -37,24 +38,28 @@ final class GetAdminPropertyStatsOverviewHandler
             $endDate,
             $propertyType,
             $query->cityId,
+            $query->regionId,
         );
         $dailyFavoritesStats = $this->adminPropertyStatsRepository->findAggregatedDailyFavorites(
             $startDate,
             $endDate,
             $propertyType,
             $query->cityId,
+            $query->regionId,
         );
         $dailyMessagesStats = $this->adminPropertyStatsRepository->findAggregatedDailyReceivedMessages(
             $startDate,
             $endDate,
             $propertyType,
             $query->cityId,
+            $query->regionId,
         );
         $dailyBookingInquiriesStats = $this->adminPropertyStatsRepository->findAggregatedDailyBookingInquiries(
             $startDate,
             $endDate,
             $propertyType,
             $query->cityId,
+            $query->regionId,
         );
 
         $dailyByDate = [];
@@ -113,7 +118,8 @@ final class GetAdminPropertyStatsOverviewHandler
             'period' => $period,
             'propertyType' => $propertyType,
             'cityId' => $query->cityId,
-            'propertiesCount' => $this->adminPropertyStatsRepository->countProperties($propertyType, $query->cityId),
+            'regionId' => $query->regionId,
+            'propertiesCount' => $this->adminPropertyStatsRepository->countProperties($propertyType, $query->cityId, $query->regionId),
             'totals' => [
                 'views' => array_sum(array_column($daily, 'views')),
                 'phoneViews' => array_sum(array_column($daily, 'phoneViews')),
