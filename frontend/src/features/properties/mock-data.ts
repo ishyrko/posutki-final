@@ -349,7 +349,7 @@ export function getMockPropertiesResponse(filters: PropertyFilters = {}): Proper
   }
 
   const page = Number(filters.page) || 1;
-  const limit = Number(filters.limit) || 12;
+  const limit = Number(filters.limit) || 48;
   const total = result.length;
   const start = (page - 1) * limit;
   const paged = result.slice(start, start + limit);

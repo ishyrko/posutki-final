@@ -75,7 +75,7 @@ type ViewMode = "grid" | "list" | "map";
 /** Горизонтальный список (PropertyListCard) рассчитан на широкую колонку результатов. */
 const CATALOG_LIST_VIEW_MIN_WIDTH = 1100;
 
-const CATALOG_ITEMS_PER_PAGE = 12;
+const CATALOG_ITEMS_PER_PAGE = 48;
 /** В режиме карты нужны все точки по фильтрам, не одна страница списка. */
 const CATALOG_MAP_FETCH_LIMIT = 500;
 
