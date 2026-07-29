@@ -82,6 +82,12 @@ const cities = [
     href: buildCatalogUrl({ city: "molodechno", propertyType: "apartment" }),
   },
   {
+    name: "Логойск",
+    slug: "logoysk",
+    icon: TreePine,
+    href: buildCatalogUrl({ city: "logoysk", propertyType: "apartment" }),
+  },
+  {
     name: "Орша",
     slug: "orsha",
     icon: MapPin,
