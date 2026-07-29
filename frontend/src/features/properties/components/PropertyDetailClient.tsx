@@ -203,12 +203,20 @@ function useImageClearlyLandscape(src: string): boolean | null {
   return clearlyLandscape;
 }
 
-function GalleryGridThumb({ src, alt }: { src: string; alt: string }) {
+function GalleryGridThumb({
+  src,
+  alt,
+  preferCover = false,
+}: {
+  src: string;
+  alt: string;
+  preferCover?: boolean;
+}) {
   const clearlyLandscape = useImageClearlyLandscape(src);
 
   return (
     <div className="relative aspect-[4/3] w-full overflow-hidden">
-      {clearlyLandscape === true ? (
+      {preferCover || clearlyLandscape === true ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover" />
       ) : (
@@ -364,6 +372,8 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   const images = property.images?.map(img => img.url) || [
     "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80",
   ];
+  const showExtraPhotosOverlay = images.length > 5;
+  const extraPhotoCount = images.length - 4;
   const videoEmbed = useMemo(() => getVideoEmbedInfo(property.videoUrl), [property.videoUrl]);
   const formatStableDate = (value: string) => {
     const date = new Date(value);
@@ -651,11 +661,11 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                 className="relative cursor-pointer group hidden md:block overflow-hidden"
                 onClick={() => { setCurrentImage(i + 1); setLightboxOpen(true); }}
               >
-                <GalleryGridThumb src={img} alt={`Фото ${i + 2}`} />
-                <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors" />
-                {i === 3 && images.length > 5 && (
-                  <div className="absolute inset-0 bg-foreground/50 flex items-center justify-center">
-                    <span className="text-primary-foreground font-medium text-sm">+{images.length - 4} фото</span>
+                <GalleryGridThumb src={img} alt={`Фото ${i + 2}`} preferCover={i === 3 && showExtraPhotosOverlay} />
+                <div className="absolute inset-0 z-[1] bg-foreground/0 group-hover:bg-foreground/10 transition-colors pointer-events-none" />
+                {i === 3 && showExtraPhotosOverlay && (
+                  <div className="absolute inset-0 z-[2] flex items-center justify-center bg-foreground/50 pointer-events-none">
+                    <span className="text-primary-foreground font-medium text-sm">Ещё {extraPhotoCount} фото</span>
                   </div>
                 )}
               </div>
