@@ -352,7 +352,12 @@ export function formatCatalogPositionRange(
     const emptyHint =
         (level.catalogListingsAtLevel ?? 0) === 0 ? 'сейчас пусто, займёте ' : '';
 
-    return `На текущий момент: ${emptyHint}${places} (${locationLabel}) · ротация каждые 5 мин.`;
+    const base = `На текущий момент: ${emptyHint}${places} (${locationLabel})`;
+    if (from === to) {
+        return base;
+    }
+
+    return `${base} · ротация каждые 5 мин.`;
 }
 
 /**
