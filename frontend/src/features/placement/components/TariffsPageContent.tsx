@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useCities, useRegions } from '@/features/create-listing/hooks';
-import { usePlacementLevels, usePlacementScope } from '@/features/placement/hooks';
+import { useHomePageCities, useRegions } from '@/features/create-listing/hooks';
+import { usePlacementLevels } from '@/features/placement/hooks';
 import {
     calcBoostPriceByn,
     MAX_VISIBLE_PHOTOS_FREE_PLACEMENT,
@@ -22,7 +22,7 @@ import { Check } from 'lucide-react';
 
 export function TariffsPageContent() {
     const [propertyType, setPropertyType] = useState<PlacementPropertyType>('apartment');
-    const { data: cities = [], isLoading: citiesLoading } = useCities();
+    const { data: cities = [], isLoading: citiesLoading } = useHomePageCities();
     const { data: regions = [], isLoading: regionsLoading } = useRegions();
 
     const minsk = useMemo(
@@ -51,7 +51,6 @@ export function TariffsPageContent() {
 
     const { data: levelsData, isLoading: levelsLoading } = usePlacementLevels(tariffScope);
     const levels = levelsData?.levels ?? [];
-    const { data: scopeSettings } = usePlacementScope(tariffScope);
 
     const locationLabel =
         propertyType === 'house'
@@ -85,10 +84,10 @@ export function TariffsPageContent() {
 
             <div className="space-y-4 mb-10">
                 <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-                    <h2 className="font-semibold text-foreground mb-2">VIP-уровни 1–5</h2>
+                    <h2 className="font-semibold text-foreground mb-2">VIP-уровни</h2>
                     <p className="text-sm text-muted-foreground">
                         Платное размещение с повышенным приоритетом в выдаче. Лимиты мест задаются
-                        отдельно для каждого города и уровня — при заполнении покупка недоступна.
+                        отдельно для каждого города — при заполнении покупка недоступна.
                         Срок оплаты: 1, 3, 6 или 12 месяцев. Скидки при покупке на срок: 3 мес. −5%,
                         6 мес. −10%, 12 мес. −20%.
                     </p>
@@ -168,7 +167,6 @@ export function TariffsPageContent() {
 
             <p className="text-sm text-muted-foreground mb-3">
                 Стоимость — {locationLabel}
-                {scopeSettings?.maxLevel ? ` · макс. VIP ${scopeSettings.maxLevel}` : ''}
             </p>
 
             <div className="rounded-xl border border-border bg-card overflow-hidden shadow-card mb-6">
@@ -237,6 +235,7 @@ export function TariffsPageContent() {
                     </tbody>
                 </table>
             </div>
+
         </div>
     );
 }
