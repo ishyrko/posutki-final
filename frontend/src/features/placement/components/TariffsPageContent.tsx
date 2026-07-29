@@ -1,9 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { notFound } from 'next/navigation';
-import { useUser } from '@/features/auth/hooks';
-import { canAccessPlacementCommerce } from '@/features/placement/access';
 import { useCities, useRegions } from '@/features/create-listing/hooks';
 import { usePlacementLevels, usePlacementScope } from '@/features/placement/hooks';
 import {
@@ -24,7 +21,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check } from 'lucide-react';
 
 export function TariffsPageContent() {
-    const { data: user, isLoading: userLoading } = useUser();
     const [propertyType, setPropertyType] = useState<PlacementPropertyType>('apartment');
     const { data: cities = [], isLoading: citiesLoading } = useCities();
     const { data: regions = [], isLoading: regionsLoading } = useRegions();
@@ -61,14 +57,6 @@ export function TariffsPageContent() {
         propertyType === 'house'
             ? selectedRegion?.name ?? 'область'
             : selectedCity?.name ?? 'город';
-
-    if (userLoading) {
-        return null;
-    }
-
-    if (!canAccessPlacementCommerce(user?.id)) {
-        notFound();
-    }
 
     return (
         <div className="mx-auto max-w-3xl">
@@ -188,6 +176,7 @@ export function TariffsPageContent() {
                     <thead>
                         <tr className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
                             <th className="text-left py-3 px-4 font-medium">Уровень</th>
+                            <th className="text-right py-3 px-4 font-medium">Мест</th>
                             <th className="text-right py-3 px-4 font-medium">Цена</th>
                             <th className="text-right py-3 px-4 font-medium">Буст / 24 ч</th>
                         </tr>
@@ -195,13 +184,13 @@ export function TariffsPageContent() {
                     <tbody>
                         {levelsLoading ? (
                             <tr>
-                                <td colSpan={3} className="py-8 text-center text-muted-foreground">
+                                <td colSpan={4} className="py-8 text-center text-muted-foreground">
                                     Загрузка…
                                 </td>
                             </tr>
                         ) : levels.length === 0 ? (
                             <tr>
-                                <td colSpan={3} className="py-8 text-center text-muted-foreground">
+                                <td colSpan={4} className="py-8 text-center text-muted-foreground">
                                     {propertyType === 'house'
                                         ? 'Для этой области VIP-тарифы ещё не настроены.'
                                         : 'Для этого города VIP-тарифы ещё не настроены.'}
@@ -214,6 +203,13 @@ export function TariffsPageContent() {
                                     <tr key={item.id} className="border-b border-border last:border-0">
                                         <td className="py-3 px-4 text-foreground font-medium">
                                             {item.label}
+                                        </td>
+                                        <td className="py-3 px-4 text-right text-foreground">
+                                            {item.capacity != null ? (
+                                                item.capacity
+                                            ) : (
+                                                <span className="text-muted-foreground">Без лимита</span>
+                                            )}
                                         </td>
                                         <td className="py-3 px-4 text-right font-semibold text-foreground">
                                             <span className="inline-flex items-baseline gap-1 justify-end">

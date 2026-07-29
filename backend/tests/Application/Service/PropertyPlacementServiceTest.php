@@ -214,6 +214,36 @@ final class PropertyPlacementServiceTest extends TestCase
         self::assertSame(4, $service->quoteBoostPurchase($property));
     }
 
+    public function testQuoteBoostPurchaseNeverBelowMinimum(): void
+    {
+        $ownerId = Id::fromInt(7);
+        $property = $this->createProperty($ownerId);
+        $this->setPlacementBaseLevel($property, 1);
+
+        $levelPrices = [
+            new PropertyPlacementLevelPrice('apartment', 1, null, 1, 49),
+            new PropertyPlacementLevelPrice('apartment', 1, null, 2, 69),
+        ];
+
+        $levelPriceRepository = $this->createMock(PropertyPlacementLevelPriceRepositoryInterface::class);
+        $levelPriceRepository->method('findActiveByCityId')->willReturn($levelPrices);
+
+        $scopeSettingsRepository = $this->createMock(PropertyPlacementScopeSettingsRepositoryInterface::class);
+        $scopeSettingsRepository->method('findActiveByCityId')->willReturn(null);
+
+        $service = new PropertyPlacementService(
+            $this->createStub(PropertyRepositoryInterface::class),
+            $this->createStub(PropertyPlacementPurchaseRepositoryInterface::class),
+            $levelPriceRepository,
+            $scopeSettingsRepository,
+            $this->createStub(CityRepositoryInterface::class),
+            $this->createStub(UserRepositoryInterface::class),
+        );
+
+        // (69 - 49) / 30 * 2 = 1.333... ? ceil 2, but minimum is 3 BYN
+        self::assertSame(3, $service->quoteBoostPurchase($property));
+    }
+
     public function testActivateBoostKeepsExistingBaseLevelFromProperty(): void
     {
         $ownerId = Id::fromInt(7);

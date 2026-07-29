@@ -208,6 +208,9 @@ export function formatPlacementPurchaseSummary(
     return summary;
 }
 
+/** Minimum VIP-boost (24h) price in BYN. */
+export const MIN_BOOST_PRICE_BYN = 3;
+
 /** 2 × daily tariff gap between current and next VIP level (monthly / 30), rounded up. */
 export function calcBoostPriceByn(
     currentLevel: number,
@@ -227,7 +230,10 @@ export function calcBoostPriceByn(
         currentPrice = current.priceBynPerMonth;
     }
 
-    return Math.max(0, Math.ceil((2 * (next.priceBynPerMonth - currentPrice)) / 30));
+    return Math.max(
+        MIN_BOOST_PRICE_BYN,
+        Math.ceil((2 * (next.priceBynPerMonth - currentPrice)) / 30),
+    );
 }
 
 export function isPlacementPurchasePayable(purchase: PlacementPurchase): boolean {

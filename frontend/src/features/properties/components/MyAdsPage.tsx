@@ -25,9 +25,7 @@ import { Property, formatAddress, isPropertyEditable } from '@/features/properti
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
 import { BuyPlacementDialog } from '@/features/placement/components/BuyPlacementDialog';
-import { canAccessPlacementCommerce } from '@/features/placement/access';
 import { usePlacementLevels } from '@/features/placement/hooks';
-import { useUser } from '@/features/auth/hooks';
 import {
     FREE_PLACEMENT_LIMITS_HREF,
     formatCatalogPositionRange,
@@ -105,12 +103,10 @@ function getDeleteEligibility(property: Property) {
 function ListingCard({
     property,
     showPublicLinks,
-    showPlacementCommerce,
     onRequestDelete,
 }: {
     property: Property;
     showPublicLinks: boolean;
-    showPlacementCommerce: boolean;
     onRequestDelete?: (propertyId: number) => void;
 }) {
     const archive = useArchiveProperty();
@@ -237,16 +233,12 @@ function ListingCard({
                                             <TooltipTrigger asChild>
                                                 <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-muted text-muted-foreground">
                                                     Бесплатно
-                                                    {showPlacementCommerce ? (
-                                                        <Link
-                                                            href={FREE_PLACEMENT_LIMITS_HREF}
-                                                            className="underline underline-offset-2 hover:text-foreground transition-colors"
-                                                        >
-                                                            с ограничениями
-                                                        </Link>
-                                                    ) : (
-                                                        <span>с ограничениями</span>
-                                                    )}
+                                                    <Link
+                                                        href={FREE_PLACEMENT_LIMITS_HREF}
+                                                        className="underline underline-offset-2 hover:text-foreground transition-colors"
+                                                    >
+                                                        с ограничениями
+                                                    </Link>
                                                 </span>
                                             </TooltipTrigger>
                                             <TooltipContent side="bottom" className="max-w-xs text-center">
@@ -336,7 +328,7 @@ function ListingCard({
                             </Link>
                         </Button>
                     )}
-                    {property.status === 'published' && showPlacementCommerce && (
+                    {property.status === 'published' && (
                         <>
                             <Button
                                 variant="ghost"
@@ -449,8 +441,6 @@ function isStatusMatch(propertyStatus: Property['status'], tabStatus: MyAdsStatu
 
 export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
     const deletePropertyMutation = useDeleteProperty();
-    const { data: user } = useUser();
-    const showPlacementCommerce = canAccessPlacementCommerce(user?.id);
     const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
     const { data, isLoading } = useMyProperties();
     const properties = useMemo(() => data?.data ?? [], [data?.data]);
@@ -566,7 +556,6 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
                             key={property.id}
                             property={property}
                             showPublicLinks={activeStatus !== 'inactive'}
-                            showPlacementCommerce={showPlacementCommerce}
                             onRequestDelete={setDeleteTargetId}
                         />
                     ))}

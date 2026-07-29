@@ -19,6 +19,7 @@ class PropertyPlacementPurchase
 {
     public const RESERVATION_HOURS = 48;
     public const BOOST_HOURS = 24;
+    public const MIN_BOOST_PRICE_BYN = 3;
 
     /** @var list<int> */
     public const ALLOWED_DURATIONS = [1, 3, 6, 12];

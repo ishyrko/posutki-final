@@ -1,13 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CreditCard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BynCurrencyMark } from '@/components/BynCurrency';
-import { useUser } from '@/features/auth/hooks';
-import { canAccessPlacementCommerce } from '@/features/placement/access';
 import { useMyPlacementPurchases } from '@/features/placement/hooks';
 import { isPlacementPurchasePayable, formatPlacementPurchaseSummary, type PlacementPurchase } from '@/features/placement/types';
 import { cn } from '@/lib/utils';
@@ -92,7 +89,6 @@ function PurchaseRow({ purchase }: { purchase: PlacementPurchase }) {
 }
 
 export function PlacementPaymentsListPage() {
-    const { data: user, isLoading: userLoading } = useUser();
     const { data: purchases = [], isLoading } = useMyPlacementPurchases();
     const sortedPurchases = [...purchases].sort((a, b) => {
         const aPayable = isPlacementPurchasePayable(a);
@@ -103,14 +99,6 @@ export function PlacementPaymentsListPage() {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
     const payableCount = purchases.filter(isPlacementPurchasePayable).length;
-
-    if (userLoading) {
-        return null;
-    }
-
-    if (!canAccessPlacementCommerce(user?.id)) {
-        notFound();
-    }
 
     return (
         <motion.div
