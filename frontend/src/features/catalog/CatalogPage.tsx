@@ -748,19 +748,21 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
             </div>
             {renderCatalogFilters()}
             <div className="mt-5 space-y-4">
-              <div>
-                <label className="text-sm font-semibold text-foreground mb-2 block font-display">Сортировка</label>
-                <Select value={sort} onValueChange={setSort}>
-                  <SelectTrigger className={cn(filterSurfaceInput, "w-full cursor-pointer")}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card border-border z-50">
-                    {sortOptions.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {viewMode !== "map" && (
+                <div>
+                  <label className="text-sm font-semibold text-foreground mb-2 block font-display">Сортировка</label>
+                  <Select value={sort} onValueChange={setSort}>
+                    <SelectTrigger className={cn(filterSurfaceInput, "w-full cursor-pointer")}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border z-50">
+                      {sortOptions.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div>
                 <label className="text-sm font-semibold text-foreground mb-2 block font-display">Вид</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -865,18 +867,20 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                   ))}
                 </div>
 
-                <div className="hidden md:block shrink-0">
-                  <Select value={sort} onValueChange={setSort}>
-                    <SelectTrigger className="h-auto min-h-0 cursor-pointer rounded-xl border-border bg-surface py-2.5 pl-3 pr-8 text-sm shadow-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border z-50">
-                      {sortOptions.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {viewMode !== "map" && (
+                  <div className="hidden md:block shrink-0">
+                    <Select value={sort} onValueChange={setSort}>
+                      <SelectTrigger className="h-auto min-h-0 cursor-pointer rounded-xl border-border bg-surface py-2.5 pl-3 pr-8 text-sm shadow-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-border z-50">
+                        {sortOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <Button
                   variant="outline"
