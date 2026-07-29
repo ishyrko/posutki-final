@@ -22,6 +22,22 @@ final readonly class FrontendUrlBuilder
     /** @var list<string> */
     private const URL_REGION_PREFIXES = ['brest', 'vitebsk', 'gomel', 'grodno', 'mogilev'];
 
+    /** Города с префиксом в URL (только квартиры) — в синхроне с frontend CITY_PREFIX_SLUG_LIST. */
+    /** @var list<string> */
+    private const CITY_PREFIX_SLUGS = [
+        'orsha',
+        'svetlogorsk',
+        'smorgon',
+        'molodechno',
+        'logoysk',
+        'baranovichi',
+        'pinsk',
+        'novopolotsk',
+        'bobruysk',
+        'zhlobin',
+        'volkovysk',
+    ];
+
     public function __construct(
         private string $frontendBaseUrl,
         private CityRepositoryInterface $cityRepository,
@@ -64,7 +80,7 @@ final readonly class FrontendUrlBuilder
         return $this->base() . '/admin';
     }
 
-    public function publicProperty(string $dealType, string $propertyType, int $propertyId, ?string $regionSlug = null): string
+    public function publicProperty(string $dealType, string $propertyType, int $propertyId, ?string $urlPrefix = null): string
     {
         $typeSlug = self::PROPERTY_TYPE_TO_PATH_SLUG[$propertyType] ?? null;
 
@@ -73,8 +89,8 @@ final readonly class FrontendUrlBuilder
         }
 
         $path = '/' . $typeSlug . '/' . $propertyId . '/';
-        if ($regionSlug !== null && \in_array($regionSlug, self::URL_REGION_PREFIXES, true)) {
-            $path = '/' . $regionSlug . $path;
+        if ($urlPrefix !== null && $this->isCatalogUrlPrefix($urlPrefix)) {
+            $path = '/' . $urlPrefix . $path;
         }
 
         return $this->base() . $path;
@@ -86,22 +102,46 @@ final readonly class FrontendUrlBuilder
             $property->getDealType(),
             $property->getType(),
             $property->getId()->getValue(),
-            $this->resolveUrlRegionSlug($property->getCityId()),
+            $this->resolveUrlPrefixSlug($property->getCityId(), $property->getType()),
         );
     }
 
-    private function resolveUrlRegionSlug(int $cityId): ?string
+    private function isCatalogUrlPrefix(string $slug): bool
+    {
+        return \in_array($slug, self::URL_REGION_PREFIXES, true)
+            || \in_array($slug, self::CITY_PREFIX_SLUGS, true);
+    }
+
+    /**
+     * Slug региона или города-префикса для URL объявления — в синхроне с
+     * frontend propertyUrlRegionSlug().
+     */
+    private function resolveUrlPrefixSlug(int $cityId, string $propertyType): ?string
     {
         $city = $this->cityRepository->findById($cityId);
         if ($city === null) {
             return null;
         }
 
-        $slug = $city->getRegionDistrict()?->getRegion()?->getSlug();
-        if ($slug === null || $slug === 'minsk' || !\in_array($slug, self::URL_REGION_PREFIXES, true)) {
+        $citySlug = $city->getSlug();
+
+        if ($propertyType === 'apartment' && \in_array($citySlug, self::CITY_PREFIX_SLUGS, true)) {
+            return $citySlug;
+        }
+
+        $regionSlug = $city->getRegionDistrict()?->getRegion()?->getSlug();
+        if ($regionSlug === null || $regionSlug === 'minsk') {
             return null;
         }
 
-        return $slug;
+        if (\in_array($regionSlug, self::URL_REGION_PREFIXES, true)) {
+            return $regionSlug;
+        }
+
+        if (\in_array($citySlug, self::URL_REGION_PREFIXES, true)) {
+            return $citySlug;
+        }
+
+        return null;
     }
 }

@@ -6,6 +6,7 @@ import { usePlacementLevels } from '@/features/placement/hooks';
 import {
     calcBoostPriceByn,
     MAX_VISIBLE_PHOTOS_FREE_PLACEMENT,
+    placementLevelLabel,
     type PlacementPropertyType,
     type PlacementTariffScope,
 } from '@/features/placement/types';
@@ -51,6 +52,8 @@ export function TariffsPageContent() {
 
     const { data: levelsData, isLoading: levelsLoading } = usePlacementLevels(tariffScope);
     const levels = levelsData?.levels ?? [];
+    const freeTierBoostPrice =
+        levels.length > 0 ? calcBoostPriceByn(0, levels) : null;
 
     const locationLabel =
         propertyType === 'house'
@@ -186,51 +189,89 @@ export function TariffsPageContent() {
                                     Загрузка…
                                 </td>
                             </tr>
-                        ) : levels.length === 0 ? (
-                            <tr>
-                                <td colSpan={4} className="py-8 text-center text-muted-foreground">
-                                    {propertyType === 'house'
-                                        ? 'Для этой области VIP-тарифы ещё не настроены.'
-                                        : 'Для этого города VIP-тарифы ещё не настроены.'}
-                                </td>
-                            </tr>
                         ) : (
-                            levels.map((item) => {
-                                const boostPriceByn = calcBoostPriceByn(item.level - 1, levels);
-                                return (
-                                    <tr key={item.id} className="border-b border-border last:border-0">
-                                        <td className="py-3 px-4 text-foreground font-medium">
-                                            {item.label}
-                                        </td>
-                                        <td className="py-3 px-4 text-right text-foreground">
-                                            {item.capacity != null ? (
-                                                item.capacity
-                                            ) : (
-                                                <span className="text-muted-foreground">Без лимита</span>
-                                            )}
-                                        </td>
-                                        <td className="py-3 px-4 text-right font-semibold text-foreground">
-                                            <span className="inline-flex items-baseline gap-1 justify-end">
-                                                {item.priceBynPerMonth} <BynCurrencyMark />
-                                                <span className="text-xs font-normal text-muted-foreground">
-                                                    /мес
-                                                </span>
+                            <>
+                                <tr className="border-b border-border">
+                                    <td className="py-3 px-4 text-foreground font-medium">
+                                        {placementLevelLabel(0)}
+                                    </td>
+                                    <td className="py-3 px-4 text-right text-foreground">
+                                        <span className="text-muted-foreground">Без лимита</span>
+                                    </td>
+                                    <td className="py-3 px-4 text-right font-semibold text-foreground">
+                                        <span className="inline-flex items-baseline gap-1 justify-end">
+                                            0 <BynCurrencyMark />
+                                            <span className="text-xs font-normal text-muted-foreground">
+                                                /мес
                                             </span>
-                                        </td>
-                                        <td className="py-3 px-4 text-right font-semibold text-foreground">
-                                            {boostPriceByn != null ? (
+                                        </span>
+                                    </td>
+                                    <td className="py-3 px-4 text-right font-semibold text-foreground">
+                                        {freeTierBoostPrice != null ? (
+                                            <span className="inline-flex items-baseline gap-1 justify-end">
+                                                {freeTierBoostPrice} <BynCurrencyMark />
+                                            </span>
+                                        ) : (
+                                            <span className="font-normal text-muted-foreground">
+                                                —
+                                            </span>
+                                        )}
+                                    </td>
+                                </tr>
+                                {levels.map((item) => {
+                                    const boostPriceByn = calcBoostPriceByn(item.level, levels);
+                                    return (
+                                        <tr
+                                            key={item.id}
+                                            className="border-b border-border last:border-0"
+                                        >
+                                            <td className="py-3 px-4 text-foreground font-medium">
+                                                {item.label}
+                                            </td>
+                                            <td className="py-3 px-4 text-right text-foreground">
+                                                {item.capacity != null ? (
+                                                    item.capacity
+                                                ) : (
+                                                    <span className="text-muted-foreground">
+                                                        Без лимита
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="py-3 px-4 text-right font-semibold text-foreground">
                                                 <span className="inline-flex items-baseline gap-1 justify-end">
-                                                    {boostPriceByn} <BynCurrencyMark />
+                                                    {item.priceBynPerMonth} <BynCurrencyMark />
+                                                    <span className="text-xs font-normal text-muted-foreground">
+                                                        /мес
+                                                    </span>
                                                 </span>
-                                            ) : (
-                                                <span className="font-normal text-muted-foreground">
-                                                    —
-                                                </span>
-                                            )}
+                                            </td>
+                                            <td className="py-3 px-4 text-right font-semibold text-foreground">
+                                                {boostPriceByn != null ? (
+                                                    <span className="inline-flex items-baseline gap-1 justify-end">
+                                                        {boostPriceByn} <BynCurrencyMark />
+                                                    </span>
+                                                ) : (
+                                                    <span className="font-normal text-muted-foreground">
+                                                        —
+                                                    </span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                                {levels.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={4}
+                                            className="py-4 text-center text-muted-foreground border-t border-border"
+                                        >
+                                            {propertyType === 'house'
+                                                ? 'Для этой области VIP-тарифы ещё не настроены.'
+                                                : 'Для этого города VIP-тарифы ещё не настроены.'}
                                         </td>
                                     </tr>
-                                );
-                            })
+                                ) : null}
+                            </>
                         )}
                     </tbody>
                 </table>
