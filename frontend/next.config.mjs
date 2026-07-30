@@ -5,8 +5,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const radixReactIdShim = path.resolve(__dirname, "src/lib/shims/radix-react-id.ts");
 const lowMemoryBuild = process.env.NEXT_LOW_MEMORY_BUILD === "1";
 
+/** Same value in `.next/BUILD_ID`, `/build-id/`, and the client bundle. */
+const APP_BUILD_ID =
+  process.env.BUILD_ID?.trim() ||
+  (process.env.NODE_ENV === "development" ? "dev" : `build-${Date.now()}`);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  generateBuildId: () => APP_BUILD_ID,
+  env: {
+    NEXT_PUBLIC_BUILD_ID: APP_BUILD_ID,
+  },
   trailingSlash: true,
   poweredByHeader: false,
   /** Shared hosting (cPanel, ≤3 GB RAM): single worker, lower webpack peak RSS. */

@@ -34,10 +34,34 @@ type UsePropertiesOptions = {
     initialDataUpdatedAt?: number;
 };
 
+/** Примитивный ключ: объект `filters` в queryKey менялся по ссылке при каждом рендере каталога. */
+export function propertyFiltersQueryKey(filters: PropertyFilters = {}) {
+    return [
+        'properties',
+        filters.page ?? 1,
+        filters.limit ?? 20,
+        filters.type ?? null,
+        filters.types ? [...filters.types].sort().join(',') : null,
+        filters.dealType ?? null,
+        filters.regionSlug ?? null,
+        filters.citySlug ?? null,
+        filters.cityId ?? null,
+        filters.minPrice ?? null,
+        filters.maxPrice ?? null,
+        filters.currency ?? null,
+        filters.roomValues ? [...filters.roomValues].join(',') : null,
+        filters.metroStationId ?? null,
+        filters.nearMetro ?? null,
+        filters.guests ?? null,
+        filters.sortBy ?? null,
+        filters.sortOrder ?? null,
+    ] as const;
+}
+
 export const useProperties = (filters: PropertyFilters = {}, options?: UsePropertiesOptions) => {
     const hasInitial = options?.initialData !== undefined;
     return useQuery({
-        queryKey: ['properties', filters],
+        queryKey: propertyFiltersQueryKey(filters),
         queryFn: () => getProperties(filters),
         placeholderData: (previousData) => previousData, // Keep previous data while fetching new
         ...(hasInitial

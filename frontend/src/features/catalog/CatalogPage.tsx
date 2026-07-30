@@ -38,7 +38,7 @@ import PropertyCard from "@/components/PropertyCard";
 import PropertyMap, { type MapProperty } from "@/components/PropertyMap";
 import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { useMetroStations } from "@/features/metro/hooks";
-import type { NearbyMetroStation } from "@/features/metro/types";
+import type { MetroStation, NearbyMetroStation } from "@/features/metro/types";
 import { Property, formatAddress, type Currency } from "@/features/properties/types";
 import { useCurrency } from "@/context/CurrencyContext";
 import type { ExchangeRates } from "@/features/properties/api";
@@ -78,6 +78,8 @@ const CATALOG_LIST_VIEW_MIN_WIDTH = 1100;
 const CATALOG_ITEMS_PER_PAGE = 48;
 /** В режиме карты нужны все точки по фильтрам, не одна страница списка. */
 const CATALOG_MAP_FETCH_LIMIT = 500;
+/** Стабильная ссылка: `data ?? []` в деструктуризации даёт новый массив на каждый рендер. */
+const EMPTY_METRO_STATIONS: MetroStation[] = [];
 
 /** Пустая строка — без фильтра по комнатам. */
 const roomCountOptions = [
@@ -282,7 +284,8 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const metroFilterVisible = isMetroCatalogContext(parsed);
   const nearMetroLanding = isNearMetroLandingPage(parsed);
   const showMetroSidebarFilters = metroFilterVisible && !parsed.metroStationSlug;
-  const { data: metroStations = [] } = useMetroStations(1, metroFilterVisible);
+  const { data: metroStationsData } = useMetroStations(1, metroFilterVisible);
+  const metroStations = metroStationsData ?? EMPTY_METRO_STATIONS;
   const roomsFilterVisible = showRoomsCatalogFilter(parsed.propertyType);
 
   useEffect(() => {

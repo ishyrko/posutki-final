@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import CookieBanner from "@/components/CookieBanner";
 import { CurrencyProvider } from "@/context/CurrencyContext";
 import { YANDEX_METRIKA_COUNTER_ID } from "@/lib/metrika";
+import DeployVersionGuard from "@/components/DeployVersionGuard";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -38,6 +39,32 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const staleChunkReloadGuard = `
+    (function () {
+      var key = 'posutki-chunk-reload';
+      function maybeReload(reason) {
+        if (!reason || !/loading chunk|chunkloaderror|failed to fetch dynamically imported module/i.test(String(reason))) {
+          return;
+        }
+        try {
+          if (sessionStorage.getItem(key)) return;
+          sessionStorage.setItem(key, '1');
+        } catch (e) {}
+        window.location.reload();
+      }
+      window.addEventListener('unhandledrejection', function (event) {
+        var reason = event.reason && (event.reason.message || event.reason);
+        maybeReload(reason);
+      });
+      window.addEventListener('error', function (event) {
+        maybeReload(event.message);
+      });
+      window.addEventListener('load', function () {
+        try { sessionStorage.removeItem(key); } catch (e) {}
+      });
+    })();
+  `;
+
   const performanceMeasureGuard = `
     (function () {
       if (typeof window === 'undefined' || typeof window.performance?.measure !== 'function') return;
@@ -59,6 +86,11 @@ export default function RootLayout({
     <html lang="ru" className={inter.variable}>
       <head>
         <Script
+          id="stale-chunk-reload-guard"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: staleChunkReloadGuard }}
+        />
+        <Script
           id="performance-measure-guard"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: performanceMeasureGuard }}
@@ -71,6 +103,7 @@ export default function RootLayout({
           </CurrencyProvider>
           <Toaster />
           <CookieBanner />
+          <DeployVersionGuard />
         </QueryProvider>
 
         {/* Google tag (gtag.js) */}
