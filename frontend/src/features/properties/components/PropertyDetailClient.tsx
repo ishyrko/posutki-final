@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Heart, Share2, MapPin, BedDouble, Bath, Maximize,
   Building2, Calendar, CalendarCheck, Layers, Phone, MessageCircle, TrainFront,
-  ChevronLeft, ChevronRight, X, Shield, Eye, Clock, Send, CheckCircle,
+  ChevronLeft, ChevronRight, Shield, Eye, Clock, Send, CheckCircle,
   Users, Utensils, Wifi, Tv, Sofa, Car, Waves, Wind,
   ShowerHead, Flame, Coffee, Snowflake, Baby, WashingMachine,
   LogIn, LogOut, UserCheck, Sunrise, Wallet,
@@ -35,6 +35,13 @@ import { useCurrency } from "@/context/CurrencyContext";
 import PropertyMap from "@/components/PropertyMap";
 import { BookingInquiryModal } from "@/features/properties/components/BookingInquiryModal";
 import { OwnerOtherListings } from "@/features/properties/components/OwnerOtherListings";
+import { PropertyLightbox } from "@/features/properties/components/PropertyLightbox";
+import { PropertyMobileGallery } from "@/features/properties/components/PropertyMobileGallery";
+import {
+  GalleryGridThumb,
+  GalleryPortraitFrame,
+  useImageClearlyLandscape,
+} from "@/features/properties/components/property-gallery-frames";
 import { buildCatalogUrl, buildCatalogUrlFromAddress } from "@/features/catalog/slugs";
 import { toast } from "sonner";
 import {
@@ -141,91 +148,6 @@ function getContactPhones(property: Property): ContactPhoneEntry[] {
   return [];
 }
 
-/** Side-column letterbox with blurred edges. Parent must be `relative` with explicit size. */
-function GalleryPortraitFrame({
-  src,
-  alt,
-  className = "absolute inset-0 flex min-h-0 min-w-0",
-}: {
-  src: string;
-  alt: string;
-  className?: string;
-}) {
-  return (
-    <div className={`${className} overflow-hidden`}>
-      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt=""
-          aria-hidden
-          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover object-left blur-md"
-        />
-      </div>
-      <div className="relative z-[1] flex h-full min-w-0 max-w-full shrink items-center justify-center overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className="max-h-full w-auto max-w-full object-contain" />
-      </div>
-      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt=""
-          aria-hidden
-          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover object-right blur-md"
-        />
-      </div>
-    </div>
-  );
-}
-
-/** True only when image is clearly wider than tall. */
-function useImageClearlyLandscape(src: string): boolean | null {
-  const [clearlyLandscape, setClearlyLandscape] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    setClearlyLandscape(null);
-    const img = new Image();
-    const finish = () => {
-      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-        setClearlyLandscape(img.naturalWidth > img.naturalHeight * 1.02);
-      }
-    };
-    img.addEventListener("load", finish);
-    img.addEventListener("error", () => setClearlyLandscape(false));
-    img.src = src;
-    if (img.complete) finish();
-    return () => {
-      img.removeEventListener("load", finish);
-    };
-  }, [src]);
-
-  return clearlyLandscape;
-}
-
-function GalleryGridThumb({
-  src,
-  alt,
-  preferCover = false,
-}: {
-  src: string;
-  alt: string;
-  preferCover?: boolean;
-}) {
-  const clearlyLandscape = useImageClearlyLandscape(src);
-
-  return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden">
-      {preferCover || clearlyLandscape === true ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover" />
-      ) : (
-        <GalleryPortraitFrame src={src} alt={alt} />
-      )}
-    </div>
-  );
-}
-
 export default function PropertyDetailClient({ id, initialProperty }: PropertyDetailClientProps) {
   const ssrFetchedAtRef = useRef(Date.now());
   const { data: property, isLoading, isError } = useProperty(id, {
@@ -257,8 +179,6 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
 
   const [currentImage, setCurrentImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const touchStartX = useRef<number | null>(null);
-  const swipeHandled = useRef(false);
   const [phoneRevealed, setPhoneRevealed] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
   const [messageText, setMessageText] = useState("");
@@ -557,31 +477,6 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
 
   const prevImage = () => setCurrentImage((p) => (p === 0 ? images.length - 1 : p - 1));
   const nextImage = () => setCurrentImage((p) => (p === images.length - 1 ? 0 : p + 1));
-  const handleGalleryTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (images.length <= 1) return;
-    touchStartX.current = event.touches[0]?.clientX ?? null;
-    swipeHandled.current = false;
-  };
-  const handleGalleryTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (images.length <= 1 || touchStartX.current == null) return;
-
-    const touchEndX = event.changedTouches[0]?.clientX;
-    if (touchEndX == null) return;
-
-    const deltaX = touchStartX.current - touchEndX;
-    const SWIPE_THRESHOLD = 40;
-
-    if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
-      swipeHandled.current = true;
-      if (deltaX > 0) {
-        nextImage();
-      } else {
-        prevImage();
-      }
-    }
-
-    touchStartX.current = null;
-  };
   const handleShare = async () => {
     const shareUrl = window.location.href;
     const shareData = {
@@ -622,15 +517,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
           <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 rounded-2xl overflow-hidden max-h-[500px]">
             <motion.div
               className="md:col-span-2 md:row-span-2 relative cursor-pointer group aspect-[4/3] w-full min-h-0 overflow-hidden md:min-h-0"
-              onClick={() => {
-                if (swipeHandled.current) {
-                  swipeHandled.current = false;
-                  return;
-                }
-                setLightboxOpen(true);
-              }}
-              onTouchStart={handleGalleryTouchStart}
-              onTouchEnd={handleGalleryTouchEnd}
+              onClick={() => setLightboxOpen(true)}
               whileHover={{ scale: 1.005 }}
             >
               {mainImageClearlyLandscape === true ? (
@@ -647,13 +534,15 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                   className="absolute inset-0 hidden md:flex"
                 />
               )}
-              <div className="md:hidden absolute inset-0 overflow-hidden">
-                <GalleryPortraitFrame
-                  src={images[currentImage]}
-                  alt={`Фото ${currentImage + 1}`}
+              <div className="md:hidden absolute inset-0">
+                <PropertyMobileGallery
+                  images={images}
+                  currentIndex={currentImage}
+                  onIndexChange={setCurrentImage}
+                  onOpenLightbox={() => setLightboxOpen(true)}
                 />
               </div>
-              <div className="absolute inset-0 z-[2] bg-foreground/0 group-hover:bg-foreground/10 transition-colors" />
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-foreground/0 group-hover:bg-foreground/10 transition-colors" />
             </motion.div>
             {images.slice(1, 5).map((img, i) => (
               <div
@@ -1351,48 +1240,12 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
 
       <AnimatePresence>
         {lightboxOpen && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-foreground/95 flex items-center justify-center"
-            onClick={() => setLightboxOpen(false)}
-          >
-            <button
-              type="button"
-              aria-label="Закрыть просмотр"
-              onClick={() => setLightboxOpen(false)}
-              className="cursor-pointer absolute top-4 right-4 p-2 text-background/70 transition-[opacity,transform,color] duration-150 hover:text-background active:scale-95 active:text-primary active:opacity-100"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <button
-              type="button"
-              aria-label="Предыдущее фото"
-              onClick={(e) => { e.stopPropagation(); prevImage(); }}
-              className="cursor-pointer absolute left-4 touch-manipulation rounded-full bg-background/10 p-2 text-background transition-[transform,background-color,color] duration-150 hover:bg-background/20 active:scale-95 active:bg-primary active:text-primary-foreground"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <motion.img
-              key={currentImage}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              src={images[currentImage]}
-              alt=""
-              className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg"
-              onClick={(e) => e.stopPropagation()}
-            />
-            <button
-              type="button"
-              aria-label="Следующее фото"
-              onClick={(e) => { e.stopPropagation(); nextImage(); }}
-              className="cursor-pointer absolute right-4 touch-manipulation rounded-full bg-background/10 p-2 text-background transition-[transform,background-color,color] duration-150 hover:bg-background/20 active:scale-95 active:bg-primary active:text-primary-foreground"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-            <div className="absolute bottom-6 text-background/70 text-sm">
-              {currentImage + 1} / {images.length}
-            </div>
-          </motion.div>
+          <PropertyLightbox
+            images={images}
+            currentIndex={currentImage}
+            onIndexChange={setCurrentImage}
+            onClose={() => setLightboxOpen(false)}
+          />
         )}
       </AnimatePresence>
 

@@ -27,8 +27,8 @@ export default function HomePage({
             <main>
                 <HeroSection />
                 <CitySection apartmentCountsBySlug={cityApartmentCounts} />
-                <RegionHouseSection houseCountsBySlug={regionHouseCounts} />
                 <FeaturedProperties featuredInitial={featuredInitial} />
+                <RegionHouseSection houseCountsBySlug={regionHouseCounts} />
                 {articles && articles.length > 0 ? <ArticlesSection articles={articles} /> : null}
                 <FeaturesSection />
             </main>
