@@ -1,6 +1,5 @@
-"use client";
-
 import { ShieldCheck, Clock, CreditCard, Headphones } from "lucide-react";
+import HomeSeoTextSection from "@/components/HomeSeoTextSection";
 
 const features = [
   { icon: ShieldCheck, title: "Проверенные объявления", desc: "Каждое объявление проходит модерацию" },
@@ -11,8 +10,9 @@ const features = [
 
 const FeaturesSection = () => {
   return (
-    <section className="py-12 md:py-16 lg:py-20 bg-background">
+    <section className="pt-6 md:pt-8 pb-12 md:pb-16 lg:pb-20 bg-background">
       <div className="container mx-auto px-4">
+        <HomeSeoTextSection />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((f) => {
             const Icon = f.icon;

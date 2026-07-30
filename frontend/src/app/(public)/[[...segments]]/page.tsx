@@ -19,6 +19,7 @@ import {
 import { formatAddress, Property } from "@/features/properties/types";
 import CatalogPage from "@/features/catalog/CatalogPage";
 import HomePage from "@/features/home/HomePage";
+import FeaturesSection from "@/components/FeaturesSection";
 import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { fetchFeaturedPropertiesForHome } from "@/lib/featured-properties-server";
 import { fetchCityApartmentCountsForHome } from "@/lib/city-apartment-counts-server";
@@ -174,6 +175,7 @@ export default async function SegmentsPage({ params }: PageProps) {
         articles={articles}
         cityApartmentCounts={cityApartmentCounts}
         regionHouseCounts={regionHouseCounts}
+        features={<FeaturesSection />}
       />
     );
   }

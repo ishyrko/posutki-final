@@ -21,7 +21,7 @@ const ArticlesSection = ({ articles = [] }: ArticlesSectionProps) => {
     [articles],
   );
   return (
-    <section className="py-12 md:py-14 bg-background">
+    <section className="pt-12 md:pt-14 pb-8 md:pb-10 bg-background">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
