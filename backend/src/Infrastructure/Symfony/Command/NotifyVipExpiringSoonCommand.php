@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Symfony\Command;
 
+use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Mail\PlacementMailer;
@@ -16,10 +17,13 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'app:notify-vip-expiring-soon',
-    description: 'Email owners whose VIP placement expires within 24 hours',
+    description: 'Email apartment owners whose VIP placement expires within 24 hours (cities with 20+ published apartments)',
 )]
 class NotifyVipExpiringSoonCommand extends Command
 {
+    /** Minimum published apartments in a city to send VIP expiry reminders. */
+    private const MIN_PUBLISHED_APARTMENTS_IN_CITY = 20;
+
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly UserRepositoryInterface $userRepository,
@@ -35,7 +39,12 @@ class NotifyVipExpiringSoonCommand extends Command
         $now = new \DateTimeImmutable();
         $until = $now->modify('+24 hours');
 
-        $properties = $this->propertyRepository->findWithPlacementLevelExpiringSoon($now, $until);
+        $properties = $this->propertyRepository->findWithPlacementLevelExpiringSoon(
+            $now,
+            $until,
+            PropertyType::Apartment->value,
+            self::MIN_PUBLISHED_APARTMENTS_IN_CITY,
+        );
         $sent = 0;
         $skipped = 0;
 

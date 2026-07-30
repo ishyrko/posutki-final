@@ -57,12 +57,15 @@ interface PropertyRepositoryInterface
 
     /**
      * Published listings whose VIP level expires within the given window and have not been reminded yet.
+     * Only listings of the given property type in cities with at least minPublishedInCity published listings.
      *
      * @return Property[]
      */
     public function findWithPlacementLevelExpiringSoon(
         \DateTimeImmutable $now,
         \DateTimeImmutable $until,
+        string $propertyType,
+        int $minPublishedInCity,
     ): array;
 
     /**

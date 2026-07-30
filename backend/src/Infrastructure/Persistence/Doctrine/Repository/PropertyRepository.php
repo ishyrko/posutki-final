@@ -434,15 +434,26 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
     public function findWithPlacementLevelExpiringSoon(
         \DateTimeImmutable $now,
         \DateTimeImmutable $until,
+        string $propertyType,
+        int $minPublishedInCity,
     ): array {
         return $this->createQueryBuilder('p')
             ->where('p.status = :status')
+            ->andWhere('p.type = :propertyType')
             ->andWhere('p.placementBaseLevel > 0')
             ->andWhere('p.placementLevelExpiresAt IS NOT NULL')
             ->andWhere('p.placementLevelExpiresAt > :now')
             ->andWhere('p.placementLevelExpiresAt <= :until')
             ->andWhere('p.placementLevelExpiryRemindedAt IS NULL')
+            ->andWhere(
+                '(SELECT COUNT(p2.id) FROM ' . Property::class . ' p2
+                 WHERE p2.cityId = p.cityId
+                 AND p2.type = :propertyType
+                 AND p2.status = :status) >= :minPublishedInCity'
+            )
             ->setParameter('status', 'published')
+            ->setParameter('propertyType', $propertyType)
+            ->setParameter('minPublishedInCity', $minPublishedInCity)
             ->setParameter('now', $now)
             ->setParameter('until', $until)
             ->getQuery()

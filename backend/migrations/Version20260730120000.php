@@ -28,6 +28,7 @@ final class Version20260730120000 extends AbstractMigration
                 placement_level_expires_at = free_trial_ends_at,
                 placement_effective_level = 1,
                 placement_is_trial = 1,
+                placement_level_expiry_reminded_at = NULL,
                 placement_shuffle_key = IF(placement_shuffle_key <= 0, RAND(), placement_shuffle_key)
             WHERE status = 'published'
               AND free_trial_ends_at > NOW()");
