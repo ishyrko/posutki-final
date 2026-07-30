@@ -16,7 +16,9 @@ final class GetAdminPropertyStatsOverviewHandler
 
     /**
      * @return array{
-     *     period: int,
+     *     period: ?int,
+     *     dateFrom: ?string,
+     *     dateTo: ?string,
      *     propertyType: ?string,
      *     cityId: ?int,
      *     regionId: ?int,
@@ -27,7 +29,11 @@ final class GetAdminPropertyStatsOverviewHandler
      */
     public function __invoke(GetAdminPropertyStatsOverviewQuery $query): array
     {
-        [$startDate, $endDate, $periodDays, $period] = $this->resolvePeriod($query->period);
+        [$startDate, $endDate, $periodDays, $period, $dateFrom, $dateTo] = $this->resolvePeriod(
+            $query->period,
+            $query->dateFrom,
+            $query->dateTo,
+        );
         $propertyType = $this->normalizePropertyType($query->propertyType);
 
         $dailyPropertyStats = $this->adminPropertyStatsRepository->findAggregatedDailyStats(
@@ -113,6 +119,8 @@ final class GetAdminPropertyStatsOverviewHandler
 
         return [
             'period' => $period,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
             'propertyType' => $propertyType,
             'cityId' => $query->cityId,
             'regionId' => $query->regionId,
@@ -140,23 +148,77 @@ final class GetAdminPropertyStatsOverviewHandler
         };
     }
 
+    private const MAX_CUSTOM_PERIOD_DAYS = 366;
+
     /**
      * @return array{
      *     0: \DateTimeImmutable,
      *     1: \DateTimeImmutable,
      *     2: int,
-     *     3: int
+     *     3: ?int,
+     *     4: ?string,
+     *     5: ?string
      * }
      */
-    private function resolvePeriod(int $period): array
+    private function resolvePeriod(int $period, ?string $dateFrom, ?string $dateTo): array
     {
         $today = (new \DateTimeImmutable('today'))->setTime(0, 0);
 
+        $customRange = $this->parseCustomDateRange($dateFrom, $dateTo, $today);
+        if ($customRange !== null) {
+            return [
+                $customRange['start'],
+                $customRange['end'],
+                $customRange['days'],
+                null,
+                $customRange['dateFrom'],
+                $customRange['dateTo'],
+            ];
+        }
+
         return match ($period) {
-            0 => [$today, $today, 1, 0],
-            -1 => [$today->modify('-1 day'), $today->modify('-1 day'), 1, -1],
-            7, 30, 90 => [$today->modify(sprintf('-%d days', $period - 1)), $today, $period, $period],
-            default => [$today->modify('-29 days'), $today, 30, 30],
+            0 => [$today, $today, 1, 0, null, null],
+            -1 => [$today->modify('-1 day'), $today->modify('-1 day'), 1, -1, null, null],
+            7, 30, 90 => [$today->modify(sprintf('-%d days', $period - 1)), $today, $period, $period, null, null],
+            default => [$today->modify('-29 days'), $today, 30, 30, null, null],
         };
+    }
+
+    /**
+     * @return array{start: \DateTimeImmutable, end: \DateTimeImmutable, days: int, dateFrom: string, dateTo: string}|null
+     */
+    private function parseCustomDateRange(?string $dateFrom, ?string $dateTo, \DateTimeImmutable $today): ?array
+    {
+        if ($dateFrom === null || $dateFrom === '' || $dateTo === null || $dateTo === '') {
+            return null;
+        }
+
+        $start = \DateTimeImmutable::createFromFormat('!Y-m-d', $dateFrom);
+        $end = \DateTimeImmutable::createFromFormat('!Y-m-d', $dateTo);
+        if ($start === false || $end === false) {
+            return null;
+        }
+
+        $errors = \DateTimeImmutable::getLastErrors();
+        if ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0)) {
+            return null;
+        }
+
+        if ($start > $end || $end > $today) {
+            return null;
+        }
+
+        $days = (int) $start->diff($end)->days + 1;
+        if ($days > self::MAX_CUSTOM_PERIOD_DAYS) {
+            return null;
+        }
+
+        return [
+            'start' => $start,
+            'end' => $end,
+            'days' => $days,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+        ];
     }
 }

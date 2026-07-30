@@ -355,7 +355,7 @@ final class PropertyPlacementService
     }
 
     /**
-     * One free VIP 1 month per account: true if the owner has not used it yet.
+     * One free VIP 1 (2 weeks) per account: true if the owner has not used it yet.
      */
     public function shouldGrantFreeTrial(Property $property): bool
     {
@@ -368,7 +368,7 @@ final class PropertyPlacementService
     }
 
     /**
-     * Mark the owner account as having consumed the one-time free VIP 1 month.
+     * Mark the owner account as having consumed the one-time free VIP 1 (2 weeks).
      * Call only after free VIP 1 was actually applied to a listing.
      */
     public function markFreePlacementTrialUsed(Property $property): void

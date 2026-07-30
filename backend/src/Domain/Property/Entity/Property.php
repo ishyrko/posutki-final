@@ -1000,7 +1000,7 @@ class Property
     }
 
     /**
-     * First publish placement: optional one-time free VIP 1 month, otherwise free placement.
+     * First publish placement: optional one-time free VIP 1 for 2 weeks, otherwise free placement.
      */
     public function applyInitialPlacement(\DateTimeImmutable $from, bool $grantFreeTrial): void
     {
@@ -1009,7 +1009,7 @@ class Property
         }
 
         if ($grantFreeTrial) {
-            $this->freeTrialEndsAt = $from->modify('+1 month');
+            $this->freeTrialEndsAt = $from->modify('+2 weeks');
         }
 
         $this->recomputePlacement($from);

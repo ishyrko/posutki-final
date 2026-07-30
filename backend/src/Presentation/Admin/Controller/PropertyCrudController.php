@@ -13,6 +13,8 @@ use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\StreetRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Entity\User;
+use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -42,6 +44,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class PropertyCrudController extends AbstractCrudController
 {
+    /** @var array<string, string> */
+    private array $ownerLabelCache = [];
+
     public function __construct(
         protected readonly MetroProximityCalculator $metroProximityCalculator,
         protected readonly PropertyRepositoryInterface $propertyRepository,
@@ -49,6 +54,7 @@ class PropertyCrudController extends AbstractCrudController
         protected readonly AdminUrlGenerator $adminUrlGenerator,
         protected readonly CityRepositoryInterface $cityRepository,
         protected readonly StreetRepositoryInterface $streetRepository,
+        protected readonly UserRepositoryInterface $userRepository,
     ) {
     }
 
@@ -181,6 +187,11 @@ class PropertyCrudController extends AbstractCrudController
                 'archived' => 'secondary',
                 'deleted' => 'danger',
             ]);
+
+        yield TextField::new('ownerId', 'Владелец')
+            ->formatValue(fn ($value, Property $property): string => $this->formatOwnerLink($property))
+            ->renderAsHtml()
+            ->hideOnForm();
 
         yield TextareaField::new('moderationComment', 'Комментарий модератора')
             ->hideOnIndex()
@@ -384,11 +395,6 @@ class PropertyCrudController extends AbstractCrudController
             ->hideOnForm()
             ->hideOnIndex();
 
-        yield TextField::new('ownerId', 'Владелец')
-            ->formatValue(fn ($value, $entity) => (string) $entity->getOwnerId()->getValue())
-            ->hideOnForm()
-            ->hideOnIndex();
-
         yield DateTimeField::new('createdAt', 'Создано')
             ->hideOnForm();
 
@@ -487,6 +493,60 @@ class PropertyCrudController extends AbstractCrudController
         } catch (LogicException) {
             return $this->resolvePropertyFromRequest($request);
         }
+    }
+
+    private function formatOwnerLink(Property $property): string
+    {
+        $ownerId = (string) $property->getOwnerId()->getValue();
+        $label = $this->resolveOwnerLabel($ownerId);
+        $url = $this->adminUrlGenerator
+            ->setController(UserCrudController::class)
+            ->setAction(Action::DETAIL)
+            ->setEntityId($ownerId)
+            ->generateUrl();
+
+        return sprintf(
+            '<a href="%s">%s</a>',
+            htmlspecialchars($url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+        );
+    }
+
+    private function resolveOwnerLabel(string $ownerId): string
+    {
+        if (isset($this->ownerLabelCache[$ownerId])) {
+            return $this->ownerLabelCache[$ownerId];
+        }
+
+        $user = $this->userRepository->findById(Id::fromString($ownerId));
+        $label = $this->formatOwnerLabel($user, $ownerId);
+        $this->ownerLabelCache[$ownerId] = $label;
+
+        return $label;
+    }
+
+    private function formatOwnerLabel(?User $user, string $ownerId): string
+    {
+        if ($user === null) {
+            return sprintf('#%s', $ownerId);
+        }
+
+        $fullName = $user->getFullName();
+        if ($fullName !== '') {
+            return $fullName;
+        }
+
+        $email = $user->getEmail()?->getValue();
+        if ($email !== null && $email !== '') {
+            return $email;
+        }
+
+        $phone = $user->getPhone();
+        if ($phone !== null && $phone !== '') {
+            return $phone;
+        }
+
+        return sprintf('#%s', $ownerId);
     }
 
     private function enrichAdminAddressLabels(Property $property): void

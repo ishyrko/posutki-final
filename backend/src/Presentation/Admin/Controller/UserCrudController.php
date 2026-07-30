@@ -77,7 +77,7 @@ class UserCrudController extends AbstractCrudController
 
         yield BooleanField::new('hasUsedFreePlacementTrial', 'Бесплатный VIP 1 использован')
             ->renderAsSwitch(false)
-            ->setHelp('Один бесплатный VIP 1 на месяц на аккаунт');
+            ->setHelp('Один бесплатный VIP 1 на 2 недели на аккаунт');
 
         yield ArrayField::new('roles', 'Роли');
 

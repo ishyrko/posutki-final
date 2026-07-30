@@ -46,7 +46,14 @@ class DashboardController extends AbstractDashboardController
     public function index(): Response
     {
         $request = $this->requestStack->getCurrentRequest();
-        $period = $request?->query->getInt('period', 30) ?? 30;
+        $periodParam = $request?->query->get('period');
+        $period = is_numeric($periodParam) ? (int) $periodParam : 30;
+        $dateFrom = null;
+        $dateTo = null;
+        if ($periodParam === 'custom') {
+            $dateFrom = $request?->query->getString('dateFrom') ?: null;
+            $dateTo = $request?->query->getString('dateTo') ?: null;
+        }
         $type = $request?->query->getString('type') ?? '';
         $cityIdRaw = $request?->query->get('cityId');
         $cityId = is_numeric($cityIdRaw) ? (int) $cityIdRaw : null;
@@ -67,6 +74,8 @@ class DashboardController extends AbstractDashboardController
             propertyType: $type !== '' ? $type : null,
             cityId: $cityId,
             regionId: $regionId,
+            dateFrom: $dateFrom,
+            dateTo: $dateTo,
         ));
 
         $selectedCityName = null;
@@ -88,7 +97,9 @@ class DashboardController extends AbstractDashboardController
             'selectedCityName' => $selectedCityName,
             'selectedRegionName' => $selectedRegionName,
             'filters' => [
-                'period' => $stats['period'],
+                'period' => $stats['dateFrom'] !== null ? 'custom' : (string) $stats['period'],
+                'dateFrom' => $stats['dateFrom'] ?? '',
+                'dateTo' => $stats['dateTo'] ?? '',
                 'type' => $stats['propertyType'] ?? '',
                 'cityId' => $stats['cityId'] ?? '',
                 'regionId' => $stats['regionId'] ?? '',

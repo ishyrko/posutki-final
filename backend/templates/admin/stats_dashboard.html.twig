@@ -4,14 +4,22 @@
 
 {% block main %}
     <div class="content-body">
-        <form method="get" action="{{ path('admin') }}" class="d-flex flex-wrap gap-2 align-items-center mb-4">
-        <select name="period" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
-            <option value="0" {% if filters.period == 0 %}selected{% endif %}>Сегодня</option>
-            <option value="-1" {% if filters.period == -1 %}selected{% endif %}>Вчера</option>
-            <option value="7" {% if filters.period == 7 %}selected{% endif %}>7 дней</option>
-            <option value="30" {% if filters.period == 30 %}selected{% endif %}>30 дней</option>
-            <option value="90" {% if filters.period == 90 %}selected{% endif %}>90 дней</option>
+        <form method="get" action="{{ path('admin') }}" id="statsFiltersForm" class="d-flex flex-wrap gap-2 align-items-center mb-4">
+        <select name="period" class="form-select form-select-sm" style="width:auto;" onchange="handleStatsPeriodChange(this)">
+            <option value="0" {% if filters.period == '0' %}selected{% endif %}>Сегодня</option>
+            <option value="-1" {% if filters.period == '-1' %}selected{% endif %}>Вчера</option>
+            <option value="7" {% if filters.period == '7' %}selected{% endif %}>7 дней</option>
+            <option value="30" {% if filters.period == '30' %}selected{% endif %}>30 дней</option>
+            <option value="90" {% if filters.period == '90' %}selected{% endif %}>90 дней</option>
+            <option value="custom" {% if filters.period == 'custom' %}selected{% endif %}>Произвольный период</option>
         </select>
+
+        <div id="customPeriodFields" class="d-flex flex-wrap gap-2 align-items-center" {% if filters.period != 'custom' %}hidden{% endif %}>
+            <input type="date" name="dateFrom" class="form-control form-control-sm" style="width:auto;" value="{{ filters.dateFrom }}" max="{{ 'now'|date('Y-m-d') }}" {% if filters.period != 'custom' %}disabled{% endif %}>
+            <span class="text-secondary">—</span>
+            <input type="date" name="dateTo" class="form-control form-control-sm" style="width:auto;" value="{{ filters.dateTo }}" max="{{ 'now'|date('Y-m-d') }}" {% if filters.period != 'custom' %}disabled{% endif %}>
+            <button type="submit" class="btn btn-sm btn-primary">Применить</button>
+        </div>
 
         <select name="type" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
             <option value="" {% if filters.type is empty %}selected{% endif %}>Все типы</option>
@@ -38,7 +46,9 @@
             Агрегированная статистика по
             {% if filters.type == 'apartment' %}квартирам{% elseif filters.type == 'house' %}домам{% else %}всем объявлениям{% endif %}
             {% if selectedCityName %}в г. {{ selectedCityName }}{% elseif selectedRegionName %}в {{ selectedRegionName }}{% else %}по всей Беларуси{% endif %}
-            {% if stats.period == 0 %}за сегодня{% elseif stats.period == -1 %}за вчера{% else %}за последние {{ stats.period }} дн.{% endif %}
+            {% if stats.dateFrom and stats.dateTo %}
+                с {{ stats.dateFrom|date('d.m.Y') }} по {{ stats.dateTo|date('d.m.Y') }}
+            {% elseif stats.period == 0 %}за сегодня{% elseif stats.period == -1 %}за вчера{% else %}за последние {{ stats.period }} дн.{% endif %}
             <span class="text-muted">· {{ stats.propertiesCount }} объявл.</span>
         </p>
 
@@ -132,6 +142,24 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
+        function handleStatsPeriodChange(select) {
+            const customFields = document.getElementById('customPeriodFields');
+            const dateInputs = customFields.querySelectorAll('input[type="date"]');
+            if (select.value === 'custom') {
+                customFields.hidden = false;
+                dateInputs.forEach((input) => {
+                    input.disabled = false;
+                });
+                return;
+            }
+
+            customFields.hidden = true;
+            dateInputs.forEach((input) => {
+                input.disabled = true;
+            });
+            select.form.submit();
+        }
+
         const dailyData = {{ stats.daily|json_encode|raw }};
         const labels = dailyData.map((row) => {
             const parts = row.date.split('-');

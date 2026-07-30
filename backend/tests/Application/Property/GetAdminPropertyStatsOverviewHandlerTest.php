@@ -107,4 +107,56 @@ final class GetAdminPropertyStatsOverviewHandlerTest extends TestCase
         self::assertSame($yesterday, $yesterdayResult['daily'][0]['date']);
         self::assertSame(6, $yesterdayResult['totals']['views']);
     }
+
+    public function testSupportsCustomDateRange(): void
+    {
+        $repository = $this->createMock(AdminPropertyStatsRepositoryInterface::class);
+        $repository->method('findAggregatedDailyStats')->willReturn([
+            ['date' => '2026-07-01', 'views' => 3, 'phoneViews' => 1],
+            ['date' => '2026-07-03', 'views' => 7, 'phoneViews' => 2],
+        ]);
+        $repository->method('findAggregatedDailyFavorites')->willReturn([]);
+        $repository->method('findAggregatedDailyReceivedMessages')->willReturn([]);
+        $repository->method('findAggregatedDailyBookingInquiries')->willReturn([]);
+        $repository->method('countProperties')->willReturn(10);
+
+        $handler = new GetAdminPropertyStatsOverviewHandler($repository);
+        $result = $handler(new GetAdminPropertyStatsOverviewQuery(
+            period: 30,
+            propertyType: null,
+            cityId: null,
+            dateFrom: '2026-07-01',
+            dateTo: '2026-07-03',
+        ));
+
+        self::assertNull($result['period']);
+        self::assertSame('2026-07-01', $result['dateFrom']);
+        self::assertSame('2026-07-03', $result['dateTo']);
+        self::assertCount(3, $result['daily']);
+        self::assertSame(10, $result['totals']['views']);
+    }
+
+    public function testFallsBackToDefaultPeriodForInvalidCustomRange(): void
+    {
+        $repository = $this->createMock(AdminPropertyStatsRepositoryInterface::class);
+        $repository->method('findAggregatedDailyStats')->willReturn([]);
+        $repository->method('findAggregatedDailyFavorites')->willReturn([]);
+        $repository->method('findAggregatedDailyReceivedMessages')->willReturn([]);
+        $repository->method('findAggregatedDailyBookingInquiries')->willReturn([]);
+        $repository->method('countProperties')->willReturn(0);
+
+        $handler = new GetAdminPropertyStatsOverviewHandler($repository);
+        $result = $handler(new GetAdminPropertyStatsOverviewQuery(
+            period: 7,
+            propertyType: null,
+            cityId: null,
+            dateFrom: '2026-07-10',
+            dateTo: '2026-07-01',
+        ));
+
+        self::assertSame(7, $result['period']);
+        self::assertNull($result['dateFrom']);
+        self::assertNull($result['dateTo']);
+        self::assertCount(7, $result['daily']);
+    }
 }
