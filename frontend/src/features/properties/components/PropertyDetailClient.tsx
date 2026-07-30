@@ -152,7 +152,7 @@ function GalleryPortraitFrame({
   className?: string;
 }) {
   return (
-    <div className={className}>
+    <div className={`${className} overflow-hidden`}>
       <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -162,7 +162,7 @@ function GalleryPortraitFrame({
           className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover object-left blur-md"
         />
       </div>
-      <div className="relative z-[1] flex h-full shrink-0 items-center justify-center">
+      <div className="relative z-[1] flex h-full min-w-0 max-w-full shrink items-center justify-center overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={alt} className="max-h-full w-auto max-w-full object-contain" />
       </div>
@@ -610,15 +610,15 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
 
   return (
     <div className="min-h-screen bg-background">
-      <main>
-        <div className="container mx-auto px-4 py-4">
+      <main className="min-w-0">
+        <div className="container mx-auto min-w-0 px-4 py-4">
           <Link href={backToCatalogHref} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Назад к объявлениям
           </Link>
         </div>
 
-        <section className="container mx-auto px-4 mb-8">
+        <section className="container mx-auto min-w-0 px-4 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 rounded-2xl overflow-hidden max-h-[500px]">
             <motion.div
               className="md:col-span-2 md:row-span-2 relative cursor-pointer group aspect-[4/3] w-full min-h-0 overflow-hidden md:min-h-0"
@@ -691,30 +691,32 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
             </button>
           </div>
           {images.length > 1 && (
-            <div className="md:hidden mt-3 flex items-center justify-center gap-1.5">
-              {images.map((_, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => setCurrentImage(index)}
-                  aria-label={`Перейти к фото ${index + 1}`}
-                  className={`h-2 rounded-full transition-all ${
-                    currentImage === index
-                      ? "w-5 bg-primary"
-                      : "w-2 bg-muted-foreground/40 hover:bg-muted-foreground/60"
-                  }`}
-                />
-              ))}
+            <div className="md:hidden mt-3 min-w-0 max-w-full overflow-hidden">
+              <div className="flex items-center justify-center gap-1.5 overflow-x-auto scrollbar-hide px-1">
+                {images.map((_, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => setCurrentImage(index)}
+                    aria-label={`Перейти к фото ${index + 1}`}
+                    className={`h-2 shrink-0 rounded-full transition-all ${
+                      currentImage === index
+                        ? "w-5 bg-primary"
+                        : "w-2 bg-muted-foreground/40 hover:bg-muted-foreground/60"
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </section>
 
-        <div className="container mx-auto px-4 pb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
+        <div className="container mx-auto min-w-0 px-4 pb-16">
+          <div className="grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-3">
+            <div className="min-w-0 space-y-8 lg:col-span-2">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div>
+                <div className="mb-3 flex min-w-0 items-start justify-between gap-4">
+                  <div className="min-w-0">
                     <span className="inline-block px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-3">
                       {formatPropertyDealHeading(property.dealType, property.type)}
                     </span>

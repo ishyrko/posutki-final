@@ -18,7 +18,7 @@ import {
 const OWNER_LISTINGS_LIMIT = 10;
 
 const CARD_CLASS =
-  "w-[min(calc(100vw-3.5rem),300px)] shrink-0 snap-start sm:w-[min(calc((100vw-3rem)/2-0.5rem),380px)] lg:w-[min(calc((min(100vw,1280px)-5rem)/4-0.75rem),320px)]";
+  "w-[min(300px,85%)] shrink-0 snap-start sm:w-[min(380px,calc(50%-0.5rem))] lg:w-[min(320px,calc(25%-0.75rem))]";
 
 type OwnerOtherListingsProps = {
   propertyId: number;
@@ -121,8 +121,8 @@ function OwnerListingsCarousel({
 
   if (isLoading) {
     return (
-      <div className="relative min-w-0">
-        <div className="flex gap-4 overflow-hidden">
+      <div className="relative min-w-0 overflow-hidden">
+        <div className="flex w-full min-w-0 max-w-full gap-4 overflow-hidden">
           {[...Array(4)].map((_, idx) => (
             <div key={idx} className={`h-[360px] animate-pulse rounded-2xl bg-muted/40 ${CARD_CLASS}`} />
           ))}
@@ -132,7 +132,7 @@ function OwnerListingsCarousel({
   }
 
   return (
-    <div className="group relative min-w-0">
+    <div className="group relative min-w-0 overflow-hidden">
       <button
         type="button"
         onClick={() => scroll("left")}
@@ -164,7 +164,7 @@ function OwnerListingsCarousel({
 
       <div
         ref={scrollRef}
-        className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain scroll-smooth pb-1 scrollbar-hide [-webkit-overflow-scrolling:touch]"
+        className="flex w-full min-w-0 max-w-full snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain scroll-smooth pb-1 scrollbar-hide [-webkit-overflow-scrolling:touch]"
       >
         {listings.map((property, i) => (
           <div key={property.id} data-owner-listing-card className={CARD_CLASS}>
