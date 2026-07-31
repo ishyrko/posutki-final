@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -17,7 +17,7 @@ import {
     Mail,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useConversations, useMessages, useSendMessage, useMarkRead } from '@/features/messages/hooks';
 import { useUser } from '@/features/auth/hooks';
 import { Conversation } from '@/features/messages/types';
@@ -305,8 +305,20 @@ function ChatView({
     const markRead = useMarkRead();
     const [text, setText] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const messages = data?.data || [];
+
+    const adjustTextareaHeight = () => {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+    };
+
+    useEffect(() => {
+        adjustTextareaHeight();
+    }, [text]);
 
     useEffect(() => {
         if (conversation.unread > 0) {
@@ -323,8 +335,20 @@ function ChatView({
         if (!trimmed) return;
         sendMessageMutation.mutate(
             { text: trimmed, conversationId },
-            { onSuccess: () => setText('') }
+            {
+                onSuccess: () => {
+                    setText('');
+                    requestAnimationFrame(adjustTextareaHeight);
+                },
+            },
         );
+    };
+
+    const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
     };
 
     const otherName = conversation.sellerId === currentUserId
@@ -390,19 +414,22 @@ function ChatView({
                     onSubmit={(e) => { e.preventDefault(); handleSend(); }}
                     className="relative min-w-0"
                 >
-                    <Input
+                    <Textarea
+                        ref={textareaRef}
                         placeholder="Введите сообщение..."
                         value={text}
                         onChange={(e) => setText(e.target.value)}
-                        className="pr-12"
-                        enterKeyHint="send"
+                        onKeyDown={handleKeyDown}
+                        rows={1}
+                        className="min-h-10 max-h-[120px] resize-none py-2.5 pr-12 text-base md:text-sm leading-normal"
+                        enterKeyHint="enter"
                         autoFocus
                     />
                     <Button
                         type="submit"
                         size="icon"
                         disabled={!text.trim() || sendMessageMutation.isPending}
-                        className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 bg-gradient-primary text-primary-foreground border-0"
+                        className="absolute right-1 bottom-1.5 h-8 w-8 bg-gradient-primary text-primary-foreground border-0"
                         aria-label="Отправить сообщение"
                     >
                         <Send className="w-4 h-4" />
