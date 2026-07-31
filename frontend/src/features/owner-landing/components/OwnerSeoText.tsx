@@ -21,7 +21,7 @@ export function OwnerSeoText() {
                     <div className="space-y-3 text-sm leading-relaxed text-muted-foreground md:text-base">
                         <p>
                             Если вы хотите сдать квартиру на сутки, разместите объявление на{' '}
-                            <span className="font-medium text-foreground">Posutki.by</span> —
+                            <span className="font-medium text-foreground">Posutki.by</span> -
                             гости увидят его в каталоге посуточной аренды и свяжутся с вами
                             напрямую, без посредников. Сервис подходит и для сдачи дома, коттеджа
                             или усадьбы.
@@ -48,7 +48,7 @@ export function OwnerSeoText() {
                         <p>
                             Чем подробнее описание и качественнее фотографии, тем быстрее находится
                             гость. После первой публикации объявление автоматически получает
-                            бесплатный VIP 1 на 2 недели — это поднимает его выше в каталоге и
+                            бесплатный VIP 1 на 2 недели - это поднимает его выше в каталоге и
                             увеличивает число просмотров.
                         </p>
                     </div>
