@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Api;
 
+use App\Domain\Property\Entity\Property;
+
 /**
  * HTTP tests for GET /api/properties query filters (SearchProperties → PropertyRepository::applyFilters).
  */
@@ -327,6 +329,28 @@ final class PropertyListFilteringTest extends ApiTestCase
         return $ids;
     }
 
+    public function testSortByPriceAscOverridesVipPlacement(): void
+    {
+        $owner = $this->createUser('filter-sort-price@example.com', 'Password123!');
+        $city = $this->createCity();
+        $cheap = $this->createProperty($owner, $city, 'published', ['priceAmount' => 5_000_000]);
+        $expensive = $this->createProperty($owner, $city, 'published', ['priceAmount' => 50_000_000]);
+
+        $this->setPropertyPlacementLevel($expensive, 5);
+        $this->setPropertyPlacementLevel($cheap, 0);
+
+        $this->client->request('GET', '/api/properties?sortBy=createdAt&sortOrder=DESC');
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $defaultIds = $this->idsFromListPayload();
+        self::assertSame($expensive->getId()->getValue(), $defaultIds[0]);
+
+        $this->client->request('GET', '/api/properties?sortBy=price&sortOrder=ASC');
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $priceAscIds = $this->idsFromListPayload();
+        self::assertSame($cheap->getId()->getValue(), $priceAscIds[0]);
+        self::assertSame($expensive->getId()->getValue(), $priceAscIds[1]);
+    }
+
     public function testRegionApartmentSearchExcludesCityPrefixSlugs(): void
     {
         $owner = $this->createUser('filter-city-prefix@example.com', 'Password123!');
@@ -351,5 +375,18 @@ final class PropertyListFilteringTest extends ApiTestCase
         $ids = $this->idsFromListPayload();
         self::assertContains($inMolodechno->getId()->getValue(), $ids);
         self::assertNotContains($inMinsk->getId()->getValue(), $ids);
+    }
+
+    private function setPropertyPlacementLevel(Property $property, int $level): void
+    {
+        $reflection = new \ReflectionProperty($property, 'placementEffectiveLevel');
+        $reflection->setAccessible(true);
+        $reflection->setValue($property, $level);
+
+        $baseReflection = new \ReflectionProperty($property, 'placementBaseLevel');
+        $baseReflection->setAccessible(true);
+        $baseReflection->setValue($property, $level);
+
+        $this->entityManager()->flush();
     }
 }

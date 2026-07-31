@@ -76,16 +76,15 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         if ($sortBy === 'publishedAt') {
             $qb->orderBy('p.publishedAt', $sortOrder)
                 ->addOrderBy('p.id', $sortOrder);
+        } elseif ($sortBy === 'area' || $sortBy === 'price') {
+            // Explicit user sort — global order, not VIP/shuffle buckets.
+            // API uses sortBy=price; DB stores comparable totals in price_byn.
+            $sortField = $sortBy === 'area' ? 'area' : 'priceByn';
+            $qb->orderBy('p.' . $sortField, $sortOrder)
+                ->addOrderBy('p.id', $sortOrder);
         } else {
+            // Default catalog: effective VIP level → rotation key.
             $this->applyPlacementSort($qb);
-
-            // User sort within the same effective VIP level (after shuffle). Skip createdAt —
-            // default catalog order is fully covered by the placement composite index.
-            // API uses sortBy=price; DB stores comparable totals in price_byn
-            if ($sortBy === 'area' || $sortBy === 'price') {
-                $sortField = $sortBy === 'area' ? 'area' : 'priceByn';
-                $qb->addOrderBy('p.' . $sortField, $sortOrder);
-            }
         }
 
         $qb->setFirstResult(($page - 1) * $limit)
