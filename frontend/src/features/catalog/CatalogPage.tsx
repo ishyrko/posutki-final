@@ -125,7 +125,7 @@ const viewModes: { value: ViewMode; icon: typeof LayoutGrid; title: string }[] =
 
 const mobileViewModes = viewModes.filter((m) => m.value === "grid" || m.value === "map");
 
-/** Каталог фильтрует удобства на клиенте (текущая страница выдачи); id совпадают с шагом размещения. */
+/** Каталог фильтрует удобства и способы оплаты на клиенте; id совпадают с шагом размещения. */
 const CATALOG_AMENITY_OPTIONS: {
   id: string;
   label: string;
@@ -374,10 +374,14 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     return null;
   }, [metroFilterVisible, parsed.metroStationSlug, metroStations, nearMetro, metroStationId]);
 
+  const hasClientOnlyFilters =
+    selectedAmenityIds.length > 0 || selectedPaymentMethodIds.length > 0;
+  const fetchAllForClientFilters = viewMode === "map" || hasClientOnlyFilters;
+
   const filters = useMemo(() => {
     const f: Record<string, unknown> = {
-      page: viewMode === "map" ? 1 : currentPage,
-      limit: viewMode === "map" ? CATALOG_MAP_FETCH_LIMIT : CATALOG_ITEMS_PER_PAGE,
+      page: fetchAllForClientFilters ? 1 : currentPage,
+      limit: fetchAllForClientFilters ? CATALOG_MAP_FETCH_LIMIT : CATALOG_ITEMS_PER_PAGE,
       sortBy: "createdAt",
       sortOrder: "DESC" as const,
     };
@@ -414,7 +418,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     return f;
-  }, [viewMode, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort]);
+  }, [fetchAllForClientFilters, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort]);
 
   const { data, isLoading } = useProperties(filters);
   const { data: rates } = useExchangeRates();
@@ -424,7 +428,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   );
   const properties = useMemo(() => data?.data ?? [], [data?.data]);
   const totalItems = data?.meta?.total || 0;
-  const totalPages = Math.ceil(totalItems / CATALOG_ITEMS_PER_PAGE);
 
   const changePage = (nextPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -490,6 +493,26 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     }
     return list;
   }, [properties, selectedAmenityIds, selectedPaymentMethodIds]);
+
+  const catalogResultCount = hasClientOnlyFilters ? displayProperties.length : totalItems;
+  const totalPages = Math.ceil(catalogResultCount / CATALOG_ITEMS_PER_PAGE);
+  const effectivePage =
+    totalPages > 0 ? Math.min(currentPage, totalPages) : 1;
+
+  const paginatedDisplayProperties = useMemo(() => {
+    if (!hasClientOnlyFilters || viewMode === "map") {
+      return displayProperties;
+    }
+    const start = (effectivePage - 1) * CATALOG_ITEMS_PER_PAGE;
+    return displayProperties.slice(start, start + CATALOG_ITEMS_PER_PAGE);
+  }, [displayProperties, hasClientOnlyFilters, viewMode, effectivePage]);
+
+  useEffect(() => {
+    if (!hasClientOnlyFilters || isLoading) return;
+    if (totalPages > 0 && currentPage > totalPages) {
+      resetToFirstPage();
+    }
+  }, [hasClientOnlyFilters, isLoading, totalPages, currentPage]);
 
   const mapProperties: MapProperty[] = useMemo(() => {
     return displayProperties
@@ -733,11 +756,6 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
 
   const resultsBottomPadding = viewMode !== "map" ? "pb-8" : "pb-6";
 
-  const catalogResultCount =
-    selectedAmenityIds.length > 0 || selectedPaymentMethodIds.length > 0
-      ? displayProperties.length
-      : totalItems;
-
   return (
     <div className="min-h-screen bg-background">
       {showMobileFilters && (
@@ -944,7 +962,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                 ) : displayProperties.length > 0 ? (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {displayProperties.map((property, i) => {
+                      {paginatedDisplayProperties.map((property, i) => {
                         const { primaryAmount, primaryCurrency, secondary } = formatPropertyPrices(property, exchangeRates, selectedCurrency);
                         return (
                           <PropertyCard
@@ -1046,7 +1064,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                 ) : displayProperties.length > 0 ? (
                   <>
                     <div className="flex flex-col gap-4">
-                      {displayProperties.map((property, i) => {
+                      {paginatedDisplayProperties.map((property, i) => {
                         const card = propertyToListCard(property, exchangeRates, metroFilterStationId, selectedCurrency);
                         return (
                           <div
