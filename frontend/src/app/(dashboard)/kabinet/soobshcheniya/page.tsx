@@ -332,8 +332,8 @@ function ChatView({
         : conversation.sellerName;
 
     return (
-        <div className="flex flex-col h-full">
-            <div className="p-4 border-b border-border flex items-center gap-3">
+        <div className="flex flex-col h-full min-w-0">
+            <div className="p-4 border-b border-border flex items-center gap-3 shrink-0">
                 <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-muted">
                     <ArrowLeft className="w-5 h-5" />
                 </button>
@@ -350,7 +350,7 @@ function ChatView({
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
                 {isLoading && (
                     <div className="flex justify-center py-8">
                         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -385,23 +385,25 @@ function ChatView({
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-4 border-t border-border">
+            <div className="shrink-0 border-t border-border bg-card p-4">
                 <form
                     onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-                    className="flex gap-2"
+                    className="relative min-w-0"
                 >
                     <Input
                         placeholder="Введите сообщение..."
                         value={text}
                         onChange={(e) => setText(e.target.value)}
-                        className="flex-1"
+                        className="pr-12"
+                        enterKeyHint="send"
                         autoFocus
                     />
                     <Button
                         type="submit"
                         size="icon"
                         disabled={!text.trim() || sendMessageMutation.isPending}
-                        className="bg-gradient-primary text-primary-foreground border-0 flex-shrink-0"
+                        className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 bg-gradient-primary text-primary-foreground border-0"
+                        aria-label="Отправить сообщение"
                     >
                         <Send className="w-4 h-4" />
                     </Button>
@@ -450,9 +452,15 @@ export default function MessagesPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <h1 className="font-display text-2xl font-bold text-foreground mb-4">Сообщения</h1>
+            <h1 className={cn(
+                'font-display text-2xl font-bold text-foreground mb-4',
+                selectedId && 'max-lg:hidden',
+            )}
+            >
+                Сообщения
+            </h1>
 
-            <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className={cn('grid grid-cols-2 gap-2 mb-4', selectedId && 'max-lg:hidden')}>
                 <Button
                     type="button"
                     variant={activeTab === 'conversations' ? 'default' : 'outline'}
@@ -491,7 +499,13 @@ export default function MessagesPage() {
                 </Button>
             </div>
 
-            <div className="bg-card rounded-xl overflow-hidden shadow-card h-[calc(100vh-16rem)]">
+            <div className={cn(
+                'bg-card rounded-xl overflow-hidden shadow-card',
+                selectedId
+                    ? 'max-lg:fixed max-lg:inset-x-0 max-lg:top-16 max-lg:bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] max-lg:z-20 max-lg:rounded-none max-lg:shadow-none h-[calc(100dvh-16rem)] max-lg:h-auto'
+                    : 'h-[calc(100dvh-16rem)]',
+            )}
+            >
                 {activeTab === 'bookings' ? (
                     <BookingInquiriesPanel />
                 ) : isLoading ? (
@@ -521,9 +535,9 @@ export default function MessagesPage() {
                             />
                         </div>
 
-                        <div className={`flex-1 ${!selectedId ? 'hidden lg:flex' : 'flex'}`}>
+                        <div className={cn('flex-1 min-w-0', !selectedId ? 'hidden lg:flex' : 'flex')}>
                             {selectedConversation ? (
-                                <div className="flex-1 flex flex-col">
+                                <div className="flex-1 flex flex-col min-w-0">
                                     <ChatView
                                         conversationId={selectedConversation.id}
                                         conversation={selectedConversation}
