@@ -754,7 +754,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
               {viewMode !== "map" && (
                 <div>
                   <label className="text-sm font-semibold text-foreground mb-2 block font-display">Сортировка</label>
-                  <Select value={sort} onValueChange={setSort}>
+                  <Select value={sort} onValueChange={(value) => { setSort(value); resetToFirstPage(); }}>
                     <SelectTrigger className={cn(filterSurfaceInput, "w-full cursor-pointer")}>
                       <SelectValue />
                     </SelectTrigger>
@@ -872,7 +872,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
 
                 {viewMode !== "map" && (
                   <div className="hidden md:block shrink-0">
-                    <Select value={sort} onValueChange={setSort}>
+                    <Select value={sort} onValueChange={(value) => { setSort(value); resetToFirstPage(); }}>
                       <SelectTrigger className="h-auto min-h-0 cursor-pointer rounded-xl border-border bg-surface py-2.5 pl-3 pr-8 text-sm shadow-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0">
                         <SelectValue />
                       </SelectTrigger>
