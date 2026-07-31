@@ -62,7 +62,7 @@ export function PropertyLightbox({
         type="button"
         aria-label="Закрыть просмотр"
         onClick={onClose}
-        className="cursor-pointer absolute top-4 right-4 p-2 text-background/70 transition-[opacity,transform,color] duration-150 hover:text-background active:scale-95 active:text-primary active:opacity-100"
+        className="cursor-pointer absolute top-4 right-4 z-10 p-2 text-background/70 transition-[opacity,transform,color] duration-150 hover:text-background active:scale-95 active:text-primary active:opacity-100"
       >
         <X className="w-6 h-6" />
       </button>
@@ -75,7 +75,7 @@ export function PropertyLightbox({
               e.stopPropagation();
               scrollPrev();
             }}
-            className="cursor-pointer absolute left-4 touch-manipulation rounded-full bg-background/10 p-2 text-background transition-[transform,background-color,color] duration-150 hover:bg-background/20 active:scale-95 active:bg-primary active:text-primary-foreground"
+            className="cursor-pointer absolute left-4 z-10 touch-manipulation rounded-full bg-background/10 p-2 text-background transition-[transform,background-color,color] duration-150 hover:bg-background/20 active:scale-95 active:bg-primary active:text-primary-foreground"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
@@ -86,7 +86,7 @@ export function PropertyLightbox({
               e.stopPropagation();
               scrollNext();
             }}
-            className="cursor-pointer absolute right-4 touch-manipulation rounded-full bg-background/10 p-2 text-background transition-[transform,background-color,color] duration-150 hover:bg-background/20 active:scale-95 active:bg-primary active:text-primary-foreground"
+            className="cursor-pointer absolute right-4 z-10 touch-manipulation rounded-full bg-background/10 p-2 text-background transition-[transform,background-color,color] duration-150 hover:bg-background/20 active:scale-95 active:bg-primary active:text-primary-foreground"
           >
             <ChevronRight className="w-6 h-6" />
           </button>

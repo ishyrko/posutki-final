@@ -38,6 +38,7 @@ function staticEntries(now: Date): Entry[] {
     { url: "/stati/", changeFrequency: "daily", priority: 0.8 },
     { url: "/o-nas/", changeFrequency: "yearly", priority: 0.4 },
     { url: "/kontakty/", changeFrequency: "yearly", priority: 0.5 },
+    { url: "/sdat-kvartiru-na-sutki/", changeFrequency: "monthly", priority: 0.7 },
     { url: "/razmestit/", changeFrequency: "yearly", priority: 0.4 },
     { url: "/oplata/", changeFrequency: "yearly", priority: 0.4 },
     {
