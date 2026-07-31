@@ -14,7 +14,7 @@ import { OWNER_LANDING_FAQ } from '@/features/owner-landing/faq-data';
 const PAGE_PATH = '/sdat-kvartiru-na-sutki/';
 
 export const metadata: Metadata = {
-    title: 'Сдать квартиру на сутки — разместить объявление бесплатно | Posutki.by',
+    title: 'Сдать квартиру на сутки - разместить объявление бесплатно | Posutki.by',
     description:
         'Разместите объявление о посуточной аренде квартиры, дома или усадьбы на Posutki.by бесплатно. Без комиссии с бронирования, календарь занятости и статистика в личном кабинете.',
     alternates: {

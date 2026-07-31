@@ -22,7 +22,7 @@ export function OwnerHero() {
                     </h1>
                     <p className="mt-4 text-lg text-muted-foreground md:text-xl">
                         Разместите объявление о посуточной аренде на Posutki.by и получайте
-                        обращения от гостей напрямую — без посредников и комиссии за бронь.
+                        обращения от гостей напрямую - без посредников и комиссии за бронь.
                     </p>
 
                     <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
