@@ -16,6 +16,7 @@ import { PAYMENT_METHOD_LABELS, type PaymentMethodId } from "@/features/properti
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { notFound, usePathname } from "next/navigation";
 import { useHasAuthToken } from "@/hooks/useHasAuthToken";
 import { useProperty, useFavoriteIds, useToggleFavorite, useExchangeRates } from "@/features/properties/hooks";
@@ -32,8 +33,13 @@ import type { ExchangeRates } from "@/features/properties/api";
 import { PriceDisplay, BynCurrencyMark } from "@/components/BynCurrency";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";
 import { useCurrency } from "@/context/CurrencyContext";
-import PropertyMap from "@/components/PropertyMap";
+import { useNearViewport } from "@/hooks/useNearViewport";
 import { BookingInquiryModal } from "@/features/properties/components/BookingInquiryModal";
+
+const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-muted/40 animate-pulse" aria-hidden />,
+});
 import { OwnerOtherListings } from "@/features/properties/components/OwnerOtherListings";
 import { PropertyLightbox } from "@/features/properties/components/PropertyLightbox";
 import { PropertyMobileGallery } from "@/features/properties/components/PropertyMobileGallery";
@@ -312,6 +318,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
     property.type,
   );
   const coords = property.coordinates;
+  const { ref: mapSectionRef, isNear: isMapNear } = useNearViewport();
   const nearbyMetroStations = property.nearbyMetroStations ?? [];
 
   const lineColorClass = (line: number): string => {
@@ -975,21 +982,28 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
               {coords?.latitude && coords?.longitude && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
                   <h2 className="text-xl font-bold text-foreground mb-4">Расположение</h2>
-                  <div className="rounded-2xl overflow-hidden border border-border h-[350px]">
-                    <PropertyMap
-                      properties={[{
-                        id: property.id,
-                        lat: coords.latitude,
-                        lng: coords.longitude,
-                        title: property.title,
-                        price: priceDisplay.primaryPlain,
-                        address: addressStr,
-                        image: images[0],
-                        dealType: property.dealType,
-                        propertyType: property.type,
-                      }]}
-                      showBalloons={false}
-                    />
+                  <div
+                    ref={mapSectionRef}
+                    className="rounded-2xl overflow-hidden border border-border h-[350px]"
+                  >
+                    {isMapNear ? (
+                      <PropertyMap
+                        properties={[{
+                          id: property.id,
+                          lat: coords.latitude,
+                          lng: coords.longitude,
+                          title: property.title,
+                          price: priceDisplay.primaryPlain,
+                          address: addressStr,
+                          image: images[0],
+                          dealType: property.dealType,
+                          propertyType: property.type,
+                        }]}
+                        showBalloons={false}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-muted/40 animate-pulse" aria-hidden />
+                    )}
                   </div>
                 </motion.div>
               )}
