@@ -478,16 +478,17 @@ export default function MessagesPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
+            className="max-lg:-mx-8"
         >
             <h1 className={cn(
-                'font-display text-2xl font-bold text-foreground mb-4',
+                'font-display text-2xl font-bold text-foreground mb-4 max-lg:px-4',
                 selectedId && 'max-lg:hidden',
             )}
             >
                 Сообщения
             </h1>
 
-            <div className={cn('grid grid-cols-2 gap-2 mb-4', selectedId && 'max-lg:hidden')}>
+            <div className={cn('grid grid-cols-2 gap-2 mb-4 max-lg:px-4', selectedId && 'max-lg:hidden')}>
                 <Button
                     type="button"
                     variant={activeTab === 'conversations' ? 'default' : 'outline'}
@@ -527,10 +528,9 @@ export default function MessagesPage() {
             </div>
 
             <div className={cn(
-                'bg-card rounded-xl overflow-hidden shadow-card',
-                selectedId
-                    ? 'max-lg:fixed max-lg:inset-x-0 max-lg:top-16 max-lg:bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] max-lg:z-20 max-lg:rounded-none max-lg:shadow-none h-[calc(100dvh-16rem)] max-lg:h-auto'
-                    : 'h-[calc(100dvh-16rem)]',
+                'bg-card rounded-xl overflow-hidden shadow-card h-[calc(100dvh-16rem)]',
+                'max-lg:rounded-none max-lg:shadow-none',
+                selectedId && 'max-lg:fixed max-lg:inset-x-0 max-lg:top-16 max-lg:bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] max-lg:z-20 max-lg:h-auto',
             )}
             >
                 {activeTab === 'bookings' ? (
