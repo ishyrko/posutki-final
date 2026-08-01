@@ -32,6 +32,8 @@ import { BynCurrencyMark } from '@/components/BynCurrency';
 import { cn } from '@/lib/utils';
 import AddressMapPicker from '@/components/AddressMapPicker';
 import { geocodeAddress as yandexGeocode } from '@/lib/yandex-geocoder';
+import { getMyProperties } from '@/features/properties/api';
+import { trackListingEvent } from '@/lib/gtag';
 import { useCityAutocompleteResults, useSearchStreets, useCreateProperty } from '../hooks';
 import type { ListingFormData, CreatePropertyPayload, CitySearchResult, AdditionalService } from '../types';
 import { PropertyPhotoGrid } from './PropertyPhotoGrid';
@@ -298,6 +300,27 @@ export function CreateListingForm() {
     const { mutateAsync: createProperty, isPending: submitting } = useCreateProperty();
     const [smsAuthOpen, setSmsAuthOpen] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const listingPageOpenTrackedRef = useRef(false);
+    const hadExistingPropertiesRef = useRef(false);
+
+    useEffect(() => {
+        if (!isMounted || !sessionReady || userLoading || !user) {
+            return;
+        }
+        if (listingPageOpenTrackedRef.current) {
+            return;
+        }
+        listingPageOpenTrackedRef.current = true;
+
+        void getMyProperties(1, 1).then((response) => {
+            if (response.data.length > 0) {
+                hadExistingPropertiesRef.current = true;
+                return;
+            }
+
+            trackListingEvent('create_listing_page_open');
+        });
+    }, [isMounted, sessionReady, userLoading, user]);
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (cityContainerRef.current && !cityContainerRef.current.contains(e.target as Node)) {
@@ -819,7 +842,16 @@ export function CreateListingForm() {
         };
 
         try {
-            await createProperty(payload);
+            const result = await createProperty(payload);
+
+            if (!hadExistingPropertiesRef.current) {
+                trackListingEvent('first_listing_submitted', {
+                    property_id: result.propertyId,
+                    property_type: form.propertyType,
+                });
+                hadExistingPropertiesRef.current = true;
+            }
+
             toast.success('Объявление отправлено на модерацию');
             setSubmitted(true);
         } catch (err: unknown) {

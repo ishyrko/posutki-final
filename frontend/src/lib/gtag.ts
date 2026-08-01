@@ -71,3 +71,11 @@ export function trackPropertyEngagementEvent(
 ): void {
     trackPropertyEvent(eventName, property);
 }
+
+export type ListingAnalyticsEvent =
+    | 'create_listing_page_open'
+    | 'first_listing_submitted';
+
+export function trackListingEvent(eventName: ListingAnalyticsEvent, params?: GtagParams): void {
+    trackGaEvent(eventName, params);
+}
