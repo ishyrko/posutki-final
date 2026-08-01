@@ -138,8 +138,13 @@ export const replyToBookingInquiry = async (
     await api.post(`/booking-inquiries/${inquiryId}/reply`, { text });
 };
 
-export const acceptBookingInquiry = async (inquiryId: string): Promise<void> => {
-    await api.post(`/booking-inquiries/${inquiryId}/accept`);
+export const acceptBookingInquiry = async (
+    inquiryId: string,
+    options: { bookCalendar?: boolean } = {},
+): Promise<void> => {
+    await api.post(`/booking-inquiries/${inquiryId}/accept`, {
+        bookCalendar: options.bookCalendar ?? true,
+    });
 };
 
 export const declineBookingInquiry = async (inquiryId: string): Promise<void> => {
@@ -206,13 +211,24 @@ export const useAcceptBookingInquiry = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ inquiryId, propertyId }: { inquiryId: string; propertyId: string }) =>
-            acceptBookingInquiry(inquiryId).then(() => propertyId),
-        onSuccess: (propertyId) => {
+        mutationFn: ({
+            inquiryId,
+            propertyId,
+            bookCalendar = true,
+        }: {
+            inquiryId: string;
+            propertyId: string;
+            bookCalendar?: boolean;
+        }) => acceptBookingInquiry(inquiryId, { bookCalendar }).then(() => ({ propertyId, bookCalendar })),
+        onSuccess: ({ propertyId, bookCalendar }) => {
             queryClient.invalidateQueries({ queryKey: ['booking-inquiries'] });
             queryClient.invalidateQueries({ queryKey: ['owner-calendar', Number(propertyId)] });
             queryClient.invalidateQueries({ queryKey: ['property-calendar', Number(propertyId)] });
-            toast.success('Заявка принята, даты отмечены в календаре');
+            toast.success(
+                bookCalendar
+                    ? 'Заявка принята, даты отмечены в календаре'
+                    : 'Заявка принята',
+            );
         },
         onError: (error: unknown) => {
             toast.error(getErrorMessage(error, 'Не удалось принять заявку'));
@@ -251,4 +267,41 @@ export function getBookingInquiryStatusLabel(status: BookingInquiryStatus): stri
         default:
             return status;
     }
+}
+
+export function buildAcceptInquiryMessage(inquiry: Pick<BookingInquiryItem, 'name' | 'checkIn' | 'checkOut'>): string {
+    const dates = formatInquiryDateRange(inquiry.checkIn, inquiry.checkOut);
+    const greeting = inquiry.name?.trim() ? `Здравствуйте, ${inquiry.name.trim()}!` : 'Здравствуйте!';
+    if (dates) {
+        return `${greeting}\n\nПодтверждаю бронирование на ${dates}. Ждём вас!`;
+    }
+    return `${greeting}\n\nПодтверждаю бронирование. Ждём вас!`;
+}
+
+export function buildDeclineInquiryMessage(inquiry: Pick<BookingInquiryItem, 'name' | 'checkIn' | 'checkOut'>): string {
+    const dates = formatInquiryDateRange(inquiry.checkIn, inquiry.checkOut);
+    const greeting = inquiry.name?.trim() ? `Здравствуйте, ${inquiry.name.trim()}!` : 'Здравствуйте!';
+    if (dates) {
+        return `${greeting}\n\nК сожалению, на ${dates} объект недоступен.`;
+    }
+    return `${greeting}\n\nК сожалению, сейчас не можем подтвердить бронирование.`;
+}
+
+function formatInquiryDateRange(checkIn?: string | null, checkOut?: string | null): string | null {
+    const from = formatInquiryDate(checkIn);
+    const to = formatInquiryDate(checkOut);
+    if (from && to) return `${from} — ${to}`;
+    if (from) return `заезд ${from}`;
+    return null;
+}
+
+function formatInquiryDate(value?: string | null): string | null {
+    if (!value) return null;
+    const date = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
 }

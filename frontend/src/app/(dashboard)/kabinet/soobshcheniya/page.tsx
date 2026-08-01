@@ -21,6 +21,8 @@ import {
     ChevronUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
     Dialog,
@@ -41,10 +43,13 @@ import {
     useAcceptBookingInquiry,
     useDeclineBookingInquiry,
     getBookingInquiryStatusLabel,
+    buildAcceptInquiryMessage,
+    buildDeclineInquiryMessage,
     BookingInquiryItem,
 } from '@/features/properties/booking-inquiry';
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 type MessagesTab = 'conversations' | 'bookings';
 
@@ -145,6 +150,14 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
     const [replyOpen, setReplyOpen] = useState(false);
     const [replyText, setReplyText] = useState('');
     const [showAllReplies, setShowAllReplies] = useState(false);
+    const [acceptOpen, setAcceptOpen] = useState(false);
+    const [declineOpen, setDeclineOpen] = useState(false);
+    const [acceptSendMessage, setAcceptSendMessage] = useState(true);
+    const [acceptBookCalendar, setAcceptBookCalendar] = useState(true);
+    const [acceptMessage, setAcceptMessage] = useState('');
+    const [declineSendMessage, setDeclineSendMessage] = useState(true);
+    const [declineMessage, setDeclineMessage] = useState('');
+    const [actionPending, setActionPending] = useState(false);
     const replyMutation = useReplyToBookingInquiry();
     const acceptMutation = useAcceptBookingInquiry();
     const declineMutation = useDeclineBookingInquiry();
@@ -178,6 +191,19 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
         ? ownerReplies
         : ownerReplies.slice(-1);
 
+    const openAcceptDialog = () => {
+        setAcceptSendMessage(canReply);
+        setAcceptBookCalendar(true);
+        setAcceptMessage(buildAcceptInquiryMessage(inquiry));
+        setAcceptOpen(true);
+    };
+
+    const openDeclineDialog = () => {
+        setDeclineSendMessage(canReply);
+        setDeclineMessage(buildDeclineInquiryMessage(inquiry));
+        setDeclineOpen(true);
+    };
+
     const handleReply = () => {
         const trimmed = replyText.trim();
         if (!trimmed) return;
@@ -190,6 +216,66 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                 },
             },
         );
+    };
+
+    const sendReplyIfNeeded = async (enabled: boolean, text: string) => {
+        if (!enabled) return;
+        const trimmed = text.trim();
+        if (!trimmed) {
+            throw new Error('Введите текст сообщения');
+        }
+        await replyMutation.mutateAsync({ inquiryId: inquiry.id, text: trimmed });
+    };
+
+    const handleAcceptConfirm = async () => {
+        if (!acceptBookCalendar && !acceptSendMessage) {
+            toast.error('Выберите хотя бы одно действие');
+            return;
+        }
+        if (acceptSendMessage && !acceptMessage.trim()) {
+            toast.error('Введите текст сообщения');
+            return;
+        }
+
+        setActionPending(true);
+        try {
+            await acceptMutation.mutateAsync({
+                inquiryId: inquiry.id,
+                propertyId: inquiry.propertyId,
+                bookCalendar: acceptBookCalendar,
+            });
+            await sendReplyIfNeeded(acceptSendMessage, acceptMessage);
+            setAcceptOpen(false);
+        } catch (error) {
+            if (error instanceof Error && error.message === 'Введите текст сообщения') {
+                toast.error(error.message);
+            }
+        } finally {
+            setActionPending(false);
+        }
+    };
+
+    const handleDeclineConfirm = async () => {
+        if (declineSendMessage && !declineMessage.trim()) {
+            toast.error('Введите текст сообщения');
+            return;
+        }
+
+        setActionPending(true);
+        try {
+            await declineMutation.mutateAsync({
+                inquiryId: inquiry.id,
+                propertyId: inquiry.propertyId,
+            });
+            await sendReplyIfNeeded(declineSendMessage, declineMessage);
+            setDeclineOpen(false);
+        } catch (error) {
+            if (error instanceof Error && error.message === 'Введите текст сообщения') {
+                toast.error(error.message);
+            }
+        } finally {
+            setActionPending(false);
+        }
     };
 
     return (
@@ -383,18 +469,10 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                                 type="button"
                                 size="sm"
                                 className="bg-gradient-primary text-primary-foreground border-0"
-                                disabled={acceptMutation.isPending}
-                                onClick={() => acceptMutation.mutate({
-                                    inquiryId: inquiry.id,
-                                    propertyId: inquiry.propertyId,
-                                })}
+                                onClick={openAcceptDialog}
                             >
-                                {acceptMutation.isPending ? (
-                                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                                ) : (
-                                    <Check className="w-3.5 h-3.5 mr-1.5" />
-                                )}
-                                Забронировать даты в календаре
+                                <Check className="w-3.5 h-3.5 mr-1.5" />
+                                Принять
                             </Button>
                         )}
                         {canDecline && (
@@ -403,18 +481,10 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                                 size="sm"
                                 variant="outline"
                                 className="text-destructive hover:text-destructive"
-                                disabled={declineMutation.isPending}
-                                onClick={() => declineMutation.mutate({
-                                    inquiryId: inquiry.id,
-                                    propertyId: inquiry.propertyId,
-                                })}
+                                onClick={openDeclineDialog}
                             >
-                                {declineMutation.isPending ? (
-                                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                                ) : (
-                                    <X className="w-3.5 h-3.5 mr-1.5" />
-                                )}
-                                Игнорировать
+                                <X className="w-3.5 h-3.5 mr-1.5" />
+                                Отклонить
                             </Button>
                         )}
                     </div>
@@ -452,6 +522,137 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                                 <Send className="w-4 h-4 mr-2" />
                             )}
                             Отправить
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={acceptOpen} onOpenChange={setAcceptOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Принять заявку</DialogTitle>
+                        <DialogDescription>
+                            Выберите, что сделать при принятии заявки.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="space-y-3">
+                            <div className="flex items-start gap-3">
+                                <Checkbox
+                                    id={`accept-message-${inquiry.id}`}
+                                    checked={acceptSendMessage}
+                                    disabled={!canReply}
+                                    onCheckedChange={(checked) => setAcceptSendMessage(checked === true)}
+                                />
+                                <div className="space-y-1 leading-none">
+                                    <Label htmlFor={`accept-message-${inquiry.id}`}>Отправить сообщение</Label>
+                                    {!canReply && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Email гостя недоступен для ответа
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            {acceptSendMessage && (
+                                <Textarea
+                                    value={acceptMessage}
+                                    onChange={(e) => setAcceptMessage(e.target.value)}
+                                    rows={5}
+                                    className="resize-none"
+                                    placeholder="Текст сообщения гостю"
+                                />
+                            )}
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <Checkbox
+                                id={`accept-calendar-${inquiry.id}`}
+                                checked={acceptBookCalendar}
+                                onCheckedChange={(checked) => setAcceptBookCalendar(checked === true)}
+                            />
+                            <Label htmlFor={`accept-calendar-${inquiry.id}`} className="leading-none">
+                                Забронировать даты в календаре
+                            </Label>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setAcceptOpen(false)}>
+                            Отмена
+                        </Button>
+                        <Button
+                            type="button"
+                            className="bg-gradient-primary text-primary-foreground border-0"
+                            disabled={
+                                actionPending
+                                || (!acceptBookCalendar && !acceptSendMessage)
+                                || (acceptSendMessage && !acceptMessage.trim())
+                            }
+                            onClick={() => void handleAcceptConfirm()}
+                        >
+                            {actionPending ? (
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                                <Check className="w-4 h-4 mr-2" />
+                            )}
+                            Принять
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={declineOpen} onOpenChange={setDeclineOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Отклонить заявку</DialogTitle>
+                        <DialogDescription>
+                            При необходимости отправьте гостю сообщение.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="flex items-start gap-3">
+                            <Checkbox
+                                id={`decline-message-${inquiry.id}`}
+                                checked={declineSendMessage}
+                                disabled={!canReply}
+                                onCheckedChange={(checked) => setDeclineSendMessage(checked === true)}
+                            />
+                            <div className="space-y-1 leading-none">
+                                <Label htmlFor={`decline-message-${inquiry.id}`}>Отправить сообщение</Label>
+                                {!canReply && (
+                                    <p className="text-xs text-muted-foreground">
+                                        Email гостя недоступен для ответа
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        {declineSendMessage && (
+                            <Textarea
+                                value={declineMessage}
+                                onChange={(e) => setDeclineMessage(e.target.value)}
+                                rows={5}
+                                className="resize-none"
+                                placeholder="Текст сообщения гостю"
+                            />
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setDeclineOpen(false)}>
+                            Отмена
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            disabled={
+                                actionPending
+                                || (declineSendMessage && !declineMessage.trim())
+                            }
+                            onClick={() => void handleDeclineConfirm()}
+                        >
+                            {actionPending ? (
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                                <X className="w-4 h-4 mr-2" />
+                            )}
+                            Отклонить
                         </Button>
                     </DialogFooter>
                 </DialogContent>

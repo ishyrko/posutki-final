@@ -9,6 +9,7 @@ final class AcceptBookingInquiryCommand
     public function __construct(
         public readonly string $inquiryId,
         public readonly string $ownerId,
+        public readonly bool $bookCalendar = true,
     ) {
     }
 }

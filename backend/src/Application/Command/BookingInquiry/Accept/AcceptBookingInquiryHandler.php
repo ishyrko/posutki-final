@@ -47,32 +47,37 @@ final class AcceptBookingInquiryHandler
             throw new DomainException('Принять заявку можно только для посуточной аренды');
         }
 
-        $checkIn = $inquiry->getCheckIn();
-        if ($checkIn === null) {
-            throw new DomainException('У заявки не указана дата заезда');
+        $blockId = null;
+        if ($command->bookCalendar) {
+            $checkIn = $inquiry->getCheckIn();
+            if ($checkIn === null) {
+                throw new DomainException('У заявки не указана дата заезда');
+            }
+
+            $blockEnd = $this->resolveBlockEndDate($checkIn, $inquiry->getCheckOut());
+            $this->assertDatesAvailable($property, $checkIn, $blockEnd);
+
+            $note = $this->buildBookedNote($inquiry->getName(), $inquiry->getNotes());
+            $propertyId = (string) $inquiry->getPropertyId()->getValue();
+
+            $blockResult = $this->commandBus->dispatch(new CreateAvailabilityBlockCommand(
+                propertyId: $propertyId,
+                userId: $command->ownerId,
+                startDate: $checkIn->format('Y-m-d'),
+                endDate: $blockEnd->format('Y-m-d'),
+                note: $note,
+            ));
+
+            $blockId = Id::fromString((string) $blockResult['id']);
         }
 
-        $blockEnd = $this->resolveBlockEndDate($checkIn, $inquiry->getCheckOut());
-        $this->assertDatesAvailable($property, $checkIn, $blockEnd);
-
-        $note = $this->buildBookedNote($inquiry->getName(), $inquiry->getNotes());
-        $propertyId = (string) $inquiry->getPropertyId()->getValue();
-
-        $blockResult = $this->commandBus->dispatch(new CreateAvailabilityBlockCommand(
-            propertyId: $propertyId,
-            userId: $command->ownerId,
-            startDate: $checkIn->format('Y-m-d'),
-            endDate: $blockEnd->format('Y-m-d'),
-            note: $note,
-        ));
-
-        $inquiry->accept(Id::fromString((string) $blockResult['id']));
+        $inquiry->accept($blockId);
         $this->bookingInquiryRepository->save($inquiry);
 
         return [
             'id' => (string) $inquiry->getId()->getValue(),
             'status' => $inquiry->getStatus()->value,
-            'availabilityBlockId' => (string) $blockResult['id'],
+            'availabilityBlockId' => $blockId !== null ? (string) $blockId->getValue() : null,
         ];
     }
 

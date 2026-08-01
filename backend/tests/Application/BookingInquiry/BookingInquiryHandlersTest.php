@@ -245,6 +245,49 @@ final class BookingInquiryHandlersTest extends TestCase
         self::assertSame(BookingInquiryStatus::Accepted, $inquiry->getStatus());
     }
 
+    public function testAcceptWithoutCalendarBooking(): void
+    {
+        $inquiry = new BookingInquiry(
+            propertyId: Id::fromInt(100),
+            ownerId: Id::fromInt(10),
+            name: 'Иван',
+            phone: '+375291112233',
+            checkIn: new \DateTimeImmutable('2026-08-15'),
+            checkOut: new \DateTimeImmutable('2026-08-18'),
+        );
+        $this->setEntityId($inquiry, 1);
+
+        $property = $this->createPropertyMock();
+
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository->method('findById')->willReturn($property);
+
+        $commandBus = $this->createMock(CommandBusInterface::class);
+        $commandBus->expects(self::never())->method('dispatch');
+
+        $repository = $this->createMock(BookingInquiryRepositoryInterface::class);
+        $repository->method('findById')->willReturn($inquiry);
+        $repository->expects(self::once())->method('save')->with($inquiry);
+
+        $handler = new AcceptBookingInquiryHandler(
+            $repository,
+            $propertyRepository,
+            $this->createCalendarAggregator([]),
+            $commandBus,
+        );
+
+        $result = ($handler)(new AcceptBookingInquiryCommand(
+            inquiryId: '1',
+            ownerId: '10',
+            bookCalendar: false,
+        ));
+
+        self::assertSame('accepted', $result['status']);
+        self::assertNull($result['availabilityBlockId']);
+        self::assertSame(BookingInquiryStatus::Accepted, $inquiry->getStatus());
+        self::assertNull($inquiry->getAvailabilityBlockId());
+    }
+
     public function testAcceptFailsWhenDatesOverlap(): void
     {
         $inquiry = new BookingInquiry(

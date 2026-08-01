@@ -233,7 +233,7 @@ class BookingInquiry
         }
     }
 
-    public function accept(Id $blockId): void
+    public function accept(?Id $blockId = null): void
     {
         $this->status = BookingInquiryStatus::Accepted;
         $this->availabilityBlockId = $blockId;

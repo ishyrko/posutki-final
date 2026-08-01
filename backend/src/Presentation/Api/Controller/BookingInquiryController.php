@@ -170,15 +170,21 @@ class BookingInquiryController extends AbstractController
     }
 
     #[Route('/booking-inquiries/{id}/accept', name: 'accept', methods: ['POST'])]
-    public function accept(string $id, #[CurrentUser] ?User $user): JsonResponse
+    public function accept(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
         if (!$user) {
             return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
         }
 
+        $data = json_decode($request->getContent(), true);
+        $bookCalendar = !is_array($data) || !array_key_exists('bookCalendar', $data)
+            ? true
+            : (bool) $data['bookCalendar'];
+
         $result = $this->commandBus->dispatch(new AcceptBookingInquiryCommand(
             inquiryId: $id,
             ownerId: (string) $user->getId()->getValue(),
+            bookCalendar: $bookCalendar,
         ));
 
         return $this->json(ApiResponse::success($result));
