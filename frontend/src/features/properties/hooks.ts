@@ -6,6 +6,7 @@ import { getProperties, getProperty, getMyProperties, updateProperty, UpdateProp
 import { Property, PropertyFilters, PropertyListResponse } from './types';
 import { isAuthenticated } from '@/lib/auth';
 import { useIsHydrated } from '@/hooks/useIsHydrated';
+import { useOwnerFeaturesContext } from './OwnerFeaturesProvider';
 import {
     addLocalFavoriteId,
     getLocalFavoriteIdsSnapshot,
@@ -105,6 +106,21 @@ export const useMyProperties = (page = 1, limit = 20) => {
         queryFn: () => getMyProperties(page, limit),
         enabled: isAuthenticated(),
     });
+};
+
+/** True, если у пользователя есть хотя бы одно объявление (любой статус). */
+export const useHasMyProperties = () => {
+    const ownerFeatures = useOwnerFeaturesContext();
+    const query = useMyProperties(1, 1);
+
+    const hasMyProperties = query.isSuccess
+        ? query.data.data.length > 0
+        : (ownerFeatures?.initialHasMyProperties ?? false);
+
+    return {
+        hasMyProperties,
+        isLoading: !query.isSuccess && query.isLoading,
+    };
 };
 
 export const useUpdateProperty = () => {

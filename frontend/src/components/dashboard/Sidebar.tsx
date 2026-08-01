@@ -7,6 +7,7 @@ import { Home, Heart, MessageSquare, User, LogOut, ChevronRight, CreditCard } fr
 import { useUser, useLogout } from '@/features/auth/hooks';
 import { useUnreadCount } from '@/features/messages/hooks';
 import { useUnreadBookingInquiryCount } from '@/features/properties/booking-inquiry';
+import { useHasMyProperties } from '@/features/properties/hooks';
 import { usePendingPlacementPaymentCount } from '@/features/placement/hooks';
 import { UserAvatar } from '@/components/UserAvatar';
 import { formatUserDisplayName } from '@/features/profile/displayName';
@@ -53,10 +54,15 @@ export function Sidebar() {
     const pathname = usePathname();
     const { data: user } = useUser();
     const logout = useLogout();
+    const { hasMyProperties } = useHasMyProperties();
     const { data: unreadCount } = useUnreadCount();
     const { data: unreadBookingInquiryCount } = useUnreadBookingInquiryCount();
     const { data: pendingPaymentCount } = usePendingPlacementPaymentCount();
-    const totalUnreadCount = (unreadCount ?? 0) + (unreadBookingInquiryCount ?? 0);
+    const totalUnreadCount =
+        (unreadCount ?? 0) + (hasMyProperties ? (unreadBookingInquiryCount ?? 0) : 0);
+    const visibleNavigation = navigation.filter(
+        (item) => item.name !== 'Оплаты' || hasMyProperties,
+    );
 
     return (
         <>
@@ -73,7 +79,7 @@ export function Sidebar() {
                         </div>
                     </div>
 
-                    {navigation.map((item) => {
+                    {visibleNavigation.map((item) => {
                         const isActive = isNavItemActive(pathname, item.href, item.activePrefix);
                         const badgeCount = getNavBadgeCount(
                             item.badgeKey,
@@ -125,7 +131,7 @@ export function Sidebar() {
 
             {/* Mobile bottom tab bar */}
             <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border flex pb-[env(safe-area-inset-bottom,0px)]">
-                {navigation.map((item) => {
+                {visibleNavigation.map((item) => {
                     const isActive = isNavItemActive(pathname, item.href, item.activePrefix);
                     const badgeCount = getNavBadgeCount(
                         item.badgeKey,

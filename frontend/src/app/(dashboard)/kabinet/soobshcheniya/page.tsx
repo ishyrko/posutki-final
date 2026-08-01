@@ -48,6 +48,7 @@ import {
     buildDeclineInquiryMessage,
     BookingInquiryItem,
 } from '@/features/properties/booking-inquiry';
+import { useHasMyProperties } from '@/features/properties/hooks';
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -941,11 +942,18 @@ function ChatView({
 export default function MessagesPage() {
     const queryClient = useQueryClient();
     const { data: user } = useUser();
+    const { hasMyProperties } = useHasMyProperties();
     const { data: conversationsData, isLoading } = useConversations();
     const { data: unreadBookingInquiryCount } = useUnreadBookingInquiryCount();
     const markBookingInquiriesRead = useMarkBookingInquiriesRead();
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState<MessagesTab>('conversations');
+
+    useEffect(() => {
+        if (!hasMyProperties && activeTab === 'bookings') {
+            setActiveTab('conversations');
+        }
+    }, [activeTab, hasMyProperties]);
 
     const conversations = conversationsData?.data || [];
     const selectedConversation = conversations.find((c) => c.id === selectedId);
@@ -992,6 +1000,7 @@ export default function MessagesPage() {
                 Сообщения
             </h1>
 
+            {hasMyProperties && (
             <div className={cn('grid grid-cols-2 gap-2 mb-4 max-lg:px-4', selectedId && 'max-lg:hidden')}>
                 <Button
                     type="button"
@@ -1030,6 +1039,7 @@ export default function MessagesPage() {
                     )}
                 </Button>
             </div>
+            )}
 
             <div className={cn(
                 'bg-card rounded-xl overflow-hidden shadow-card h-[calc(100dvh-16rem)]',
