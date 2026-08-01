@@ -8,7 +8,7 @@ import {
     markConversationRead,
     getUnreadCount,
 } from './api';
-import { SendMessagePayload } from './types';
+import { SendMessagePayload, ConversationListResponse } from './types';
 import { isAuthenticated } from '@/lib/auth';
 
 export const useConversations = (page = 1, limit = 20) => {
@@ -46,8 +46,24 @@ export const useMarkRead = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (conversationId: number) => markConversationRead(conversationId),
+        onMutate: async (conversationId) => {
+            await queryClient.cancelQueries({ queryKey: ['conversations'] });
+            queryClient.setQueriesData<ConversationListResponse>(
+                { queryKey: ['conversations'] },
+                (old) => {
+                    if (!old) return old;
+                    return {
+                        ...old,
+                        data: old.data.map((conversation) => (
+                            conversation.id === conversationId
+                                ? { ...conversation, unread: 0 }
+                                : conversation
+                        )),
+                    };
+                },
+            );
+        },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['conversations'] });
             queryClient.invalidateQueries({ queryKey: ['unread-count'] });
         },
     });

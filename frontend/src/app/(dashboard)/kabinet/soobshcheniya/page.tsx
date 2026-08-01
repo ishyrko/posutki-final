@@ -783,13 +783,13 @@ function ChatView({
     currentUserId: number;
     onBack: () => void;
 }) {
-    const queryClient = useQueryClient();
     const { data, isLoading } = useMessages(conversationId);
     const sendMessageMutation = useSendMessage();
-    const markRead = useMarkRead();
+    const { mutate: markConversationRead } = useMarkRead();
     const [text, setText] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const markedReadRef = useRef(false);
 
     const messages = data?.data || [];
 
@@ -801,18 +801,28 @@ function ChatView({
     };
 
     useEffect(() => {
-        void queryClient.invalidateQueries({ queryKey: ['conversations'] });
-    }, [conversationId, queryClient]);
-
-    useEffect(() => {
         adjustTextareaHeight();
     }, [text]);
 
     useEffect(() => {
-        if (conversation.unread > 0) {
-            markRead.mutate(conversationId);
+        markedReadRef.current = false;
+    }, [conversationId]);
+
+    useEffect(() => {
+        if (conversation.unread <= 0) {
+            markedReadRef.current = false;
+            return;
         }
-    }, [conversationId, conversation.unread, markRead]);
+        if (markedReadRef.current) {
+            return;
+        }
+        markedReadRef.current = true;
+        markConversationRead(conversationId, {
+            onSettled: () => {
+                markedReadRef.current = false;
+            },
+        });
+    }, [conversationId, conversation.unread, markConversationRead]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
