@@ -51,7 +51,7 @@ import {
 import { useCurrency } from '@/context/CurrencyContext';
 import { trackPropertyEngagementEvent } from '@/lib/gtag';
 import {
-    bookingInquirySchema,
+    createBookingInquirySchema,
     BookingInquiryFormData,
     getErrorMessage,
     useSubmitBookingInquiry,
@@ -72,6 +72,9 @@ function formatDateLabel(value?: string): string {
 
 export function BookingInquiryModal({ open, onOpenChange, property }: BookingInquiryModalProps) {
     const { data: user } = useUser();
+    const isLoggedIn = Boolean(user);
+    const requireEmail = !isLoggedIn;
+    const inquirySchema = useMemo(() => createBookingInquirySchema(requireEmail), [requireEmail]);
     const { mutate: submitInquiry, isPending } = useSubmitBookingInquiry();
     const { data: exchangeRates } = useExchangeRates();
     const { currency } = useCurrency();
@@ -112,7 +115,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
     }), [property.id, user]);
 
     const form = useForm<BookingInquiryFormData>({
-        resolver: zodResolver(bookingInquirySchema),
+        resolver: zodResolver(inquirySchema),
         defaultValues,
     });
 
@@ -256,7 +259,9 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                 name="email"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>E-mail</FormLabel>
+                                                        <FormLabel>
+                                                            E-mail{requireEmail ? ' *' : ''}
+                                                        </FormLabel>
                                                         <FormControl>
                                                             <Input
                                                                 type="email"
@@ -264,6 +269,11 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                 {...field}
                                                             />
                                                         </FormControl>
+                                                        {requireEmail && (
+                                                            <p className="text-xs text-muted-foreground">
+                                                                На этот адрес придёт ответ владельца
+                                                            </p>
+                                                        )}
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Presentation\Api\Controller;
 
+use App\Application\Command\BookingInquiry\Accept\AcceptBookingInquiryCommand;
+use App\Application\Command\BookingInquiry\Decline\DeclineBookingInquiryCommand;
 use App\Application\Command\BookingInquiry\MarkRead\MarkBookingInquiriesReadCommand;
+use App\Application\Command\BookingInquiry\Reply\ReplyToBookingInquiryCommand;
 use App\Application\Command\BookingInquiry\Submit\SubmitBookingInquiryCommand;
 use App\Application\Command\CommandBusInterface;
 use App\Application\Query\BookingInquiry\GetMyBookingInquiries\GetMyBookingInquiriesQuery;
@@ -145,5 +148,54 @@ class BookingInquiryController extends AbstractController
         $this->commandBus->dispatch($command);
 
         return $this->json(ApiResponse::success(['message' => 'Отмечено как прочитанное']));
+    }
+
+    #[Route('/booking-inquiries/{id}/reply', name: 'reply', methods: ['POST'])]
+    public function reply(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $text = trim((string) (is_array($data) ? ($data['text'] ?? '') : ''));
+
+        $result = $this->commandBus->dispatch(new ReplyToBookingInquiryCommand(
+            inquiryId: $id,
+            ownerId: (string) $user->getId()->getValue(),
+            text: $text,
+        ));
+
+        return $this->json(ApiResponse::success($result));
+    }
+
+    #[Route('/booking-inquiries/{id}/accept', name: 'accept', methods: ['POST'])]
+    public function accept(string $id, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $result = $this->commandBus->dispatch(new AcceptBookingInquiryCommand(
+            inquiryId: $id,
+            ownerId: (string) $user->getId()->getValue(),
+        ));
+
+        return $this->json(ApiResponse::success($result));
+    }
+
+    #[Route('/booking-inquiries/{id}/decline', name: 'decline', methods: ['POST'])]
+    public function decline(string $id, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $result = $this->commandBus->dispatch(new DeclineBookingInquiryCommand(
+            inquiryId: $id,
+            ownerId: (string) $user->getId()->getValue(),
+        ));
+
+        return $this->json(ApiResponse::success($result));
     }
 }

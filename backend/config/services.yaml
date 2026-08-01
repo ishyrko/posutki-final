@@ -366,6 +366,17 @@ services:
     App\Application\Command\BookingInquiry\MarkRead\MarkBookingInquiriesReadHandler:
         tags: [ { name: messenger.message_handler, bus: command.bus } ]
 
+    App\Application\Command\BookingInquiry\Reply\ReplyToBookingInquiryHandler:
+        arguments:
+            $notificationBus: '@notification.bus'
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\BookingInquiry\Accept\AcceptBookingInquiryHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
+    App\Application\Command\BookingInquiry\Decline\DeclineBookingInquiryHandler:
+        tags: [ { name: messenger.message_handler, bus: command.bus } ]
+
     # Message Query Handlers
     App\Application\Query\Message\GetConversations\GetConversationsHandler:
         tags: [ { name: messenger.message_handler, bus: query.bus } ]
@@ -479,6 +490,9 @@ services:
         tags: [ { name: messenger.message_handler, bus: notification.bus } ]
 
     App\Application\Notification\BookingInquiry\BookingInquirySubmittedHandler:
+        tags: [ { name: messenger.message_handler, bus: notification.bus } ]
+
+    App\Application\Notification\BookingInquiry\BookingInquiryRepliedHandler:
         tags: [ { name: messenger.message_handler, bus: notification.bus } ]
 
     App\Application\Notification\Placement\PlacementPaymentSucceededHandler:

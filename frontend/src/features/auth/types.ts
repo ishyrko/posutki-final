@@ -30,6 +30,7 @@ export interface User {
     roles: string[];
     individualProfile?: UserIndividualProfile | null;
     businessProfile?: UserBusinessProfile | null;
+    allowGuestBookingInquiries?: boolean;
 }
 
 export interface LoginResponse {

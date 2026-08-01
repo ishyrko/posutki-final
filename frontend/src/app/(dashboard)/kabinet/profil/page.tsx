@@ -7,7 +7,7 @@ import type { User } from '@/features/auth/types';
 import { useUpdateProfile, useChangePassword, useUpdateEmail } from '@/features/profile/hooks';
 import { updateProfileSchema, UpdateProfileData, changePasswordSchema, ChangePasswordData } from '@/features/profile/api';
 import { motion } from 'framer-motion';
-import { Phone, Mail, Lock, Bell, CheckCircle2, AlertCircle, LogOut } from 'lucide-react';
+import { Phone, Mail, Lock, Settings, CheckCircle2, AlertCircle, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -272,26 +272,29 @@ export default function ProfilePage() {
                 </form>
             </div>
 
-            {/* Notifications */}
+            {/* Settings */}
             <div className="bg-card rounded-xl p-6 shadow-card">
                 <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <Bell className="w-4 h-4" />Уведомления
+                    <Settings className="w-4 h-4" />Настройки
                 </h3>
                 <div className="space-y-4">
-                    {[
-                        { label: 'Новые сообщения', desc: 'Уведомления о входящих сообщениях', defaultOn: true },
-                        { label: 'Отклики на объявления', desc: 'Когда кто-то откликается на ваше объявление', defaultOn: true },
-                        { label: 'Изменения цен в избранном', desc: 'Уведомления об изменении цен', defaultOn: false },
-                        { label: 'Новости и акции', desc: 'Рассылка о новых функциях сервиса', defaultOn: false },
-                    ].map((item) => (
-                        <div key={item.label} className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-foreground">{item.label}</p>
-                                <p className="text-xs text-muted-foreground">{item.desc}</p>
-                            </div>
-                            <Switch defaultChecked={item.defaultOn} />
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <p className="text-sm font-medium text-foreground">
+                                Принимать заявки от незарегистрированных пользователей
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                Если выключено, заявку на бронирование смогут оставить только авторизованные гости
+                            </p>
                         </div>
-                    ))}
+                        <Switch
+                            checked={user?.allowGuestBookingInquiries !== false}
+                            onCheckedChange={(checked) => {
+                                updateProfile({ allowGuestBookingInquiries: checked });
+                            }}
+                            disabled={isUpdating}
+                        />
+                    </div>
                 </div>
             </div>
 

@@ -6,16 +6,24 @@ import { toast } from 'sonner';
 import api from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
 
-export const bookingInquirySchema = z.object({
-    propertyId: z.number().int().positive(),
-    name: z.string().trim().min(2, 'Введите имя'),
-    phone: z.string().trim().min(5, 'Введите телефон'),
-    email: z.union([z.literal(''), z.string().email('Введите корректный email')]).optional(),
-    guests: z.number().int().min(1).max(50).optional(),
-    checkIn: z.string().optional(),
-    checkOut: z.string().optional(),
-    notes: z.string().max(1000).optional(),
-});
+export type BookingInquiryStatus = 'new' | 'replied' | 'accepted' | 'declined';
+
+export function createBookingInquirySchema(requireEmail: boolean) {
+    return z.object({
+        propertyId: z.number().int().positive(),
+        name: z.string().trim().min(2, 'Введите имя'),
+        phone: z.string().trim().min(5, 'Введите телефон'),
+        email: requireEmail
+            ? z.string().trim().min(1, 'Укажите email').email('Введите корректный email')
+            : z.union([z.literal(''), z.string().email('Введите корректный email')]).optional(),
+        guests: z.number().int().min(1).max(50).optional(),
+        checkIn: z.string().optional(),
+        checkOut: z.string().optional(),
+        notes: z.string().max(1000).optional(),
+    });
+}
+
+export const bookingInquirySchema = createBookingInquirySchema(false);
 
 export type BookingInquiryFormData = z.infer<typeof bookingInquirySchema>;
 
@@ -28,6 +36,7 @@ export interface BookingInquiryItem {
     propertyId: string;
     propertyTitle?: string | null;
     propertyType?: string | null;
+    propertyDealType?: string | null;
     propertyCitySlug?: string | null;
     propertyRegionName?: string | null;
     propertyImage?: string | null;
@@ -44,6 +53,11 @@ export interface BookingInquiryItem {
     notes?: string | null;
     createdAt: string;
     isRead: boolean;
+    status: BookingInquiryStatus;
+    ownerReply?: string | null;
+    repliedAt?: string | null;
+    availabilityBlockId?: string | null;
+    canAccept?: boolean;
 }
 
 export interface BookingInquiryListResponse {
@@ -110,6 +124,21 @@ export const markBookingInquiriesRead = async (): Promise<void> => {
     await api.post('/booking-inquiries/mark-read');
 };
 
+export const replyToBookingInquiry = async (
+    inquiryId: string,
+    text: string,
+): Promise<void> => {
+    await api.post(`/booking-inquiries/${inquiryId}/reply`, { text });
+};
+
+export const acceptBookingInquiry = async (inquiryId: string): Promise<void> => {
+    await api.post(`/booking-inquiries/${inquiryId}/accept`);
+};
+
+export const declineBookingInquiry = async (inquiryId: string): Promise<void> => {
+    await api.post(`/booking-inquiries/${inquiryId}/decline`);
+};
+
 export const useSubmitBookingInquiry = () => {
     return useMutation({
         mutationFn: submitBookingInquiry,
@@ -149,3 +178,70 @@ export const useMarkBookingInquiriesRead = () => {
         },
     });
 };
+
+export const useReplyToBookingInquiry = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ inquiryId, text }: { inquiryId: string; text: string }) =>
+            replyToBookingInquiry(inquiryId, text),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['booking-inquiries'] });
+            toast.success('Ответ отправлен гостю');
+        },
+        onError: (error: unknown) => {
+            toast.error(getErrorMessage(error, 'Не удалось отправить ответ'));
+        },
+    });
+};
+
+export const useAcceptBookingInquiry = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ inquiryId, propertyId }: { inquiryId: string; propertyId: string }) =>
+            acceptBookingInquiry(inquiryId).then(() => propertyId),
+        onSuccess: (propertyId) => {
+            queryClient.invalidateQueries({ queryKey: ['booking-inquiries'] });
+            queryClient.invalidateQueries({ queryKey: ['owner-calendar', Number(propertyId)] });
+            queryClient.invalidateQueries({ queryKey: ['property-calendar', Number(propertyId)] });
+            toast.success('Заявка принята, даты отмечены в календаре');
+        },
+        onError: (error: unknown) => {
+            toast.error(getErrorMessage(error, 'Не удалось принять заявку'));
+        },
+    });
+};
+
+export const useDeclineBookingInquiry = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ inquiryId, propertyId }: { inquiryId: string; propertyId: string }) =>
+            declineBookingInquiry(inquiryId).then(() => propertyId),
+        onSuccess: (propertyId) => {
+            queryClient.invalidateQueries({ queryKey: ['booking-inquiries'] });
+            queryClient.invalidateQueries({ queryKey: ['owner-calendar', Number(propertyId)] });
+            queryClient.invalidateQueries({ queryKey: ['property-calendar', Number(propertyId)] });
+            toast.success('Заявка отклонена');
+        },
+        onError: (error: unknown) => {
+            toast.error(getErrorMessage(error, 'Не удалось отклонить заявку'));
+        },
+    });
+};
+
+export function getBookingInquiryStatusLabel(status: BookingInquiryStatus): string {
+    switch (status) {
+        case 'new':
+            return 'Новая';
+        case 'replied':
+            return 'Отвечено';
+        case 'accepted':
+            return 'Принята';
+        case 'declined':
+            return 'Отклонена';
+        default:
+            return status;
+    }
+}

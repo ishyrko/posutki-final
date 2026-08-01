@@ -43,6 +43,25 @@ final readonly class BookingInquiryMailer
         );
     }
 
+    public function sendReplyToGuest(
+        User $owner,
+        Property $property,
+        BookingInquiry $inquiry,
+        string $guestEmail,
+    ): void {
+        $this->send(
+            to: $guestEmail,
+            subject: 'Ответ на заявку — ' . $property->getTitle(),
+            template: 'email/booking-inquiry/reply.html.twig',
+            context: [
+                'owner' => $owner,
+                'property' => $property,
+                'inquiry' => $inquiry,
+                'propertyUrl' => $this->frontendUrls->publicPropertyForListing($property),
+            ],
+        );
+    }
+
     private function send(string $to, string $subject, string $template, array $context): void
     {
         $html = $this->twig->render($template, $context);

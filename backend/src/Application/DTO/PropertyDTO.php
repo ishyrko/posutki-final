@@ -74,6 +74,7 @@ final class PropertyDTO implements \JsonSerializable
         public readonly array $ownerContactPhones,
         public readonly ?string $ownerTelegram,
         public readonly bool $ownerHasEmail,
+        public readonly bool $ownerAllowsGuestInquiries,
         /** @var array<string, mixed>|null Owner legal profile for daily listings (public). */
         public readonly ?array $dailySellerLegalProfile,
         public readonly bool $nearMetro,
@@ -112,7 +113,7 @@ final class PropertyDTO implements \JsonSerializable
         array $nearbyMetroStations = [],
         int $favoritesCount = 0,
         ?array $dailySellerLegalProfile = null,
-        /** @param array{name: ?string, phone: ?string, phones: list<array{phone: string, hasViber: bool, hasWhatsapp: bool}>, telegram: ?string, hasEmail?: bool}|null $ownerContact */
+        /** @param array{name: ?string, phone: ?string, phones: list<array{phone: string, hasViber: bool, hasWhatsapp: bool}>, telegram: ?string, hasEmail?: bool, allowsGuestInquiries?: bool}|null $ownerContact */
         ?array $ownerContact = null,
         ?float $ratingAvg = null,
         int $reviewCount = 0,
@@ -123,12 +124,13 @@ final class PropertyDTO implements \JsonSerializable
         $district = $city->getRegionDistrict();
         $region = $district?->getRegion();
 
-        $ownerContact ??= ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null, 'hasEmail' => false];
+        $ownerContact ??= ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null, 'hasEmail' => false, 'allowsGuestInquiries' => true];
         $ownerContactPhones = $ownerContact['phones'] ?? [];
         $contactPhone = $ownerContact['phone'] ?? ($ownerContactPhones[0]['phone'] ?? null);
         $contactName = $ownerContact['name'] ?? null;
         $ownerTelegram = $ownerContact['telegram'] ?? null;
         $ownerHasEmail = (bool) ($ownerContact['hasEmail'] ?? false);
+        $ownerAllowsGuestInquiries = (bool) ($ownerContact['allowsGuestInquiries'] ?? true);
 
         $images = $property->getImages();
         $instagramUrl = $property->getInstagramUrl();
@@ -207,6 +209,7 @@ final class PropertyDTO implements \JsonSerializable
             ownerContactPhones: $ownerContactPhones,
             ownerTelegram: $ownerTelegram,
             ownerHasEmail: $ownerHasEmail,
+            ownerAllowsGuestInquiries: $ownerAllowsGuestInquiries,
             dailySellerLegalProfile: $dailySellerLegalProfile,
             nearMetro: $property->isNearMetro(),
             nearbyMetroStations: $nearbyMetroStations,
@@ -312,6 +315,7 @@ final class PropertyDTO implements \JsonSerializable
                 'phones' => $this->ownerContactPhones,
                 'telegram' => $this->ownerTelegram,
                 'hasEmail' => $this->ownerHasEmail,
+                'allowsGuestInquiries' => $this->ownerAllowsGuestInquiries,
             ],
             'nearMetro' => $this->nearMetro,
             'nearbyMetroStations' => $this->nearbyMetroStations,

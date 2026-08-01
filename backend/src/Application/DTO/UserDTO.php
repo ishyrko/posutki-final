@@ -32,6 +32,7 @@ final class UserDTO
         public readonly string $createdAt,
         public readonly ?array $individualProfile = null,
         public readonly ?array $businessProfile = null,
+        public readonly bool $allowGuestBookingInquiries = true,
     ) {
     }
 
@@ -71,6 +72,7 @@ final class UserDTO
                     'unp' => $businessProfile->getUnp(),
                 ]
                 : null,
+            allowGuestBookingInquiries: $user->allowsGuestBookingInquiries(),
         );
     }
 

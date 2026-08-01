@@ -30,6 +30,7 @@ export const updateProfileSchema = z.object({
     telegram: telegramFieldSchema,
     phoneHasViber: z.boolean().optional(),
     phoneHasWhatsapp: z.boolean().optional(),
+    allowGuestBookingInquiries: z.boolean().optional(),
 });
 
 export type UpdateProfileData = {
@@ -39,6 +40,7 @@ export type UpdateProfileData = {
     telegram?: string;
     phoneHasViber?: boolean;
     phoneHasWhatsapp?: boolean;
+    allowGuestBookingInquiries?: boolean;
 };
 
 export const changePasswordSchema = z.object({
@@ -91,6 +93,9 @@ export const updateProfile = async (data: UpdateProfileData): Promise<User> => {
     }
     if (data.phoneHasWhatsapp !== undefined) {
         payload.phoneHasWhatsapp = data.phoneHasWhatsapp;
+    }
+    if (data.allowGuestBookingInquiries !== undefined) {
+        payload.allowGuestBookingInquiries = data.allowGuestBookingInquiries;
     }
 
     const response = await api.put<User>('/users/profile', payload);

@@ -162,6 +162,7 @@ class UserController extends AbstractController
             telegram: $request->telegram,
             phoneHasViber: $request->phoneHasViber,
             phoneHasWhatsapp: $request->phoneHasWhatsapp,
+            allowGuestBookingInquiries: $request->allowGuestBookingInquiries,
         );
 
         $this->commandBus->dispatch($command);

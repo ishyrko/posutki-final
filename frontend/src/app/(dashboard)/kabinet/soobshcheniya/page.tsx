@@ -15,13 +15,32 @@ import {
     Phone,
     Users,
     Mail,
+    Reply,
+    X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useConversations, useMessages, useSendMessage, useMarkRead } from '@/features/messages/hooks';
 import { useUser } from '@/features/auth/hooks';
 import { Conversation } from '@/features/messages/types';
-import { useMyBookingInquiries, useUnreadBookingInquiryCount, useMarkBookingInquiriesRead, BookingInquiryItem } from '@/features/properties/booking-inquiry';
+import {
+    useMyBookingInquiries,
+    useUnreadBookingInquiryCount,
+    useMarkBookingInquiriesRead,
+    useReplyToBookingInquiry,
+    useAcceptBookingInquiry,
+    useDeclineBookingInquiry,
+    getBookingInquiryStatusLabel,
+    BookingInquiryItem,
+} from '@/features/properties/booking-inquiry';
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { cn } from '@/lib/utils';
 
@@ -121,6 +140,12 @@ function ConversationList({
 }
 
 function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
+    const [replyOpen, setReplyOpen] = useState(false);
+    const [replyText, setReplyText] = useState('');
+    const replyMutation = useReplyToBookingInquiry();
+    const acceptMutation = useAcceptBookingInquiry();
+    const declineMutation = useDeclineBookingInquiry();
+
     const checkIn = formatDateLabel(inquiry.checkIn);
     const checkOut = formatDateLabel(inquiry.checkOut);
     const isUnread = !inquiry.isRead;
@@ -135,122 +160,257 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
         )
         : null;
 
+    const status = inquiry.status ?? 'new';
+    const isFinal = status === 'accepted' || status === 'declined';
+    const canReply = !isFinal && Boolean(inquiry.email);
+    const canAccept = inquiry.canAccept === true && status !== 'accepted' && status !== 'declined';
+    const canDecline = status !== 'declined';
+
+    const handleReply = () => {
+        const trimmed = replyText.trim();
+        if (!trimmed) return;
+        replyMutation.mutate(
+            { inquiryId: inquiry.id, text: trimmed },
+            {
+                onSuccess: () => {
+                    setReplyOpen(false);
+                    setReplyText('');
+                },
+            },
+        );
+    };
+
     return (
-        <div
-            className={cn(
-                'rounded-xl border bg-card p-4 space-y-3',
-                isUnread ? 'border-primary/40 bg-primary/[0.03]' : 'border-border',
-            )}
-        >
-            <div className="flex items-start gap-3">
-                {propertyHref ? (
-                    <Link href={propertyHref} className="shrink-0">
-                        {inquiry.propertyImage ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                                src={inquiry.propertyImage}
-                                alt={inquiry.propertyTitle ?? 'Объявление'}
-                                className="w-16 h-16 rounded-lg object-cover"
-                            />
-                        ) : (
-                            <div className="w-16 h-16 rounded-lg bg-muted" />
-                        )}
-                    </Link>
-                ) : inquiry.propertyImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                        src={inquiry.propertyImage}
-                        alt={inquiry.propertyTitle ?? 'Объявление'}
-                        className="w-16 h-16 rounded-lg object-cover shrink-0"
-                    />
-                ) : (
-                    <div className="w-16 h-16 rounded-lg bg-muted shrink-0" />
+        <>
+            <div
+                className={cn(
+                    'rounded-xl border bg-card p-4 space-y-3',
+                    isUnread ? 'border-primary/40 bg-primary/[0.03]' : 'border-border',
                 )}
-                <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                                {propertyHref ? (
-                                    <Link
-                                        href={propertyHref}
-                                        className={cn(
-                                            'text-sm text-foreground hover:text-primary hover:underline',
+            >
+                <div className="flex items-start gap-3">
+                    {propertyHref ? (
+                        <Link href={propertyHref} className="shrink-0">
+                            {inquiry.propertyImage ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                    src={inquiry.propertyImage}
+                                    alt={inquiry.propertyTitle ?? 'Объявление'}
+                                    className="w-16 h-16 rounded-lg object-cover"
+                                />
+                            ) : (
+                                <div className="w-16 h-16 rounded-lg bg-muted" />
+                            )}
+                        </Link>
+                    ) : inquiry.propertyImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                            src={inquiry.propertyImage}
+                            alt={inquiry.propertyTitle ?? 'Объявление'}
+                            className="w-16 h-16 rounded-lg object-cover shrink-0"
+                        />
+                    ) : (
+                        <div className="w-16 h-16 rounded-lg bg-muted shrink-0" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    {propertyHref ? (
+                                        <Link
+                                            href={propertyHref}
+                                            className={cn(
+                                                'text-sm text-foreground hover:text-primary hover:underline',
+                                                isUnread ? 'font-semibold' : 'font-medium',
+                                            )}
+                                        >
+                                            {inquiry.propertyTitle || 'Объявление'}
+                                        </Link>
+                                    ) : (
+                                        <p className={cn(
+                                            'text-sm text-foreground',
                                             isUnread ? 'font-semibold' : 'font-medium',
                                         )}
-                                    >
-                                        {inquiry.propertyTitle || 'Объявление'}
-                                    </Link>
-                                ) : (
-                                    <p className={cn(
-                                        'text-sm text-foreground',
-                                        isUnread ? 'font-semibold' : 'font-medium',
+                                        >
+                                            {inquiry.propertyTitle || 'Объявление'}
+                                        </p>
+                                    )}
+                                    {isUnread && status === 'new' && (
+                                        <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
+                                            Новая
+                                        </span>
+                                    )}
+                                    <span className={cn(
+                                        'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium',
+                                        status === 'accepted' && 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+                                        status === 'declined' && 'bg-muted text-muted-foreground',
+                                        status === 'replied' && 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                                        status === 'new' && !isUnread && 'bg-muted text-muted-foreground',
                                     )}
                                     >
-                                        {inquiry.propertyTitle || 'Объявление'}
-                                    </p>
-                                )}
-                                {isUnread && (
-                                    <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
-                                        Новая
+                                        {getBookingInquiryStatusLabel(status)}
                                     </span>
+                                </div>
+                                {inquiry.propertyAddress && (
+                                    <p className="text-xs text-muted-foreground mt-0.5">{inquiry.propertyAddress}</p>
+                                )}
+                                {propertyHref && (
+                                    <Link
+                                        href={propertyHref}
+                                        className="inline-block text-xs text-primary hover:underline mt-1"
+                                    >
+                                        Перейти к объявлению
+                                    </Link>
                                 )}
                             </div>
-                            {inquiry.propertyAddress && (
-                                <p className="text-xs text-muted-foreground mt-0.5">{inquiry.propertyAddress}</p>
-                            )}
-                            {propertyHref && (
-                                <Link
-                                    href={propertyHref}
-                                    className="inline-block text-xs text-primary hover:underline mt-1"
-                                >
-                                    Перейти к объявлению
-                                </Link>
+                            {submittedAt && (
+                                <span className="hidden sm:inline text-xs text-muted-foreground whitespace-nowrap shrink-0 text-right">
+                                    {submittedAt}
+                                </span>
                             )}
                         </div>
-                        {submittedAt && (
-                            <span className="hidden sm:inline text-xs text-muted-foreground whitespace-nowrap shrink-0 text-right">
-                                {submittedAt}
-                            </span>
-                        )}
                     </div>
                 </div>
+
+                <div className="rounded-lg bg-muted/50 p-3 space-y-2 text-sm">
+                    {submittedAt && (
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                            <CalendarCheck className="w-3.5 h-3.5 shrink-0" />
+                            <span>Отправлено: {submittedAt}</span>
+                        </div>
+                    )}
+                    <p className="font-medium text-foreground">{inquiry.name}</p>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <Phone className="w-3.5 h-3.5" />
+                        <a href={`tel:${inquiry.phone}`} className="hover:text-primary">{inquiry.phone}</a>
+                    </div>
+                    {inquiry.email && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Mail className="w-3.5 h-3.5" />
+                            <a href={`mailto:${inquiry.email}`} className="hover:text-primary">{inquiry.email}</a>
+                        </div>
+                    )}
+                    {(checkIn || checkOut || inquiry.guests) && (
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
+                            {checkIn && <span>Заезд: {checkIn}</span>}
+                            {checkOut && <span>Выезд: {checkOut}</span>}
+                            {inquiry.guests != null && (
+                                <span className="inline-flex items-center gap-1">
+                                    <Users className="w-3.5 h-3.5" />
+                                    {inquiry.guests}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                    {inquiry.notes && (
+                        <p className="text-muted-foreground whitespace-pre-wrap">{inquiry.notes}</p>
+                    )}
+                </div>
+
+                {inquiry.ownerReply && (
+                    <div className="rounded-lg border border-primary/20 bg-primary/[0.03] p-3 space-y-1">
+                        <p className="text-xs font-medium text-primary">Ваш ответ</p>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">{inquiry.ownerReply}</p>
+                        {inquiry.repliedAt && (
+                            <p className="text-xs text-muted-foreground">
+                                {formatSubmissionDate(inquiry.repliedAt)}
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                {!isFinal && (
+                    <div className="flex flex-wrap gap-2">
+                        {canReply && (
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setReplyOpen(true)}
+                            >
+                                <Reply className="w-3.5 h-3.5 mr-1.5" />
+                                Ответить
+                            </Button>
+                        )}
+                        {canAccept && (
+                            <Button
+                                type="button"
+                                size="sm"
+                                className="bg-gradient-primary text-primary-foreground border-0"
+                                disabled={acceptMutation.isPending}
+                                onClick={() => acceptMutation.mutate({
+                                    inquiryId: inquiry.id,
+                                    propertyId: inquiry.propertyId,
+                                })}
+                            >
+                                {acceptMutation.isPending ? (
+                                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                                ) : (
+                                    <Check className="w-3.5 h-3.5 mr-1.5" />
+                                )}
+                                Принять
+                            </Button>
+                        )}
+                        {canDecline && status !== 'declined' && (
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="text-destructive hover:text-destructive"
+                                disabled={declineMutation.isPending}
+                                onClick={() => declineMutation.mutate({
+                                    inquiryId: inquiry.id,
+                                    propertyId: inquiry.propertyId,
+                                })}
+                            >
+                                {declineMutation.isPending ? (
+                                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                                ) : (
+                                    <X className="w-3.5 h-3.5 mr-1.5" />
+                                )}
+                                Отклонить
+                            </Button>
+                        )}
+                    </div>
+                )}
             </div>
 
-            <div className="rounded-lg bg-muted/50 p-3 space-y-2 text-sm">
-                {submittedAt && (
-                    <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                        <CalendarCheck className="w-3.5 h-3.5 shrink-0" />
-                        <span>Отправлено: {submittedAt}</span>
-                    </div>
-                )}
-                <p className="font-medium text-foreground">{inquiry.name}</p>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <Phone className="w-3.5 h-3.5" />
-                    <a href={`tel:${inquiry.phone}`} className="hover:text-primary">{inquiry.phone}</a>
-                </div>
-                {inquiry.email && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <Mail className="w-3.5 h-3.5" />
-                        <a href={`mailto:${inquiry.email}`} className="hover:text-primary">{inquiry.email}</a>
-                    </div>
-                )}
-                {(checkIn || checkOut || inquiry.guests) && (
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
-                        {checkIn && <span>Заезд: {checkIn}</span>}
-                        {checkOut && <span>Выезд: {checkOut}</span>}
-                        {inquiry.guests != null && (
-                            <span className="inline-flex items-center gap-1">
-                                <Users className="w-3.5 h-3.5" />
-                                {inquiry.guests}
-                            </span>
-                        )}
-                    </div>
-                )}
-                {inquiry.notes && (
-                    <p className="text-muted-foreground whitespace-pre-wrap">{inquiry.notes}</p>
-                )}
-            </div>
-        </div>
+            <Dialog open={replyOpen} onOpenChange={setReplyOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Ответ гостю</DialogTitle>
+                        <DialogDescription>
+                            Ответ будет отправлен на email гостя{inquiry.email ? ` (${inquiry.email})` : ''}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Textarea
+                        placeholder="Введите ответ..."
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        rows={5}
+                        className="resize-none"
+                    />
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setReplyOpen(false)}>
+                            Отмена
+                        </Button>
+                        <Button
+                            type="button"
+                            className="bg-gradient-primary text-primary-foreground border-0"
+                            disabled={!replyText.trim() || replyMutation.isPending}
+                            onClick={handleReply}
+                        >
+                            {replyMutation.isPending ? (
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                                <Send className="w-4 h-4 mr-2" />
+                            )}
+                            Отправить
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
 

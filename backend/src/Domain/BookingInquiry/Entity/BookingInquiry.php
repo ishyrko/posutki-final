@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\BookingInquiry\Entity;
 
+use App\Domain\BookingInquiry\ValueObject\BookingInquiryStatus;
 use App\Domain\Shared\ValueObject\Id;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -55,6 +56,18 @@ class BookingInquiry
 
     #[ORM\Column(type: 'boolean', name: 'is_read')]
     private bool $isRead = false;
+
+    #[ORM\Column(type: 'string', length: 20, enumType: BookingInquiryStatus::class)]
+    private BookingInquiryStatus $status = BookingInquiryStatus::New;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true, name: 'owner_reply')]
+    private ?string $ownerReply = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'replied_at')]
+    private ?\DateTimeImmutable $repliedAt = null;
+
+    #[ORM\Column(type: 'id', nullable: true, name: 'availability_block_id')]
+    private ?Id $availabilityBlockId = null;
 
     public function __construct(
         Id $propertyId,
@@ -149,5 +162,48 @@ class BookingInquiry
     public function markAsRead(): void
     {
         $this->isRead = true;
+    }
+
+    public function getStatus(): BookingInquiryStatus
+    {
+        return $this->status;
+    }
+
+    public function getOwnerReply(): ?string
+    {
+        return $this->ownerReply;
+    }
+
+    public function getRepliedAt(): ?\DateTimeImmutable
+    {
+        return $this->repliedAt;
+    }
+
+    public function getAvailabilityBlockId(): ?Id
+    {
+        return $this->availabilityBlockId;
+    }
+
+    public function reply(string $text): void
+    {
+        $this->ownerReply = $text;
+        $this->repliedAt = new \DateTimeImmutable();
+        $this->status = BookingInquiryStatus::Replied;
+    }
+
+    public function accept(Id $blockId): void
+    {
+        $this->status = BookingInquiryStatus::Accepted;
+        $this->availabilityBlockId = $blockId;
+    }
+
+    public function decline(): void
+    {
+        $this->status = BookingInquiryStatus::Declined;
+    }
+
+    public function detachAvailabilityBlock(): void
+    {
+        $this->availabilityBlockId = null;
     }
 }

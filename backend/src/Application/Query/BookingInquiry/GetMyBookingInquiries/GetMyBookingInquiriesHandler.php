@@ -52,12 +52,15 @@ final class GetMyBookingInquiriesHandler
             ]);
 
             $region = $city?->getRegionDistrict()?->getRegion();
+            $dealType = $property?->getDealType();
+            $hasCheckIn = $inquiry->getCheckIn() !== null;
 
             $items[] = [
                 'id' => (string) $inquiry->getId()->getValue(),
                 'propertyId' => (string) $inquiry->getPropertyId()->getValue(),
                 'propertyTitle' => $property?->getTitle(),
                 'propertyType' => $property?->getType(),
+                'propertyDealType' => $dealType,
                 'propertyCitySlug' => $city?->getSlug(),
                 'propertyRegionName' => $region?->getName(),
                 'propertyImage' => $propertyImage,
@@ -76,6 +79,13 @@ final class GetMyBookingInquiriesHandler
                 'notes' => $inquiry->getNotes(),
                 'createdAt' => $inquiry->getCreatedAt()->format(\DateTimeInterface::ATOM),
                 'isRead' => $inquiry->isRead(),
+                'status' => $inquiry->getStatus()->value,
+                'ownerReply' => $inquiry->getOwnerReply(),
+                'repliedAt' => $inquiry->getRepliedAt()?->format(\DateTimeInterface::ATOM),
+                'availabilityBlockId' => $inquiry->getAvailabilityBlockId() !== null
+                    ? (string) $inquiry->getAvailabilityBlockId()->getValue()
+                    : null,
+                'canAccept' => $hasCheckIn && $dealType === 'daily',
             ];
         }
 

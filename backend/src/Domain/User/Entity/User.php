@@ -84,6 +84,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'boolean', name: 'has_used_free_placement_trial', options: ['default' => false])]
     private bool $hasUsedFreePlacementTrial = false;
 
+    #[ORM\Column(type: 'boolean', name: 'allow_guest_booking_inquiries', options: ['default' => true])]
+    private bool $allowGuestBookingInquiries = true;
+
     public function __construct(
         ?Email $email,
         string $password,
@@ -439,6 +442,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setHasUsedFreePlacementTrial(bool $hasUsedFreePlacementTrial): void
     {
         $this->hasUsedFreePlacementTrial = $hasUsedFreePlacementTrial;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function allowsGuestBookingInquiries(): bool
+    {
+        return $this->allowGuestBookingInquiries;
+    }
+
+    public function setAllowGuestBookingInquiries(bool $allowGuestBookingInquiries): void
+    {
+        $this->allowGuestBookingInquiries = $allowGuestBookingInquiries;
         $this->updatedAt = new \DateTimeImmutable();
     }
 

@@ -47,6 +47,7 @@ export interface Property {
         }>;
         telegram?: string | null;
         hasEmail?: boolean;
+        allowsGuestInquiries?: boolean;
     };
     title: string;
     description: string;

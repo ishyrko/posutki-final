@@ -294,6 +294,8 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   const hasContactPhones = contactPhones.length > 0;
   const contactTelegram = property.contact?.telegram?.trim() ?? "";
   const canBookInquiry = property.contact?.hasEmail === true;
+  const allowsGuestInquiries = property.contact?.allowsGuestInquiries !== false;
+  const canSubmitBookingInquiry = canBookInquiry && (loggedIn || allowsGuestInquiries);
 
   const images = property.images?.map(img => img.url) || [
     "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80",
@@ -1143,7 +1145,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                       })}
                     </>
                   )}
-                  {!isOwner && canBookInquiry && (
+                  {!isOwner && canSubmitBookingInquiry && (
                     <Button
                       variant="outline"
                       className="w-full h-11"
@@ -1151,6 +1153,14 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                     >
                       <CalendarCheck className="w-4 h-4 mr-2" />
                       Заявка на бронирование
+                    </Button>
+                  )}
+                  {!isOwner && canBookInquiry && !allowsGuestInquiries && !loggedIn && (
+                    <Button variant="outline" className="w-full h-11" asChild>
+                      <Link href={loginWithReturnHref}>
+                        <CalendarCheck className="w-4 h-4 mr-2" />
+                        Войти, чтобы оставить заявку
+                      </Link>
                     </Button>
                   )}
                   {!isOwner && loggedIn && (
@@ -1263,7 +1273,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
         )}
       </AnimatePresence>
 
-      {canBookInquiry && (
+      {canSubmitBookingInquiry && (
         <BookingInquiryModal
           key={bookingOpen ? `booking-${property.id}` : 'booking-closed'}
           open={bookingOpen}

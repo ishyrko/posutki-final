@@ -44,6 +44,14 @@ final class SubmitBookingInquiryHandler
             throw new DomainException('Заявка на бронирование для этого объявления недоступна');
         }
 
+        if ($command->userId === null && !$owner->allowsGuestBookingInquiries()) {
+            throw new DomainException('Владелец принимает заявки только от зарегистрированных пользователей. Войдите в аккаунт.');
+        }
+
+        if ($command->userId === null && ($command->email === null || trim($command->email) === '')) {
+            throw new DomainException('Укажите email — на него придёт ответ владельца');
+        }
+
         $checkIn = $this->parseDate($command->checkIn);
         $checkOut = $this->parseDate($command->checkOut);
 
