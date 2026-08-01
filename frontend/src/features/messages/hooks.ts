@@ -25,6 +25,7 @@ export const useMessages = (conversationId: number, page = 1, limit = 50) => {
         queryFn: () => getMessages(conversationId, page, limit),
         enabled: isAuthenticated() && conversationId > 0,
         refetchInterval: 10000,
+        refetchOnMount: false,
     });
 };
 
@@ -48,23 +49,30 @@ export const useMarkRead = () => {
         mutationFn: (conversationId: number) => markConversationRead(conversationId),
         onMutate: async (conversationId) => {
             await queryClient.cancelQueries({ queryKey: ['conversations'] });
+
+            let unreadRemoved = 0;
             queryClient.setQueriesData<ConversationListResponse>(
                 { queryKey: ['conversations'] },
                 (old) => {
                     if (!old) return old;
                     return {
                         ...old,
-                        data: old.data.map((conversation) => (
-                            conversation.id === conversationId
-                                ? { ...conversation, unread: 0 }
-                                : conversation
-                        )),
+                        data: old.data.map((conversation) => {
+                            if (conversation.id === conversationId) {
+                                unreadRemoved = conversation.unread;
+                                return { ...conversation, unread: 0 };
+                            }
+                            return conversation;
+                        }),
                     };
                 },
             );
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['unread-count'] });
+
+            if (unreadRemoved > 0) {
+                queryClient.setQueryData<number>(['unread-count'], (old) => (
+                    Math.max(0, (old ?? 0) - unreadRemoved)
+                ));
+            }
         },
     });
 };

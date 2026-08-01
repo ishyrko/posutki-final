@@ -789,7 +789,7 @@ function ChatView({
     const [text, setText] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const markedReadRef = useRef(false);
+    const markedReadSnapshotRef = useRef<{ conversationId: number; unread: number } | null>(null);
 
     const messages = data?.data || [];
 
@@ -805,23 +805,24 @@ function ChatView({
     }, [text]);
 
     useEffect(() => {
-        markedReadRef.current = false;
-    }, [conversationId]);
-
-    useEffect(() => {
         if (conversation.unread <= 0) {
-            markedReadRef.current = false;
+            markedReadSnapshotRef.current = null;
             return;
         }
-        if (markedReadRef.current) {
+
+        const snapshot = markedReadSnapshotRef.current;
+        if (
+            snapshot?.conversationId === conversationId
+            && snapshot.unread === conversation.unread
+        ) {
             return;
         }
-        markedReadRef.current = true;
-        markConversationRead(conversationId, {
-            onSettled: () => {
-                markedReadRef.current = false;
-            },
-        });
+
+        markedReadSnapshotRef.current = {
+            conversationId,
+            unread: conversation.unread,
+        };
+        markConversationRead(conversationId);
     }, [conversationId, conversation.unread, markConversationRead]);
 
     useEffect(() => {

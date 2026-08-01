@@ -51,8 +51,9 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
     });
     const { data: history = [] } = usePropertyPlacementPurchases(purchase?.propertyId);
     const createPayment = useCreatePlacementPayment();
-    const confirmPayment = useConfirmPlacementPayment();
+    const { mutate: confirmPlacementPayment } = useConfirmPlacementPayment();
     const confirmedRef = useRef(false);
+    const awaitingTokenRef = useRef(false);
 
     const cleanReturnUrl = () => {
         router.replace(`/kabinet/oplata/${purchaseId}/`);
@@ -75,6 +76,10 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
 
         if (isSuccessReturn) {
             if (!checkoutToken) {
+                if (awaitingTokenRef.current) {
+                    return;
+                }
+                awaitingTokenRef.current = true;
                 setAwaitingActivation(true);
                 toast.message('Оплата получена, подтверждаем статус…');
                 void refetch();
@@ -85,7 +90,7 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
             confirmedRef.current = true;
             setAwaitingActivation(true);
             cleanReturnUrl();
-            confirmPayment.mutate(
+            confirmPlacementPayment(
                 { purchaseId, token: checkoutToken },
                 {
                     onSuccess: (confirmedPurchase) => {
@@ -114,8 +119,7 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
         void refetch();
     }, [
         checkoutToken,
-        confirmPayment,
-        hasReturnParams,
+        confirmPlacementPayment,
         isSuccessReturn,
         purchaseId,
         refetch,
