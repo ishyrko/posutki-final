@@ -8,6 +8,7 @@ use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\SellerType;
+use App\Application\Service\PropertyEngagementStatsCache;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
@@ -17,6 +18,7 @@ use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Doctrine\ORM\EntityManagerInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -25,7 +27,18 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
 use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
+use EasyCorp\Bundle\EasyAdminBundle\Event\AfterCrudActionEvent;
+use EasyCorp\Bundle\EasyAdminBundle\Event\BeforeCrudActionEvent;
+use EasyCorp\Bundle\EasyAdminBundle\Exception\ForbiddenActionException;
+use EasyCorp\Bundle\EasyAdminBundle\Factory\ActionFactory;
+use EasyCorp\Bundle\EasyAdminBundle\Factory\EntityFactory;
+use EasyCorp\Bundle\EasyAdminBundle\Factory\FieldFactory;
+use EasyCorp\Bundle\EasyAdminBundle\Factory\FilterFactory;
+use EasyCorp\Bundle\EasyAdminBundle\Factory\PaginatorFactory;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGeneratorInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Option\EA;
+use EasyCorp\Bundle\EasyAdminBundle\Security\Permission;
 use LogicException;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
@@ -55,6 +68,7 @@ class PropertyCrudController extends AbstractCrudController
         protected readonly CityRepositoryInterface $cityRepository,
         protected readonly StreetRepositoryInterface $streetRepository,
         protected readonly UserRepositoryInterface $userRepository,
+        protected readonly PropertyEngagementStatsCache $propertyEngagementStatsCache,
     ) {
     }
 
@@ -83,6 +97,55 @@ class PropertyCrudController extends AbstractCrudController
             ->disable(Action::NEW)
             ->add(Crud::PAGE_INDEX, $syncMetroProximity)
             ->add(Crud::PAGE_EDIT, $syncMetroProximity);
+    }
+
+    public function index(AdminContext $context): KeyValueStore|Response
+    {
+        $event = new BeforeCrudActionEvent($context);
+        $this->container->get('event_dispatcher')->dispatch($event);
+        if ($event->isPropagationStopped()) {
+            return $event->getResponse();
+        }
+
+        if (!$this->isGranted(Permission::EA_EXECUTE_ACTION, ['action' => Action::INDEX, 'entity' => null, 'entityFqcn' => $context->getEntity()->getFqcn()])) {
+            throw new ForbiddenActionException($context);
+        }
+
+        $fields = new FieldCollection($this->configureFields(Crud::PAGE_INDEX));
+        $filters = $this->container->get(FilterFactory::class)->create($context->getCrud()->getFiltersConfig(), $fields, $context->getEntity());
+        $queryBuilder = $this->createIndexQueryBuilder($context->getSearch(), $context->getEntity(), $fields, $filters);
+        $paginator = $this->container->get(PaginatorFactory::class)->create($queryBuilder);
+
+        if ($paginator->isOutOfRange()) {
+            return $this->redirect($this->container->get(AdminUrlGeneratorInterface::class)
+                ->set(EA::PAGE, $paginator->getLastPage())
+                ->generateUrl());
+        }
+
+        $entities = $this->container->get(EntityFactory::class)->createCollection($context->getEntity(), $paginator->getResults());
+        $this->warmUpEngagementStatsForEntities($paginator->getResults());
+        $this->container->get(FieldFactory::class)->processFieldsForAll($entities, $fields, Crud::PAGE_INDEX);
+        $processedFields = $entities->first()?->getFields() ?? new FieldCollection([]);
+        $context->getCrud()->setFieldAssets($this->getFieldAssets($processedFields));
+        $actions = $this->container->get(ActionFactory::class)->processGlobalActionsAndEntityActionsForAll($entities, $context->getCrud()->getActionsConfig());
+
+        $responseParameters = $this->configureResponseParameters(KeyValueStore::new([
+            'pageName' => Crud::PAGE_INDEX,
+            'templateName' => 'crud/index',
+            'entities' => $entities,
+            'paginator' => $paginator,
+            'global_actions' => $actions->getGlobalActions(),
+            'batch_actions' => $actions->getBatchActions(),
+            'filters' => $filters,
+        ]));
+
+        $event = new AfterCrudActionEvent($context, $responseParameters);
+        $this->container->get('event_dispatcher')->dispatch($event);
+        if ($event->isPropagationStopped()) {
+            return $event->getResponse();
+        }
+
+        return $responseParameters;
     }
 
     public function syncMetroProximity(AdminContext $context, Request $request): Response
@@ -391,9 +454,18 @@ class PropertyCrudController extends AbstractCrudController
         yield IntegerField::new('views', 'Просмотры')
             ->hideOnForm();
 
-        yield IntegerField::new('phoneViews', 'Просмотры телефона')
-            ->hideOnForm()
-            ->hideOnIndex();
+        yield IntegerField::new('phoneViews', 'Просмотры контакта')
+            ->hideOnForm();
+
+        yield IntegerField::new('adminDistinctInquirers', 'Заявки')
+            ->onlyOnIndex()
+            ->setValue(0)
+            ->formatValue(fn ($value, Property $property): int => $this->propertyEngagementStatsCache->getDistinctInquirers($property->getId()->getValue()));
+
+        yield IntegerField::new('adminDistinctMessageSenders', 'Сообщения')
+            ->onlyOnIndex()
+            ->setValue(0)
+            ->formatValue(fn ($value, Property $property): int => $this->propertyEngagementStatsCache->getDistinctMessageSenders($property->getId()->getValue()));
 
         yield DateTimeField::new('createdAt', 'Создано')
             ->hideOnForm();
@@ -547,6 +619,21 @@ class PropertyCrudController extends AbstractCrudController
         }
 
         return sprintf('#%s', $ownerId);
+    }
+
+    /**
+     * @param iterable<Property> $properties
+     */
+    private function warmUpEngagementStatsForEntities(iterable $properties): void
+    {
+        $propertyIds = [];
+        foreach ($properties as $property) {
+            if ($property instanceof Property) {
+                $propertyIds[] = $property->getId()->getValue();
+            }
+        }
+
+        $this->propertyEngagementStatsCache->warmUp($propertyIds);
     }
 
     private function enrichAdminAddressLabels(Property $property): void

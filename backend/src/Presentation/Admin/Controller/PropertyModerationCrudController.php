@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Admin\Controller;
 
+use App\Application\Service\PropertyEngagementStatsCache;
 use App\Application\Command\CommandBusInterface;
 use App\Application\Command\Property\ApproveRevision\ApproveRevisionCommand;
 use App\Application\Command\Property\RejectRevision\RejectRevisionCommand;
@@ -46,6 +47,7 @@ final class PropertyModerationCrudController extends PropertyCrudController
         CityRepositoryInterface $cityRepository,
         StreetRepositoryInterface $streetRepository,
         UserRepositoryInterface $userRepository,
+        PropertyEngagementStatsCache $propertyEngagementStatsCache,
         private readonly CommandBusInterface $commandBus,
         private readonly MessageBusInterface $notificationBus,
         private readonly PropertyPlacementService $placementService,
@@ -58,6 +60,7 @@ final class PropertyModerationCrudController extends PropertyCrudController
             $cityRepository,
             $streetRepository,
             $userRepository,
+            $propertyEngagementStatsCache,
         );
     }
 

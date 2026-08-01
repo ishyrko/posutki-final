@@ -91,6 +91,9 @@ services:
     App\Domain\Property\Repository\AdminPropertyStatsRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\AdminPropertyStatsRepository
 
+    App\Domain\Property\Repository\PropertyEngagementStatsRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyEngagementStatsRepository
+
     App\Domain\Property\Repository\PropertyAvailabilityBlockRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyAvailabilityBlockRepository
 
