@@ -31,6 +31,11 @@ export type BookingInquiryPayload = BookingInquiryFormData & {
     recaptchaToken: string;
 };
 
+export interface BookingInquiryReply {
+    text: string;
+    repliedAt?: string | null;
+}
+
 export interface BookingInquiryItem {
     id: string;
     propertyId: string;
@@ -56,6 +61,7 @@ export interface BookingInquiryItem {
     status: BookingInquiryStatus;
     ownerReply?: string | null;
     repliedAt?: string | null;
+    ownerReplies?: BookingInquiryReply[];
     availabilityBlockId?: string | null;
     canAccept?: boolean;
     canReply?: boolean;

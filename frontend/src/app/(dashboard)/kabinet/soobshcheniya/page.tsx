@@ -17,6 +17,8 @@ import {
     Mail,
     Reply,
     X,
+    ChevronDown,
+    ChevronUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -142,6 +144,7 @@ function ConversationList({
 function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
     const [replyOpen, setReplyOpen] = useState(false);
     const [replyText, setReplyText] = useState('');
+    const [showAllReplies, setShowAllReplies] = useState(false);
     const replyMutation = useReplyToBookingInquiry();
     const acceptMutation = useAcceptBookingInquiry();
     const declineMutation = useDeclineBookingInquiry();
@@ -162,9 +165,18 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
 
     const status = inquiry.status ?? 'new';
     const isFinal = status === 'accepted' || status === 'declined';
-    const canReply = !isFinal && inquiry.canReply === true;
-    const canAccept = inquiry.canAccept === true && status !== 'accepted' && status !== 'declined';
-    const canDecline = status !== 'declined';
+    const canReply = inquiry.canReply === true;
+    const canAccept = inquiry.canAccept === true && !isFinal;
+    const canDecline = !isFinal;
+    const ownerReplies = inquiry.ownerReplies?.length
+        ? inquiry.ownerReplies
+        : inquiry.ownerReply
+            ? [{ text: inquiry.ownerReply, repliedAt: inquiry.repliedAt }]
+            : [];
+    const hasMultipleReplies = ownerReplies.length > 1;
+    const visibleReplies = showAllReplies || !hasMultipleReplies
+        ? ownerReplies
+        : ownerReplies.slice(-1);
 
     const handleReply = () => {
         const trimmed = replyText.trim();
@@ -235,16 +247,12 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                                             {inquiry.propertyTitle || 'Объявление'}
                                         </p>
                                     )}
-                                    {isUnread && status === 'new' && (
-                                        <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
-                                            Новая
-                                        </span>
-                                    )}
                                     <span className={cn(
                                         'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium',
                                         status === 'accepted' && 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
                                         status === 'declined' && 'bg-muted text-muted-foreground',
                                         status === 'replied' && 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                                        status === 'new' && isUnread && 'bg-primary text-primary-foreground',
                                         status === 'new' && !isUnread && 'bg-muted text-muted-foreground',
                                     )}
                                     >
@@ -307,19 +315,57 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                     )}
                 </div>
 
-                {inquiry.ownerReply && (
-                    <div className="rounded-lg border border-primary/20 bg-primary/[0.03] p-3 space-y-1">
-                        <p className="text-xs font-medium text-primary">Ваш ответ</p>
-                        <p className="text-sm text-foreground whitespace-pre-wrap">{inquiry.ownerReply}</p>
-                        {inquiry.repliedAt && (
-                            <p className="text-xs text-muted-foreground">
-                                {formatSubmissionDate(inquiry.repliedAt)}
-                            </p>
+                {ownerReplies.length > 0 && (
+                    <div className="space-y-2">
+                        {visibleReplies.map((reply, index) => {
+                            const replyKey = `${reply.repliedAt ?? 'reply'}-${index}-${reply.text.slice(0, 24)}`;
+                            const isLatestOnly = !showAllReplies && hasMultipleReplies;
+                            return (
+                                <div
+                                    key={replyKey}
+                                    className="rounded-lg border border-primary/20 bg-primary/[0.03] p-3 space-y-1"
+                                >
+                                    <p className="text-xs font-medium text-primary">
+                                        {isLatestOnly
+                                            ? 'Ваш последний ответ'
+                                            : hasMultipleReplies
+                                                ? `Ваш ответ ${showAllReplies ? index + 1 : ownerReplies.length}`
+                                                : 'Ваш ответ'}
+                                    </p>
+                                    <p className="text-sm text-foreground whitespace-pre-wrap">{reply.text}</p>
+                                    {reply.repliedAt && (
+                                        <p className="text-xs text-muted-foreground">
+                                            {formatSubmissionDate(reply.repliedAt)}
+                                        </p>
+                                    )}
+                                </div>
+                            );
+                        })}
+                        {hasMultipleReplies && (
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 px-2 text-xs text-muted-foreground"
+                                onClick={() => setShowAllReplies((prev) => !prev)}
+                            >
+                                {showAllReplies ? (
+                                    <>
+                                        <ChevronUp className="w-3.5 h-3.5 mr-1" />
+                                        Скрыть ответы
+                                    </>
+                                ) : (
+                                    <>
+                                        <ChevronDown className="w-3.5 h-3.5 mr-1" />
+                                        Показать все ответы ({ownerReplies.length})
+                                    </>
+                                )}
+                            </Button>
                         )}
                     </div>
                 )}
 
-                {!isFinal && (
+                {(canReply || canAccept || canDecline) && (
                     <div className="flex flex-wrap gap-2">
                         {canReply && (
                             <Button
@@ -348,10 +394,10 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                                 ) : (
                                     <Check className="w-3.5 h-3.5 mr-1.5" />
                                 )}
-                                Принять
+                                Забронировать даты в календаре
                             </Button>
                         )}
-                        {canDecline && status !== 'declined' && (
+                        {canDecline && (
                             <Button
                                 type="button"
                                 size="sm"
@@ -368,7 +414,7 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                                 ) : (
                                     <X className="w-3.5 h-3.5 mr-1.5" />
                                 )}
-                                Отклонить
+                                Игнорировать
                             </Button>
                         )}
                     </div>

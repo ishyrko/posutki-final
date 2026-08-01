@@ -212,4 +212,14 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Radix Dialog sets body { pointer-events: none }; keep reCAPTCHA challenge clickable */
+  body > div[style*="z-index: 2000000000"],
+  body > div[style*="z-index: 2000000000"] * {
+    pointer-events: auto !important;
+  }
+
+  iframe[src*="google.com/recaptcha"] {
+    pointer-events: auto !important;
+  }
 }

@@ -82,6 +82,7 @@ final class GetMyBookingInquiriesHandler
                 'status' => $inquiry->getStatus()->value,
                 'ownerReply' => $inquiry->getOwnerReply(),
                 'repliedAt' => $inquiry->getRepliedAt()?->format(\DateTimeInterface::ATOM),
+                'ownerReplies' => $inquiry->getOwnerReplies(),
                 'availabilityBlockId' => $inquiry->getAvailabilityBlockId() !== null
                     ? (string) $inquiry->getAvailabilityBlockId()->getValue()
                     : null,

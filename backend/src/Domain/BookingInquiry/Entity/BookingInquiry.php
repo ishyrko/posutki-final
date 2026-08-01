@@ -66,6 +66,10 @@ class BookingInquiry
     #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'replied_at')]
     private ?\DateTimeImmutable $repliedAt = null;
 
+    /** @var list<array{text: string, repliedAt: string}> */
+    #[ORM\Column(type: 'json', name: 'owner_replies')]
+    private array $ownerReplies = [];
+
     #[ORM\Column(type: 'id', nullable: true, name: 'availability_block_id')]
     private ?Id $availabilityBlockId = null;
 
@@ -179,6 +183,35 @@ class BookingInquiry
         return $this->repliedAt;
     }
 
+    /**
+     * @return list<array{text: string, repliedAt: string|null}>
+     */
+    public function getOwnerReplies(): array
+    {
+        if ($this->ownerReplies === [] && $this->ownerReply !== null) {
+            return [[
+                'text' => $this->ownerReply,
+                'repliedAt' => $this->repliedAt?->format(\DateTimeInterface::ATOM),
+            ]];
+        }
+
+        return array_values(array_map(
+            static function (mixed $reply): array {
+                if (!is_array($reply)) {
+                    return ['text' => '', 'repliedAt' => null];
+                }
+
+                return [
+                    'text' => isset($reply['text']) && is_string($reply['text']) ? $reply['text'] : '',
+                    'repliedAt' => isset($reply['repliedAt']) && is_string($reply['repliedAt'])
+                        ? $reply['repliedAt']
+                        : null,
+                ];
+            },
+            $this->ownerReplies,
+        ));
+    }
+
     public function getAvailabilityBlockId(): ?Id
     {
         return $this->availabilityBlockId;
@@ -186,9 +219,18 @@ class BookingInquiry
 
     public function reply(string $text): void
     {
+        $now = new \DateTimeImmutable();
+        $this->ownerReplies[] = [
+            'text' => $text,
+            'repliedAt' => $now->format(\DateTimeInterface::ATOM),
+        ];
         $this->ownerReply = $text;
-        $this->repliedAt = new \DateTimeImmutable();
-        $this->status = BookingInquiryStatus::Replied;
+        $this->repliedAt = $now;
+        if ($this->status !== BookingInquiryStatus::Accepted
+            && $this->status !== BookingInquiryStatus::Declined
+        ) {
+            $this->status = BookingInquiryStatus::Replied;
+        }
     }
 
     public function accept(Id $blockId): void

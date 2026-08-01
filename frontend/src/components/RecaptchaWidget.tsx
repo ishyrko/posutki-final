@@ -2,6 +2,7 @@
 
 import type { RefObject } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { useRecaptchaPointerEventsFix } from '@/lib/recaptcha-pointer-events';
 
 type RecaptchaWidgetProps = {
     recaptchaRef: RefObject<ReCAPTCHA | null>;
@@ -11,6 +12,7 @@ type RecaptchaWidgetProps = {
 
 export function RecaptchaWidget({ recaptchaRef, onChange, onExpired }: RecaptchaWidgetProps) {
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim() ?? '';
+    useRecaptchaPointerEventsFix(Boolean(siteKey));
     if (!siteKey) {
         return null;
     }

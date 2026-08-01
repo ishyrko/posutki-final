@@ -33,6 +33,7 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { RecaptchaWidget } from '@/components/RecaptchaWidget';
+import { useRecaptchaPointerEventsFix } from '@/lib/recaptcha-pointer-events';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/features/auth/hooks';
 import { formatAddress, Property } from '@/features/properties/types';
@@ -81,6 +82,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
     const [submitted, setSubmitted] = useState(false);
 
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim() ?? '';
+    useRecaptchaPointerEventsFix(open && Boolean(siteKey));
     const recaptchaRef = useRef<ReCAPTCHA | null>(null);
     const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
 
@@ -191,7 +193,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             {open ? (
-                <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+                <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-visible p-0 gap-0">
                     <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
                         <DialogTitle className="text-center text-xl font-display">
                             Заявка на бронирование
@@ -216,7 +218,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                             </Button>
                         </div>
                     ) : (
-                        <div className="grid md:grid-cols-[1fr_240px]">
+                        <div className="grid md:grid-cols-[1fr_240px] max-h-[calc(90vh-5rem)] overflow-y-auto">
                             <div className="px-6 py-5">
                                 <Form {...form}>
                                     <form

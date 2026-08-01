@@ -55,6 +55,7 @@ final class ReplyToBookingInquiryHandler
             'status' => $inquiry->getStatus()->value,
             'ownerReply' => $inquiry->getOwnerReply(),
             'repliedAt' => $inquiry->getRepliedAt()?->format(\DateTimeInterface::ATOM),
+            'ownerReplies' => $inquiry->getOwnerReplies(),
         ];
     }
 

@@ -70,6 +70,73 @@ final class BookingInquiryHandlersTest extends TestCase
         self::assertSame('replied', $result['status']);
         self::assertSame('Даты свободны', $inquiry->getOwnerReply());
         self::assertSame(BookingInquiryStatus::Replied, $inquiry->getStatus());
+        self::assertCount(1, $inquiry->getOwnerReplies());
+        self::assertSame('Даты свободны', $inquiry->getOwnerReplies()[0]['text']);
+    }
+
+    public function testReplyAppendsToHistory(): void
+    {
+        $inquiry = $this->createInquiry(email: 'guest@example.com');
+        $this->setEntityId($inquiry, 1);
+        $inquiry->reply('Первый ответ');
+
+        $repository = $this->createMock(BookingInquiryRepositoryInterface::class);
+        $repository->method('findById')->willReturn($inquiry);
+        $repository->expects(self::once())->method('save')->with($inquiry);
+
+        $notificationBus = $this->createMock(MessageBusInterface::class);
+        $notificationBus
+            ->expects(self::once())
+            ->method('dispatch')
+            ->willReturn(new Envelope(new \stdClass()));
+
+        $handler = new ReplyToBookingInquiryHandler(
+            $repository,
+            $notificationBus,
+        );
+
+        ($handler)(new ReplyToBookingInquiryCommand(
+            inquiryId: '1',
+            ownerId: '10',
+            text: 'Второй ответ',
+        ));
+
+        self::assertSame('Второй ответ', $inquiry->getOwnerReply());
+        self::assertCount(2, $inquiry->getOwnerReplies());
+        self::assertSame('Первый ответ', $inquiry->getOwnerReplies()[0]['text']);
+        self::assertSame('Второй ответ', $inquiry->getOwnerReplies()[1]['text']);
+    }
+
+    public function testReplyKeepsAcceptedStatus(): void
+    {
+        $inquiry = $this->createInquiry(email: 'guest@example.com');
+        $this->setEntityId($inquiry, 1);
+        $inquiry->accept(Id::fromInt(50));
+
+        $repository = $this->createMock(BookingInquiryRepositoryInterface::class);
+        $repository->method('findById')->willReturn($inquiry);
+        $repository->expects(self::once())->method('save')->with($inquiry);
+
+        $notificationBus = $this->createMock(MessageBusInterface::class);
+        $notificationBus
+            ->expects(self::once())
+            ->method('dispatch')
+            ->willReturn(new Envelope(new \stdClass()));
+
+        $handler = new ReplyToBookingInquiryHandler(
+            $repository,
+            $notificationBus,
+        );
+
+        $result = ($handler)(new ReplyToBookingInquiryCommand(
+            inquiryId: '1',
+            ownerId: '10',
+            text: 'Ждём вас',
+        ));
+
+        self::assertSame('accepted', $result['status']);
+        self::assertSame('Ждём вас', $inquiry->getOwnerReply());
+        self::assertSame(BookingInquiryStatus::Accepted, $inquiry->getStatus());
     }
 
     public function testReplyFailsWithoutGuestEmail(): void
