@@ -24,7 +24,7 @@ readonly class DeleteUserPhoneHandler
             throw new DomainException('Телефон не найден');
         }
 
-        if ($userPhone->getUserId()->getValue() !== $command->userId) {
+        if ($userPhone->getUserId()->getValue() !== (int) $command->userId) {
             throw new DomainException('Доступ запрещён');
         }
 
