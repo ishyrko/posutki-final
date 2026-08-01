@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { CLIENT_BUILD_ID } from "@/lib/client-build-id";
+import { hardReloadAfterDeploy } from "@/lib/hard-reload";
 
 const BUILD_ID_ENDPOINT = "/build-id/";
 const POLL_INTERVAL_MS = 30 * 60 * 1000;
@@ -45,7 +46,7 @@ export default function DeployVersionGuard() {
           duration: Infinity,
           action: {
             label: "Обновить",
-            onClick: () => window.location.reload(),
+            onClick: () => void hardReloadAfterDeploy(latest),
           },
         });
       } catch {
@@ -61,6 +62,10 @@ export default function DeployVersionGuard() {
 
     document.addEventListener("visibilitychange", onVisibilityChange);
     const intervalId = window.setInterval(checkForNewBuild, POLL_INTERVAL_MS);
+
+    if (document.visibilityState === "visible") {
+      void checkForNewBuild();
+    }
 
     return () => {
       cancelled = true;

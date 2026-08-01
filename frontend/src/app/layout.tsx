@@ -42,6 +42,24 @@ export default function RootLayout({
   const staleChunkReloadGuard = `
     (function () {
       var key = 'posutki-chunk-reload';
+      function hardReload() {
+        function navigate() {
+          try {
+            var url = new URL(window.location.href);
+            url.searchParams.set('_cb', String(Date.now()));
+            window.location.replace(url.toString());
+          } catch (e) {
+            window.location.reload();
+          }
+        }
+        if ('caches' in window) {
+          caches.keys().then(function (keys) {
+            return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+          }).then(navigate).catch(navigate);
+        } else {
+          navigate();
+        }
+      }
       function maybeReload(reason) {
         if (!reason || !/loading chunk|chunkloaderror|failed to fetch dynamically imported module/i.test(String(reason))) {
           return;
@@ -50,7 +68,7 @@ export default function RootLayout({
           if (sessionStorage.getItem(key)) return;
           sessionStorage.setItem(key, '1');
         } catch (e) {}
-        window.location.reload();
+        hardReload();
       }
       window.addEventListener('unhandledrejection', function (event) {
         var reason = event.reason && (event.reason.message || event.reason);
