@@ -48,20 +48,8 @@ readonly class VerifyPhoneHandler
         }
 
         $mainPhone = $user->getPhone();
-        if ($mainPhone === null || trim($mainPhone) === '') {
+        if ($mainPhone === null || trim($mainPhone) === '' || !$user->isPhoneVerified()) {
             $user->setVerifiedProfilePhone($normalizedPhone);
-            try {
-                $this->userRepository->save($user);
-            } catch (UniqueConstraintViolationException) {
-                throw new ConflictException('Этот телефон уже подтверждён другим пользователем');
-            }
-
-            return;
-        }
-
-        $mainPhoneNormalized = PhoneNumberNormalizer::normalize($mainPhone);
-        if ($mainPhoneNormalized === $normalizedPhone) {
-            $user->markPhoneVerified();
             try {
                 $this->userRepository->save($user);
             } catch (UniqueConstraintViolationException) {
