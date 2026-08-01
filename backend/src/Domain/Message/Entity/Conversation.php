@@ -42,6 +42,9 @@ class Conversation
     #[ORM\Column(type: 'datetime_immutable', name: 'created_at')]
     private \DateTimeImmutable $createdAt;
 
+    #[ORM\Column(type: 'id', nullable: true, name: 'booking_inquiry_id')]
+    private ?Id $bookingInquiryId = null;
+
     public function __construct(
         Id $propertyId,
         Id $sellerId,
@@ -96,6 +99,20 @@ class Conversation
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    public function getBookingInquiryId(): ?string
+    {
+        return $this->bookingInquiryId !== null
+            ? (string) $this->bookingInquiryId->getValue()
+            : null;
+    }
+
+    public function linkBookingInquiry(Id $inquiryId): void
+    {
+        if ($this->bookingInquiryId === null) {
+            $this->bookingInquiryId = $inquiryId;
+        }
     }
 
     public function addMessage(string $text, string $senderId): void

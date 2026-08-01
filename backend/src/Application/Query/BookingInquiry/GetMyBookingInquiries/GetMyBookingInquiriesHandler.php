@@ -90,6 +90,7 @@ final class GetMyBookingInquiriesHandler
                 'canReply' => $inquiry->getUserId() === null
                     && $inquiry->getEmail() !== null
                     && trim($inquiry->getEmail()) !== '',
+                'canMessage' => $inquiry->getUserId() !== null,
             ];
         }
 

@@ -6,6 +6,8 @@ namespace App\Tests\Application\Message;
 
 use App\Application\Command\Message\SendMessage\SendMessageCommand;
 use App\Application\Command\Message\SendMessage\SendMessageHandler;
+use App\Domain\BookingInquiry\Entity\BookingInquiry;
+use App\Domain\BookingInquiry\Repository\BookingInquiryRepositoryInterface;
 use App\Domain\Message\Entity\Conversation;
 use App\Domain\Message\Entity\Message;
 use App\Domain\Message\Event\MessageSentEvent;
@@ -75,7 +77,7 @@ final class SendMessageHandlerTest extends TestCase
             }))
             ->willReturn(new Envelope(new \stdClass()));
 
-        $handler = new SendMessageHandler(
+        $handler = $this->createHandler(
             $conversationRepository,
             $messageRepository,
             $propertyRepository,
@@ -87,6 +89,195 @@ final class SendMessageHandlerTest extends TestCase
             senderId: '5',
             propertyId: '100',
             text: 'Привет!',
+        ));
+    }
+
+    public function testSellerCanStartConversationWithBuyer(): void
+    {
+        $conversationRepository = $this->createMock(ConversationRepositoryInterface::class);
+        $messageRepository = $this->createMock(MessageRepositoryInterface::class);
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $userRepository = $this->createMock(UserRepositoryInterface::class);
+        $notificationBus = $this->createMock(MessageBusInterface::class);
+
+        $property = $this->createMock(Property::class);
+        $property->method('getOwnerId')->willReturn(Id::fromInt(10));
+        $propertyRepository->method('findById')->willReturn($property);
+
+        $buyer = User::register(Email::fromString('buyer@example.com'), '', 'Buyer', 'User');
+        $userRepository->method('findById')->willReturn($buyer);
+
+        $conversationRepository->method('findByPropertyAndBuyer')->willReturn(null);
+        $conversationRepository
+            ->expects(self::exactly(2))
+            ->method('save')
+            ->willReturnCallback(function (Conversation $conversation): void {
+                $idReflection = new \ReflectionProperty($conversation, 'id');
+                $idReflection->setAccessible(true);
+                if (!$idReflection->isInitialized($conversation)) {
+                    $idReflection->setValue($conversation, Id::fromInt(77));
+                }
+            });
+
+        $messageRepository
+            ->expects(self::once())
+            ->method('save')
+            ->willReturnCallback(function (Message $message): void {
+                $idReflection = new \ReflectionProperty($message, 'id');
+                $idReflection->setAccessible(true);
+                if (!$idReflection->isInitialized($message)) {
+                    $idReflection->setValue($message, Id::fromInt(88));
+                }
+            });
+
+        $notificationBus
+            ->expects(self::once())
+            ->method('dispatch')
+            ->willReturn(new Envelope(new \stdClass()));
+
+        $handler = $this->createHandler(
+            $conversationRepository,
+            $messageRepository,
+            $propertyRepository,
+            $userRepository,
+            $notificationBus,
+        );
+
+        $result = $handler(new SendMessageCommand(
+            senderId: '10',
+            propertyId: '100',
+            text: 'Даты свободны',
+            buyerId: '5',
+        ));
+
+        self::assertSame(77, $result['conversationId']);
+    }
+
+    public function testSellerCanLinkBookingInquiryWhenStartingConversation(): void
+    {
+        $conversationRepository = $this->createMock(ConversationRepositoryInterface::class);
+        $messageRepository = $this->createMock(MessageRepositoryInterface::class);
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $userRepository = $this->createMock(UserRepositoryInterface::class);
+        $bookingInquiryRepository = $this->createMock(BookingInquiryRepositoryInterface::class);
+        $notificationBus = $this->createMock(MessageBusInterface::class);
+
+        $property = $this->createMock(Property::class);
+        $property->method('getOwnerId')->willReturn(Id::fromInt(10));
+        $propertyRepository->method('findById')->willReturn($property);
+
+        $buyer = User::register(Email::fromString('buyer@example.com'), '', 'Buyer', 'User');
+        $userRepository->method('findById')->willReturn($buyer);
+
+        $inquiry = new BookingInquiry(
+            propertyId: Id::fromInt(100),
+            ownerId: Id::fromInt(10),
+            name: 'Иван',
+            phone: '+375291112233',
+            userId: Id::fromInt(5),
+            email: 'buyer@example.com',
+            checkIn: new \DateTimeImmutable('2026-08-05'),
+            checkOut: new \DateTimeImmutable('2026-08-07'),
+        );
+        $this->setEntityId($inquiry, 15);
+
+        $bookingInquiryRepository->method('findById')->with('15')->willReturn($inquiry);
+
+        $savedConversation = null;
+        $conversationRepository->method('findByPropertyAndBuyer')->willReturn(null);
+        $conversationRepository
+            ->expects(self::exactly(2))
+            ->method('save')
+            ->willReturnCallback(function (Conversation $conversation) use (&$savedConversation): void {
+                $idReflection = new \ReflectionProperty($conversation, 'id');
+                $idReflection->setAccessible(true);
+                if (!$idReflection->isInitialized($conversation)) {
+                    $idReflection->setValue($conversation, Id::fromInt(77));
+                }
+                $savedConversation = $conversation;
+            });
+
+        $messageRepository
+            ->expects(self::once())
+            ->method('save')
+            ->willReturnCallback(function (Message $message): void {
+                $idReflection = new \ReflectionProperty($message, 'id');
+                $idReflection->setAccessible(true);
+                if (!$idReflection->isInitialized($message)) {
+                    $idReflection->setValue($message, Id::fromInt(88));
+                }
+            });
+
+        $notificationBus
+            ->expects(self::once())
+            ->method('dispatch')
+            ->willReturn(new Envelope(new \stdClass()));
+
+        $handler = $this->createHandler(
+            $conversationRepository,
+            $messageRepository,
+            $propertyRepository,
+            $userRepository,
+            $notificationBus,
+            $bookingInquiryRepository,
+        );
+
+        $handler(new SendMessageCommand(
+            senderId: '10',
+            propertyId: '100',
+            text: 'Подтверждаю бронирование',
+            buyerId: '5',
+            bookingInquiryId: '15',
+        ));
+
+        self::assertNotNull($savedConversation);
+        self::assertSame('15', $savedConversation->getBookingInquiryId());
+    }
+
+    public function testSendFailsForInvalidBookingInquiry(): void
+    {
+        $conversationRepository = $this->createMock(ConversationRepositoryInterface::class);
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $userRepository = $this->createMock(UserRepositoryInterface::class);
+        $bookingInquiryRepository = $this->createMock(BookingInquiryRepositoryInterface::class);
+
+        $property = $this->createMock(Property::class);
+        $property->method('getOwnerId')->willReturn(Id::fromInt(10));
+        $propertyRepository->method('findById')->willReturn($property);
+
+        $buyer = User::register(Email::fromString('buyer@example.com'), '', 'Buyer', 'User');
+        $userRepository->method('findById')->willReturn($buyer);
+
+        $inquiry = new BookingInquiry(
+            propertyId: Id::fromInt(200),
+            ownerId: Id::fromInt(10),
+            name: 'Иван',
+            phone: '+375291112233',
+            userId: Id::fromInt(5),
+        );
+        $this->setEntityId($inquiry, 15);
+        $bookingInquiryRepository->method('findById')->willReturn($inquiry);
+
+        $conversationRepository->method('findByPropertyAndBuyer')->willReturn(null);
+
+        $handler = $this->createHandler(
+            $conversationRepository,
+            $this->createStub(MessageRepositoryInterface::class),
+            $propertyRepository,
+            $userRepository,
+            $this->createStub(MessageBusInterface::class),
+            $bookingInquiryRepository,
+        );
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Заявка относится к другому объявлению');
+
+        $handler(new SendMessageCommand(
+            senderId: '10',
+            propertyId: '100',
+            text: 'Ответ',
+            buyerId: '5',
+            bookingInquiryId: '15',
         ));
     }
 
@@ -106,7 +297,7 @@ final class SendMessageHandlerTest extends TestCase
         $owner->setAllowMessagesAndInquiries(false);
         $userRepository->method('findById')->willReturn($owner);
 
-        $handler = new SendMessageHandler(
+        $handler = $this->createHandler(
             $conversationRepository,
             $this->createStub(MessageRepositoryInterface::class),
             $propertyRepository,
@@ -122,5 +313,30 @@ final class SendMessageHandlerTest extends TestCase
             propertyId: '100',
             text: 'Привет!',
         ));
+    }
+
+    private function createHandler(
+        ConversationRepositoryInterface $conversationRepository,
+        MessageRepositoryInterface $messageRepository,
+        PropertyRepositoryInterface $propertyRepository,
+        UserRepositoryInterface $userRepository,
+        MessageBusInterface $notificationBus,
+        ?BookingInquiryRepositoryInterface $bookingInquiryRepository = null,
+    ): SendMessageHandler {
+        return new SendMessageHandler(
+            $conversationRepository,
+            $messageRepository,
+            $propertyRepository,
+            $userRepository,
+            $bookingInquiryRepository ?? $this->createStub(BookingInquiryRepositoryInterface::class),
+            $notificationBus,
+        );
+    }
+
+    private function setEntityId(BookingInquiry $inquiry, int $id): void
+    {
+        $idReflection = new \ReflectionProperty($inquiry, 'id');
+        $idReflection->setAccessible(true);
+        $idReflection->setValue($inquiry, Id::fromInt($id));
     }
 }

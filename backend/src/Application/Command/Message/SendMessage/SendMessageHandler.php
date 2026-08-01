@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Command\Message\SendMessage;
 
+use App\Domain\BookingInquiry\Repository\BookingInquiryRepositoryInterface;
 use App\Domain\Message\Entity\Conversation;
 use App\Domain\Message\Entity\Message;
 use App\Domain\Message\Event\MessageSentEvent;
@@ -22,6 +23,7 @@ final class SendMessageHandler
         private readonly MessageRepositoryInterface $messageRepository,
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly UserRepositoryInterface $userRepository,
+        private readonly BookingInquiryRepositoryInterface $bookingInquiryRepository,
         private readonly MessageBusInterface $notificationBus,
     ) {
     }
@@ -48,29 +50,60 @@ final class SendMessageHandler
                 throw new DomainException('Объявление не найдено');
             }
 
-            $sellerId = $property->getOwnerId()->getValue();
+            $sellerId = (string) $property->getOwnerId()->getValue();
 
-            if ((string) $sellerId === $command->senderId) {
-                throw new DomainException('Нельзя написать самому себе');
-            }
-
-            $conversation = $this->conversationRepository->findByPropertyAndBuyer(
-                $command->propertyId,
-                $command->senderId,
-            );
-
-            if ($conversation === null) {
-                $owner = $this->userRepository->findById(Id::fromInt($sellerId));
-                if ($owner === null || !$owner->allowsMessagesAndInquiries()) {
-                    throw new DomainException('Владелец отключил приём сообщений и заявок на бронирование');
+            if ($command->buyerId !== null) {
+                if ($sellerId !== $command->senderId) {
+                    throw new DomainException('Только владелец объявления может начать переписку с гостем');
+                }
+                if ($command->buyerId === $command->senderId) {
+                    throw new DomainException('Нельзя написать самому себе');
                 }
 
-                $conversation = new Conversation(
-                    propertyId: Id::fromString($command->propertyId),
-                    sellerId: Id::fromInt($sellerId),
-                    buyerId: Id::fromString($command->senderId),
+                $buyer = $this->userRepository->findById(Id::fromString($command->buyerId));
+                if ($buyer === null) {
+                    throw new DomainException('Пользователь не найден');
+                }
+
+                $conversation = $this->conversationRepository->findByPropertyAndBuyer(
+                    $command->propertyId,
+                    $command->buyerId,
                 );
+
+                if ($conversation === null) {
+                    $conversation = new Conversation(
+                        propertyId: Id::fromString($command->propertyId),
+                        sellerId: Id::fromString($sellerId),
+                        buyerId: Id::fromString($command->buyerId),
+                    );
+                }
+            } else {
+                if ($sellerId === $command->senderId) {
+                    throw new DomainException('Нельзя написать самому себе');
+                }
+
+                $conversation = $this->conversationRepository->findByPropertyAndBuyer(
+                    $command->propertyId,
+                    $command->senderId,
+                );
+
+                if ($conversation === null) {
+                    $owner = $this->userRepository->findById(Id::fromString($sellerId));
+                    if ($owner === null || !$owner->allowsMessagesAndInquiries()) {
+                        throw new DomainException('Владелец отключил приём сообщений и заявок на бронирование');
+                    }
+
+                    $conversation = new Conversation(
+                        propertyId: Id::fromString($command->propertyId),
+                        sellerId: Id::fromString($sellerId),
+                        buyerId: Id::fromString($command->senderId),
+                    );
+                }
             }
+        }
+
+        if ($command->bookingInquiryId !== null) {
+            $this->linkBookingInquiryIfValid($conversation, $command->bookingInquiryId);
         }
 
         $this->conversationRepository->save($conversation);
@@ -96,5 +129,33 @@ final class SendMessageHandler
             'conversationId' => $conversation->getId()->getValue(),
             'messageId' => $message->getId()->getValue(),
         ];
+    }
+
+    private function linkBookingInquiryIfValid(Conversation $conversation, string $bookingInquiryId): void
+    {
+        if ($conversation->getBookingInquiryId() !== null) {
+            return;
+        }
+
+        $inquiry = $this->bookingInquiryRepository->findById($bookingInquiryId);
+        if ($inquiry === null) {
+            throw new DomainException('Заявка не найдена');
+        }
+
+        if ((string) $inquiry->getPropertyId()->getValue() !== $conversation->getPropertyId()) {
+            throw new DomainException('Заявка относится к другому объявлению');
+        }
+
+        if ($inquiry->getUserId() === null
+            || (string) $inquiry->getUserId()->getValue() !== $conversation->getBuyerId()
+        ) {
+            throw new DomainException('Заявка не принадлежит этому гостю');
+        }
+
+        if ((string) $inquiry->getOwnerId()->getValue() !== $conversation->getSellerId()) {
+            throw new DomainException('Заявка не относится к этой переписке');
+        }
+
+        $conversation->linkBookingInquiry($inquiry->getId());
     }
 }

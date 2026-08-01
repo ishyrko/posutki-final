@@ -65,6 +65,7 @@ export interface BookingInquiryItem {
     availabilityBlockId?: string | null;
     canAccept?: boolean;
     canReply?: boolean;
+    canMessage?: boolean;
 }
 
 export interface BookingInquiryListResponse {

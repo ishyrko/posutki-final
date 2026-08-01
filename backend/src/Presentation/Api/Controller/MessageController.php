@@ -93,10 +93,19 @@ class MessageController extends AbstractController
 
         $propertyId = $data['propertyId'] ?? null;
         $conversationId = $data['conversationId'] ?? null;
+        $buyerId = $data['buyerId'] ?? null;
+        $bookingInquiryId = $data['bookingInquiryId'] ?? null;
 
         if ($propertyId === null && $conversationId === null) {
             return $this->json(
                 ApiResponse::error('Укажите propertyId или conversationId', 422),
+                422
+            );
+        }
+
+        if ($buyerId !== null && $propertyId === null) {
+            return $this->json(
+                ApiResponse::error('Для сообщения гостю укажите propertyId', 422),
                 422
             );
         }
@@ -106,6 +115,8 @@ class MessageController extends AbstractController
             propertyId: $propertyId !== null ? (string) $propertyId : '',
             text: $text,
             conversationId: $conversationId !== null ? (string) $conversationId : null,
+            buyerId: $buyerId !== null ? (string) $buyerId : null,
+            bookingInquiryId: $bookingInquiryId !== null ? (string) $bookingInquiryId : null,
         );
 
         $result = $this->commandBus->dispatch($command);

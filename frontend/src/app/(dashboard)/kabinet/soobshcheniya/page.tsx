@@ -33,6 +33,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useConversations, useMessages, useSendMessage, useMarkRead } from '@/features/messages/hooks';
+import { ConversationContextCard } from '@/features/messages/components/ConversationContextCard';
 import { useUser } from '@/features/auth/hooks';
 import { Conversation } from '@/features/messages/types';
 import {
@@ -146,7 +147,13 @@ function ConversationList({
     );
 }
 
-function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
+function BookingInquiryCard({
+    inquiry,
+    onOpenConversation,
+}: {
+    inquiry: BookingInquiryItem;
+    onOpenConversation?: (conversationId: number) => void;
+}) {
     const [replyOpen, setReplyOpen] = useState(false);
     const [replyText, setReplyText] = useState('');
     const [showAllReplies, setShowAllReplies] = useState(false);
@@ -159,6 +166,7 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
     const [declineMessage, setDeclineMessage] = useState('');
     const [actionPending, setActionPending] = useState(false);
     const replyMutation = useReplyToBookingInquiry();
+    const sendMessageMutation = useSendMessage();
     const acceptMutation = useAcceptBookingInquiry();
     const declineMutation = useDeclineBookingInquiry();
 
@@ -167,6 +175,7 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
     const isUnread = !inquiry.isRead;
     const submittedAt = formatSubmissionDate(inquiry.createdAt);
     const propertyId = Number(inquiry.propertyId);
+    const buyerId = inquiry.userId != null ? Number(inquiry.userId) : null;
     const propertyHref = Number.isFinite(propertyId) && propertyId > 0
         ? buildPropertyUrlFromRegionName(
             inquiry.propertyType ?? undefined,
@@ -178,7 +187,10 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
 
     const status = inquiry.status ?? 'new';
     const isFinal = status === 'accepted' || status === 'declined';
-    const canReply = inquiry.canReply === true;
+    const canEmailReply = inquiry.canReply === true;
+    const canDialogMessage = inquiry.canMessage === true
+        || (buyerId != null && Number.isFinite(buyerId) && buyerId > 0);
+    const canContact = canEmailReply || canDialogMessage;
     const canAccept = inquiry.canAccept === true && !isFinal;
     const canDecline = !isFinal;
     const ownerReplies = inquiry.ownerReplies?.length
@@ -191,40 +203,68 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
         ? ownerReplies
         : ownerReplies.slice(-1);
 
+    const openReplyDialog = () => {
+        setReplyText('');
+        setReplyOpen(true);
+    };
+
     const openAcceptDialog = () => {
-        setAcceptSendMessage(canReply);
+        setAcceptSendMessage(canContact);
         setAcceptBookCalendar(true);
         setAcceptMessage(buildAcceptInquiryMessage(inquiry));
         setAcceptOpen(true);
     };
 
     const openDeclineDialog = () => {
-        setDeclineSendMessage(canReply);
+        setDeclineSendMessage(canContact);
         setDeclineMessage(buildDeclineInquiryMessage(inquiry));
         setDeclineOpen(true);
     };
 
-    const handleReply = () => {
-        const trimmed = replyText.trim();
-        if (!trimmed) return;
-        replyMutation.mutate(
-            { inquiryId: inquiry.id, text: trimmed },
-            {
-                onSuccess: () => {
-                    setReplyOpen(false);
-                    setReplyText('');
-                },
-            },
-        );
-    };
-
-    const sendReplyIfNeeded = async (enabled: boolean, text: string) => {
-        if (!enabled) return;
+    const sendContactMessage = async (text: string): Promise<number | null> => {
         const trimmed = text.trim();
         if (!trimmed) {
             throw new Error('Введите текст сообщения');
         }
+
+        if (canDialogMessage && buyerId != null) {
+            const result = await sendMessageMutation.mutateAsync({
+                text: trimmed,
+                propertyId,
+                buyerId,
+                bookingInquiryId: inquiry.id,
+            });
+            toast.success('Сообщение отправлено');
+            return result.conversationId;
+        }
+
         await replyMutation.mutateAsync({ inquiryId: inquiry.id, text: trimmed });
+        return null;
+    };
+
+    const handleReply = async () => {
+        setActionPending(true);
+        try {
+            const conversationId = await sendContactMessage(replyText);
+            setReplyOpen(false);
+            setReplyText('');
+            if (conversationId != null) {
+                onOpenConversation?.(conversationId);
+            }
+        } catch (error) {
+            if (error instanceof Error && error.message === 'Введите текст сообщения') {
+                toast.error(error.message);
+            } else if (canDialogMessage) {
+                toast.error('Не удалось отправить сообщение');
+            }
+        } finally {
+            setActionPending(false);
+        }
+    };
+
+    const sendReplyIfNeeded = async (enabled: boolean, text: string) => {
+        if (!enabled) return null;
+        return sendContactMessage(text);
     };
 
     const handleAcceptConfirm = async () => {
@@ -244,8 +284,11 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                 propertyId: inquiry.propertyId,
                 bookCalendar: acceptBookCalendar,
             });
-            await sendReplyIfNeeded(acceptSendMessage, acceptMessage);
+            const conversationId = await sendReplyIfNeeded(acceptSendMessage, acceptMessage);
             setAcceptOpen(false);
+            if (conversationId != null) {
+                onOpenConversation?.(conversationId);
+            }
         } catch (error) {
             if (error instanceof Error && error.message === 'Введите текст сообщения') {
                 toast.error(error.message);
@@ -267,8 +310,11 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                 inquiryId: inquiry.id,
                 propertyId: inquiry.propertyId,
             });
-            await sendReplyIfNeeded(declineSendMessage, declineMessage);
+            const conversationId = await sendReplyIfNeeded(declineSendMessage, declineMessage);
             setDeclineOpen(false);
+            if (conversationId != null) {
+                onOpenConversation?.(conversationId);
+            }
         } catch (error) {
             if (error instanceof Error && error.message === 'Введите текст сообщения') {
                 toast.error(error.message);
@@ -451,14 +497,14 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                     </div>
                 )}
 
-                {(canReply || canAccept || canDecline) && (
+                {(canContact || canAccept || canDecline) && (
                     <div className="flex flex-wrap gap-2">
-                        {canReply && (
+                        {canContact && (
                             <Button
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                onClick={() => setReplyOpen(true)}
+                                onClick={openReplyDialog}
                             >
                                 <Reply className="w-3.5 h-3.5 mr-1.5" />
                                 Ответить
@@ -496,7 +542,9 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                     <DialogHeader>
                         <DialogTitle>Ответ гостю</DialogTitle>
                         <DialogDescription>
-                            Ответ будет отправлен на email гостя{inquiry.email ? ` (${inquiry.email})` : ''}.
+                            {canDialogMessage
+                                ? 'Сообщение будет отправлено в диалог на сайте.'
+                                : `Ответ будет отправлен на email гостя${inquiry.email ? ` (${inquiry.email})` : ''}.`}
                         </DialogDescription>
                     </DialogHeader>
                     <Textarea
@@ -513,10 +561,10 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                         <Button
                             type="button"
                             className="bg-gradient-primary text-primary-foreground border-0"
-                            disabled={!replyText.trim() || replyMutation.isPending}
-                            onClick={handleReply}
+                            disabled={!replyText.trim() || actionPending}
+                            onClick={() => void handleReply()}
                         >
-                            {replyMutation.isPending ? (
+                            {actionPending ? (
                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             ) : (
                                 <Send className="w-4 h-4 mr-2" />
@@ -541,14 +589,24 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                                 <Checkbox
                                     id={`accept-message-${inquiry.id}`}
                                     checked={acceptSendMessage}
-                                    disabled={!canReply}
+                                    disabled={!canContact}
                                     onCheckedChange={(checked) => setAcceptSendMessage(checked === true)}
                                 />
                                 <div className="space-y-1 leading-none">
                                     <Label htmlFor={`accept-message-${inquiry.id}`}>Отправить сообщение</Label>
-                                    {!canReply && (
+                                    {!canContact && (
                                         <p className="text-xs text-muted-foreground">
-                                            Email гостя недоступен для ответа
+                                            Нет способа связаться с гостем
+                                        </p>
+                                    )}
+                                    {canDialogMessage && (
+                                        <p className="text-xs text-muted-foreground">
+                                            В диалог на сайте
+                                        </p>
+                                    )}
+                                    {canEmailReply && (
+                                        <p className="text-xs text-muted-foreground">
+                                            На email гостя
                                         </p>
                                     )}
                                 </div>
@@ -612,14 +670,24 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
                             <Checkbox
                                 id={`decline-message-${inquiry.id}`}
                                 checked={declineSendMessage}
-                                disabled={!canReply}
+                                disabled={!canContact}
                                 onCheckedChange={(checked) => setDeclineSendMessage(checked === true)}
                             />
                             <div className="space-y-1 leading-none">
                                 <Label htmlFor={`decline-message-${inquiry.id}`}>Отправить сообщение</Label>
-                                {!canReply && (
+                                {!canContact && (
                                     <p className="text-xs text-muted-foreground">
-                                        Email гостя недоступен для ответа
+                                        Нет способа связаться с гостем
+                                    </p>
+                                )}
+                                {canDialogMessage && (
+                                    <p className="text-xs text-muted-foreground">
+                                        В диалог на сайте
+                                    </p>
+                                )}
+                                {canEmailReply && (
+                                    <p className="text-xs text-muted-foreground">
+                                        На email гостя
                                     </p>
                                 )}
                             </div>
@@ -661,7 +729,11 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
     );
 }
 
-function BookingInquiriesPanel() {
+function BookingInquiriesPanel({
+    onOpenConversation,
+}: {
+    onOpenConversation?: (conversationId: number) => void;
+}) {
     const { data, isLoading } = useMyBookingInquiries();
     const inquiries = data?.data ?? [];
 
@@ -690,7 +762,11 @@ function BookingInquiriesPanel() {
     return (
         <div className="h-full overflow-y-auto p-4 space-y-3">
             {inquiries.map((inquiry) => (
-                <BookingInquiryCard key={inquiry.id} inquiry={inquiry} />
+                <BookingInquiryCard
+                    key={inquiry.id}
+                    inquiry={inquiry}
+                    onOpenConversation={onOpenConversation}
+                />
             ))}
         </div>
     );
@@ -707,6 +783,7 @@ function ChatView({
     currentUserId: number;
     onBack: () => void;
 }) {
+    const queryClient = useQueryClient();
     const { data, isLoading } = useMessages(conversationId);
     const sendMessageMutation = useSendMessage();
     const markRead = useMarkRead();
@@ -722,6 +799,10 @@ function ChatView({
         el.style.height = 'auto';
         el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
     };
+
+    useEffect(() => {
+        void queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    }, [conversationId, queryClient]);
 
     useEffect(() => {
         adjustTextareaHeight();
@@ -775,11 +856,10 @@ function ChatView({
                     <p className="font-medium text-foreground text-sm truncate">
                         {otherName || 'Пользователь'}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                        {conversation.propertyTitle}
-                    </p>
                 </div>
             </div>
+
+            <ConversationContextCard conversation={conversation} />
 
             <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
                 {isLoading && (
@@ -872,6 +952,12 @@ export default function MessagesPage() {
         }
     };
 
+    const openConversation = async (conversationId: number) => {
+        await queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        setActiveTab('conversations');
+        setSelectedId(conversationId);
+    };
+
     if (!user) {
         return (
             <div className="flex items-center justify-center h-[calc(100vh-14rem)]">
@@ -941,7 +1027,7 @@ export default function MessagesPage() {
             )}
             >
                 {activeTab === 'bookings' ? (
-                    <BookingInquiriesPanel />
+                    <BookingInquiriesPanel onOpenConversation={openConversation} />
                 ) : isLoading ? (
                     <div className="flex items-center justify-center h-full">
                         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />

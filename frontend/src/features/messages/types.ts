@@ -7,11 +7,28 @@ export interface Message {
     createdAt: string;
 }
 
+export interface ConversationBookingInquiry {
+    id: string;
+    status: 'new' | 'replied' | 'accepted' | 'declined';
+    checkIn?: string | null;
+    checkOut?: string | null;
+    guests?: number | null;
+    createdAt: string;
+}
+
 export interface Conversation {
     id: number;
     propertyId: number;
     propertyTitle: string | null;
     propertyImage: string | null;
+    propertyType?: string | null;
+    propertyCitySlug?: string | null;
+    propertyRegionName?: string | null;
+    propertyPriceAmount?: number | null;
+    propertyPriceCurrency?: string | null;
+    propertyAddress?: string | null;
+    propertyAvailable?: boolean;
+    propertyLinkAvailable?: boolean;
     sellerId: number;
     sellerName: string | null;
     buyerId: number;
@@ -20,6 +37,7 @@ export interface Conversation {
     lastMessageAt: string | null;
     unread: number;
     createdAt: string;
+    bookingInquiry?: ConversationBookingInquiry | null;
 }
 
 export interface ConversationListResponse {
@@ -46,6 +64,8 @@ export interface SendMessagePayload {
     text: string;
     propertyId?: number;
     conversationId?: number;
+    buyerId?: number;
+    bookingInquiryId?: string;
 }
 
 export interface SendMessageResponse {

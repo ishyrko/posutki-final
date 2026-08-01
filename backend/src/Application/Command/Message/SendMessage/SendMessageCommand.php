@@ -11,6 +11,8 @@ final class SendMessageCommand
         public readonly string $propertyId,
         public readonly string $text,
         public readonly ?string $conversationId = null,
+        public readonly ?string $buyerId = null,
+        public readonly ?string $bookingInquiryId = null,
     ) {
     }
 }
