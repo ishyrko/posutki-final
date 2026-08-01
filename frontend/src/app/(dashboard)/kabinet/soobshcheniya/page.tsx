@@ -162,7 +162,7 @@ function BookingInquiryCard({ inquiry }: { inquiry: BookingInquiryItem }) {
 
     const status = inquiry.status ?? 'new';
     const isFinal = status === 'accepted' || status === 'declined';
-    const canReply = !isFinal && Boolean(inquiry.email);
+    const canReply = !isFinal && inquiry.canReply === true;
     const canAccept = inquiry.canAccept === true && status !== 'accepted' && status !== 'declined';
     const canDecline = status !== 'declined';
 

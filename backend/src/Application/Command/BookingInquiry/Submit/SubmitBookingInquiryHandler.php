@@ -44,6 +44,10 @@ final class SubmitBookingInquiryHandler
             throw new DomainException('Заявка на бронирование для этого объявления недоступна');
         }
 
+        if (!$owner->allowsMessagesAndInquiries()) {
+            throw new DomainException('Владелец отключил приём сообщений и заявок на бронирование');
+        }
+
         if ($command->userId === null && !$owner->allowsGuestBookingInquiries()) {
             throw new DomainException('Владелец принимает заявки только от зарегистрированных пользователей. Войдите в аккаунт.');
         }

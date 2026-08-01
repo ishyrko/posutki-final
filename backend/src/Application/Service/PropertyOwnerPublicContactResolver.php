@@ -26,7 +26,8 @@ readonly class PropertyOwnerPublicContactResolver
      *   phones: list<array{phone: string, hasViber: bool, hasWhatsapp: bool}>,
      *   telegram: ?string,
      *   hasEmail: bool,
-     *   allowsGuestInquiries: bool
+     *   allowsGuestInquiries: bool,
+     *   allowsMessagesAndInquiries: bool
      * }>
      */
     public function resolveForOwnerIds(array $ownerIds): array
@@ -48,7 +49,7 @@ readonly class PropertyOwnerPublicContactResolver
         foreach ($intIds as $oid) {
             $user = $usersById[$oid] ?? null;
             if ($user === null) {
-                $out[$oid] = ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null, 'hasEmail' => false, 'allowsGuestInquiries' => true];
+                $out[$oid] = ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null, 'hasEmail' => false, 'allowsGuestInquiries' => true, 'allowsMessagesAndInquiries' => true];
                 continue;
             }
 
@@ -89,6 +90,7 @@ readonly class PropertyOwnerPublicContactResolver
                 'telegram' => $telegram,
                 'hasEmail' => $user->getEmail() !== null && $user->isVerified(),
                 'allowsGuestInquiries' => $user->allowsGuestBookingInquiries(),
+                'allowsMessagesAndInquiries' => $user->allowsMessagesAndInquiries(),
             ];
         }
 
@@ -98,7 +100,7 @@ readonly class PropertyOwnerPublicContactResolver
     public function assertOwnerHasPublicContact(string $ownerIdString): void
     {
         $id = Id::fromString($ownerIdString)->getValue();
-        $resolved = $this->resolveForOwnerIds([$id])[$id] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null, 'hasEmail' => false, 'allowsGuestInquiries' => true];
+        $resolved = $this->resolveForOwnerIds([$id])[$id] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null, 'hasEmail' => false, 'allowsGuestInquiries' => true, 'allowsMessagesAndInquiries' => true];
 
         if ($resolved['phone'] === null) {
             throw new DomainException('Подтвердите телефон в профиле');

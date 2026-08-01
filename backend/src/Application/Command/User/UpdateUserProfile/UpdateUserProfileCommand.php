@@ -15,6 +15,7 @@ readonly class UpdateUserProfileCommand
         public ?bool $phoneHasViber = null,
         public ?bool $phoneHasWhatsapp = null,
         public ?bool $allowGuestBookingInquiries = null,
+        public ?bool $allowMessagesAndInquiries = null,
     ) {
     }
 }

@@ -12,6 +12,7 @@ use App\Domain\Message\Repository\MessageRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Repository\UserRepositoryInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 final class SendMessageHandler
@@ -20,6 +21,7 @@ final class SendMessageHandler
         private readonly ConversationRepositoryInterface $conversationRepository,
         private readonly MessageRepositoryInterface $messageRepository,
         private readonly PropertyRepositoryInterface $propertyRepository,
+        private readonly UserRepositoryInterface $userRepository,
         private readonly MessageBusInterface $notificationBus,
     ) {
     }
@@ -58,6 +60,11 @@ final class SendMessageHandler
             );
 
             if ($conversation === null) {
+                $owner = $this->userRepository->findById(Id::fromInt($sellerId));
+                if ($owner === null || !$owner->allowsMessagesAndInquiries()) {
+                    throw new DomainException('Владелец отключил приём сообщений и заявок на бронирование');
+                }
+
                 $conversation = new Conversation(
                     propertyId: Id::fromString($command->propertyId),
                     sellerId: Id::fromInt($sellerId),

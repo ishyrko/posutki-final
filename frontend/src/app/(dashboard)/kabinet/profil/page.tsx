@@ -281,6 +281,23 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between gap-4">
                         <div>
                             <p className="text-sm font-medium text-foreground">
+                                Принимать сообщения и заявки на бронирование
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                Если выключено, гости не смогут написать и оставить заявку через сайт. Телефон и мессенджеры останутся доступны
+                            </p>
+                        </div>
+                        <Switch
+                            checked={user?.allowMessagesAndInquiries !== false}
+                            onCheckedChange={(checked) => {
+                                updateProfile({ allowMessagesAndInquiries: checked });
+                            }}
+                            disabled={isUpdating}
+                        />
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <p className="text-sm font-medium text-foreground">
                                 Принимать заявки от незарегистрированных пользователей
                             </p>
                             <p className="text-xs text-muted-foreground">
@@ -292,7 +309,7 @@ export default function ProfilePage() {
                             onCheckedChange={(checked) => {
                                 updateProfile({ allowGuestBookingInquiries: checked });
                             }}
-                            disabled={isUpdating}
+                            disabled={isUpdating || user?.allowMessagesAndInquiries === false}
                         />
                     </div>
                 </div>

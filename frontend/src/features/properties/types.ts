@@ -48,6 +48,7 @@ export interface Property {
         telegram?: string | null;
         hasEmail?: boolean;
         allowsGuestInquiries?: boolean;
+        allowsMessagesAndInquiries?: boolean;
     };
     title: string;
     description: string;

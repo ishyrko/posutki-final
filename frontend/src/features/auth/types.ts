@@ -31,6 +31,7 @@ export interface User {
     individualProfile?: UserIndividualProfile | null;
     businessProfile?: UserBusinessProfile | null;
     allowGuestBookingInquiries?: boolean;
+    allowMessagesAndInquiries?: boolean;
 }
 
 export interface LoginResponse {

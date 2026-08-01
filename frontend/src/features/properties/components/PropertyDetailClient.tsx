@@ -294,8 +294,9 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   const hasContactPhones = contactPhones.length > 0;
   const contactTelegram = property.contact?.telegram?.trim() ?? "";
   const canBookInquiry = property.contact?.hasEmail === true;
+  const allowsMessagesAndInquiries = property.contact?.allowsMessagesAndInquiries !== false;
   const allowsGuestInquiries = property.contact?.allowsGuestInquiries !== false;
-  const canSubmitBookingInquiry = canBookInquiry && (loggedIn || allowsGuestInquiries);
+  const canSubmitBookingInquiry = canBookInquiry && allowsMessagesAndInquiries && (loggedIn || allowsGuestInquiries);
 
   const images = property.images?.map(img => img.url) || [
     "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80",
@@ -1145,7 +1146,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                       })}
                     </>
                   )}
-                  {!isOwner && canSubmitBookingInquiry && (
+                  {!isOwner && allowsMessagesAndInquiries && canSubmitBookingInquiry && (
                     <Button
                       variant="outline"
                       className="w-full h-11"
@@ -1155,7 +1156,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                       Заявка на бронирование
                     </Button>
                   )}
-                  {!isOwner && canBookInquiry && !allowsGuestInquiries && !loggedIn && (
+                  {!isOwner && allowsMessagesAndInquiries && canBookInquiry && !allowsGuestInquiries && !loggedIn && (
                     <Button variant="outline" className="w-full h-11" asChild>
                       <Link href={loginWithReturnHref}>
                         <CalendarCheck className="w-4 h-4 mr-2" />
@@ -1163,7 +1164,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                       </Link>
                     </Button>
                   )}
-                  {!isOwner && loggedIn && (
+                  {!isOwner && allowsMessagesAndInquiries && loggedIn && (
                     <Button
                       variant="outline"
                       className="w-full h-11"
@@ -1173,7 +1174,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                       Написать сообщение
                     </Button>
                   )}
-                  {!isOwner && !loggedIn && (
+                  {!isOwner && allowsMessagesAndInquiries && !loggedIn && (
                     <Button variant="outline" className="w-full h-11" asChild>
                       <Link href={loginWithReturnHref}>
                         <MessageCircle className="w-4 h-4 mr-2" />
@@ -1184,7 +1185,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                 </div>
 
                 <AnimatePresence>
-                  {!isOwner && loggedIn && messageOpen && (
+                  {!isOwner && allowsMessagesAndInquiries && loggedIn && messageOpen && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}

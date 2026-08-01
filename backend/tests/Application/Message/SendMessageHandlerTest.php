@@ -13,7 +13,11 @@ use App\Domain\Message\Repository\ConversationRepositoryInterface;
 use App\Domain\Message\Repository\MessageRepositoryInterface;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
+use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Entity\User;
+use App\Domain\User\Repository\UserRepositoryInterface;
+use App\Domain\User\ValueObject\Email;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -25,6 +29,7 @@ final class SendMessageHandlerTest extends TestCase
         $conversationRepository = $this->createMock(ConversationRepositoryInterface::class);
         $messageRepository = $this->createMock(MessageRepositoryInterface::class);
         $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $userRepository = $this->createMock(UserRepositoryInterface::class);
         $notificationBus = $this->createMock(MessageBusInterface::class);
 
         $property = $this->createMock(Property::class);
@@ -33,6 +38,9 @@ final class SendMessageHandlerTest extends TestCase
         $propertyRepository
             ->method('findById')
             ->willReturn($property);
+
+        $owner = User::register(Email::fromString('owner@example.com'), '', 'Owner', 'User');
+        $userRepository->method('findById')->willReturn($owner);
 
         $conversationRepository
             ->expects(self::exactly(2))
@@ -71,8 +79,43 @@ final class SendMessageHandlerTest extends TestCase
             $conversationRepository,
             $messageRepository,
             $propertyRepository,
+            $userRepository,
             $notificationBus,
         );
+
+        $handler(new SendMessageCommand(
+            senderId: '5',
+            propertyId: '100',
+            text: 'Привет!',
+        ));
+    }
+
+    public function testSendFailsWhenOwnerDisabledMessagesAndInquiries(): void
+    {
+        $conversationRepository = $this->createMock(ConversationRepositoryInterface::class);
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $userRepository = $this->createMock(UserRepositoryInterface::class);
+
+        $property = $this->createMock(Property::class);
+        $property->method('getOwnerId')->willReturn(Id::fromInt(10));
+
+        $propertyRepository->method('findById')->willReturn($property);
+        $conversationRepository->method('findByPropertyAndBuyer')->willReturn(null);
+
+        $owner = User::register(Email::fromString('owner@example.com'), '', 'Owner', 'User');
+        $owner->setAllowMessagesAndInquiries(false);
+        $userRepository->method('findById')->willReturn($owner);
+
+        $handler = new SendMessageHandler(
+            $conversationRepository,
+            $this->createStub(MessageRepositoryInterface::class),
+            $propertyRepository,
+            $userRepository,
+            $this->createStub(MessageBusInterface::class),
+        );
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Владелец отключил приём сообщений и заявок на бронирование');
 
         $handler(new SendMessageCommand(
             senderId: '5',

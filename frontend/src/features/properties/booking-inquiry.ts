@@ -58,6 +58,7 @@ export interface BookingInquiryItem {
     repliedAt?: string | null;
     availabilityBlockId?: string | null;
     canAccept?: boolean;
+    canReply?: boolean;
 }
 
 export interface BookingInquiryListResponse {

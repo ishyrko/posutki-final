@@ -10,6 +10,8 @@ use App\Application\Command\BookingInquiry\Decline\DeclineBookingInquiryCommand;
 use App\Application\Command\BookingInquiry\Decline\DeclineBookingInquiryHandler;
 use App\Application\Command\BookingInquiry\Reply\ReplyToBookingInquiryCommand;
 use App\Application\Command\BookingInquiry\Reply\ReplyToBookingInquiryHandler;
+use App\Application\Command\BookingInquiry\Submit\SubmitBookingInquiryCommand;
+use App\Application\Command\BookingInquiry\Submit\SubmitBookingInquiryHandler;
 use App\Application\Command\CommandBusInterface;
 use App\Application\Command\Property\CreateAvailabilityBlock\CreateAvailabilityBlockCommand;
 use App\Application\Service\IcsCalendarService;
@@ -24,7 +26,9 @@ use App\Domain\Property\Repository\PropertyAvailabilityBlockRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
+use App\Domain\User\ValueObject\Email;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -54,7 +58,6 @@ final class BookingInquiryHandlersTest extends TestCase
 
         $handler = new ReplyToBookingInquiryHandler(
             $repository,
-            $this->createStub(UserRepositoryInterface::class),
             $notificationBus,
         );
 
@@ -79,12 +82,41 @@ final class BookingInquiryHandlersTest extends TestCase
 
         $handler = new ReplyToBookingInquiryHandler(
             $repository,
-            $this->createStub(UserRepositoryInterface::class),
             $this->createStub(MessageBusInterface::class),
         );
 
         $this->expectException(DomainException::class);
         $this->expectExceptionMessage('У гостя не указан email');
+
+        ($handler)(new ReplyToBookingInquiryCommand(
+            inquiryId: '1',
+            ownerId: '10',
+            text: 'Ответ',
+        ));
+    }
+
+    public function testReplyFailsForRegisteredGuest(): void
+    {
+        $inquiry = new BookingInquiry(
+            propertyId: Id::fromInt(100),
+            ownerId: Id::fromInt(10),
+            name: 'Иван',
+            phone: '+375291112233',
+            userId: Id::fromInt(5),
+            email: 'guest@example.com',
+        );
+        $this->setEntityId($inquiry, 1);
+
+        $repository = $this->createMock(BookingInquiryRepositoryInterface::class);
+        $repository->method('findById')->willReturn($inquiry);
+
+        $handler = new ReplyToBookingInquiryHandler(
+            $repository,
+            $this->createStub(MessageBusInterface::class),
+        );
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Для зарегистрированных гостей используйте диалоги');
 
         ($handler)(new ReplyToBookingInquiryCommand(
             inquiryId: '1',
@@ -219,6 +251,40 @@ final class BookingInquiryHandlersTest extends TestCase
         self::assertSame('declined', $result['status']);
         self::assertSame(BookingInquiryStatus::Declined, $inquiry->getStatus());
         self::assertNull($inquiry->getAvailabilityBlockId());
+    }
+
+    public function testSubmitFailsWhenOwnerDisabledMessagesAndInquiries(): void
+    {
+        $property = $this->createPropertyMock();
+        $property->method('getOwnerId')->willReturn(Id::fromInt(10));
+
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository->method('findById')->willReturn($property);
+
+        $owner = User::register(Email::fromString('owner@example.com'), '', 'Owner', 'User');
+        $owner->verify();
+        $owner->setAllowMessagesAndInquiries(false);
+
+        $userRepository = $this->createMock(UserRepositoryInterface::class);
+        $userRepository->method('findById')->willReturn($owner);
+
+        $handler = new SubmitBookingInquiryHandler(
+            $this->createStub(BookingInquiryRepositoryInterface::class),
+            $propertyRepository,
+            $userRepository,
+            $this->createStub(MessageBusInterface::class),
+            $this->createCalendarAggregator([]),
+        );
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Владелец отключил приём сообщений и заявок на бронирование');
+
+        ($handler)(new SubmitBookingInquiryCommand(
+            propertyId: '100',
+            name: 'Гость',
+            phone: '+375291112233',
+            email: 'guest@example.com',
+        ));
     }
 
     private function createPropertyMock(): Property

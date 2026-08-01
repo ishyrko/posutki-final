@@ -91,6 +91,28 @@ final class UpdateUserProfileHandlerTest extends TestCase
         self::assertFalse($user->allowsGuestBookingInquiries());
     }
 
+    public function testUpdatesAllowMessagesAndInquiriesSetting(): void
+    {
+        $user = User::registerViaPhone('+375291112233', 'Иван', 'Петров');
+        $this->setUserId($user, 42);
+
+        $userRepository = $this->createMock(UserRepositoryInterface::class);
+        $userRepository->method('findById')->willReturn($user);
+        $userRepository->expects(self::once())->method('save')->with($user);
+
+        $handler = new UpdateUserProfileHandler(
+            $userRepository,
+            $this->createStub(UserPhoneRepositoryInterface::class),
+        );
+
+        ($handler)(new UpdateUserProfileCommand(
+            userId: '42',
+            allowMessagesAndInquiries: false,
+        ));
+
+        self::assertFalse($user->allowsMessagesAndInquiries());
+    }
+
     public function testRejectsInvalidTelegram(): void
     {
         $user = User::registerViaPhone('+375291112233');

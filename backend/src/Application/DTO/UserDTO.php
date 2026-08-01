@@ -33,6 +33,7 @@ final class UserDTO
         public readonly ?array $individualProfile = null,
         public readonly ?array $businessProfile = null,
         public readonly bool $allowGuestBookingInquiries = true,
+        public readonly bool $allowMessagesAndInquiries = true,
     ) {
     }
 
@@ -73,6 +74,7 @@ final class UserDTO
                 ]
                 : null,
             allowGuestBookingInquiries: $user->allowsGuestBookingInquiries(),
+            allowMessagesAndInquiries: $user->allowsMessagesAndInquiries(),
         );
     }
 

@@ -7,15 +7,12 @@ namespace App\Application\Command\BookingInquiry\Reply;
 use App\Domain\BookingInquiry\Event\BookingInquiryRepliedEvent;
 use App\Domain\BookingInquiry\Repository\BookingInquiryRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
-use App\Domain\Shared\ValueObject\Id;
-use App\Domain\User\Repository\UserRepositoryInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 final class ReplyToBookingInquiryHandler
 {
     public function __construct(
         private readonly BookingInquiryRepositoryInterface $bookingInquiryRepository,
-        private readonly UserRepositoryInterface $userRepository,
         private readonly MessageBusInterface $notificationBus,
     ) {
     }
@@ -29,6 +26,10 @@ final class ReplyToBookingInquiryHandler
 
         if ((string) $inquiry->getOwnerId()->getValue() !== $command->ownerId) {
             throw new DomainException('Нет прав на эту заявку');
+        }
+
+        if ($inquiry->getUserId() !== null) {
+            throw new DomainException('Для зарегистрированных гостей используйте диалоги');
         }
 
         $text = trim($command->text);
@@ -60,25 +61,10 @@ final class ReplyToBookingInquiryHandler
     private function resolveGuestEmail(\App\Domain\BookingInquiry\Entity\BookingInquiry $inquiry): ?string
     {
         $email = $inquiry->getEmail();
-        if ($email !== null && trim($email) !== '') {
-            return trim($email);
-        }
-
-        $userId = $inquiry->getUserId();
-        if ($userId === null) {
+        if ($email === null || trim($email) === '') {
             return null;
         }
 
-        $user = $this->userRepository->findById($userId);
-        if ($user === null) {
-            return null;
-        }
-
-        $accountEmail = $user->getEmail()?->getValue();
-        if ($accountEmail !== null && $user->isVerified()) {
-            return $accountEmail;
-        }
-
-        return null;
+        return trim($email);
     }
 }

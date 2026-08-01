@@ -31,6 +31,7 @@ export const updateProfileSchema = z.object({
     phoneHasViber: z.boolean().optional(),
     phoneHasWhatsapp: z.boolean().optional(),
     allowGuestBookingInquiries: z.boolean().optional(),
+    allowMessagesAndInquiries: z.boolean().optional(),
 });
 
 export type UpdateProfileData = {
@@ -41,6 +42,7 @@ export type UpdateProfileData = {
     phoneHasViber?: boolean;
     phoneHasWhatsapp?: boolean;
     allowGuestBookingInquiries?: boolean;
+    allowMessagesAndInquiries?: boolean;
 };
 
 export const changePasswordSchema = z.object({
@@ -96,6 +98,9 @@ export const updateProfile = async (data: UpdateProfileData): Promise<User> => {
     }
     if (data.allowGuestBookingInquiries !== undefined) {
         payload.allowGuestBookingInquiries = data.allowGuestBookingInquiries;
+    }
+    if (data.allowMessagesAndInquiries !== undefined) {
+        payload.allowMessagesAndInquiries = data.allowMessagesAndInquiries;
     }
 
     const response = await api.put<User>('/users/profile', payload);

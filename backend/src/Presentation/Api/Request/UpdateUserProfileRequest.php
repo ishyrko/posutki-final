@@ -40,4 +40,6 @@ class UpdateUserProfileRequest
     public ?bool $phoneHasWhatsapp = null;
 
     public ?bool $allowGuestBookingInquiries = null;
+
+    public ?bool $allowMessagesAndInquiries = null;
 }

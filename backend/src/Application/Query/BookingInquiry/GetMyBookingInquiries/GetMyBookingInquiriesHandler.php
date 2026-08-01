@@ -86,6 +86,9 @@ final class GetMyBookingInquiriesHandler
                     ? (string) $inquiry->getAvailabilityBlockId()->getValue()
                     : null,
                 'canAccept' => $hasCheckIn && $dealType === 'daily',
+                'canReply' => $inquiry->getUserId() === null
+                    && $inquiry->getEmail() !== null
+                    && trim($inquiry->getEmail()) !== '',
             ];
         }
 

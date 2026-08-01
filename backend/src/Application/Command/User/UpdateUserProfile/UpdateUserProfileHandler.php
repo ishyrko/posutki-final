@@ -73,6 +73,10 @@ readonly class UpdateUserProfileHandler
             $user->setAllowGuestBookingInquiries($command->allowGuestBookingInquiries);
         }
 
+        if ($command->allowMessagesAndInquiries !== null) {
+            $user->setAllowMessagesAndInquiries($command->allowMessagesAndInquiries);
+        }
+
         if ($command->phone !== null && $normalizedPhone !== null) {
             $userPhone = $this->userPhoneRepository->findByUserIdAndPhone($userId, $normalizedPhone);
             if ($userPhone !== null && $userPhone->isVerified()) {

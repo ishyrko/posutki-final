@@ -163,6 +163,7 @@ class UserController extends AbstractController
             phoneHasViber: $request->phoneHasViber,
             phoneHasWhatsapp: $request->phoneHasWhatsapp,
             allowGuestBookingInquiries: $request->allowGuestBookingInquiries,
+            allowMessagesAndInquiries: $request->allowMessagesAndInquiries,
         );
 
         $this->commandBus->dispatch($command);

@@ -87,6 +87,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'boolean', name: 'allow_guest_booking_inquiries', options: ['default' => true])]
     private bool $allowGuestBookingInquiries = true;
 
+    #[ORM\Column(type: 'boolean', name: 'allow_messages_and_inquiries', options: ['default' => true])]
+    private bool $allowMessagesAndInquiries = true;
+
     public function __construct(
         ?Email $email,
         string $password,
@@ -453,6 +456,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setAllowGuestBookingInquiries(bool $allowGuestBookingInquiries): void
     {
         $this->allowGuestBookingInquiries = $allowGuestBookingInquiries;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function allowsMessagesAndInquiries(): bool
+    {
+        return $this->allowMessagesAndInquiries;
+    }
+
+    public function setAllowMessagesAndInquiries(bool $allowMessagesAndInquiries): void
+    {
+        $this->allowMessagesAndInquiries = $allowMessagesAndInquiries;
         $this->updatedAt = new \DateTimeImmutable();
     }
 
