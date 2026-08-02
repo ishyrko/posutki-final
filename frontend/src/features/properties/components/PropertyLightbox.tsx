@@ -47,8 +47,36 @@ export function PropertyLightbox({
     }
   }, [currentIndex, emblaApi]);
 
-  const scrollPrev = () => emblaApi?.scrollPrev();
-  const scrollNext = () => emblaApi?.scrollNext();
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (images.length <= 1) return;
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        scrollPrev();
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        scrollNext();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [images.length, onClose, scrollNext, scrollPrev]);
 
   return (
     <motion.div
