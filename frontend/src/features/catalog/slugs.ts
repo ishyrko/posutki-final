@@ -30,6 +30,17 @@ export const CITY_PREFIX_SLUG_LIST = [
 
 export const CITY_PREFIX_SLUGS: ReadonlySet<string> = new Set(CITY_PREFIX_SLUG_LIST);
 
+/** Города с внутригородскими районами (зеркало backend CitiesWithDistricts::SLUGS). */
+export const CITIES_WITH_DISTRICTS_SLUGS: ReadonlySet<string> = new Set([
+  'minsk',
+  'brest',
+  'vitebsk',
+  'gomel',
+  'grodno',
+  'mogilev',
+  'bobruysk',
+] as const);
+
 /** Только посуточная аренда — в URL сделка не кодируется, всегда daily. */
 export const IMPLICIT_DEAL_TYPE = 'daily' as const;
 
@@ -96,6 +107,7 @@ export interface ParsedSegments {
   citySlug?: string;
   nearMetro?: boolean;
   metroStationSlug?: string;
+  cityDistrictSlug?: string;
 }
 
 export function parseSegments(segments: string[] = []): ParsedSegments {
@@ -116,6 +128,7 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
   let citySlug: string | undefined;
   let nearMetro: boolean | undefined;
   let metroStationSlug: string | undefined;
+  let cityDistrictSlug: string | undefined;
 
   if (i < segments.length) {
     if (segments[i] === 'vozle-metro') {
@@ -126,6 +139,12 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
       i++;
       if (segments[i]) {
         metroStationSlug = segments[i]!;
+        i++;
+      }
+    } else if (segments[i] === 'raion') {
+      i++;
+      if (segments[i]) {
+        cityDistrictSlug = segments[i]!;
         i++;
       }
     } else {
@@ -145,6 +164,7 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
     citySlug,
     nearMetro,
     metroStationSlug,
+    cityDistrictSlug,
   };
 }
 
@@ -157,6 +177,9 @@ export function isValidMetroCatalogSegments(parsed: ParsedSegments): boolean {
   if (!parsed.nearMetro && !parsed.metroStationSlug) {
     return true;
   }
+  if (parsed.cityDistrictSlug) {
+    return false;
+  }
   if (parsed.propertyType !== 'apartment') {
     return false;
   }
@@ -167,6 +190,25 @@ export function isValidMetroCatalogSegments(parsed: ParsedSegments): boolean {
     return false;
   }
   return true;
+}
+
+/** Район в URL — только квартиры в городах с административными районами. */
+export function isValidDistrictCatalogSegments(parsed: ParsedSegments): boolean {
+  if (!parsed.cityDistrictSlug) {
+    return true;
+  }
+  if (parsed.nearMetro || parsed.metroStationSlug) {
+    return false;
+  }
+  if (parsed.propertyType !== 'apartment') {
+    return false;
+  }
+
+  return CITIES_WITH_DISTRICTS_SLUGS.has(resolveCatalogCitySlug(parsed));
+}
+
+export function resolveCatalogCitySlug(parsed: ParsedSegments): string {
+  return parsed.citySlug ?? parsed.regionSlug ?? MINSK_CITY_SLUG;
 }
 
 /** Структура URL каталога: регион → тип → город / метро (без проверки slug в API). */
@@ -194,6 +236,10 @@ export function validateCatalogSegmentsStructure(segments: string[] = []): boole
       i++;
       if (segments[i]) i++;
       else return false;
+    } else if (segments[i] === 'raion') {
+      i++;
+      if (segments[i]) i++;
+      else return false;
     } else {
       i++;
     }
@@ -215,13 +261,13 @@ export function validatePublicSegmentsStructure(segments: string[] = []): boolea
     if (!validateCatalogSegmentsStructure(catalogSegments)) return false;
 
     const parsed = parseSegments(catalogSegments);
-    return parsed.propertyType !== undefined && isValidMetroCatalogSegments(parsed);
+    return parsed.propertyType !== undefined && isValidMetroCatalogSegments(parsed) && isValidDistrictCatalogSegments(parsed);
   }
 
   if (!validateCatalogSegmentsStructure(segments)) return false;
 
   const parsed = parseSegments(segments);
-  return isCatalogRoute(parsed) && isValidMetroCatalogSegments(parsed);
+  return isCatalogRoute(parsed) && isValidMetroCatalogSegments(parsed) && isValidDistrictCatalogSegments(parsed);
 }
 
 /** Фильтр метро — только квартиры в Минске (не дома, не другие области/города). */
@@ -238,12 +284,22 @@ export function isMetroCatalogContext(parsed: ParsedSegments): boolean {
   return parsed.propertyType === 'apartment' || parsed.nearMetro === true;
 }
 
+/** Район в каталоге — только квартиры в городах с административными районами. */
+export function isDistrictCatalogContext(parsed: ParsedSegments): boolean {
+  if (parsed.propertyType !== 'apartment') {
+    return false;
+  }
+
+  return CITIES_WITH_DISTRICTS_SLUGS.has(resolveCatalogCitySlug(parsed));
+}
+
 export interface BuildCatalogUrlParams {
   region?: string;
   propertyType?: string;
   city?: string;
   nearMetro?: boolean;
   metroStation?: string;
+  cityDistrict?: string;
 }
 
 /** Путь каталога без query (для canonical). */
@@ -254,6 +310,7 @@ export function buildCatalogCanonicalPath(parsed: ParsedSegments): string {
     city: parsed.citySlug,
     nearMetro: parsed.nearMetro,
     metroStation: parsed.metroStationSlug,
+    cityDistrict: parsed.cityDistrictSlug,
   });
 }
 
@@ -276,7 +333,10 @@ export function buildCatalogUrl(params: BuildCatalogUrlParams = {}): string {
     parts.push(PROPERTY_TYPE_VALUE_TO_SLUG[params.propertyType]);
   }
 
-  if (params.nearMetro) {
+  if (params.cityDistrict) {
+    parts.push('raion');
+    parts.push(params.cityDistrict);
+  } else if (params.nearMetro) {
     if (params.metroStation) {
       parts.push('metro');
       parts.push(params.metroStation);
@@ -334,6 +394,43 @@ export function buildCatalogUrlFromAddress(
   return buildCatalogUrl({ propertyType });
 }
 
+/** Каталог квартир по району из адреса объявления; только для 7 городов с районами. */
+export function buildDistrictCatalogUrlFromAddress(
+  regionName?: string,
+  citySlug?: string,
+  cityDistrictSlug?: string,
+): string | undefined {
+  if (!cityDistrictSlug || !citySlug || !CITIES_WITH_DISTRICTS_SLUGS.has(citySlug)) {
+    return undefined;
+  }
+
+  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({
+      city: citySlug,
+      propertyType: 'apartment',
+      cityDistrict: cityDistrictSlug,
+    });
+  }
+
+  const region = propertyUrlRegionSlug(regionName, citySlug, 'apartment');
+  if (region && REGION_SLUGS.has(region)) {
+    return buildCatalogUrl({
+      region,
+      propertyType: 'apartment',
+      cityDistrict: cityDistrictSlug,
+    });
+  }
+
+  if (citySlug === MINSK_CITY_SLUG) {
+    return buildCatalogUrl({
+      propertyType: 'apartment',
+      cityDistrict: cityDistrictSlug,
+    });
+  }
+
+  return undefined;
+}
+
 /** Страница объявления: …/kvartiry/123 или …/vitebsk/kvartiry/123 */
 export function isPropertyDetailPath(pathname: string): boolean {
   const segments = pathname.split('/').filter(Boolean);
@@ -375,6 +472,7 @@ function resolveCatalogLocation(
   parsed: ParsedSegments,
   cityName?: string,
   metroStationName?: string,
+  cityDistrictName?: string,
 ): string {
   if (metroStationName) {
     return `у метро ${metroStationName} в Минске`;
@@ -386,28 +484,36 @@ function resolveCatalogLocation(
     return 'возле метро в Минске';
   }
 
-  if (cityName) {
-    return cityName.startsWith('в ') ? cityName : `в ${cityName}`;
-  }
-
   const key = catalogLocationKey(parsed);
   const map =
     parsed.propertyType === 'house' ? CATALOG_HOUSE_LOCATION : CATALOG_APARTMENT_LOCATION;
+  const cityLocation = cityName
+    ? (cityName.startsWith('в ') ? cityName : `в ${cityName}`)
+    : (map[key] ?? map[MINSK_CITY_SLUG]);
 
-  return map[key] ?? map[MINSK_CITY_SLUG];
+  if (cityDistrictName) {
+    return `${cityLocation} в районе ${cityDistrictName}`;
+  }
+
+  if (cityName) {
+    return cityLocation;
+  }
+
+  return cityLocation;
 }
 
 export function buildPageTitle(
   parsed: ParsedSegments,
   cityName?: string,
-  metroStationName?: string
+  metroStationName?: string,
+  cityDistrictName?: string,
 ): string {
   const typePart =
     parsed.propertyType && parsed.propertyType in DAILY_DEAL_PAGE_TITLES
       ? DAILY_DEAL_PAGE_TITLES[parsed.propertyType]
       : 'Посуточная аренда';
 
-  const location = resolveCatalogLocation(parsed, cityName, metroStationName);
+  const location = resolveCatalogLocation(parsed, cityName, metroStationName, cityDistrictName);
   if (!location) {
     return typePart || 'Посуточная аренда в Беларуси';
   }
@@ -426,6 +532,7 @@ export const NEAR_METRO_CATALOG_INTRO =
 function resolveApartmentCatalogMetaLocation(
   parsed: ParsedSegments,
   metroStationName?: string,
+  cityDistrictName?: string,
 ): string | null {
   if (parsed.propertyType !== 'apartment') {
     return null;
@@ -434,10 +541,15 @@ function resolveApartmentCatalogMetaLocation(
     return null;
   }
 
-  return (
+  const baseLocation =
     CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
-    CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG]
-  );
+    CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+
+  if (cityDistrictName) {
+    return `${baseLocation} в районе ${cityDistrictName}`;
+  }
+
+  return baseLocation;
 }
 
 function resolveHouseCatalogMetaLocation(parsed: ParsedSegments): string | null {
@@ -455,12 +567,13 @@ function resolveHouseCatalogMetaLocation(parsed: ParsedSegments): string | null 
 export function buildCatalogMetaTitle(
   parsed: ParsedSegments,
   metroStationName?: string,
+  cityDistrictName?: string,
 ): string | null {
   if (isNearMetroLandingPage(parsed)) {
     return 'Снять квартиру возле метро в Минске недорого. Посуточная аренда у метро в Минске на Посутки.by.';
   }
 
-  const apartmentLocation = resolveApartmentCatalogMetaLocation(parsed, metroStationName);
+  const apartmentLocation = resolveApartmentCatalogMetaLocation(parsed, metroStationName, cityDistrictName);
   if (apartmentLocation) {
     return `Снять квартиру ${apartmentLocation} недорого. Посуточная аренда ${apartmentLocation}.`;
   }
@@ -477,12 +590,13 @@ export function buildCatalogMetaTitle(
 export function buildCatalogMetaDescription(
   parsed: ParsedSegments,
   metroStationName?: string,
+  cityDistrictName?: string,
 ): string | null {
   if (isNearMetroLandingPage(parsed)) {
     return 'Квартиры на сутки возле метро в Минске. Посуточная аренда квартир у станций минского метро на Posutki.by без посредников.';
   }
 
-  const apartmentLocation = resolveApartmentCatalogMetaLocation(parsed, metroStationName);
+  const apartmentLocation = resolveApartmentCatalogMetaLocation(parsed, metroStationName, cityDistrictName);
   if (apartmentLocation) {
     return `Квартиры на сутки ${apartmentLocation}. Посуточная аренда квартир ${apartmentLocation} на Posutki.by без посредников.`;
   }

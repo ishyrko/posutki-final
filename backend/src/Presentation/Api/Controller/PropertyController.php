@@ -95,6 +95,7 @@ class PropertyController extends AbstractController
             rooms: $roomsList,
             metroStationId: $request->query->getInt('metroStationId') ?: null,
             nearMetro: $request->query->getBoolean('nearMetro', false),
+            cityDistrictSlug: $request->query->get('cityDistrictSlug') ?: null,
             guests: $guests,
             sortBy: $request->query->get('sortBy', 'createdAt'),
             sortOrder: $request->query->get('sortOrder', 'DESC'),

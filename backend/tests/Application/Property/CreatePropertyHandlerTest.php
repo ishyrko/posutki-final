@@ -89,7 +89,7 @@ final class CreatePropertyHandlerTest extends TestCase
                 }
             });
 
-        $cityDistrict = new \App\Domain\Property\Entity\CityDistrict(1, 'Советский район');
+        $cityDistrict = new \App\Domain\Property\Entity\CityDistrict(1, 'Советский район', 'sovetskiy');
         $districtIdReflection = new \ReflectionProperty($cityDistrict, 'id');
         $districtIdReflection->setAccessible(true);
         $districtIdReflection->setValue($cityDistrict, 7);

@@ -94,6 +94,10 @@ backfill-city-districts: ## Fill city district for properties in cities with dis
 	@echo "${GREEN}Backfilling city districts...${RESET}"
 	docker-compose exec php php bin/console app:backfill-city-districts --no-interaction
 
+backfill-city-district-slugs: ## Generate URL slugs for existing city_districts rows
+	@echo "${GREEN}Backfilling city district slugs...${RESET}"
+	docker-compose exec php php bin/console app:backfill-city-district-slugs --no-interaction
+
 sync-calendars: ## Sync external iCal calendars for all properties
 	@echo "${GREEN}Syncing external calendars...${RESET}"
 	docker-compose exec php php bin/console app:sync-external-calendars --no-interaction

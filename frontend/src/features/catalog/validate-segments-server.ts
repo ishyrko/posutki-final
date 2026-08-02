@@ -5,8 +5,10 @@ import {
   parseSegments,
   validatePublicSegmentsStructure,
   CITY_PREFIX_SLUGS,
+  resolveCatalogCitySlug,
   type ParsedSegments,
 } from "@/features/catalog/slugs";
+import type { CityDistrict } from "@/features/city-districts/types";
 
 interface CityResponse {
   slug: string;
@@ -34,6 +36,19 @@ const getMetroStationName = cache(async (slug: string): Promise<string | undefin
   }
 });
 
+const getCityDistrictsByCitySlug = cache(async (citySlug: string): Promise<CityDistrict[]> => {
+  try {
+    return await fetchPublicApi<CityDistrict[]>(
+      `/cities/${encodeURIComponent(citySlug)}/districts`,
+      {
+        next: { revalidate: 3600, tags: [`city-districts-${citySlug}`] },
+      },
+    );
+  } catch {
+    return [];
+  }
+});
+
 async function validateParsedCatalogLocation(parsed: ParsedSegments): Promise<boolean> {
   if (parsed.citySlug && !CITY_PREFIX_SLUGS.has(parsed.citySlug)) {
     const city = await getCityBySlug(parsed.citySlug);
@@ -45,10 +60,18 @@ async function validateParsedCatalogLocation(parsed: ParsedSegments): Promise<bo
     if (!stationName) return false;
   }
 
+  if (parsed.cityDistrictSlug) {
+    const citySlug = resolveCatalogCitySlug(parsed);
+    const districts = await getCityDistrictsByCitySlug(citySlug);
+    if (!districts.some((district) => district.slug === parsed.cityDistrictSlug)) {
+      return false;
+    }
+  }
+
   return true;
 }
 
-/** Полная проверка сегментов для SSR: структура + город/метро в API. */
+/** Полная проверка сегментов для SSR: структура + город/метро/район в API. */
 export async function validatePublicSegments(segments: string[] = []): Promise<boolean> {
   if (!validatePublicSegmentsStructure(segments)) {
     return false;
@@ -68,4 +91,14 @@ export async function validatePublicSegments(segments: string[] = []): Promise<b
 export async function resolveMetroStationName(slug?: string): Promise<string | undefined> {
   if (!slug) return undefined;
   return getMetroStationName(slug);
+}
+
+export async function resolveCityDistrictName(
+  parsed: ParsedSegments,
+): Promise<string | undefined> {
+  if (!parsed.cityDistrictSlug) return undefined;
+
+  const citySlug = resolveCatalogCitySlug(parsed);
+  const districts = await getCityDistrictsByCitySlug(citySlug);
+  return districts.find((district) => district.slug === parsed.cityDistrictSlug)?.name;
 }

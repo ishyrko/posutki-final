@@ -12,5 +12,17 @@ interface CityDistrictRepositoryInterface
 
     public function findByCityIdAndName(int $cityId, string $name): ?CityDistrict;
 
+    public function findByCityIdAndSlug(int $cityId, string $slug): ?CityDistrict;
+
+    /**
+     * @return list<CityDistrict>
+     */
+    public function findAllByCityId(int $cityId): array;
+
+    /**
+     * @return list<CityDistrict>
+     */
+    public function findAllWithoutSlug(): array;
+
     public function save(CityDistrict $cityDistrict): void;
 }

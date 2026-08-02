@@ -9,7 +9,7 @@ import PropertyCard from "./PropertyCard";
 import { PriceDisplay } from "@/components/BynCurrency";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useProperties, useExchangeRates } from "@/features/properties/hooks";
-import { formatAddress } from "@/features/properties/types";
+import { PropertyAddress } from "@/features/properties/components/PropertyAddress";
 import { buildCatalogUrl, propertyUrlRegionSlug, REGION_SLUGS } from "@/features/catalog/slugs";
 import { RESIDENTIAL_PROPERTY_TYPES } from "@/features/catalog/residential-types";
 import type { ExchangeRates } from "@/features/properties/api";
@@ -104,7 +104,7 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
                 primaryBynAmount={primaryAmount}
                 secondaryPrice={secondary}
                 title={property.title}
-                address={formatAddress(property.address)}
+                address={<PropertyAddress address={property.address} propertyType={property.type} />}
                 beds={property.specifications.rooms || 0}
                 baths={property.specifications.bathrooms ?? 1}
                 area={property.specifications.area || 0}

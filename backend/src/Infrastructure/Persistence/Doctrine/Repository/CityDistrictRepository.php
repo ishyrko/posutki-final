@@ -34,6 +34,44 @@ class CityDistrictRepository extends ServiceEntityRepository implements CityDist
             ->getOneOrNullResult();
     }
 
+    public function findByCityIdAndSlug(int $cityId, string $slug): ?CityDistrict
+    {
+        return $this->createQueryBuilder('d')
+            ->where('d.cityId = :cityId')
+            ->andWhere('d.slug = :slug')
+            ->setParameter('cityId', $cityId)
+            ->setParameter('slug', $slug)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * @return list<CityDistrict>
+     */
+    public function findAllByCityId(int $cityId): array
+    {
+        return $this->createQueryBuilder('d')
+            ->where('d.cityId = :cityId')
+            ->andWhere('d.slug IS NOT NULL')
+            ->setParameter('cityId', $cityId)
+            ->orderBy('d.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return list<CityDistrict>
+     */
+    public function findAllWithoutSlug(): array
+    {
+        return $this->createQueryBuilder('d')
+            ->where('d.slug IS NULL')
+            ->orderBy('d.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function save(CityDistrict $cityDistrict): void
     {
         try {

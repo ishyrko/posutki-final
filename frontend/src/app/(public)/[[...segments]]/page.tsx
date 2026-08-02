@@ -14,6 +14,7 @@ import {
 } from "@/features/catalog/slugs";
 import {
   resolveMetroStationName,
+  resolveCityDistrictName,
   validatePublicSegments,
 } from "@/features/catalog/validate-segments-server";
 import { formatAddress, Property } from "@/features/properties/types";
@@ -111,9 +112,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const metroStationName = await resolveMetroStationName(parsed.metroStationSlug);
-  const h1Title = buildPageTitle(parsed, undefined, metroStationName);
-  const metaTitle = buildCatalogMetaTitle(parsed, metroStationName);
-  const metaDescription = buildCatalogMetaDescription(parsed, metroStationName);
+  const cityDistrictName = await resolveCityDistrictName(parsed);
+  const h1Title = buildPageTitle(parsed, undefined, metroStationName, cityDistrictName);
+  const metaTitle = buildCatalogMetaTitle(parsed, metroStationName, cityDistrictName);
+  const metaDescription = buildCatalogMetaDescription(parsed, metroStationName, cityDistrictName);
 
   return {
     title: metaTitle ?? `${h1Title} | Посутки.by`,
@@ -181,7 +183,8 @@ export default async function SegmentsPage({ params }: PageProps) {
   }
 
   const metroStationName = await resolveMetroStationName(parsed.metroStationSlug);
-  const title = buildPageTitle(parsed, undefined, metroStationName);
+  const cityDistrictName = await resolveCityDistrictName(parsed);
+  const title = buildPageTitle(parsed, undefined, metroStationName, cityDistrictName);
 
   return <CatalogPage parsed={parsed} title={title} />;
 }

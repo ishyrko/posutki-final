@@ -158,6 +158,11 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
                 ->setParameter('regionSlug', $filters['regionSlug']);
         }
 
+        if (isset($filters['cityDistrictId'])) {
+            $qb->andWhere('p.cityDistrictId = :cityDistrictId')
+                ->setParameter('cityDistrictId', $filters['cityDistrictId']);
+        }
+
         if (
             isset($filters['excludeCitySlugs'])
             && \is_array($filters['excludeCitySlugs'])

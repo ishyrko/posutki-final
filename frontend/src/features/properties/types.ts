@@ -11,6 +11,7 @@ export interface Address {
     regionName?: string;
     districtName?: string;
     cityDistrictName?: string;
+    cityDistrictSlug?: string;
     cityId: number;
     cityName: string;
     citySlug?: string;
@@ -206,6 +207,7 @@ export interface PropertyFilters {
     roomValues?: readonly number[];
     metroStationId?: number;
     nearMetro?: boolean;
+    cityDistrictSlug?: string;
     /** Минимальная вместимость (maxDailyGuests >= guests). */
     guests?: number;
     sortBy?: string;
@@ -224,6 +226,11 @@ export interface PropertyListResponse {
 /**
  * Compose a human-readable address string from the address object.
  */
+export function formatCityDistrictLabel(name: string): string {
+    const district = name.trim();
+    return /район$/iu.test(district) || /р-н$/iu.test(district) ? district : `${district} р-н`;
+}
+
 export function formatAddress(address: Address): string {
     const parts: string[] = [];
     if (address.streetName) parts.push(address.streetName);
@@ -235,8 +242,7 @@ export function formatAddress(address: Address): string {
         parts.push(`корп. ${address.block}`);
     }
     if (address.cityDistrictName) {
-        const district = address.cityDistrictName.trim();
-        parts.push(/\bрайон$/iu.test(district) ? district : `${district} р-н`);
+        parts.push(formatCityDistrictLabel(address.cityDistrictName));
     }
     if (address.cityName) parts.push(address.cityName);
     return parts.join(', ');

@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import { MapPin, BedDouble, Bath, Maximize, Heart } from "lucide-react";
 import Link from "next/link";
 import type { ExchangeRates } from "../api";
-import { Property, formatAddress } from "../types";
+import { Property } from "../types";
+import { PropertyAddress } from "./PropertyAddress";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "../price-display";
 import { useToggleFavorite, useFavoriteIds, useExchangeRates } from "../hooks";
 import { buildPropertyUrlFromRegionName } from "@/features/catalog/slugs";
@@ -110,21 +111,24 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
         </div>
       </div>
 
-      <Link href={href} className="block p-5">
+      <div className="p-5">
+        <Link href={href} className="block">
           <div className="flex justify-between items-start mb-2">
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                {title}
-              </h3>
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <MapPin className="w-3.5 h-3.5" />
-                <span className="line-clamp-1">{formatAddress(address)}</span>
-              </div>
-            </div>
+            <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+              {title}
+            </h3>
           </div>
+        </Link>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
+          <MapPin className="w-3.5 h-3.5" />
+          <span className="line-clamp-1">
+            <PropertyAddress address={address} propertyType={type} />
+          </span>
+        </div>
 
+        <Link href={href} className="block">
           {/* Features */}
-          <div className="flex items-start gap-4 pt-4 mt-4 border-t border-border/50">
+          <div className="flex items-start gap-4 pt-4 mt-2 border-t border-border/50">
             {showRooms(type) && specifications.rooms != null && (
               <div className="flex flex-col gap-1 min-w-0">
                 <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -157,7 +161,8 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
               </span>
             </div>
           </div>
-      </Link>
+        </Link>
+      </div>
     </motion.div>
   );
 };

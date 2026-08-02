@@ -3,11 +3,13 @@ import { fetchPublicApi } from "@/lib/server-api";
 import { getSiteOrigin } from "@/lib/site-url";
 import {
   CITY_PREFIX_SLUG_LIST,
+  CITIES_WITH_DISTRICTS_SLUGS,
   PROPERTY_TYPE_SLUG_TO_VALUE,
   REGION_SLUGS,
   buildCatalogUrl,
   buildPropertyUrlFromRegionName,
 } from "@/features/catalog/slugs";
+import type { CityDistrict } from "@/features/city-districts/types";
 import type { Article, ArticleCategory } from "@/features/articles/types";
 import type { Property } from "@/features/properties/types";
 
@@ -105,6 +107,46 @@ function catalogEntries(now: Date): Entry[] {
   }));
 }
 
+async function districtEntries(now: Date): Promise<Entry[]> {
+  const entries: Entry[] = [];
+
+  for (const citySlug of CITIES_WITH_DISTRICTS_SLUGS) {
+    try {
+      const districts = await fetchPublicApi<CityDistrict[]>(
+        `/cities/${encodeURIComponent(citySlug)}/districts`,
+        { next: { revalidate: 3600, tags: [`city-districts-${citySlug}`] } },
+      );
+
+      const isCityPrefix = CITY_PREFIX_SLUG_LIST.includes(
+        citySlug as (typeof CITY_PREFIX_SLUG_LIST)[number],
+      );
+      const isRegion = REGION_SLUGS.has(citySlug);
+
+      for (const district of districts) {
+        if (!district.slug) continue;
+
+        const path = buildCatalogUrl({
+          region: !isCityPrefix && isRegion ? citySlug : undefined,
+          city: isCityPrefix ? citySlug : undefined,
+          propertyType: "apartment",
+          cityDistrict: district.slug,
+        });
+
+        entries.push({
+          url: toAbsolute(path),
+          lastModified: now,
+          changeFrequency: "weekly",
+          priority: 0.6,
+        });
+      }
+    } catch {
+      // Soft-fail per city.
+    }
+  }
+
+  return entries;
+}
+
 async function articleEntries(now: Date): Promise<Entry[]> {
   try {
     const [categories, articles] = await Promise.all([
@@ -186,14 +228,16 @@ async function propertyEntries(now: Date): Promise<Entry[]> {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
-  const [articles, properties] = await Promise.all([
+  const [articles, properties, districts] = await Promise.all([
     articleEntries(now),
     propertyEntries(now),
+    districtEntries(now),
   ]);
 
   return [
     ...staticEntries(now),
     ...catalogEntries(now),
+    ...districts,
     ...articles,
     ...properties,
   ];

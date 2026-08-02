@@ -7,7 +7,8 @@ import PropertyCard from "@/components/PropertyCard";
 import { PriceDisplay } from "@/components/BynCurrency";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useExchangeRates, useOwnerListings } from "@/features/properties/hooks";
-import { formatAddress, type Property } from "@/features/properties/types";
+import { PropertyAddress } from "@/features/properties/components/PropertyAddress";
+import { type Property } from "@/features/properties/types";
 import { propertyUrlRegionSlug } from "@/features/catalog/slugs";
 import type { ExchangeRates } from "@/features/properties/api";
 import {
@@ -54,7 +55,7 @@ function OwnerListingCard({
       primaryBynAmount={primaryAmount}
       secondaryPrice={secondary}
       title={property.title}
-      address={formatAddress(property.address)}
+      address={<PropertyAddress address={property.address} propertyType={property.type} />}
       beds={property.specifications.rooms || 0}
       baths={property.specifications.bathrooms ?? 1}
       area={property.specifications.area || 0}

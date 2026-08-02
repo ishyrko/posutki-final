@@ -1,4 +1,5 @@
-import { Property, formatAddress } from '../types';
+import { Property } from '../types';
+import { PropertyAddress } from './PropertyAddress';
 import { normalizeCurrency } from '../price-display';
 import { formatPropertyDealHeading } from '../property-deal-heading';
 import { PriceInByn } from '@/components/BynCurrency';
@@ -40,7 +41,7 @@ export function PropertyInfo({ property }: PropertyInfoProps) {
                     <div className="flex items-center text-muted-foreground">
                         <MapPin className="h-4 w-4 mr-1.5 text-primary/60" />
                         <span className="text-sm font-medium">
-                            {formatAddress(property.address)}
+                            <PropertyAddress address={property.address} propertyType={property.type} />
                         </span>
                     </div>
                 </div>

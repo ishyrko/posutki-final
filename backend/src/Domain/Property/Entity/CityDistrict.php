@@ -22,13 +22,17 @@ class CityDistrict
     #[ORM\Column(type: 'string', length: 255)]
     private string $name;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $slug = null;
+
     #[ORM\Column(type: 'datetime_immutable', name: 'created_at')]
     private \DateTimeImmutable $createdAt;
 
-    public function __construct(int $cityId, string $name)
+    public function __construct(int $cityId, string $name, string $slug)
     {
         $this->cityId = $cityId;
         $this->name = trim($name);
+        $this->slug = $slug;
         $this->createdAt = new \DateTimeImmutable();
     }
 
@@ -45,6 +49,16 @@ class CityDistrict
     public function getName(): string
     {
         return $this->name;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(string $slug): void
+    {
+        $this->slug = $slug;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

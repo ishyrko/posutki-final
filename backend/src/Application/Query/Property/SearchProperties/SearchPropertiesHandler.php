@@ -14,6 +14,7 @@ use App\Domain\Property\Repository\{
     MetroStationRepositoryInterface,
     PropertyMetroStationRepositoryInterface
 };
+use App\Domain\Property\Service\CitiesWithDistricts;
 use App\Domain\Shared\Exception\NotFoundException;
 use App\Infrastructure\Service\ExchangeRateService;
 
@@ -78,6 +79,27 @@ final class SearchPropertiesHandler
         }
         if ($query->cityId !== null) {
             $filters['cityId'] = $query->cityId;
+        }
+        if ($query->cityDistrictSlug !== null) {
+            $districtSlug = trim($query->cityDistrictSlug);
+            if ($districtSlug !== '') {
+                $resolvedCitySlug = $query->citySlug ?? $query->regionSlug;
+                if ($resolvedCitySlug === null || trim($resolvedCitySlug) === '') {
+                    throw new NotFoundException('Район не найден');
+                }
+
+                $city = $this->cityRepository->findBySlug(trim($resolvedCitySlug));
+                if ($city === null || !CitiesWithDistricts::supportsSlug($city->getSlug())) {
+                    throw new NotFoundException('Район не найден');
+                }
+
+                $cityDistrict = $this->cityDistrictRepository->findByCityIdAndSlug($city->getId(), $districtSlug);
+                if ($cityDistrict === null) {
+                    throw new NotFoundException('Район не найден');
+                }
+
+                $filters['cityDistrictId'] = $cityDistrict->getId();
+            }
         }
         $filterCurrency = $query->currency ?? 'BYN';
         if ($query->minPrice !== null) {

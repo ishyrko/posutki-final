@@ -38,7 +38,9 @@ import PropertyCard from "@/components/PropertyCard";
 import PropertyMap, { type MapProperty } from "@/components/PropertyMap";
 import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { useMetroStations } from "@/features/metro/hooks";
+import { useCityDistricts } from "@/features/city-districts/hooks";
 import type { MetroStation, NearbyMetroStation } from "@/features/metro/types";
+import { PropertyAddress } from "@/features/properties/components/PropertyAddress";
 import { Property, formatAddress, type Currency } from "@/features/properties/types";
 import { useCurrency } from "@/context/CurrencyContext";
 import type { ExchangeRates } from "@/features/properties/api";
@@ -47,11 +49,16 @@ import {
   DEFAULT_EXCHANGE_RATES_FALLBACK,
 } from "@/features/properties/price-display";
 import {
+  buildCatalogUrl,
   buildPageTitle,
+  CITY_PREFIX_SLUGS,
+  isDistrictCatalogContext,
   isMetroCatalogContext,
   isNearMetroLandingPage,
   NEAR_METRO_CATALOG_INTRO,
   propertyUrlRegionSlug,
+  REGION_SLUGS,
+  resolveCatalogCitySlug,
   type ParsedSegments,
 } from "@/features/catalog/slugs";
 import { GuestCountControl } from "@/features/catalog/GuestCountControl";
@@ -218,7 +225,7 @@ function propertyToListCard(p: Property, rates: ExchangeRates, metroFilterStatio
     primaryBynAmount: primaryAmount,
     secondaryPrice: secondary,
     title: p.title,
-    address: formatAddress(p.address),
+    address: <PropertyAddress address={p.address} propertyType={p.type} />,
     beds: showRooms(p.type) ? (p.specifications.rooms ?? null) : null,
     baths: showBathrooms(p.type) ? (p.specifications.bathrooms ?? null) : null,
     area: p.specifications.area || 0,
@@ -282,10 +289,15 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
   const validPageFromQuery = Number.isFinite(pageFromQuery) && pageFromQuery > 0 ? Math.floor(pageFromQuery) : 1;
   const [currentPage, setCurrentPage] = useState(validPageFromQuery);
   const metroFilterVisible = isMetroCatalogContext(parsed);
+  const districtFilterVisible = isDistrictCatalogContext(parsed);
+  const catalogCitySlug = resolveCatalogCitySlug(parsed);
   const nearMetroLanding = isNearMetroLandingPage(parsed);
   const showMetroSidebarFilters = metroFilterVisible && !parsed.metroStationSlug;
+  const showDistrictSidebarFilters = districtFilterVisible && !parsed.cityDistrictSlug;
   const { data: metroStationsData } = useMetroStations(1, metroFilterVisible);
+  const { data: cityDistrictsData } = useCityDistricts(catalogCitySlug, districtFilterVisible);
   const metroStations = metroStationsData ?? EMPTY_METRO_STATIONS;
+  const cityDistricts = cityDistrictsData ?? [];
   const roomsFilterVisible = showRoomsCatalogFilter(parsed.propertyType);
 
   useEffect(() => {
@@ -358,10 +370,14 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     selectedPaymentMethodIds.length;
 
   const pageTitle = useMemo(() => {
+    if (parsed.cityDistrictSlug) {
+      const district = cityDistricts.find((d) => d.slug === parsed.cityDistrictSlug);
+      if (district) return buildPageTitle(parsed, undefined, undefined, district.name);
+    }
     if (!parsed.metroStationSlug) return title;
     const station = metroStations.find((s) => s.slug === parsed.metroStationSlug);
     return station ? buildPageTitle(parsed, undefined, station.name) : title;
-  }, [parsed, metroStations, title]);
+  }, [parsed, metroStations, cityDistricts, title]);
 
   /** Same station id as sent to the API when filtering by metro (URL or sidebar). */
   const metroFilterStationId = useMemo((): number | null => {
@@ -390,7 +406,9 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
       : undefined;
 
     if (parsed.dealType) f.dealType = parsed.dealType;
-    if (parsed.citySlug) {
+    if (parsed.cityDistrictSlug) {
+      f.citySlug = resolveCatalogCitySlug(parsed);
+    } else if (parsed.citySlug) {
       f.citySlug = parsed.citySlug;
     } else if (parsed.regionSlug) {
       f.regionSlug = parsed.regionSlug;
@@ -411,6 +429,9 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
         f.nearMetro = true;
       }
     }
+    if (parsed.cityDistrictSlug) {
+      f.cityDistrictSlug = parsed.cityDistrictSlug;
+    }
     if (minPrice) f.minPrice = Number(minPrice);
     if (maxPrice) f.maxPrice = Number(maxPrice);
     if (guestsFromQuery !== null) f.guests = guestsFromQuery;
@@ -418,7 +439,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
     if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     return f;
-  }, [fetchAllForClientFilters, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort]);
+  }, [fetchAllForClientFilters, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort]);
 
   const { data, isLoading } = useProperties(filters);
   const { data: rates } = useExchangeRates();
@@ -677,6 +698,45 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
           Рядом с метро
         </label>
         )}
+      </div>
+      )}
+
+      {showDistrictSidebarFilters && cityDistricts.length > 0 && (
+      <div>
+        <label className="text-sm font-semibold text-foreground mb-2 block font-display">Район</label>
+        <Select
+          value="all"
+          onValueChange={(value) => {
+            const isCityPrefix = CITY_PREFIX_SLUGS.has(catalogCitySlug);
+            const url = buildCatalogUrl({
+              region:
+                !isCityPrefix && (parsed.regionSlug || REGION_SLUGS.has(catalogCitySlug))
+                  ? (parsed.regionSlug ?? catalogCitySlug)
+                  : undefined,
+              city: isCityPrefix ? catalogCitySlug : parsed.citySlug,
+              propertyType: parsed.propertyType,
+              cityDistrict: value === "all" ? undefined : value,
+            });
+            router.push(url);
+          }}
+        >
+          <SelectTrigger
+            className={cn(
+              filterSurfaceInput,
+              "w-full cursor-pointer justify-between gap-2 text-left [&>span]:min-w-0 [&>span]:truncate",
+            )}
+          >
+            <SelectValue placeholder="Любой район" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border z-50 max-h-72">
+            <SelectItem value="all">Любой район</SelectItem>
+            {cityDistricts.map((district) => (
+              <SelectItem key={district.id} value={district.slug}>
+                {district.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       )}
 
@@ -973,7 +1033,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                             primaryBynAmount={primaryAmount}
                             secondaryPrice={secondary}
                             title={property.title}
-                            address={formatAddress(property.address)}
+                            address={<PropertyAddress address={property.address} propertyType={property.type} />}
                             beds={property.specifications.rooms || 0}
                             baths={property.specifications.bathrooms ?? 1}
                             area={property.specifications.area || 0}

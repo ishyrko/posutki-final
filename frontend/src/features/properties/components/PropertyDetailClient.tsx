@@ -26,6 +26,7 @@ import { trackPropertyContactEvent, trackPropertyEngagementEvent } from "@/lib/g
 import { useSendMessage } from "@/features/messages/hooks";
 import { useUser } from "@/features/auth/hooks";
 import { formatAddress, Property } from "@/features/properties/types";
+import { PropertyAddress } from "@/features/properties/components/PropertyAddress";
 import { getVideoEmbedInfo } from "@/features/properties/lib/videoEmbed";
 import { PropertyVideoPlayer } from "@/features/properties/components/PropertyVideoPlayer";
 import { formatPropertyDealHeading } from "@/features/properties/property-deal-heading";
@@ -657,7 +658,9 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                 <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
                   <p className="flex items-center gap-1.5 text-muted-foreground min-w-0">
                     <MapPin className="w-4 h-4 shrink-0" />
-                    <span className="truncate">{addressStr}</span>
+                    <span className="truncate">
+                      <PropertyAddress address={property.address} propertyType={property.type} />
+                    </span>
                   </p>
                   {nearbyMetroStations.length > 0 && (
                     <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">

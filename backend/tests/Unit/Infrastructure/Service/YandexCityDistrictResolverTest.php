@@ -10,6 +10,8 @@ use App\Domain\Property\Entity\PropertyGeocoderResult;
 use App\Domain\Property\Repository\CityDistrictRepositoryInterface;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyGeocoderResultRepositoryInterface;
+use App\Infrastructure\Service\CityDistrictSlugGenerator;
+use App\Infrastructure\Service\SlugGenerator;
 use App\Infrastructure\Service\YandexCityDistrictResolver;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -63,7 +65,7 @@ final class YandexCityDistrictResolverTest extends TestCase
             )
             ->willReturn($response);
 
-        $existingDistrict = new CityDistrict(1, 'Советский район');
+        $existingDistrict = new CityDistrict(1, 'Советский район', 'sovetskiy');
         $idReflection = new \ReflectionProperty($existingDistrict, 'id');
         $idReflection->setAccessible(true);
         $idReflection->setValue($existingDistrict, 42);
@@ -102,7 +104,7 @@ final class YandexCityDistrictResolverTest extends TestCase
         $httpClient = $this->createStub(HttpClientInterface::class);
         $httpClient->method('request')->willReturn($response);
 
-        $existingDistrict = new CityDistrict(1, 'Советский район');
+        $existingDistrict = new CityDistrict(1, 'Советский район', 'sovetskiy');
         $idReflection = new \ReflectionProperty($existingDistrict, 'id');
         $idReflection->setAccessible(true);
         $idReflection->setValue($existingDistrict, 42);
@@ -149,7 +151,7 @@ final class YandexCityDistrictResolverTest extends TestCase
         $httpClient = $this->createMock(HttpClientInterface::class);
         $httpClient->expects(self::never())->method('request');
 
-        $existingDistrict = new CityDistrict(1, 'Советский район');
+        $existingDistrict = new CityDistrict(1, 'Советский район', 'sovetskiy');
         $idReflection = new \ReflectionProperty($existingDistrict, 'id');
         $idReflection->setAccessible(true);
         $idReflection->setValue($existingDistrict, 42);
@@ -194,7 +196,7 @@ final class YandexCityDistrictResolverTest extends TestCase
         $httpClient = $this->createMock(HttpClientInterface::class);
         $httpClient->expects(self::once())->method('request')->willReturn($response);
 
-        $existingDistrict = new CityDistrict(1, 'Советский район');
+        $existingDistrict = new CityDistrict(1, 'Советский район', 'sovetskiy');
         $idReflection = new \ReflectionProperty($existingDistrict, 'id');
         $idReflection->setAccessible(true);
         $idReflection->setValue($existingDistrict, 42);
@@ -292,14 +294,21 @@ final class YandexCityDistrictResolverTest extends TestCase
         ?CityRepositoryInterface $cityRepository = null,
         ?CityDistrictRepositoryInterface $cityDistrictRepository = null,
         ?PropertyGeocoderResultRepositoryInterface $propertyGeocoderResultRepository = null,
+        ?CityDistrictSlugGenerator $cityDistrictSlugGenerator = null,
         string $apiKey = 'test-key',
         string $referer = 'https://posutki.by',
     ): YandexCityDistrictResolver {
+        $districtRepository = $cityDistrictRepository ?? $this->createStub(CityDistrictRepositoryInterface::class);
+
         return new YandexCityDistrictResolver(
             $httpClient ?? $this->createStub(HttpClientInterface::class),
             $cityRepository ?? $this->createStub(CityRepositoryInterface::class),
-            $cityDistrictRepository ?? $this->createStub(CityDistrictRepositoryInterface::class),
+            $districtRepository,
             $propertyGeocoderResultRepository ?? $this->createStub(PropertyGeocoderResultRepositoryInterface::class),
+            $cityDistrictSlugGenerator ?? new CityDistrictSlugGenerator(
+                new SlugGenerator(),
+                $districtRepository,
+            ),
             $this->createStub(LoggerInterface::class),
             $apiKey,
             $referer,

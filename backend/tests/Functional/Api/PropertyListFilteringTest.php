@@ -310,25 +310,6 @@ final class PropertyListFilteringTest extends ApiTestCase
         self::assertSame(3, $payload['pagination']['pages']);
     }
 
-    /**
-     * @return list<int>
-     */
-    private function idsFromListPayload(): array
-    {
-        $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
-        self::assertTrue($payload['success']);
-        self::assertIsArray($payload['data']);
-
-        $ids = [];
-        foreach ($payload['data'] as $row) {
-            self::assertIsArray($row);
-            self::assertArrayHasKey('id', $row);
-            $ids[] = (int) $row['id'];
-        }
-
-        return $ids;
-    }
-
     public function testSortByPriceAscOverridesVipPlacement(): void
     {
         $owner = $this->createUser('filter-sort-price@example.com', 'Password123!');

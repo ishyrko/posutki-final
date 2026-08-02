@@ -265,4 +265,23 @@ abstract class ApiTestCase extends WebTestCase
         $reflection->setAccessible(true);
         $reflection->setValue($object, $value);
     }
+
+    /**
+     * @return list<int>
+     */
+    protected function idsFromListPayload(): array
+    {
+        $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertTrue($payload['success']);
+        self::assertIsArray($payload['data']);
+
+        $ids = [];
+        foreach ($payload['data'] as $row) {
+            self::assertIsArray($row);
+            self::assertArrayHasKey('id', $row);
+            $ids[] = (int) $row['id'];
+        }
+
+        return $ids;
+    }
 }

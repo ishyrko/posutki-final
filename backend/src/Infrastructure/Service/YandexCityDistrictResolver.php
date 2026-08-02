@@ -11,6 +11,7 @@ use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyGeocoderResultRepositoryInterface;
 use App\Domain\Property\Service\CitiesWithDistricts;
 use App\Domain\Property\Service\CityDistrictResolverInterface;
+use App\Infrastructure\Service\CityDistrictSlugGenerator;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -23,6 +24,7 @@ final class YandexCityDistrictResolver implements CityDistrictResolverInterface
         private readonly CityRepositoryInterface $cityRepository,
         private readonly CityDistrictRepositoryInterface $cityDistrictRepository,
         private readonly PropertyGeocoderResultRepositoryInterface $propertyGeocoderResultRepository,
+        private readonly CityDistrictSlugGenerator $cityDistrictSlugGenerator,
         private readonly LoggerInterface $logger,
         private readonly string $apiKey,
         private readonly string $referer,
@@ -61,7 +63,8 @@ final class YandexCityDistrictResolver implements CityDistrictResolverInterface
                 return $existing;
             }
 
-            $cityDistrict = new CityDistrict($cityId, $districtName);
+            $slug = $this->cityDistrictSlugGenerator->generateSlug($cityId, $districtName);
+            $cityDistrict = new CityDistrict($cityId, $districtName, $slug);
             $this->cityDistrictRepository->save($cityDistrict);
 
             $persisted = $this->cityDistrictRepository->findByCityIdAndName($cityId, $districtName);
