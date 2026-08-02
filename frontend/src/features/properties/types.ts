@@ -231,7 +231,11 @@ export function formatCityDistrictLabel(name: string): string {
     return /район$/iu.test(district) || /р-н$/iu.test(district) ? district : `${district} р-н`;
 }
 
-export function formatAddress(address: Address): string {
+export function formatAddress(
+    address: Address,
+    options?: { includeCityDistrict?: boolean },
+): string {
+    const includeCityDistrict = options?.includeCityDistrict ?? true;
     const parts: string[] = [];
     if (address.streetName) parts.push(address.streetName);
     if (address.building && address.block) {
@@ -241,7 +245,7 @@ export function formatAddress(address: Address): string {
     } else if (address.block) {
         parts.push(`корп. ${address.block}`);
     }
-    if (address.cityDistrictName) {
+    if (includeCityDistrict && address.cityDistrictName) {
         parts.push(formatCityDistrictLabel(address.cityDistrictName));
     }
     if (address.cityName) parts.push(address.cityName);

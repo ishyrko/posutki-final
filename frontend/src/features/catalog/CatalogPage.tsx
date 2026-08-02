@@ -40,7 +40,6 @@ import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { useMetroStations } from "@/features/metro/hooks";
 import { useCityDistricts } from "@/features/city-districts/hooks";
 import type { MetroStation, NearbyMetroStation } from "@/features/metro/types";
-import { PropertyAddress } from "@/features/properties/components/PropertyAddress";
 import { Property, formatAddress, type Currency } from "@/features/properties/types";
 import { useCurrency } from "@/context/CurrencyContext";
 import type { ExchangeRates } from "@/features/properties/api";
@@ -225,7 +224,7 @@ function propertyToListCard(p: Property, rates: ExchangeRates, metroFilterStatio
     primaryBynAmount: primaryAmount,
     secondaryPrice: secondary,
     title: p.title,
-    address: <PropertyAddress address={p.address} propertyType={p.type} />,
+    address: formatAddress(p.address, { includeCityDistrict: false }),
     beds: showRooms(p.type) ? (p.specifications.rooms ?? null) : null,
     baths: showBathrooms(p.type) ? (p.specifications.bathrooms ?? null) : null,
     area: p.specifications.area || 0,
@@ -250,7 +249,7 @@ function propertyToMapItem(p: Property, rates: ExchangeRates, displayCurrency: C
     lng: p.coordinates.longitude,
     title: p.title,
     price: primaryPlain,
-    address: formatAddress(p.address),
+    address: formatAddress(p.address, { includeCityDistrict: false }),
     image: p.images?.[0]?.thumbnailUrl || p.images?.[0]?.url || "",
     dealType: p.dealType,
     propertyType: p.type,
@@ -1033,7 +1032,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                             primaryBynAmount={primaryAmount}
                             secondaryPrice={secondary}
                             title={property.title}
-                            address={<PropertyAddress address={property.address} propertyType={property.type} />}
+                            address={formatAddress(property.address, { includeCityDistrict: false })}
                             beds={property.specifications.rooms || 0}
                             baths={property.specifications.bathrooms ?? 1}
                             area={property.specifications.area || 0}

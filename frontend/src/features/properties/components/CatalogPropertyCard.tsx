@@ -11,8 +11,7 @@ import {
     DEFAULT_EXCHANGE_RATES_FALLBACK,
     formatPropertyPrices,
 } from '@/features/properties/price-display';
-import { PropertyAddress } from '@/features/properties/components/PropertyAddress';
-import { type Property } from '@/features/properties/types';
+import { formatAddress, type Property } from '@/features/properties/types';
 
 type CatalogPropertyCardProps = {
     property: Property;
@@ -49,7 +48,7 @@ export function CatalogPropertyCard({
             primaryBynAmount={primaryAmount}
             secondaryPrice={secondary}
             title={property.title}
-            address={<PropertyAddress address={property.address} propertyType={property.type} />}
+            address={formatAddress(property.address, { includeCityDistrict: false })}
             beds={property.specifications.rooms || 0}
             baths={property.specifications.bathrooms ?? 1}
             area={property.specifications.area || 0}

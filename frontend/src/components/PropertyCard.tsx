@@ -18,7 +18,7 @@ interface PropertyCardProps {
   /** Approximate price in listing currency (or USD if listing was in BYN). */
   secondaryPrice?: string;
   title: string;
-  address: ReactNode;
+  address: string;
   beds: number;
   baths: number;
   area: number;
@@ -124,8 +124,7 @@ const PropertyCard = ({
         </button>
       </div>
 
-      <div className="p-4 flex flex-col flex-1">
-        <Link href={href} className="block">
+      <Link href={href} className="block p-4 flex flex-col flex-1">
           <div className="flex items-start justify-between gap-2 mb-1">
             <h3 className="font-display font-semibold text-base text-foreground leading-tight line-clamp-2 min-h-[2.5rem]">
               {title}
@@ -140,14 +139,12 @@ const PropertyCard = ({
               </div>
             )}
           </div>
-        </Link>
 
-        <p className="text-xs text-muted-foreground flex items-center gap-1 mb-3 line-clamp-1">
-          <MapPin className="w-3 h-3 shrink-0" />
-          {address}
-        </p>
+          <p className="text-xs text-muted-foreground flex items-center gap-1 mb-3 line-clamp-1">
+            <MapPin className="w-3 h-3 shrink-0" />
+            {address}
+          </p>
 
-        <Link href={href} className="block flex flex-col flex-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mb-3">
             <span className="flex items-center gap-1">
               <BedDouble className="w-3.5 h-3.5" />
@@ -187,8 +184,7 @@ const PropertyCard = ({
           {isDaily && secondaryPrice && (
             <span className="text-xs text-muted-foreground mt-0.5">{secondaryPrice}</span>
           )}
-        </Link>
-      </div>
+      </Link>
     </motion.div>
   );
 };

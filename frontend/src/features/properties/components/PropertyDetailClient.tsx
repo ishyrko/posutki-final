@@ -198,6 +198,11 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
       return;
     }
 
+    // Backend returns 404 for non-published listings; owners preview moderation/etc. without counting.
+    if (property.status !== "published") {
+      return;
+    }
+
     const isListingOwner =
       currentUser?.id != null &&
       property.ownerId != null &&
@@ -208,7 +213,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
 
     void trackViewOnce(`property:${property.id}`, (visitorId) =>
       trackPropertyView(property.id, visitorId),
-    );
+    ).catch(() => null);
   }, [property, currentUser?.id]);
 
   const mainImageSrc =

@@ -18,7 +18,7 @@ interface PropertyListCardProps {
   primaryBynAmount?: number;
   secondaryPrice?: string;
   title: string;
-  address: ReactNode;
+  address: string;
   beds?: number | null;
   baths?: number | null;
   area: number;
@@ -140,21 +140,19 @@ const PropertyListCard = ({
           </button>
         </div>
 
-        <div className="flex flex-1 flex-col justify-between min-w-0 p-5">
+        <Link href={href} className="flex flex-1 flex-col justify-between min-w-0 p-5">
           <div>
-            <Link href={href} className="block">
-              <div className="flex items-start justify-between gap-4 mb-2">
-                <h3 className="text-xl font-display font-bold text-foreground min-w-0 flex-1 line-clamp-2">
-                  {title}
-                </h3>
-                <div className="text-right shrink-0">
-                  <div className="text-xl font-display font-bold text-foreground whitespace-nowrap">{price}</div>
-                  {secondaryLine && (
-                    <span className="text-xs text-muted-foreground">{secondaryLine}</span>
-                  )}
-                </div>
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h3 className="text-xl font-display font-bold text-foreground min-w-0 flex-1 line-clamp-2">
+                {title}
+              </h3>
+              <div className="text-right shrink-0">
+                <div className="text-xl font-display font-bold text-foreground whitespace-nowrap">{price}</div>
+                {secondaryLine && (
+                  <span className="text-xs text-muted-foreground">{secondaryLine}</span>
+                )}
               </div>
-            </Link>
+            </div>
             <div
               className={cn(
                 "mb-3 flex flex-col gap-2",
@@ -229,12 +227,12 @@ const PropertyListCard = ({
             </div>
           </div>
 
-          <Link href={href} className="flex items-center justify-end mt-4 pt-3 border-t border-border">
+          <div className="flex items-center justify-end mt-4 pt-3 border-t border-border">
             <Button variant="ghost" size="sm" className="text-primary hover:text-primary">
               Подробнее <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
-          </Link>
-        </div>
+          </div>
+        </Link>
       </div>
     </motion.div>
   );
