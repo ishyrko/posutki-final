@@ -260,9 +260,10 @@ function propertyToMapItem(p: Property, rates: ExchangeRates, displayCurrency: C
 interface CatalogPageProps {
   parsed: ParsedSegments;
   title: string;
+  citySeoSection?: ReactNode;
 }
 
-export default function CatalogPage({ parsed, title }: CatalogPageProps) {
+export default function CatalogPage({ parsed, title, citySeoSection }: CatalogPageProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -1198,6 +1199,7 @@ export default function CatalogPage({ parsed, title }: CatalogPageProps) {
                 )}
               </>
             )}
+            {currentPage === 1 ? citySeoSection : null}
           </div>
         </div>
       </section>

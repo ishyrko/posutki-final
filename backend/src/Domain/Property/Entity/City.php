@@ -43,6 +43,9 @@ class City
     #[ORM\Column(type: 'boolean', name: 'is_main', options: ['default' => false])]
     private bool $isMain = false;
 
+    #[ORM\Column(type: 'text', nullable: true, name: 'catalog_seo_text')]
+    private ?string $catalogSeoText = null;
+
     public function getId(): int
     {
         return $this->id;
@@ -91,6 +94,16 @@ class City
     public function isMain(): bool
     {
         return $this->isMain;
+    }
+
+    public function getCatalogSeoText(): ?string
+    {
+        return $this->catalogSeoText;
+    }
+
+    public function setCatalogSeoText(?string $catalogSeoText): void
+    {
+        $this->catalogSeoText = $catalogSeoText;
     }
 
     public function __toString(): string

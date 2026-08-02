@@ -1,5 +1,11 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
+import {
+  buildCatalogUrl,
+  CITY_PREFIX_SLUGS,
+  MINSK_CITY_SLUG,
+  REGION_SLUGS,
+} from "@/features/catalog/slugs";
 
 type RevalidateBody = {
   secret?: string;
@@ -8,6 +14,20 @@ type RevalidateBody = {
   /** Present for articles — used to revalidate the full `/stati/[category]/[slug]` route. */
   categorySlug?: string;
 };
+
+/** Base apartment catalog path for a city slug (SEO block lives only there). */
+function catalogApartmentPathForCitySlug(citySlug: string): string {
+  if (citySlug === MINSK_CITY_SLUG) {
+    return buildCatalogUrl({ propertyType: "apartment" });
+  }
+  if (REGION_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ region: citySlug, propertyType: "apartment" });
+  }
+  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ city: citySlug, propertyType: "apartment" });
+  }
+  return buildCatalogUrl({ propertyType: "apartment", city: citySlug });
+}
 
 /** POST /revalidate — intentionally NOT under /api (Symfony nginx sends all /api/* to PHP). */
 export async function POST(request: Request) {
@@ -56,6 +76,17 @@ export async function POST(request: Request) {
     revalidateTag(`static-page-${slug}`, { expire: 0 });
     revalidatePath(`/${slug}`, "page");
     return NextResponse.json({ revalidated: true, type: "static-page", slug });
+  }
+
+  if (type === "city") {
+    if (!slug) {
+      return NextResponse.json({ error: "slug is required for city" }, { status: 400 });
+    }
+    revalidateTag("city-seo", { expire: 0 });
+    revalidateTag(`city-seo-${slug}`, { expire: 0 });
+    const catalogPath = catalogApartmentPathForCitySlug(slug);
+    revalidatePath(catalogPath, "page");
+    return NextResponse.json({ revalidated: true, type: "city", slug, path: catalogPath });
   }
 
   return NextResponse.json({ error: "Invalid type" }, { status: 400 });

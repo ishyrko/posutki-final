@@ -11,6 +11,9 @@ import {
   buildPropertyUrlFromRegionName,
   buildSegmentsCanonicalPath,
   isPropertyId,
+  isBaseCityApartmentCatalogPage,
+  buildCatalogCitySeoHeading,
+  resolveCatalogCitySlug,
 } from "@/features/catalog/slugs";
 import {
   resolveMetroStationName,
@@ -19,11 +22,13 @@ import {
 } from "@/features/catalog/validate-segments-server";
 import { formatAddress, Property } from "@/features/properties/types";
 import CatalogPage from "@/features/catalog/CatalogPage";
+import CatalogCitySeoSection from "@/features/catalog/CatalogCitySeoSection";
 import HomePage from "@/features/home/HomePage";
 import FeaturesSection from "@/components/FeaturesSection";
 import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { fetchFeaturedPropertiesForHome } from "@/lib/featured-properties-server";
 import { fetchCityApartmentCountsForHome } from "@/lib/city-apartment-counts-server";
+import { fetchCityCatalogSeoText } from "@/lib/city-catalog-seo-server";
 import { fetchRegionHouseCountsForHome } from "@/lib/region-house-counts-server";
 import { fetchRecentArticlesForHome } from "@/lib/articles-server";
 import { HEADER_REGION_MINSK_SLUG } from "@/lib/region-header";
@@ -32,10 +37,12 @@ import {
   buildApartmentPropertyMetaDescription,
   buildApartmentPropertyMetaTitle,
 } from "@/features/properties/property-meta-title";
+import { sanitizeArticleHtml } from "@/features/articles/sanitizeArticleHtml";
 import PropertyDetailClient from "../../../features/properties/components/PropertyDetailClient";
 
 interface PageProps {
   params: Promise<{ segments?: string[] }>;
+  searchParams: Promise<{ page?: string }>;
 }
 
 /** Anonymous GET first (avoids 401 from invalid cookie JWT on SSR); then auth for unpublished owner views. */
@@ -128,7 +135,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function SegmentsPage({ params }: PageProps) {
+export default async function SegmentsPage({ params, searchParams }: PageProps) {
   const { segments } = await params;
 
   if (!(await validatePublicSegments(segments))) {
@@ -186,5 +193,28 @@ export default async function SegmentsPage({ params }: PageProps) {
   const cityDistrictName = await resolveCityDistrictName(parsed);
   const title = buildPageTitle(parsed, undefined, metroStationName, cityDistrictName);
 
-  return <CatalogPage parsed={parsed} title={title} />;
+  const { page: pageParam } = await searchParams;
+  const pageFromQuery = Number(pageParam ?? "1");
+  const validPage =
+    Number.isFinite(pageFromQuery) && pageFromQuery > 0 ? Math.floor(pageFromQuery) : 1;
+  const isFirstPage = validPage <= 1;
+
+  let citySeoSection = null;
+  if (isFirstPage && isBaseCityApartmentCatalogPage(parsed)) {
+    const citySlug = resolveCatalogCitySlug(parsed);
+    const rawSeoText = await fetchCityCatalogSeoText(citySlug);
+    if (rawSeoText) {
+      const sanitizedHtml = sanitizeArticleHtml(rawSeoText);
+      if (sanitizedHtml) {
+        citySeoSection = (
+          <CatalogCitySeoSection
+            heading={buildCatalogCitySeoHeading(citySlug)}
+            html={sanitizedHtml}
+          />
+        );
+      }
+    }
+  }
+
+  return <CatalogPage parsed={parsed} title={title} citySeoSection={citySeoSection} />;
 }

@@ -222,6 +222,23 @@ export function resolveCatalogCitySlug(parsed: ParsedSegments): string {
   return parsed.citySlug ?? parsed.regionSlug ?? MINSK_CITY_SLUG;
 }
 
+/** Базовая страница каталога квартир города (без метро и районов). */
+export function isBaseCityApartmentCatalogPage(parsed: ParsedSegments): boolean {
+  return (
+    parsed.propertyType === 'apartment' &&
+    !parsed.nearMetro &&
+    !parsed.metroStationSlug &&
+    !parsed.cityDistrictSlug
+  );
+}
+
+/** Заголовок SEO-блока под каталогом квартир города. */
+export function buildCatalogCitySeoHeading(citySlug: string): string {
+  const location =
+    CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+  return `Аренда жилья посуточно ${location}`;
+}
+
 /** Структура URL каталога: регион → тип → город / метро (без проверки slug в API). */
 export function validateCatalogSegmentsStructure(segments: string[] = []): boolean {
   if (segments.length === 0) {

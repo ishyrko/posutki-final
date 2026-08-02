@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Admin\EventListener;
 
 use App\Domain\Article\Entity\Article;
+use App\Domain\Property\Entity\City;
 use App\Domain\StaticPage\Entity\StaticPage;
 use EasyCorp\Bundle\EasyAdminBundle\Contracts\Event\EntityLifecycleEventInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Event\AfterEntityDeletedEvent;
@@ -50,6 +51,12 @@ final class RevalidateNextjsListener implements EventSubscriberInterface
 
         if ($entity instanceof StaticPage) {
             $this->notifyNextJs('static-page', $entity->getSlug()->getValue());
+
+            return;
+        }
+
+        if ($entity instanceof City) {
+            $this->notifyNextJs('city', $entity->getSlug());
         }
     }
 

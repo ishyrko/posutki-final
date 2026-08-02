@@ -68,6 +68,7 @@ class CityController extends AbstractController
             'latitude' => $city->getLatitude(),
             'longitude' => $city->getLongitude(),
             'isMain' => $city->isMain(),
+            'catalogSeoText' => $city->getCatalogSeoText(),
             'district' => $district ? [
                 'id' => $district->getId(),
                 'name' => $district->getName(),
