@@ -10,6 +10,7 @@ use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Repository\{
     PropertyRepositoryInterface,
     CityRepositoryInterface,
+    CityDistrictRepositoryInterface,
     StreetRepositoryInterface,
     MetroStationRepositoryInterface,
     PropertyMetroStationRepositoryInterface,
@@ -22,6 +23,7 @@ final class GetOwnerListingsHandler
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly CityRepositoryInterface $cityRepository,
+        private readonly CityDistrictRepositoryInterface $cityDistrictRepository,
         private readonly StreetRepositoryInterface $streetRepository,
         private readonly MetroStationRepositoryInterface $metroStationRepository,
         private readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
@@ -77,6 +79,11 @@ final class GetOwnerListingsHandler
             $properties
         )));
 
+        $cityDistrictIds = array_filter(array_unique(array_map(
+            static fn($item) => $item->getCityDistrictId(),
+            $properties
+        )));
+
         $cities = [];
         foreach ($cityIds as $cityId) {
             $city = $this->cityRepository->findById($cityId);
@@ -90,6 +97,14 @@ final class GetOwnerListingsHandler
             $street = $this->streetRepository->findById($streetId);
             if ($street !== null) {
                 $streets[$streetId] = $street;
+            }
+        }
+
+        $cityDistricts = [];
+        foreach ($cityDistrictIds as $cityDistrictId) {
+            $cityDistrict = $this->cityDistrictRepository->findById($cityDistrictId);
+            if ($cityDistrict !== null) {
+                $cityDistricts[$cityDistrictId] = $cityDistrict;
             }
         }
 
@@ -137,11 +152,12 @@ final class GetOwnerListingsHandler
         $contact = $ownerContacts[(int) $ownerId] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
 
         return array_map(
-            function ($item) use ($cities, $streets, $nearbyMetroByPropertyId, $contact) {
+            function ($item) use ($cities, $streets, $cityDistricts, $nearbyMetroByPropertyId, $contact) {
                 return PropertyDTO::fromEntity(
                     $item,
                     $cities[$item->getCityId()] ?? null,
                     $streets[$item->getStreetId()] ?? null,
+                    $cityDistricts[$item->getCityDistrictId()] ?? null,
                     $nearbyMetroByPropertyId[$item->getId()->getValue()] ?? [],
                     0,
                     null,

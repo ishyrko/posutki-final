@@ -1588,6 +1588,11 @@ export default function EditPropertyPage() {
                                 setForm((prev) => (prev ? { ...prev, latitude: lat, longitude: lng } : prev))
                             }
                         />
+                        {property.address.cityDistrictName ? (
+                            <p className="text-xs text-muted-foreground">
+                                Определён район: {property.address.cityDistrictName}
+                            </p>
+                        ) : null}
                     </div>
                 </section>
 

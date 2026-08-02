@@ -6,6 +6,7 @@ namespace App\Application\DTO;
 
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Entity\City;
+use App\Domain\Property\Entity\CityDistrict;
 use App\Domain\Property\Entity\Street;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\DealType;
@@ -56,6 +57,7 @@ final class PropertyDTO implements \JsonSerializable
         public readonly ?int $streetId,
         public readonly ?string $streetName,
         public readonly ?string $districtName,
+        public readonly ?string $cityDistrictName,
         public readonly ?int $regionId,
         public readonly ?string $regionName,
         public readonly float $latitude,
@@ -111,6 +113,7 @@ final class PropertyDTO implements \JsonSerializable
         Property $property,
         City $city,
         ?Street $street = null,
+        ?CityDistrict $cityDistrict = null,
         array $nearbyMetroStations = [],
         int $favoritesCount = 0,
         ?array $dailySellerLegalProfile = null,
@@ -195,6 +198,7 @@ final class PropertyDTO implements \JsonSerializable
                     : $street->getName())
                 : $property->getStreetName(),
             districtName: $district?->getName(),
+            cityDistrictName: $cityDistrict?->getName(),
             regionId: $region?->getId(),
             regionName: $region?->getName(),
             latitude: $property->getCoordinates()->getLatitude(),
@@ -263,6 +267,7 @@ final class PropertyDTO implements \JsonSerializable
                 'regionId' => $this->regionId,
                 'regionName' => $this->regionName,
                 'districtName' => $this->districtName,
+                'cityDistrictName' => $this->cityDistrictName,
                 'cityId' => $this->cityId,
                 'cityName' => $this->cityName,
                 'citySlug' => $this->citySlug,

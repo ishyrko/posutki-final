@@ -10,6 +10,7 @@ export interface Address {
     regionId?: number;
     regionName?: string;
     districtName?: string;
+    cityDistrictName?: string;
     cityId: number;
     cityName: string;
     citySlug?: string;
@@ -232,6 +233,10 @@ export function formatAddress(address: Address): string {
         parts.push(address.building);
     } else if (address.block) {
         parts.push(`корп. ${address.block}`);
+    }
+    if (address.cityDistrictName) {
+        const district = address.cityDistrictName.trim();
+        parts.push(/\bрайон$/iu.test(district) ? district : `${district} р-н`);
     }
     if (address.cityName) parts.push(address.cityName);
     return parts.join(', ');

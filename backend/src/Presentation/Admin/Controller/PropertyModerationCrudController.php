@@ -13,6 +13,7 @@ use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Event\PropertyApprovedEvent;
 use App\Domain\Property\Event\PropertyRejectedEvent;
 use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Domain\Property\Repository\CityDistrictRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\StreetRepositoryInterface;
@@ -45,6 +46,7 @@ final class PropertyModerationCrudController extends PropertyCrudController
         PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
         AdminUrlGenerator $adminUrlGenerator,
         CityRepositoryInterface $cityRepository,
+        CityDistrictRepositoryInterface $cityDistrictRepository,
         StreetRepositoryInterface $streetRepository,
         UserRepositoryInterface $userRepository,
         PropertyEngagementStatsCache $propertyEngagementStatsCache,
@@ -58,6 +60,7 @@ final class PropertyModerationCrudController extends PropertyCrudController
             $propertyMetroStationRepository,
             $adminUrlGenerator,
             $cityRepository,
+            $cityDistrictRepository,
             $streetRepository,
             $userRepository,
             $propertyEngagementStatsCache,

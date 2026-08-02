@@ -9,6 +9,7 @@ use App\Application\Command\Property\CreateProperty\CreatePropertyHandler;
 use App\Domain\Exchange\Repository\ExchangeRateRepositoryInterface;
 use App\Domain\Property\Event\PropertySubmittedForModerationEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
+use App\Domain\Property\Service\CityDistrictResolverInterface;
 use App\Domain\Property\Repository\MetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
@@ -60,12 +61,64 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createUserRepository(),
             $exchangeRateService,
             $metroCalculator,
+            $this->createCityDistrictResolver(),
             $notificationBus,
         );
 
         $propertyId = $handler($this->createValidCommand(priceCurrency: 'USD'));
 
         self::assertSame(123, $propertyId);
+    }
+
+    public function testSuccessfulCreateSetsCityDistrictFromResolver(): void
+    {
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $metroCalculator = $this->createMetroCalculator();
+        $notificationBus = $this->createMock(MessageBusInterface::class);
+        $exchangeRateService = $this->createExchangeRateService(['USD' => 3.2]);
+
+        $savedProperty = null;
+        $propertyRepository
+            ->method('save')
+            ->willReturnCallback(function ($property) use (&$savedProperty): void {
+                $savedProperty = $property;
+                $idReflection = new \ReflectionProperty($property, 'id');
+                $idReflection->setAccessible(true);
+                if (!$idReflection->isInitialized($property)) {
+                    $idReflection->setValue($property, Id::fromInt(123));
+                }
+            });
+
+        $cityDistrict = new \App\Domain\Property\Entity\CityDistrict(1, 'Советский район');
+        $districtIdReflection = new \ReflectionProperty($cityDistrict, 'id');
+        $districtIdReflection->setAccessible(true);
+        $districtIdReflection->setValue($cityDistrict, 7);
+
+        $cityDistrictResolver = $this->createMock(CityDistrictResolverInterface::class);
+        $cityDistrictResolver
+            ->expects(self::once())
+            ->method('resolve')
+            ->with(53.9045, 27.5615, 1, 123)
+            ->willReturn($cityDistrict);
+
+        $notificationBus
+            ->expects(self::once())
+            ->method('dispatch')
+            ->willReturn(new Envelope(new \stdClass()));
+
+        $handler = new CreatePropertyHandler(
+            $propertyRepository,
+            $this->createUserRepository(),
+            $exchangeRateService,
+            $metroCalculator,
+            $cityDistrictResolver,
+            $notificationBus,
+        );
+
+        $handler($this->createValidCommand(priceCurrency: 'USD'));
+
+        self::assertNotNull($savedProperty);
+        self::assertSame(7, $savedProperty->getCityDistrictId());
     }
 
     public function testDailyRentWithoutRequiredFieldsThrowsDomainException(): void
@@ -80,6 +133,7 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createUserRepository(),
             $exchangeRateService,
             $metroCalculator,
+            $this->createCityDistrictResolver(),
             $notificationBus,
         );
 
@@ -101,6 +155,7 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createUserRepository(phoneVerified: false),
             $exchangeRateService,
             $metroCalculator,
+            $this->createCityDistrictResolver(),
             $notificationBus,
         );
 
@@ -122,6 +177,7 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createUserRepository(emailVerified: false),
             $exchangeRateService,
             $metroCalculator,
+            $this->createCityDistrictResolver(),
             $notificationBus,
         );
 
@@ -220,5 +276,10 @@ final class CreatePropertyHandlerTest extends TestCase
         $propertyMetroStationRepository = $this->createStub(PropertyMetroStationRepositoryInterface::class);
 
         return new MetroProximityCalculator($metroStationRepository, $propertyMetroStationRepository);
+    }
+
+    private function createCityDistrictResolver(): CityDistrictResolverInterface
+    {
+        return $this->createStub(CityDistrictResolverInterface::class);
     }
 }

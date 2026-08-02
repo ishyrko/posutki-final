@@ -10,6 +10,7 @@ use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\SellerType;
 use App\Application\Service\PropertyEngagementStatsCache;
 use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Domain\Property\Repository\CityDistrictRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\StreetRepositoryInterface;
@@ -66,6 +67,7 @@ class PropertyCrudController extends AbstractCrudController
         protected readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
         protected readonly AdminUrlGenerator $adminUrlGenerator,
         protected readonly CityRepositoryInterface $cityRepository,
+        protected readonly CityDistrictRepositoryInterface $cityDistrictRepository,
         protected readonly StreetRepositoryInterface $streetRepository,
         protected readonly UserRepositoryInterface $userRepository,
         protected readonly PropertyEngagementStatsCache $propertyEngagementStatsCache,
@@ -373,6 +375,11 @@ class PropertyCrudController extends AbstractCrudController
             ->setDisabled()
             ->setColumns(8);
 
+        yield TextField::new('adminCityDistrictName', 'Район города')
+            ->onlyOnForms()
+            ->setDisabled()
+            ->setColumns(12);
+
         yield TextField::new('streetName', 'Улица (свободный ввод)')
             ->hideOnIndex();
 
@@ -646,13 +653,23 @@ class PropertyCrudController extends AbstractCrudController
         $streetId = $property->getStreetId();
         if ($streetId === null) {
             $property->setAdminStreetName('—');
+        } else {
+            $street = $this->streetRepository->findById($streetId);
+            $property->setAdminStreetName(
+                $street !== null ? $street->getName() : sprintf('не найдена (id %d)', $streetId),
+            );
+        }
+
+        $cityDistrictId = $property->getCityDistrictId();
+        if ($cityDistrictId === null) {
+            $property->setAdminCityDistrictName('—');
 
             return;
         }
 
-        $street = $this->streetRepository->findById($streetId);
-        $property->setAdminStreetName(
-            $street !== null ? $street->getName() : sprintf('не найдена (id %d)', $streetId),
+        $cityDistrict = $this->cityDistrictRepository->findById($cityDistrictId);
+        $property->setAdminCityDistrictName(
+            $cityDistrict !== null ? $cityDistrict->getName() : sprintf('не найден (id %d)', $cityDistrictId),
         );
     }
 

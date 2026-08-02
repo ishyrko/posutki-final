@@ -20,6 +20,7 @@ use App\Domain\Property\Repository\MetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
+use App\Domain\Property\Service\CityDistrictResolverInterface;
 use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
@@ -63,6 +64,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $revisionRepository,
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
+            $this->createCityDistrictResolver(),
         );
 
         $requiresModeration = $handler(new UpdatePropertyCommand(
@@ -112,6 +114,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $revisionRepository,
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
+            $this->createCityDistrictResolver(),
             new class implements MessageBusInterface {
                 public function dispatch(object $message, array $stamps = []): Envelope
                 {
@@ -154,6 +157,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $revisionRepository,
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
+            $this->createCityDistrictResolver(),
         );
 
         $requiresModeration = $handler(new UpdatePropertyCommand(
@@ -212,6 +216,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $revisionRepository,
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
+            $this->createCityDistrictResolver(),
         );
 
         $requiresModeration = $handler(new UpdatePropertyCommand(
@@ -303,6 +308,11 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
         $metroStationRepository->method('findAll')->willReturn([]);
 
         return new MetroProximityCalculator($metroStationRepository, $propertyMetroStationRepository);
+    }
+
+    private function createCityDistrictResolver(): CityDistrictResolverInterface
+    {
+        return $this->createStub(CityDistrictResolverInterface::class);
     }
 
     private function createPlacementService(PropertyRepositoryInterface $propertyRepository): PropertyPlacementService

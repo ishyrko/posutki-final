@@ -7,13 +7,14 @@ namespace App\Application\Query\Property\GetMyProperties;
 use App\Application\DTO\PropertyDTO;
 use App\Application\Service\PropertyOwnerPublicContactResolver;
 use App\Domain\Favorite\Repository\FavoriteRepositoryInterface;
-use App\Domain\Property\Repository\{PropertyRepositoryInterface, CityRepositoryInterface, StreetRepositoryInterface};
+use App\Domain\Property\Repository\{PropertyRepositoryInterface, CityRepositoryInterface, CityDistrictRepositoryInterface, StreetRepositoryInterface};
 
 final class GetMyPropertiesHandler
 {
     public function __construct(
         private PropertyRepositoryInterface $propertyRepository,
         private CityRepositoryInterface $cityRepository,
+        private CityDistrictRepositoryInterface $cityDistrictRepository,
         private StreetRepositoryInterface $streetRepository,
         private FavoriteRepositoryInterface $favoriteRepository,
         private PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
@@ -38,6 +39,11 @@ final class GetMyPropertiesHandler
             $properties
         )));
 
+        $cityDistrictIds = array_filter(array_unique(array_map(
+            fn($p) => $p->getCityDistrictId(),
+            $properties
+        )));
+
         $cities = [];
         foreach ($cityIds as $cityId) {
             $city = $this->cityRepository->findById($cityId);
@@ -54,6 +60,14 @@ final class GetMyPropertiesHandler
             }
         }
 
+        $cityDistricts = [];
+        foreach ($cityDistrictIds as $cityDistrictId) {
+            $cityDistrict = $this->cityDistrictRepository->findById($cityDistrictId);
+            if ($cityDistrict !== null) {
+                $cityDistricts[$cityDistrictId] = $cityDistrict;
+            }
+        }
+
         $ownerIds = array_values(array_unique(array_map(
             static fn($property) => $property->getOwnerId()->getValue(),
             $properties
@@ -61,7 +75,7 @@ final class GetMyPropertiesHandler
         $ownerContacts = $this->ownerPublicContactResolver->resolveForOwnerIds($ownerIds);
 
         return array_map(
-            function ($property) use ($cities, $streets, $ownerContacts) {
+            function ($property) use ($cities, $streets, $cityDistricts, $ownerContacts) {
                 $ownerId = $property->getOwnerId()->getValue();
                 $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
 
@@ -69,6 +83,7 @@ final class GetMyPropertiesHandler
                     $property,
                     $cities[$property->getCityId()] ?? null,
                     $streets[$property->getStreetId()] ?? null,
+                    $cityDistricts[$property->getCityDistrictId()] ?? null,
                     [],
                     $this->favoriteRepository->countByProperty($property->getId()),
                     null,

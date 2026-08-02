@@ -8,6 +8,7 @@ use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Entity\PropertyRevision;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
+use App\Domain\Property\Service\CityDistrictResolverInterface;
 use App\Domain\Property\Validation\DailyRentDetailsValidator;
 use App\Domain\Property\Validation\DealConditionsValidator;
 use App\Domain\Property\Validation\PaymentMethodsValidator;
@@ -32,6 +33,7 @@ readonly class UpdatePropertyHandler
         private PropertyRevisionRepositoryInterface $revisionRepository,
         private ExchangeRateService $exchangeRateService,
         private MetroProximityCalculator $metroProximityCalculator,
+        private CityDistrictResolverInterface $cityDistrictResolver,
     ) {
     }
 
@@ -193,6 +195,17 @@ readonly class UpdatePropertyHandler
             videoUrl: $command->videoUrl,
             externalCalendarUrls: $command->externalCalendarUrls,
         );
+
+        if ($coordinates !== null) {
+            $effectiveCityId = $command->cityId ?? $property->getCityId();
+            $cityDistrict = $this->cityDistrictResolver->resolve(
+                $coordinates->getLatitude(),
+                $coordinates->getLongitude(),
+                $effectiveCityId,
+                $property->getId()->getValue(),
+            );
+            $property->setCityDistrictId($cityDistrict?->getId());
+        }
 
         if ($price !== null) {
             $property->setPriceByn(

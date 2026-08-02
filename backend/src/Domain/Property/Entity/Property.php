@@ -115,6 +115,9 @@ class Property
     #[ORM\Column(type: 'integer', name: 'city_id')]
     private int $cityId;
 
+    #[ORM\Column(type: 'integer', nullable: true, name: 'city_district_id')]
+    private ?int $cityDistrictId = null;
+
     #[ORM\Column(type: 'integer', nullable: true, name: 'street_id')]
     private ?int $streetId = null;
 
@@ -1139,6 +1142,16 @@ class Property
         return $this->cityId;
     }
 
+    public function getCityDistrictId(): ?int
+    {
+        return $this->cityDistrictId;
+    }
+
+    public function setCityDistrictId(?int $cityDistrictId): void
+    {
+        $this->cityDistrictId = $cityDistrictId;
+    }
+
     public function getStreetId(): ?int
     {
         return $this->streetId;
@@ -1518,6 +1531,8 @@ class Property
 
     private ?string $adminStreetName = null;
 
+    private ?string $adminCityDistrictName = null;
+
     public function getAdminCityName(): ?string
     {
         return $this->adminCityName;
@@ -1536,6 +1551,16 @@ class Property
     public function setAdminStreetName(?string $adminStreetName): void
     {
         $this->adminStreetName = $adminStreetName;
+    }
+
+    public function getAdminCityDistrictName(): ?string
+    {
+        return $this->adminCityDistrictName;
+    }
+
+    public function setAdminCityDistrictName(?string $adminCityDistrictName): void
+    {
+        $this->adminCityDistrictName = $adminCityDistrictName;
     }
 
     public function getAmenitiesDisplay(): string

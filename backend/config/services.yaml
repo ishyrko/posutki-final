@@ -19,6 +19,7 @@ parameters:
     app.sms.global_daily_limit: '%env(int:SMS_GLOBAL_DAILY_LIMIT)%'
     app.recaptcha.enabled: '%env(bool:RECAPTCHA_ENABLED)%'
     app.recaptcha.secret: '%env(string:RECAPTCHA_SECRET)%'
+    app.yandex_geocoder_api_key: '%env(string:YANDEX_GEOCODER_API_KEY)%'
     app.backend_url: '%env(resolve:BACKEND_URL)%'
     app.bepaid.shop_id: '%env(resolve:BEPAID_SHOP_ID)%'
     app.bepaid.secret_key: '%env(resolve:BEPAID_SECRET_KEY)%'
@@ -75,6 +76,12 @@ services:
 
     App\Domain\Property\Repository\StreetRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\StreetRepository
+
+    App\Domain\Property\Repository\CityDistrictRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\CityDistrictRepository
+
+    App\Domain\Property\Repository\PropertyGeocoderResultRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyGeocoderResultRepository
 
     App\Domain\Property\Repository\MetroStationRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\MetroStationRepository
@@ -432,6 +439,12 @@ services:
         arguments:
             $enabled: '%app.recaptcha.enabled%'
             $secret: '%app.recaptcha.secret%'
+
+    App\Domain\Property\Service\CityDistrictResolverInterface:
+        class: App\Infrastructure\Service\YandexCityDistrictResolver
+        arguments:
+            $apiKey: '%app.yandex_geocoder_api_key%'
+            $referer: '%app.frontend_url%'
 
     App\Infrastructure\Payment\BePaid\BePaidGatewayClient:
         arguments:

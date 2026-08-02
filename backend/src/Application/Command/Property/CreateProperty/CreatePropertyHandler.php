@@ -8,6 +8,7 @@ use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Event\PropertySubmittedForModerationEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
+use App\Domain\Property\Service\CityDistrictResolverInterface;
 use App\Domain\Property\Validation\DailyRentDetailsValidator;
 use App\Domain\Property\Validation\DealConditionsValidator;
 use App\Domain\Property\Validation\PaymentMethodsValidator;
@@ -31,6 +32,7 @@ final class CreatePropertyHandler
         private readonly UserRepositoryInterface $userRepository,
         private readonly ExchangeRateService $exchangeRateService,
         private readonly MetroProximityCalculator $metroProximityCalculator,
+        private readonly CityDistrictResolverInterface $cityDistrictResolver,
         private readonly MessageBusInterface $notificationBus,
     ) {
     }
@@ -137,6 +139,15 @@ final class CreatePropertyHandler
         $property->setPriceByn($priceByn);
 
         $this->propertyRepository->save($property);
+
+        $cityDistrict = $this->cityDistrictResolver->resolve(
+            $command->latitude,
+            $command->longitude,
+            $command->cityId,
+            $property->getId()->getValue(),
+        );
+        $property->setCityDistrictId($cityDistrict?->getId());
+
         $this->metroProximityCalculator->syncForProperty($property);
         $this->propertyRepository->save($property);
 

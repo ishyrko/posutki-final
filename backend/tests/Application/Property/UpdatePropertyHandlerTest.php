@@ -13,6 +13,7 @@ use App\Domain\Property\Repository\MetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
+use App\Domain\Property\Service\CityDistrictResolverInterface;
 use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
@@ -63,6 +64,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $revisionRepository,
             $exchangeRateService,
             $metroCalculator,
+            $this->createCityDistrictResolver(),
         );
 
         $requiresModeration = $handler(new UpdatePropertyCommand(
@@ -95,6 +97,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $revisionRepository,
             $exchangeRateService,
             $metroCalculator,
+            $this->createCityDistrictResolver(),
         );
 
         $this->expectException(DomainException::class);
@@ -127,6 +130,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $revisionRepository,
             $exchangeRateService,
             $metroCalculator,
+            $this->createCityDistrictResolver(),
         );
 
         $this->expectException(DomainException::class);
@@ -167,6 +171,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $revisionRepository,
             $exchangeRateService,
             $metroCalculator,
+            $this->createCityDistrictResolver(),
         );
 
         $requiresModeration = $handler(new UpdatePropertyCommand(
@@ -227,6 +232,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $revisionRepository,
             $exchangeRateService,
             $metroCalculator,
+            $this->createCityDistrictResolver(),
         );
 
         $handler(new UpdatePropertyCommand(
@@ -304,5 +310,10 @@ final class UpdatePropertyHandlerTest extends TestCase
         $metroStationRepository->method('findAll')->willReturn([]);
 
         return new MetroProximityCalculator($metroStationRepository, $propertyMetroStationRepository);
+    }
+
+    private function createCityDistrictResolver(): CityDistrictResolverInterface
+    {
+        return $this->createStub(CityDistrictResolverInterface::class);
     }
 }

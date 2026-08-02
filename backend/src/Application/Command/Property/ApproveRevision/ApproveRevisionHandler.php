@@ -9,6 +9,7 @@ use App\Domain\Property\Entity\PropertyRevision;
 use App\Domain\Property\Event\PropertyApprovedEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
+use App\Domain\Property\Service\CityDistrictResolverInterface;
 use App\Domain\Property\Validation\DailyRentDetailsValidator;
 use App\Domain\Property\Validation\DealConditionsValidator;
 use App\Domain\Property\Validation\PaymentMethodsValidator;
@@ -30,6 +31,7 @@ readonly class ApproveRevisionHandler
         private PropertyRevisionRepositoryInterface $revisionRepository,
         private ExchangeRateService $exchangeRateService,
         private MetroProximityCalculator $metroProximityCalculator,
+        private CityDistrictResolverInterface $cityDistrictResolver,
         private MessageBusInterface $notificationBus,
         private PropertyPlacementService $placementService,
     ) {
@@ -144,6 +146,17 @@ readonly class ApproveRevisionHandler
             websiteUrl: array_key_exists('websiteUrl', $data) ? ($data['websiteUrl'] !== null ? (string) $data['websiteUrl'] : null) : null,
             videoUrl: array_key_exists('videoUrl', $data) ? ($data['videoUrl'] !== null ? (string) $data['videoUrl'] : null) : null,
         );
+
+        if ($coordinates !== null) {
+            $effectiveCityId = isset($data['cityId']) ? (int) $data['cityId'] : $property->getCityId();
+            $cityDistrict = $this->cityDistrictResolver->resolve(
+                $coordinates->getLatitude(),
+                $coordinates->getLongitude(),
+                $effectiveCityId,
+                $property->getId()->getValue(),
+            );
+            $property->setCityDistrictId($cityDistrict?->getId());
+        }
 
         if ($priceAmount !== null) {
             $property->setPriceByn(

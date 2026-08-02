@@ -9,6 +9,7 @@ use App\Application\Service\PropertyOwnerPublicContactResolver;
 use App\Domain\Property\Repository\{
     PropertyRepositoryInterface,
     CityRepositoryInterface,
+    CityDistrictRepositoryInterface,
     StreetRepositoryInterface,
     MetroStationRepositoryInterface,
     PropertyMetroStationRepositoryInterface
@@ -42,6 +43,7 @@ final class SearchPropertiesHandler
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly CityRepositoryInterface $cityRepository,
+        private readonly CityDistrictRepositoryInterface $cityDistrictRepository,
         private readonly StreetRepositoryInterface $streetRepository,
         private readonly MetroStationRepositoryInterface $metroStationRepository,
         private readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
@@ -130,6 +132,11 @@ final class SearchPropertiesHandler
             $properties
         )));
 
+        $cityDistrictIds = array_filter(array_unique(array_map(
+            fn($p) => $p->getCityDistrictId(),
+            $properties
+        )));
+
         $cities = [];
         foreach ($cityIds as $cityId) {
             $city = $this->cityRepository->findById($cityId);
@@ -143,6 +150,14 @@ final class SearchPropertiesHandler
             $street = $this->streetRepository->findById($streetId);
             if ($street !== null) {
                 $streets[$streetId] = $street;
+            }
+        }
+
+        $cityDistricts = [];
+        foreach ($cityDistrictIds as $cityDistrictId) {
+            $cityDistrict = $this->cityDistrictRepository->findById($cityDistrictId);
+            if ($cityDistrict !== null) {
+                $cityDistricts[$cityDistrictId] = $cityDistrict;
             }
         }
 
@@ -193,7 +208,7 @@ final class SearchPropertiesHandler
         $ownerContacts = $this->ownerPublicContactResolver->resolveForOwnerIds($ownerIds);
 
         $items = array_map(
-            function ($property) use ($cities, $streets, $nearbyMetroByPropertyId, $ownerContacts) {
+            function ($property) use ($cities, $streets, $cityDistricts, $nearbyMetroByPropertyId, $ownerContacts) {
                 $ownerId = $property->getOwnerId()->getValue();
                 $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
 
@@ -201,6 +216,7 @@ final class SearchPropertiesHandler
                     $property,
                     $cities[$property->getCityId()],
                     $streets[$property->getStreetId()] ?? null,
+                    $cityDistricts[$property->getCityDistrictId()] ?? null,
                     $nearbyMetroByPropertyId[$property->getId()->getValue()] ?? [],
                     0,
                     null,

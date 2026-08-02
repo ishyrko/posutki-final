@@ -34,12 +34,21 @@ final class PropertyEngagementStatsCacheTest extends TestCase
     {
         $repository = $this->createMock(PropertyEngagementStatsRepositoryInterface::class);
         $repository
-            ->expects(self::once())
+            ->expects(self::exactly(2))
             ->method('findCountsByPropertyIds')
-            ->with([10])
-            ->willReturn([
-                10 => ['distinctInquirers' => 1, 'distinctMessageSenders' => 4],
-            ]);
+            ->willReturnCallback(static function (array $propertyIds): array {
+                if ($propertyIds === [10]) {
+                    return [
+                        10 => ['distinctInquirers' => 1, 'distinctMessageSenders' => 4],
+                    ];
+                }
+
+                if ($propertyIds === [20]) {
+                    return [];
+                }
+
+                self::fail('Unexpected property ids: ' . json_encode($propertyIds));
+            });
 
         $cache = new PropertyEngagementStatsCache($repository);
         $cache->warmUp([10]);

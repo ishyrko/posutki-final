@@ -12,6 +12,7 @@ use App\Domain\Property\Enum\SellerType;
 use App\Domain\Property\Repository\{
     PropertyRepositoryInterface,
     CityRepositoryInterface,
+    CityDistrictRepositoryInterface,
     StreetRepositoryInterface,
     MetroStationRepositoryInterface,
     PropertyMetroStationRepositoryInterface,
@@ -28,6 +29,7 @@ final class GetPropertyHandler
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly CityRepositoryInterface $cityRepository,
+        private readonly CityDistrictRepositoryInterface $cityDistrictRepository,
         private readonly StreetRepositoryInterface $streetRepository,
         private readonly MetroStationRepositoryInterface $metroStationRepository,
         private readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
@@ -67,6 +69,11 @@ final class GetPropertyHandler
         $street = null;
         if ($property->getStreetId() !== null) {
             $street = $this->streetRepository->findById($property->getStreetId());
+        }
+
+        $cityDistrict = null;
+        if ($property->getCityDistrictId() !== null) {
+            $cityDistrict = $this->cityDistrictRepository->findById($property->getCityDistrictId());
         }
 
         $propertyMetroStations = $this->propertyMetroStationRepository->findByPropertyIds([$property->getId()->getValue()]);
@@ -156,6 +163,7 @@ final class GetPropertyHandler
             $property,
             $city,
             $street,
+            $cityDistrict,
             $nearbyMetroStations,
             0,
             $dailySellerLegalProfile,

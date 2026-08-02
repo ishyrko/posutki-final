@@ -7,7 +7,7 @@ namespace App\Application\Query\Favorite\GetFavorites;
 use App\Application\DTO\PropertyDTO;
 use App\Application\Service\PropertyOwnerPublicContactResolver;
 use App\Domain\Favorite\Repository\FavoriteRepositoryInterface;
-use App\Domain\Property\Repository\{PropertyRepositoryInterface, CityRepositoryInterface, StreetRepositoryInterface};
+use App\Domain\Property\Repository\{PropertyRepositoryInterface, CityRepositoryInterface, CityDistrictRepositoryInterface, StreetRepositoryInterface};
 use App\Domain\Shared\ValueObject\Id;
 
 final class GetFavoritesHandler
@@ -16,6 +16,7 @@ final class GetFavoritesHandler
         private FavoriteRepositoryInterface $favoriteRepository,
         private PropertyRepositoryInterface $propertyRepository,
         private CityRepositoryInterface $cityRepository,
+        private CityDistrictRepositoryInterface $cityDistrictRepository,
         private StreetRepositoryInterface $streetRepository,
         private PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
     ) {
@@ -43,7 +44,12 @@ final class GetFavoritesHandler
                 $street = $this->streetRepository->findById($property->getStreetId());
             }
 
-            $rows[] = ['property' => $property, 'city' => $city, 'street' => $street];
+            $cityDistrict = null;
+            if ($property->getCityDistrictId() !== null) {
+                $cityDistrict = $this->cityDistrictRepository->findById($property->getCityDistrictId());
+            }
+
+            $rows[] = ['property' => $property, 'city' => $city, 'street' => $street, 'cityDistrict' => $cityDistrict];
         }
 
         $ownerIds = array_values(array_unique(array_map(
@@ -61,6 +67,7 @@ final class GetFavoritesHandler
                     $r['property'],
                     $r['city'],
                     $r['street'],
+                    $r['cityDistrict'],
                     [],
                     0,
                     null,
