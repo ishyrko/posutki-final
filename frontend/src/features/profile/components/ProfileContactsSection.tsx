@@ -6,6 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { User } from '@/features/auth/types';
 import { useUpdateProfile } from '@/features/profile/hooks';
 import type { UpdateProfileData } from '@/features/profile/api';
@@ -56,6 +66,7 @@ export function ProfileContactsSection({ user }: { user: User | undefined }) {
     const { mutate: deletePhone, isPending: isDeleting } = useDeletePhone();
     const { mutate: updatePhoneFlags } = useUpdatePhoneFlags();
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: number; phone: string } | null>(null);
     const [telegram, setTelegram] = useState('');
     const [telegramError, setTelegramError] = useState<string | null>(null);
 
@@ -196,7 +207,7 @@ export function ProfileContactsSection({ user }: { user: User | undefined }) {
                                     size="sm"
                                     disabled={isDeleting}
                                     className="text-destructive hover:text-destructive hover:bg-destructive/10 self-start"
-                                    onClick={() => deletePhone(p.id)}
+                                    onClick={() => setDeleteTarget({ id: p.id, phone: p.phone })}
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -245,6 +256,34 @@ export function ProfileContactsSection({ user }: { user: User | undefined }) {
                     </p>
                 )}
             </div>
+
+            <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Удалить телефон?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {deleteTarget
+                                ? `Номер ${deleteTarget.phone} будет удалён из дополнительных контактов.`
+                                : 'Номер будет удалён из дополнительных контактов.'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={isDeleting}
+                            onClick={() => {
+                                if (deleteTarget === null) return;
+                                deletePhone(deleteTarget.id, {
+                                    onSuccess: () => setDeleteTarget(null),
+                                });
+                            }}
+                        >
+                            Удалить
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <PhoneVerifyDialog open={dialogOpen} onOpenChange={setDialogOpen} />
         </div>
