@@ -216,5 +216,9 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     }
   }
 
-  return <CatalogPage parsed={parsed} title={title} citySeoSection={citySeoSection} />;
+  return (
+    <CatalogPage parsed={parsed} title={title}>
+      {citySeoSection}
+    </CatalogPage>
+  );
 }

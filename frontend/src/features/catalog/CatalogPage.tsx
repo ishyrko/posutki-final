@@ -260,10 +260,11 @@ function propertyToMapItem(p: Property, rates: ExchangeRates, displayCurrency: C
 interface CatalogPageProps {
   parsed: ParsedSegments;
   title: string;
-  citySeoSection?: ReactNode;
+  /** SSR SEO block (RSC children slot — keeps Radix useId stable in this client tree). */
+  children?: ReactNode;
 }
 
-export default function CatalogPage({ parsed, title, citySeoSection }: CatalogPageProps) {
+export default function CatalogPage({ parsed, title, children }: CatalogPageProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -1199,7 +1200,7 @@ export default function CatalogPage({ parsed, title, citySeoSection }: CatalogPa
                 )}
               </>
             )}
-            {currentPage === 1 ? citySeoSection : null}
+            {currentPage === 1 ? children : null}
           </div>
         </div>
       </section>
