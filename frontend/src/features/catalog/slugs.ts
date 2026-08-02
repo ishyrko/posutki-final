@@ -79,6 +79,17 @@ const CATALOG_APARTMENT_LOCATION: Record<string, string> = {
   volkovysk: 'в Волковыске',
 };
 
+/** Родительный падеж города для фраз «в … районе Минска» (города с адм. районами). */
+const CATALOG_CITY_GENITIVE: Record<string, string> = {
+  minsk: 'Минска',
+  brest: 'Бреста',
+  vitebsk: 'Витебска',
+  gomel: 'Гомеля',
+  grodno: 'Гродно',
+  mogilev: 'Могилёва',
+  bobruysk: 'Бобруйска',
+};
+
 const CATALOG_HOUSE_LOCATION: Record<string, string> = {
   minsk: 'в Минской области',
   brest: 'в Брестской области',
@@ -468,6 +479,51 @@ function catalogLocationKey(parsed: ParsedSegments): string {
   return parsed.citySlug ?? parsed.regionSlug ?? MINSK_CITY_SLUG;
 }
 
+/** Убрать административный суффикс «район» (и склонения) — как backend CityDistrictSlugGenerator. */
+export function stripDistrictSuffix(name: string): string {
+  // В JS `\b` не считает кириллицу word-char — имитируем Unicode-границу слова.
+  const stripped = name.replace(
+    /(^|[^\p{L}\p{N}_])район(?:а|е|ом|у)?(?=$|[^\p{L}\p{N}_])/giu,
+    '$1',
+  );
+  return stripped.replace(/\s+/gu, ' ').trim();
+}
+
+/** Муж. прилагательное → предложный падеж (Фрунзенский → Фрунзенском, Заводской → Заводском). */
+export function toPrepositionalMasculineAdjective(stem: string): string {
+  if (/ский$/iu.test(stem)) return stem.replace(/ский$/iu, 'ском');
+  if (/цкий$/iu.test(stem)) return stem.replace(/цкий$/iu, 'цком');
+  if (/ный$/iu.test(stem)) return stem.replace(/ный$/iu, 'ном');
+  if (/ной$/iu.test(stem)) return stem.replace(/ной$/iu, 'ном');
+  if (/овый$/iu.test(stem)) return stem.replace(/овый$/iu, 'овом');
+  if (/евый$/iu.test(stem)) return stem.replace(/евый$/iu, 'евом');
+  if (/ой$/iu.test(stem)) return stem.replace(/ой$/iu, 'ом');
+  if (/ий$/iu.test(stem)) return stem.replace(/ий$/iu, 'ем');
+  if (/ый$/iu.test(stem)) return stem.replace(/ый$/iu, 'ом');
+  return stem;
+}
+
+/** «в» / «во» перед прилагательным района (во Фрунзенском, в Центральном). */
+function districtLocationPreposition(adjective: string): 'в' | 'во' {
+  return /^[вф][^аеёиоуыэюя]/iu.test(adjective) ? 'во' : 'в';
+}
+
+/**
+ * Локация каталога по району: «во Фрунзенском районе Минска».
+ * Имя из справочника может быть «Фрунзенский район» или уже без суффикса.
+ */
+export function formatCityDistrictCatalogLocation(
+  cityDistrictName: string,
+  citySlug: string,
+): string {
+  const stem = stripDistrictSuffix(cityDistrictName) || cityDistrictName.trim();
+  const adjective = toPrepositionalMasculineAdjective(stem);
+  const prep = districtLocationPreposition(adjective);
+  const cityGenitive =
+    CATALOG_CITY_GENITIVE[citySlug] ?? CATALOG_CITY_GENITIVE[MINSK_CITY_SLUG];
+  return `${prep} ${adjective} районе ${cityGenitive}`;
+}
+
 function resolveCatalogLocation(
   parsed: ParsedSegments,
   cityName?: string,
@@ -485,21 +541,16 @@ function resolveCatalogLocation(
   }
 
   const key = catalogLocationKey(parsed);
-  const map =
-    parsed.propertyType === 'house' ? CATALOG_HOUSE_LOCATION : CATALOG_APARTMENT_LOCATION;
-  const cityLocation = cityName
-    ? (cityName.startsWith('в ') ? cityName : `в ${cityName}`)
-    : (map[key] ?? map[MINSK_CITY_SLUG]);
 
   if (cityDistrictName) {
-    return `${cityLocation} в районе ${cityDistrictName}`;
+    return formatCityDistrictCatalogLocation(cityDistrictName, key);
   }
 
-  if (cityName) {
-    return cityLocation;
-  }
-
-  return cityLocation;
+  const map =
+    parsed.propertyType === 'house' ? CATALOG_HOUSE_LOCATION : CATALOG_APARTMENT_LOCATION;
+  return cityName
+    ? (cityName.startsWith('в ') ? cityName : `в ${cityName}`)
+    : (map[key] ?? map[MINSK_CITY_SLUG]);
 }
 
 export function buildPageTitle(
@@ -541,15 +592,15 @@ function resolveApartmentCatalogMetaLocation(
     return null;
   }
 
-  const baseLocation =
-    CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
-    CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+  const key = catalogLocationKey(parsed);
 
   if (cityDistrictName) {
-    return `${baseLocation} в районе ${cityDistrictName}`;
+    return formatCityDistrictCatalogLocation(cityDistrictName, key);
   }
 
-  return baseLocation;
+  return (
+    CATALOG_APARTMENT_LOCATION[key] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG]
+  );
 }
 
 function resolveHouseCatalogMetaLocation(parsed: ParsedSegments): string | null {
