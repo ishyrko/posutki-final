@@ -226,9 +226,14 @@ export interface PropertyListResponse {
 /**
  * Compose a human-readable address string from the address object.
  */
+/** Компактная подпись района в адресе: «Фрунзенский р-н» (не «… район»). */
 export function formatCityDistrictLabel(name: string): string {
     const district = name.trim();
-    return /район$/iu.test(district) || /р-н$/iu.test(district) ? district : `${district} р-н`;
+    const stem = district
+        .replace(/\s*район$/iu, '')
+        .replace(/\s*р-?\s*н\.?$/iu, '')
+        .trim();
+    return stem ? `${stem} р-н` : district;
 }
 
 export function formatAddress(

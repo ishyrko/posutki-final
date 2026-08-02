@@ -295,9 +295,12 @@ export function isMetroCatalogContext(parsed: ParsedSegments): boolean {
   return parsed.propertyType === 'apartment' || parsed.nearMetro === true;
 }
 
-/** Район в каталоге — только квартиры в городах с административными районами. */
+/** Район в каталоге — только квартиры в городах с административными районами (не на страницах метро). */
 export function isDistrictCatalogContext(parsed: ParsedSegments): boolean {
   if (parsed.propertyType !== 'apartment') {
+    return false;
+  }
+  if (parsed.nearMetro || parsed.metroStationSlug) {
     return false;
   }
 

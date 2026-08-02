@@ -661,9 +661,9 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                   </div>
                 </div>
                 <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
-                  <p className="flex items-center gap-1.5 text-muted-foreground min-w-0">
-                    <MapPin className="w-4 h-4 shrink-0" />
-                    <span className="truncate">
+                  <p className="flex min-w-0 items-start gap-1.5 text-muted-foreground md:items-center">
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 md:mt-0" />
+                    <span className="min-w-0 break-words">
                       <PropertyAddress address={property.address} propertyType={property.type} />
                     </span>
                   </p>

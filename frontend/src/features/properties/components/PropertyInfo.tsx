@@ -38,9 +38,9 @@ export function PropertyInfo({ property }: PropertyInfoProps) {
                     <h1 className="text-4xl font-display font-bold text-foreground">
                         {property.title}
                     </h1>
-                    <div className="flex items-center text-muted-foreground">
-                        <MapPin className="h-4 w-4 mr-1.5 text-primary/60" />
-                        <span className="text-sm font-medium">
+                    <div className="flex min-w-0 items-start text-muted-foreground">
+                        <MapPin className="mt-0.5 h-4 w-4 mr-1.5 shrink-0 text-primary/60" />
+                        <span className="min-w-0 break-words text-sm font-medium">
                             <PropertyAddress address={property.address} propertyType={property.type} />
                         </span>
                     </div>
