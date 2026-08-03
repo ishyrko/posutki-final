@@ -641,12 +641,12 @@ export function buildCatalogMetaTitle(
   cityDistrictName?: string,
 ): string | null {
   if (isNearMetroLandingPage(parsed)) {
-    return 'Снять квартиру возле метро в Минске недорого. Посуточная аренда у метро в Минске на Посутки.by.';
+    return 'Снять квартиру на сутки возле метро в Минске недорого. Посуточная аренда у метро в Минске на Посутки.by.';
   }
 
   const apartmentLocation = resolveApartmentCatalogMetaLocation(parsed, metroStationName, cityDistrictName);
   if (apartmentLocation) {
-    return `Снять квартиру ${apartmentLocation} недорого. Посуточная аренда ${apartmentLocation}.`;
+    return `Снять квартиру на сутки ${apartmentLocation} недорого. Посуточная аренда ${apartmentLocation}.`;
   }
 
   const houseLocation = resolveHouseCatalogMetaLocation(parsed);
