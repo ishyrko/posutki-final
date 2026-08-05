@@ -36,6 +36,7 @@ final readonly class FrontendUrlBuilder
         'bobruysk',
         'zhlobin',
         'volkovysk',
+        'novolukoml',
     ];
 
     public function __construct(

@@ -26,6 +26,7 @@ export const CITY_PREFIX_SLUG_LIST = [
   'bobruysk',
   'zhlobin',
   'volkovysk',
+  'novolukoml',
 ] as const;
 
 export const CITY_PREFIX_SLUGS: ReadonlySet<string> = new Set(CITY_PREFIX_SLUG_LIST);
@@ -77,6 +78,7 @@ const CATALOG_APARTMENT_LOCATION: Record<string, string> = {
   bobruysk: 'в Бобруйске',
   zhlobin: 'в Жлобине',
   volkovysk: 'в Волковыске',
+  novolukoml: 'в Новолукомле',
 };
 
 /** Родительный падеж города для фраз «в … районе Минска» (города с адм. районами). */

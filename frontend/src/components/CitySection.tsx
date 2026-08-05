@@ -123,6 +123,12 @@ const cities = [
     icon: MapPin,
     href: buildCatalogUrl({ city: "volkovysk", propertyType: "apartment" }),
   },
+  {
+    name: "Новолукомль",
+    slug: "novolukoml",
+    icon: Home,
+    href: buildCatalogUrl({ city: "novolukoml", propertyType: "apartment" }),
+  },
 ];
 
 interface CitySectionProps {
