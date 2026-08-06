@@ -25,6 +25,7 @@ final class GetHomeCityApartmentCountsHandler
         'zhlobin',
         'volkovysk',
         'novolukoml',
+        'krichev',
     ];
 
     /** @var list<array{slug: string, regionSlug?: string, citySlug?: string}> */
@@ -47,6 +48,7 @@ final class GetHomeCityApartmentCountsHandler
         ['slug' => 'zhlobin', 'citySlug' => 'zhlobin'],
         ['slug' => 'volkovysk', 'citySlug' => 'volkovysk'],
         ['slug' => 'novolukoml', 'citySlug' => 'novolukoml'],
+        ['slug' => 'krichev', 'citySlug' => 'krichev'],
     ];
 
     public function __construct(

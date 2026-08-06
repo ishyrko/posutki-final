@@ -131,6 +131,11 @@ const cities: CityItem[] = [
     slug: "novolukoml",
     href: buildCatalogUrl({ city: "novolukoml", propertyType: "apartment" }),
   },
+  {
+    name: "Кричев",
+    slug: "krichev",
+    href: buildCatalogUrl({ city: "krichev", propertyType: "apartment" }),
+  },
 ];
 
 interface CitySectionProps {

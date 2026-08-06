@@ -27,6 +27,7 @@ export const CITY_PREFIX_SLUG_LIST = [
   'zhlobin',
   'volkovysk',
   'novolukoml',
+  'krichev',
 ] as const;
 
 export const CITY_PREFIX_SLUGS: ReadonlySet<string> = new Set(CITY_PREFIX_SLUG_LIST);
@@ -79,6 +80,7 @@ const CATALOG_APARTMENT_LOCATION: Record<string, string> = {
   zhlobin: 'в Жлобине',
   volkovysk: 'в Волковыске',
   novolukoml: 'в Новолукомле',
+  krichev: 'в Кричеве',
 };
 
 /** Именительный падеж города (баннер достопримечательности, карточки перелинковки). */
@@ -102,6 +104,7 @@ const CATALOG_CITY_NOMINATIVE: Record<string, string> = {
   zhlobin: 'Жлобин',
   volkovysk: 'Волковыск',
   novolukoml: 'Новолукомль',
+  krichev: 'Кричев',
 };
 
 /** Родительный падеж города для фраз «в … районе Минска» (города с адм. районами). */

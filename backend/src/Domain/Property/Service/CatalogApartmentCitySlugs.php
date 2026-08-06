@@ -30,6 +30,7 @@ final class CatalogApartmentCitySlugs
         'zhlobin',
         'volkovysk',
         'novolukoml',
+        'krichev',
     ];
 
     public static function supportsSlug(string $slug): bool
