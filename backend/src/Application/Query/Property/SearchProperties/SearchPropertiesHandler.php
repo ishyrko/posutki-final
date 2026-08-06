@@ -14,6 +14,7 @@ use App\Domain\Property\Repository\{
     MetroStationRepositoryInterface,
     PropertyMetroStationRepositoryInterface,
     LandmarkRepositoryInterface,
+    PropertyLandmarkRepositoryInterface,
 };
 use App\Domain\Property\Service\CitiesWithDistricts;
 use App\Domain\Shared\Exception\NotFoundException;
@@ -51,6 +52,7 @@ final class SearchPropertiesHandler
         private readonly MetroStationRepositoryInterface $metroStationRepository,
         private readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
         private readonly LandmarkRepositoryInterface $landmarkRepository,
+        private readonly PropertyLandmarkRepositoryInterface $propertyLandmarkRepository,
         private readonly ExchangeRateService $exchangeRateService,
         private readonly PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
     ) {
@@ -124,6 +126,9 @@ final class SearchPropertiesHandler
 
                 $filters['landmarkId'] = $landmark->getId();
             }
+        }
+        if ($query->maxLandmarkDistanceKm !== null && $query->maxLandmarkDistanceKm > 0) {
+            $filters['maxLandmarkDistanceKm'] = $query->maxLandmarkDistanceKm;
         }
         $filterCurrency = $query->currency ?? 'BYN';
         if ($query->minPrice !== null) {
@@ -247,6 +252,16 @@ final class SearchPropertiesHandler
         }
         unset($metroStations);
 
+        $landmarkIdForDistance = $filters['landmarkId'] ?? null;
+        $landmarkDistanceByPropertyId = [];
+        if ($landmarkIdForDistance !== null) {
+            foreach ($this->propertyLandmarkRepository->findByPropertyIds($propertyIds) as $propertyLandmark) {
+                if ($propertyLandmark->getLandmarkId() === $landmarkIdForDistance) {
+                    $landmarkDistanceByPropertyId[$propertyLandmark->getPropertyId()] = $propertyLandmark->getDistanceKm();
+                }
+            }
+        }
+
         $ownerIds = array_values(array_unique(array_map(
             static fn($property) => $property->getOwnerId()->getValue(),
             $properties
@@ -254,7 +269,7 @@ final class SearchPropertiesHandler
         $ownerContacts = $this->ownerPublicContactResolver->resolveForOwnerIds($ownerIds);
 
         $items = array_map(
-            function ($property) use ($cities, $streets, $cityDistricts, $nearbyMetroByPropertyId, $ownerContacts) {
+            function ($property) use ($cities, $streets, $cityDistricts, $nearbyMetroByPropertyId, $landmarkDistanceByPropertyId, $ownerContacts) {
                 $ownerId = $property->getOwnerId()->getValue();
                 $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
 
@@ -267,6 +282,7 @@ final class SearchPropertiesHandler
                     0,
                     null,
                     $contact,
+                    landmarkDistanceKm: $landmarkDistanceByPropertyId[$property->getId()->getValue()] ?? null,
                 );
             },
             $properties

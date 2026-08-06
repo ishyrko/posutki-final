@@ -83,6 +83,9 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
             $sortField = $sortBy === 'area' ? 'area' : 'priceByn';
             $qb->orderBy('p.' . $sortField, $sortOrder)
                 ->addOrderBy('p.id', $sortOrder);
+        } elseif ($sortBy === 'landmarkDistance' && isset($filters['landmarkId'])) {
+            $qb->orderBy('pl.distanceKm', $sortOrder)
+                ->addOrderBy('p.id', $sortOrder);
         } else {
             // Default catalog: effective VIP level → rotation key.
             $this->applyPlacementSort($qb);
@@ -208,6 +211,11 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
             $qb->innerJoin(PropertyLandmark::class, 'pl', 'WITH', 'pl.propertyId = p.id')
                 ->andWhere('pl.landmarkId = :landmarkId')
                 ->setParameter('landmarkId', $filters['landmarkId']);
+
+            if (isset($filters['maxLandmarkDistanceKm'])) {
+                $qb->andWhere('pl.distanceKm <= :maxLandmarkDistanceKm')
+                    ->setParameter('maxLandmarkDistanceKm', $filters['maxLandmarkDistanceKm']);
+            }
         }
 
         if (isset($filters['minGuests'])) {

@@ -24,6 +24,7 @@ final class SearchPropertiesQuery
         public readonly bool $nearMetro = false,
         public readonly ?string $cityDistrictSlug = null,
         public readonly ?string $landmarkSlug = null,
+        public readonly ?float $maxLandmarkDistanceKm = null,
         /** Минимальная вместимость: объявления с maxDailyGuests >= guests */
         public readonly ?int $guests = null,
         public readonly string $sortBy = 'createdAt',

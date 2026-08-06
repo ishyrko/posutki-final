@@ -25,7 +25,6 @@ import {
 import { formatAddress, Property } from "@/features/properties/types";
 import CatalogPage from "@/features/catalog/CatalogPage";
 import CatalogCitySeoSection from "@/features/catalog/CatalogCitySeoSection";
-import CatalogLandmarkIntro from "@/features/catalog/CatalogLandmarkIntro";
 import HomePage from "@/features/home/HomePage";
 import FeaturesSection from "@/components/FeaturesSection";
 import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
@@ -224,17 +223,8 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     }
   }
 
-  let landmarkIntro = null;
   let landmarkSeoSection = null;
   if (isFirstPage && landmark) {
-    landmarkIntro = (
-      <CatalogLandmarkIntro
-        name={landmark.name}
-        shortDescription={landmark.shortDescription}
-        imageUrl={landmark.imageUrl}
-      />
-    );
-
     const sanitizedDescription = landmark.description
       ? sanitizeArticleHtml(landmark.description)
       : null;
@@ -249,7 +239,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
   }
 
   return (
-    <CatalogPage parsed={parsed} title={title} intro={landmarkIntro}>
+    <CatalogPage parsed={parsed} title={title} landmark={landmark}>
       {landmarkSeoSection}
       {citySeoSection}
     </CatalogPage>

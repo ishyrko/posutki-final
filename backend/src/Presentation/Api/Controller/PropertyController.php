@@ -97,6 +97,9 @@ class PropertyController extends AbstractController
             nearMetro: $request->query->getBoolean('nearMetro', false),
             cityDistrictSlug: $request->query->get('cityDistrictSlug') ?: null,
             landmarkSlug: $request->query->get('landmarkSlug') ?: null,
+            maxLandmarkDistanceKm: $request->query->get('maxLandmarkDistanceKm')
+                ? (float) $request->query->get('maxLandmarkDistanceKm')
+                : null,
             guests: $guests,
             sortBy: $request->query->get('sortBy', 'createdAt'),
             sortOrder: $request->query->get('sortOrder', 'DESC'),

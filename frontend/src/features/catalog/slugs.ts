@@ -112,6 +112,16 @@ export const PROPERTY_TYPE_LABELS: Record<string, string> = {
   house: 'домов',
 };
 
+/** Именительный падеж города для подписи в баннере достопримечательности. */
+export function resolveCatalogCityNominative(citySlug: string): string {
+  const phrase = CATALOG_APARTMENT_LOCATION[citySlug];
+  if (phrase) {
+    return phrase.replace(/^в\s+/i, "");
+  }
+
+  return citySlug;
+}
+
 export interface ParsedSegments {
   regionSlug?: string;
   /** Всегда daily — в URL не передаётся. */

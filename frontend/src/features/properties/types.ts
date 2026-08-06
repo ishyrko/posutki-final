@@ -144,6 +144,7 @@ export interface Property {
     amenities?: string[];
     nearMetro?: boolean;
     nearbyMetroStations?: NearbyMetroStation[];
+    landmarkDistanceKm?: number | null;
     views?: number;
     phoneViews?: number;
     favoritesCount?: number;
@@ -209,6 +210,7 @@ export interface PropertyFilters {
     nearMetro?: boolean;
     cityDistrictSlug?: string;
     landmarkSlug?: string;
+    maxLandmarkDistanceKm?: number;
     /** Минимальная вместимость (maxDailyGuests >= guests). */
     guests?: number;
     sortBy?: string;

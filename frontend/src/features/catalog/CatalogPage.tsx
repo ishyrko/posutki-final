@@ -8,6 +8,7 @@ import {
   SlidersHorizontal,
   X,
   Map as MapIcon,
+  MapPin,
   LayoutGrid,
   Rows3,
   ChevronLeft,
@@ -40,6 +41,13 @@ import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { useMetroStations } from "@/features/metro/hooks";
 import { useCityDistricts } from "@/features/city-districts/hooks";
 import { useCityLandmarks } from "@/features/landmarks/hooks";
+import type { Landmark } from "@/features/landmarks/types";
+import {
+  formatLandmarkDistance,
+  LANDMARK_DISTANCE_FILTER_OPTIONS,
+  type LandmarkDistanceFilterValue,
+} from "@/features/landmarks/distance";
+import CatalogLandmarkBanner from "@/features/catalog/CatalogLandmarkBanner";
 import type { MetroStation, NearbyMetroStation } from "@/features/metro/types";
 import { Property, formatAddress, type Currency } from "@/features/properties/types";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -262,23 +270,24 @@ function propertyToMapItem(p: Property, rates: ExchangeRates, displayCurrency: C
 interface CatalogPageProps {
   parsed: ParsedSegments;
   title: string;
-  /** SSR intro block above listings (landmark photo + short text). */
-  intro?: ReactNode;
+  landmark?: Landmark | null;
   /** SSR SEO block under listings (RSC children slot — keeps Radix useId stable in this client tree). */
   children?: ReactNode;
 }
 
-export default function CatalogPage({ parsed, title, intro, children }: CatalogPageProps) {
+export default function CatalogPage({ parsed, title, landmark, children }: CatalogPageProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isLandmarkPage = Boolean(parsed.landmarkSlug);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const { selectedCurrency } = useCurrency();
   const [roomBuckets, setRoomBuckets] = useState<RoomBucket[]>([]);
   const [metroStationId, setMetroStationId] = useState("all");
   const [nearMetro, setNearMetro] = useState(false);
-  const [sort, setSort] = useState("default");
+  const [landmarkMaxDistanceKm, setLandmarkMaxDistanceKm] = useState<LandmarkDistanceFilterValue>(0);
+  const [sort, setSort] = useState(() => (parsed.landmarkSlug ? "distance-asc" : "default"));
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [selectedAmenityIds, setSelectedAmenityIds] = useState<string[]>([]);
@@ -369,10 +378,22 @@ export default function CatalogPage({ parsed, title, intro, children }: CatalogP
       { line: 3, label: "Зеленолужская", stations: byLine.get(3) ?? [] },
     ];
   }, [metroStations]);
+  const catalogSortOptions = useMemo(
+    () =>
+      isLandmarkPage
+        ? [
+            { value: "distance-asc", label: "Сначала ближе" },
+            ...sortOptions,
+          ]
+        : sortOptions,
+    [isLandmarkPage],
+  );
+
   const activeFilterCount =
     (hasPriceFilter ? 1 : 0) +
     (guestsFromQuery !== null ? 1 : 0) +
     (roomsFilterVisible && roomBuckets.length > 0 ? 1 : 0) +
+    (isLandmarkPage && landmarkMaxDistanceKm > 0 ? 1 : 0) +
     (showMetroSidebarFilters && !nearMetroLanding && nearMetro && metroStationId !== "all" ? 1 : 0) +
     (showMetroSidebarFilters && !nearMetroLanding && nearMetro ? 1 : 0) +
     selectedAmenityIds.length +
@@ -420,6 +441,9 @@ export default function CatalogPage({ parsed, title, intro, children }: CatalogP
     } else if (parsed.landmarkSlug) {
       f.citySlug = resolveCatalogCitySlug(parsed);
       f.landmarkSlug = parsed.landmarkSlug;
+      if (landmarkMaxDistanceKm > 0) {
+        f.maxLandmarkDistanceKm = landmarkMaxDistanceKm;
+      }
     } else if (parsed.citySlug) {
       f.citySlug = parsed.citySlug;
     } else if (parsed.regionSlug) {
@@ -448,10 +472,11 @@ export default function CatalogPage({ parsed, title, intro, children }: CatalogP
     if (maxPrice) f.maxPrice = Number(maxPrice);
     if (guestsFromQuery !== null) f.guests = guestsFromQuery;
     if (hasPriceFilter) f.currency = selectedCurrency;
-    if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
+    if (sort === "distance-asc") { f.sortBy = "landmarkDistance"; f.sortOrder = "ASC"; }
+    else if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     return f;
-  }, [fetchAllForClientFilters, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.landmarkSlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort]);
+  }, [fetchAllForClientFilters, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.landmarkSlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort, landmarkMaxDistanceKm]);
 
   const { data, isLoading } = useProperties(filters);
   const { data: rates } = useExchangeRates();
@@ -564,6 +589,7 @@ export default function CatalogPage({ parsed, title, intro, children }: CatalogP
     setSelectedAmenityIds([]);
     setSelectedPaymentMethodIds([]);
     setShowAllAmenities(false);
+    setLandmarkMaxDistanceKm(0);
     const params = new URLSearchParams(searchParams.toString());
     params.delete(GUESTS_QUERY_PARAM);
     params.delete(AMENITY_QUERY_PARAM);
@@ -583,6 +609,34 @@ export default function CatalogPage({ parsed, title, intro, children }: CatalogP
 
   const renderCatalogFilters = () => (
     <div className="space-y-5">
+      {isLandmarkPage && (
+        <div>
+          <label className="text-sm font-semibold text-foreground mb-2 block font-display">
+            Расстояние до объекта
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {LANDMARK_DISTANCE_FILTER_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  setLandmarkMaxDistanceKm(opt.value);
+                  resetToFirstPage();
+                }}
+                className={cn(
+                  "cursor-pointer rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+                  landmarkMaxDistanceKm === opt.value
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "border border-border bg-surface text-foreground hover:bg-muted",
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <label className="text-sm font-semibold text-foreground mb-2 block font-display">
           Цена за сутки
@@ -869,6 +923,15 @@ export default function CatalogPage({ parsed, title, intro, children }: CatalogP
 
   return (
     <div className="min-h-screen bg-background">
+      {isLandmarkPage && landmark && currentPage === 1 ? (
+        <CatalogLandmarkBanner
+          landmark={landmark}
+          citySlug={catalogCitySlug}
+          nearbyCount={isLoading ? null : catalogResultCount}
+          isLoading={isLoading}
+        />
+      ) : null}
+
       {showMobileFilters && (
         <div className="md:hidden bg-card border-b border-border animate-fade-in">
           <div className="container mx-auto px-4 py-4">
@@ -888,7 +951,7 @@ export default function CatalogPage({ parsed, title, intro, children }: CatalogP
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border z-50">
-                      {sortOptions.map((o) => (
+                      {catalogSortOptions.map((o) => (
                         <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                       ))}
                     </SelectContent>
@@ -941,18 +1004,24 @@ export default function CatalogPage({ parsed, title, intro, children }: CatalogP
           </aside>
 
           <div className="flex-1 min-w-0">
-            <div className="mb-5">
-              <h1 className="font-display font-bold text-2xl md:text-3xl text-foreground tracking-tight">
-                {pageTitle}
-              </h1>
-              {nearMetroLanding && (
-                <p className="text-muted-foreground text-sm md:text-base mt-2 max-w-3xl">
-                  {NEAR_METRO_CATALOG_INTRO}
-                </p>
-              )}
-            </div>
-
-            {currentPage === 1 ? intro : null}
+            {!isLandmarkPage ? (
+              <div className="mb-5">
+                <h1 className="font-display font-bold text-2xl md:text-3xl text-foreground tracking-tight">
+                  {pageTitle}
+                </h1>
+                {nearMetroLanding && (
+                  <p className="text-muted-foreground text-sm md:text-base mt-2 max-w-3xl">
+                    {NEAR_METRO_CATALOG_INTRO}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="mb-5">
+                <h2 className="font-display font-bold text-xl md:text-2xl text-foreground tracking-tight">
+                  Квартиры рядом
+                </h2>
+              </div>
+            )}
 
             <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
               <p className="text-sm text-muted-foreground">
@@ -1008,7 +1077,7 @@ export default function CatalogPage({ parsed, title, intro, children }: CatalogP
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-card border-border z-50">
-                        {sortOptions.map((o) => (
+                        {catalogSortOptions.map((o) => (
                           <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                         ))}
                       </SelectContent>
@@ -1078,29 +1147,36 @@ export default function CatalogPage({ parsed, title, intro, children }: CatalogP
                       {paginatedDisplayProperties.map((property, i) => {
                         const { primaryAmount, primaryCurrency, secondary } = formatPropertyPrices(property, exchangeRates, selectedCurrency);
                         return (
-                          <PropertyCard
-                            key={property.id}
-                            id={property.id}
-                            image={property.images?.[0]?.thumbnailUrl || property.images?.[0]?.url || "https://placehold.co/600x450?text=No+Image"}
-                            price={<PriceDisplay amount={primaryAmount} currency={primaryCurrency} />}
-                            primaryBynAmount={primaryAmount}
-                            secondaryPrice={secondary}
-                            title={property.title}
-                            address={formatAddress(property.address, { includeCityDistrict: false })}
-                            beds={property.specifications.rooms || 0}
-                            baths={property.specifications.bathrooms ?? 1}
-                            area={property.specifications.area || 0}
-                            maxGuests={property.specifications.maxDailyGuests}
-                            dealType={property.dealType}
-                            propertyType={property.type}
-                            regionSlug={propertyUrlRegionSlug(property.address.regionName, property.address.citySlug, property.type)}
-                            typeLabel={property.typeLabel}
-                            showTypeBadge={!parsed.propertyType}
-                            index={i}
-                            animateEntrance={false}
-                            rating={property.ratingAvg ?? null}
-                            reviewCount={property.reviewCount ?? null}
-                          />
+                          <div key={property.id}>
+                            <PropertyCard
+                              id={property.id}
+                              image={property.images?.[0]?.thumbnailUrl || property.images?.[0]?.url || "https://placehold.co/600x450?text=No+Image"}
+                              price={<PriceDisplay amount={primaryAmount} currency={primaryCurrency} />}
+                              primaryBynAmount={primaryAmount}
+                              secondaryPrice={secondary}
+                              title={property.title}
+                              address={formatAddress(property.address, { includeCityDistrict: false })}
+                              beds={property.specifications.rooms || 0}
+                              baths={property.specifications.bathrooms ?? 1}
+                              area={property.specifications.area || 0}
+                              maxGuests={property.specifications.maxDailyGuests}
+                              dealType={property.dealType}
+                              propertyType={property.type}
+                              regionSlug={propertyUrlRegionSlug(property.address.regionName, property.address.citySlug, property.type)}
+                              typeLabel={property.typeLabel}
+                              showTypeBadge={!parsed.propertyType}
+                              index={i}
+                              animateEntrance={false}
+                              rating={property.ratingAvg ?? null}
+                              reviewCount={property.reviewCount ?? null}
+                            />
+                            {isLandmarkPage && property.landmarkDistanceKm != null ? (
+                              <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                                <MapPin className="h-3.5 w-3.5 text-primary" />
+                                {formatLandmarkDistance(property.landmarkDistanceKm)} до объекта
+                              </p>
+                            ) : null}
+                          </div>
                         );
                       })}
                     </div>
@@ -1190,6 +1266,12 @@ export default function CatalogPage({ parsed, title, intro, children }: CatalogP
                               index={i}
                               metroOnSeparateLine={false}
                             />
+                            {isLandmarkPage && property.landmarkDistanceKm != null ? (
+                              <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                                <MapPin className="h-3.5 w-3.5 text-primary" />
+                                {formatLandmarkDistance(property.landmarkDistanceKm)} до объекта
+                              </p>
+                            ) : null}
                           </div>
                         );
                       })}

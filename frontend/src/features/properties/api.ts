@@ -41,6 +41,9 @@ export const getProperties = async (filters: PropertyFilters = {}): Promise<Prop
         if (filters.nearMetro) params.append('nearMetro', '1');
         if (filters.cityDistrictSlug) params.append('cityDistrictSlug', filters.cityDistrictSlug);
         if (filters.landmarkSlug) params.append('landmarkSlug', filters.landmarkSlug);
+        if (filters.maxLandmarkDistanceKm) {
+            params.append('maxLandmarkDistanceKm', filters.maxLandmarkDistanceKm.toString());
+        }
         if (filters.guests) params.append('guests', filters.guests.toString());
         if (filters.sortBy) params.append('sortBy', filters.sortBy);
         if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
