@@ -144,7 +144,7 @@ export default function CatalogLandmarkDetails({
                   </div>
                   <div className="p-4">
                     <h4 className="font-semibold text-foreground transition-colors group-hover:text-primary">
-                      Квартиры возле «{related.nameGenitive ?? related.name}»
+                      Квартиры возле {related.nameGenitive ?? related.name}
                     </h4>
                     <p className="mt-1 text-xs text-muted-foreground">{cityLabel}</p>
                   </div>

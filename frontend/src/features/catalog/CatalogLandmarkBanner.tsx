@@ -67,7 +67,7 @@ export default function CatalogLandmarkBanner({
           </span>
         </div>
         <h1 className="font-display max-w-3xl text-2xl font-bold text-background md:text-4xl">
-          Снять квартиру на сутки возле «{landmark.nameGenitive}»
+          Снять квартиру на сутки возле {landmark.nameGenitive}
         </h1>
         {subtitle ? (
           <p className="mt-2 max-w-2xl text-sm text-background/85 md:text-base">{subtitle}</p>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Button } from '@/components/ui/button';
 import { getSiteOrigin } from '@/lib/site-url';
 import { OwnerHero } from '@/features/owner-landing/components/OwnerHero';
+import { OwnerReach } from '@/features/owner-landing/components/OwnerReach';
 import { OwnerBenefits } from '@/features/owner-landing/components/OwnerBenefits';
 import { OwnerSteps } from '@/features/owner-landing/components/OwnerSteps';
 import { OwnerPricingSummary } from '@/features/owner-landing/components/OwnerPricingSummary';
@@ -49,8 +50,10 @@ export default function OwnerLandingPage() {
         <>
             <OwnerFaqJsonLd />
             <OwnerHero />
+            <OwnerReach />
             <OwnerBenefits />
             <OwnerSteps />
+
             <OwnerPricingSummary />
             <OwnerTools />
             <OwnerFaq />
