@@ -81,7 +81,7 @@ final class LandmarkProximityCalculatorTest extends TestCase
         $landmarkRepository
             ->method('findActiveByCityId')
             ->willReturn([
-                new Landmark(1, 'Near landmark', 'near-landmark', 53.9042, 27.5608),
+                new Landmark(1, 'Near landmark', 'near-landmark', 'Near landmark', 53.9042, 27.5608),
             ]);
 
         $propertyLandmarkRepository
@@ -166,7 +166,7 @@ final class LandmarkProximityCalculatorTest extends TestCase
         float $longitude,
         float $radiusKm,
     ): Landmark {
-        $landmark = new Landmark(1, $name, $slug, $latitude, $longitude);
+        $landmark = new Landmark(1, $name, $slug, $name, $latitude, $longitude);
         $landmark->setRadiusKm($radiusKm);
 
         $reflection = new \ReflectionProperty($landmark, 'id');

@@ -7,6 +7,7 @@ namespace App\Presentation\Api\Controller;
 use App\Domain\Property\Entity\Landmark;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\LandmarkRepositoryInterface;
+use App\Infrastructure\Service\NearestMetroStationResolver;
 use App\Presentation\Api\Response\ApiResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -18,6 +19,7 @@ final class LandmarkController extends AbstractController
     public function __construct(
         private readonly CityRepositoryInterface $cityRepository,
         private readonly LandmarkRepositoryInterface $landmarkRepository,
+        private readonly NearestMetroStationResolver $nearestMetroStationResolver,
     ) {
     }
 
@@ -40,7 +42,6 @@ final class LandmarkController extends AbstractController
                 'name' => $landmark->getName(),
                 'slug' => $landmark->getSlug(),
                 'category' => $landmark->getCategory(),
-                'catalogLocationPhrase' => $landmark->getCatalogLocationPhrase(),
             ],
             $landmarks,
         )));
@@ -65,17 +66,28 @@ final class LandmarkController extends AbstractController
             );
         }
 
+        $nearestMetro = null;
+        if ($landmark->hasCoordinates()) {
+            $nearestMetro = $this->nearestMetroStationResolver->resolve(
+                $landmark->getCityId(),
+                $landmark->getLatitude(),
+                $landmark->getLongitude(),
+            );
+        }
+
         return $this->json(ApiResponse::success([
             'id' => $landmark->getId(),
             'name' => $landmark->getName(),
+            'nameGenitive' => $landmark->getNameGenitive(),
             'slug' => $landmark->getSlug(),
             'category' => $landmark->getCategory(),
             'shortDescription' => $landmark->getShortDescription(),
             'description' => $landmark->getDescription(),
             'imageUrl' => self::normalizeLandmarkImageUrl($landmark->getImageUrl()),
-            'catalogLocationPhrase' => $landmark->getCatalogLocationPhrase(),
-            'metaTitle' => $landmark->getMetaTitle(),
-            'metaDescription' => $landmark->getMetaDescription(),
+            'address' => $landmark->getAddress(),
+            'facts' => $landmark->getFacts(),
+            'guestTips' => $landmark->getGuestTips(),
+            'nearestMetro' => $nearestMetro,
             'latitude' => $landmark->getLatitude(),
             'longitude' => $landmark->getLongitude(),
             'radiusKm' => $landmark->getRadiusKm(),

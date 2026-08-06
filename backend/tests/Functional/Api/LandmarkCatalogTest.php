@@ -12,7 +12,7 @@ final class LandmarkCatalogTest extends ApiTestCase
     public function testListLandmarksByCitySlug(): void
     {
         $city = $this->createCity('Minsk', 'minsk', 'г. Минск');
-        $landmark = new Landmark($city->getId(), 'National Library', 'national-library', 53.9315, 27.6458);
+        $landmark = new Landmark($city->getId(), 'National Library', 'national-library', 'National Library', 53.9315, 27.6458);
         $this->entityManager()->persist($landmark);
         $this->entityManager()->flush();
 
@@ -29,9 +29,8 @@ final class LandmarkCatalogTest extends ApiTestCase
     public function testGetLandmarkByCitySlugAndSlug(): void
     {
         $city = $this->createCity('Minsk', 'minsk', 'г. Минск');
-        $landmark = new Landmark($city->getId(), 'National Library', 'national-library', 53.9315, 27.6458);
+        $landmark = new Landmark($city->getId(), 'National Library', 'national-library', 'National Library', 53.9315, 27.6458);
         $landmark->setShortDescription('Landmark intro');
-        $landmark->setCatalogLocationPhrase('возле Национальной библиотеки в Минске');
         $this->entityManager()->persist($landmark);
         $this->entityManager()->flush();
 
@@ -47,7 +46,7 @@ final class LandmarkCatalogTest extends ApiTestCase
     {
         $owner = $this->createUser('landmark-filter@example.com', 'Password123!');
         $city = $this->createCity('Minsk', 'minsk', 'г. Минск');
-        $landmark = new Landmark($city->getId(), 'National Library', 'national-library', 53.9315, 27.6458);
+        $landmark = new Landmark($city->getId(), 'National Library', 'national-library', 'National Library', 53.9315, 27.6458);
         $this->entityManager()->persist($landmark);
         $this->entityManager()->flush();
 

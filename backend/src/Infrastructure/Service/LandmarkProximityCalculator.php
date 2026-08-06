@@ -30,6 +30,10 @@ final readonly class LandmarkProximityCalculator
         }
 
         foreach ($this->landmarkRepository->findActiveByCityId($property->getCityId()) as $landmark) {
+            if (!$landmark->hasCoordinates()) {
+                continue;
+            }
+
             $landmarkCoordinates = Coordinates::create(
                 $landmark->getLatitude(),
                 $landmark->getLongitude(),

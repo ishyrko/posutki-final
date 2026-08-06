@@ -145,5 +145,5 @@ export async function resolveLandmark(
 
 export function resolveLandmarkPhrase(landmark: Landmark | null): string | undefined {
   if (!landmark) return undefined;
-  return landmark.catalogLocationPhrase ?? landmark.name;
+  return landmark.nameGenitive;
 }

@@ -25,6 +25,7 @@ import {
 import { formatAddress, Property } from "@/features/properties/types";
 import CatalogPage from "@/features/catalog/CatalogPage";
 import CatalogCitySeoSection from "@/features/catalog/CatalogCitySeoSection";
+import CatalogLandmarkDetails from "@/features/catalog/CatalogLandmarkDetails";
 import HomePage from "@/features/home/HomePage";
 import FeaturesSection from "@/components/FeaturesSection";
 import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
@@ -129,9 +130,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const metaDescription = buildCatalogMetaDescription(parsed, metroStationName, cityDistrictName, landmarkPhrase);
 
   return {
-    title: landmark?.metaTitle ?? metaTitle ?? `${h1Title} | Посутки.by`,
+    title: metaTitle ?? `${h1Title} | Посутки.by`,
     description:
-      landmark?.metaDescription ??
       metaDescription ??
       `Каталог посуточной аренды: ${h1Title.toLowerCase()}. Актуальные объявления с ценами и фото.`,
     alternates: {
@@ -223,24 +223,22 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     }
   }
 
-  let landmarkSeoSection = null;
+  let landmarkDetailsSection = null;
   if (isFirstPage && landmark) {
     const sanitizedDescription = landmark.description
       ? sanitizeArticleHtml(landmark.description)
       : null;
-    if (sanitizedDescription) {
-      landmarkSeoSection = (
-        <CatalogCitySeoSection
-          heading={`Аренда жилья ${landmarkPhrase ?? `возле ${landmark.name}`}`}
-          html={sanitizedDescription}
-        />
-      );
-    }
+    landmarkDetailsSection = (
+      <CatalogLandmarkDetails
+        landmark={landmark}
+        descriptionHtml={sanitizedDescription}
+      />
+    );
   }
 
   return (
     <CatalogPage parsed={parsed} title={title} landmark={landmark}>
-      {landmarkSeoSection}
+      {landmarkDetailsSection}
       {citySeoSection}
     </CatalogPage>
   );

@@ -10,6 +10,7 @@ use App\Domain\Property\Entity\Landmark;
 use App\Domain\Property\Repository\LandmarkRepositoryInterface;
 use App\Infrastructure\Service\FileUploader;
 use App\Infrastructure\Service\SlugGenerator;
+use App\Infrastructure\Service\YandexForwardGeocoder;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -36,6 +37,7 @@ final class LandmarkCrudController extends AbstractCrudController
         private readonly SlugGenerator $slugGenerator,
         private readonly LandmarkRepositoryInterface $landmarkRepository,
         private readonly FileUploader $fileUploader,
+        private readonly YandexForwardGeocoder $forwardGeocoder,
     ) {
     }
 
@@ -66,8 +68,6 @@ final class LandmarkCrudController extends AbstractCrudController
             cityId: 1,
             name: '',
             slug: 'draft-' . time(),
-            latitude: 53.900000,
-            longitude: 27.566700,
         );
     }
 
@@ -82,6 +82,8 @@ final class LandmarkCrudController extends AbstractCrudController
 
         if ($entityInstance instanceof Landmark) {
             $this->applyLandmarkSlugFromFormOrName($entityInstance, $formData);
+            $this->applyLandmarkFactsFromForm($entityInstance, $formData);
+            $this->applyLandmarkGuestTipsFromForm($entityInstance, $formData);
             $this->normalizeLandmark($entityInstance);
         }
 
@@ -104,6 +106,8 @@ final class LandmarkCrudController extends AbstractCrudController
         if ($entityInstance instanceof Landmark) {
             $this->restoreLandmarkImageIfClearedWithoutIntent($entityManager, $entityInstance, $request);
             $this->applyLandmarkSlugFromFormOrName($entityInstance, $formData);
+            $this->applyLandmarkFactsFromForm($entityInstance, $formData);
+            $this->applyLandmarkGuestTipsFromForm($entityInstance, $formData);
             $this->normalizeLandmark($entityInstance);
         }
 
@@ -132,6 +136,10 @@ final class LandmarkCrudController extends AbstractCrudController
         yield IntegerField::new('cityId', 'ID города');
 
         yield TextField::new('name', 'Название');
+
+        yield TextField::new('nameGenitive', 'Название в родительном падеже')
+            ->setHelp('Например: «Национальной библиотеки» — для заголовков «возле …» в каталоге и meta title')
+            ->setFormTypeOption('required', true);
 
         yield TextField::new('slug', 'Slug')
             ->formatValue(static fn ($value, Landmark $entity): string => $entity->getSlug())
@@ -162,9 +170,16 @@ final class LandmarkCrudController extends AbstractCrudController
             ->renderExpanded(false);
 
         yield NumberField::new('latitude', 'Широта')
-            ->setNumDecimals(6);
+            ->setNumDecimals(6)
+            ->setRequired(false)
+            ->setHelp('Необязательно: если пусто — координаты будут получены по адресу');
         yield NumberField::new('longitude', 'Долгота')
-            ->setNumDecimals(6);
+            ->setNumDecimals(6)
+            ->setRequired(false)
+            ->setHelp('Необязательно: если пусто — координаты будут получены по адресу');
+        yield TextField::new('address', 'Адрес')
+            ->setHelp('Используется в блоке «Информация» и для геокодинга координат, если широта/долгота не указаны')
+            ->hideOnIndex();
         yield NumberField::new('radiusKm', 'Радиус (км)')
             ->setNumDecimals(2)
             ->setHelp('Объявления в этом радиусе попадут в каталог «возле»');
@@ -202,15 +217,33 @@ final class LandmarkCrudController extends AbstractCrudController
             ])
             ->hideOnIndex();
 
-        yield TextField::new('catalogLocationPhrase', 'Фраза локации для каталога')
-            ->setHelp('Например: «возле Национальной библиотеки в Минске»')
-            ->hideOnIndex();
+        $factsTextField = TextareaField::new('factsText', 'Свойства')
+            ->setFormTypeOption('mapped', false)
+            ->onlyOnForms()
+            ->setHelp('По одному на строку в формате «Год открытия = 2006»')
+            ->setFormTypeOption('attr', ['rows' => 6]);
 
-        yield TextField::new('metaTitle', 'Meta title')
-            ->hideOnIndex();
-        yield TextareaField::new('metaDescription', 'Meta description')
-            ->setFormTypeOption('attr', ['rows' => 3])
-            ->hideOnIndex();
+        if ($landmarkOnEdit instanceof Landmark) {
+            $factsTextField->setFormTypeOption('data', self::formatFactsForForm($landmarkOnEdit->getFacts()));
+        } else {
+            $factsTextField->setFormTypeOption('data', '');
+        }
+
+        yield $factsTextField;
+
+        $guestTipsTextField = TextareaField::new('guestTipsText', 'Советы гостям')
+            ->setFormTypeOption('mapped', false)
+            ->onlyOnForms()
+            ->setHelp('По одному совету на строку')
+            ->setFormTypeOption('attr', ['rows' => 6]);
+
+        if ($landmarkOnEdit instanceof Landmark) {
+            $guestTipsTextField->setFormTypeOption('data', self::formatGuestTipsForForm($landmarkOnEdit->getGuestTips()));
+        } else {
+            $guestTipsTextField->setFormTypeOption('data', '');
+        }
+
+        yield $guestTipsTextField;
 
         yield IntegerField::new('sortOrder', 'Порядок');
         yield BooleanField::new('isActive', 'Активна');
@@ -349,6 +382,9 @@ final class LandmarkCrudController extends AbstractCrudController
 
     private function normalizeLandmark(Landmark $landmark): void
     {
+        $this->normalizeLandmarkCoordinates($landmark);
+        $this->geocodeLandmarkAddressIfNeeded($landmark);
+
         $raw = $landmark->getDescription();
         if ($raw === null || trim($raw) === '') {
             $landmark->setDescription(null);
@@ -363,24 +399,143 @@ final class LandmarkCrudController extends AbstractCrudController
             $landmark->setShortDescription(null);
         }
 
-        $phrase = $landmark->getCatalogLocationPhrase();
-        if ($phrase !== null && trim($phrase) === '') {
-            $landmark->setCatalogLocationPhrase(null);
+        $nameGenitive = trim($landmark->getNameGenitive());
+        if ($nameGenitive === '') {
+            throw new \InvalidArgumentException('Укажите название в родительном падеже.');
         }
-
-        $metaTitle = $landmark->getMetaTitle();
-        if ($metaTitle !== null && trim($metaTitle) === '') {
-            $landmark->setMetaTitle(null);
-        }
-
-        $metaDescription = $landmark->getMetaDescription();
-        if ($metaDescription !== null && trim($metaDescription) === '') {
-            $landmark->setMetaDescription(null);
-        }
+        $landmark->setNameGenitive($nameGenitive);
 
         $imageUrl = $landmark->getImageUrl();
         if ($imageUrl !== null && trim($imageUrl) === '') {
             $landmark->setImageUrl(null);
         }
+    }
+
+    private function normalizeLandmarkCoordinates(Landmark $landmark): void
+    {
+        $latitude = $landmark->getLatitude();
+        $longitude = $landmark->getLongitude();
+
+        if ($latitude === 0.0 && $longitude === 0.0) {
+            $landmark->setLatitude(null);
+            $landmark->setLongitude(null);
+        }
+    }
+
+    private function geocodeLandmarkAddressIfNeeded(Landmark $landmark): void
+    {
+        if ($landmark->hasCoordinates()) {
+            return;
+        }
+
+        $address = $landmark->getAddress();
+        if ($address === null) {
+            return;
+        }
+
+        $coordinates = $this->forwardGeocoder->geocodeAddress($address);
+        if ($coordinates === null) {
+            return;
+        }
+
+        $landmark->setLatitude($coordinates->getLatitude());
+        $landmark->setLongitude($coordinates->getLongitude());
+    }
+
+    private function applyLandmarkFactsFromForm(Landmark $landmark, array $formData): void
+    {
+        $raw = isset($formData['factsText']) ? trim((string) $formData['factsText']) : '';
+        if ($raw === '') {
+            $landmark->setFacts(null);
+
+            return;
+        }
+
+        $facts = [];
+        foreach (preg_split('/\r\n|\r|\n/', $raw) ?: [] as $line) {
+            $line = trim((string) $line);
+            if ($line === '' || !preg_match('/^(.+?)\s*=\s*(.+)$/u', $line, $matches)) {
+                continue;
+            }
+
+            $label = trim($matches[1]);
+            $value = trim($matches[2]);
+            if ($label === '' || $value === '') {
+                continue;
+            }
+
+            $facts[] = ['label' => $label, 'value' => $value];
+        }
+
+        $landmark->setFacts($facts === [] ? null : $facts);
+    }
+
+    private function applyLandmarkGuestTipsFromForm(Landmark $landmark, array $formData): void
+    {
+        $raw = isset($formData['guestTipsText']) ? trim((string) $formData['guestTipsText']) : '';
+        if ($raw === '') {
+            $landmark->setGuestTips(null);
+
+            return;
+        }
+
+        $tips = [];
+        foreach (preg_split('/\r\n|\r|\n/', $raw) ?: [] as $line) {
+            $line = trim((string) $line);
+            if ($line === '') {
+                continue;
+            }
+
+            $tips[] = $line;
+        }
+
+        $landmark->setGuestTips($tips === [] ? null : $tips);
+    }
+
+    /**
+     * @param list<array{label: string, value: string}>|null $facts
+     */
+    private static function formatFactsForForm(?array $facts): string
+    {
+        if ($facts === null || $facts === []) {
+            return '';
+        }
+
+        $lines = [];
+        foreach ($facts as $fact) {
+            if (!is_array($fact)) {
+                continue;
+            }
+
+            $label = trim((string) ($fact['label'] ?? ''));
+            $value = trim((string) ($fact['value'] ?? ''));
+            if ($label === '' || $value === '') {
+                continue;
+            }
+
+            $lines[] = $label . ' = ' . $value;
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param list<string>|null $guestTips
+     */
+    private static function formatGuestTipsForForm(?array $guestTips): string
+    {
+        if ($guestTips === null || $guestTips === []) {
+            return '';
+        }
+
+        $lines = [];
+        foreach ($guestTips as $tip) {
+            $line = trim((string) $tip);
+            if ($line !== '') {
+                $lines[] = $line;
+            }
+        }
+
+        return implode("\n", $lines);
     }
 }

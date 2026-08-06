@@ -287,7 +287,7 @@ export default function CatalogPage({ parsed, title, landmark, children }: Catal
   const [metroStationId, setMetroStationId] = useState("all");
   const [nearMetro, setNearMetro] = useState(false);
   const [landmarkMaxDistanceKm, setLandmarkMaxDistanceKm] = useState<LandmarkDistanceFilterValue>(0);
-  const [sort, setSort] = useState(() => (parsed.landmarkSlug ? "distance-asc" : "default"));
+  const [sort, setSort] = useState("default");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [selectedAmenityIds, setSelectedAmenityIds] = useState<string[]>([]);
