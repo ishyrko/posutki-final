@@ -11,6 +11,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\UniqueConstraint(name: 'uniq_landmark_city_slug', columns: ['city_id', 'slug'])]
 class Landmark
 {
+    public const PROXIMITY_RADIUS_KM = 2.0;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -33,9 +35,6 @@ class Landmark
 
     #[ORM\Column(type: 'float', nullable: true)]
     private ?float $longitude = null;
-
-    #[ORM\Column(type: 'float', name: 'radius_km', options: ['default' => 1.5])]
-    private float $radiusKm = 1.5;
 
     #[ORM\Column(type: 'string', length: 32, nullable: true)]
     private ?string $category = null;
@@ -150,16 +149,6 @@ class Landmark
     public function hasCoordinates(): bool
     {
         return $this->latitude !== null && $this->longitude !== null;
-    }
-
-    public function getRadiusKm(): float
-    {
-        return $this->radiusKm;
-    }
-
-    public function setRadiusKm(float $radiusKm): void
-    {
-        $this->radiusKm = $radiusKm;
     }
 
     public function getCategory(): ?string

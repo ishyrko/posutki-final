@@ -15,6 +15,7 @@ export interface LandmarkListItem {
   nameGenitive?: string;
   slug: string;
   category?: string | null;
+  imageUrl?: string | null;
 }
 
 export interface Landmark extends LandmarkListItem {
@@ -28,5 +29,4 @@ export interface Landmark extends LandmarkListItem {
   nearestMetro?: LandmarkNearestMetro | null;
   latitude?: number | null;
   longitude?: number | null;
-  radiusKm: number;
 }

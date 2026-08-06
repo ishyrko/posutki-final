@@ -16,12 +16,12 @@ function resolveCityLabel(citySlug: string): string {
   return resolveCatalogCityNominative(citySlug);
 }
 
-function pluralVariants(count: number): string {
+function pluralApartments(count: number): string {
   const mod10 = count % 10;
   const mod100 = count % 100;
-  if (mod10 === 1 && mod100 !== 11) return "вариант";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "варианта";
-  return "вариантов";
+  if (mod10 === 1 && mod100 !== 11) return "квартира";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "квартиры";
+  return "квартир";
 }
 
 /** Full-width hero banner for landmark catalog pages (design: AttractionCatalogPage). */
@@ -37,7 +37,7 @@ export default function CatalogLandmarkBanner({
 
   let subtitle = landmark.shortDescription;
   if (!isLoading && nearbyCount != null) {
-    subtitle = `${nearbyCount} ${pluralVariants(nearbyCount)} рядом с объектом`;
+    subtitle = `${nearbyCount} ${pluralApartments(nearbyCount)} рядом`;
   }
 
   return (
@@ -67,7 +67,7 @@ export default function CatalogLandmarkBanner({
           </span>
         </div>
         <h1 className="font-display max-w-3xl text-2xl font-bold text-background md:text-4xl">
-          Снять квартиру на сутки возле «{landmark.name}»
+          Снять квартиру на сутки возле «{landmark.nameGenitive}»
         </h1>
         {subtitle ? (
           <p className="mt-2 max-w-2xl text-sm text-background/85 md:text-base">{subtitle}</p>

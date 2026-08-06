@@ -24,8 +24,6 @@ import {
 } from "@/features/catalog/validate-segments-server";
 import { formatAddress, Property } from "@/features/properties/types";
 import CatalogPage from "@/features/catalog/CatalogPage";
-import CatalogCitySeoSection from "@/features/catalog/CatalogCitySeoSection";
-import CatalogLandmarkDetails from "@/features/catalog/CatalogLandmarkDetails";
 import HomePage from "@/features/home/HomePage";
 import FeaturesSection from "@/components/FeaturesSection";
 import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
@@ -41,6 +39,7 @@ import {
   buildApartmentPropertyMetaTitle,
 } from "@/features/properties/property-meta-title";
 import { sanitizeArticleHtml } from "@/features/articles/sanitizeArticleHtml";
+import { fetchCityLandmarks } from "@/lib/landmark-server";
 import PropertyDetailClient from "../../../features/properties/components/PropertyDetailClient";
 
 interface PageProps {
@@ -206,40 +205,46 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     Number.isFinite(pageFromQuery) && pageFromQuery > 0 ? Math.floor(pageFromQuery) : 1;
   const isFirstPage = validPage <= 1;
 
-  let citySeoSection = null;
+  let citySeoFooter = null;
   if (isFirstPage && isBaseCityApartmentCatalogPage(parsed)) {
     const citySlug = resolveCatalogCitySlug(parsed);
     const rawSeoText = await fetchCityCatalogSeoText(citySlug);
     if (rawSeoText) {
       const sanitizedHtml = sanitizeArticleHtml(rawSeoText);
       if (sanitizedHtml) {
-        citySeoSection = (
-          <CatalogCitySeoSection
-            heading={buildCatalogCitySeoHeading(citySlug)}
-            html={sanitizedHtml}
-          />
-        );
+        citySeoFooter = {
+          heading: buildCatalogCitySeoHeading(citySlug),
+          html: sanitizedHtml,
+        };
       }
     }
   }
 
-  let landmarkDetailsSection = null;
+  let landmarkFooter = null;
   if (isFirstPage && landmark) {
+    const citySlug = resolveCatalogCitySlug(parsed);
+    const cityLandmarks = await fetchCityLandmarks(citySlug);
+    const relatedLandmarks = cityLandmarks
+      .filter((item) => item.slug !== landmark.slug)
+      .slice(0, 3);
     const sanitizedDescription = landmark.description
       ? sanitizeArticleHtml(landmark.description)
       : null;
-    landmarkDetailsSection = (
-      <CatalogLandmarkDetails
-        landmark={landmark}
-        descriptionHtml={sanitizedDescription}
-      />
-    );
+    landmarkFooter = {
+      landmark,
+      citySlug,
+      relatedLandmarks,
+      descriptionHtml: sanitizedDescription,
+    };
   }
 
   return (
-    <CatalogPage parsed={parsed} title={title} landmark={landmark}>
-      {landmarkDetailsSection}
-      {citySeoSection}
-    </CatalogPage>
+    <CatalogPage
+      parsed={parsed}
+      title={title}
+      landmark={landmark}
+      landmarkFooter={landmarkFooter}
+      citySeoFooter={citySeoFooter}
+    />
   );
 }

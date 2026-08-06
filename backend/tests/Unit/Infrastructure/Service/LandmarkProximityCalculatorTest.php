@@ -25,7 +25,7 @@ final class LandmarkProximityCalculatorTest extends TestCase
         $property = $this->createPropertyWithId(100);
         $property->setStreetName('Немига');
 
-        $landmark = $this->createLandmarkWithId(1, 'National Library', 'national-library', 53.9045, 27.5615, 1.5);
+        $landmark = $this->createLandmarkWithId(1, 'National Library', 'national-library', 53.9045, 27.5615);
 
         $landmarkRepository
             ->method('findActiveByCityId')
@@ -52,7 +52,7 @@ final class LandmarkProximityCalculatorTest extends TestCase
         $property = $this->createPropertyWithId(101);
         $property->setStreetName('Дальняя');
 
-        $landmark = $this->createLandmarkWithId(1, 'Far landmark', 'far-landmark', 53.9500, 27.6500, 0.5);
+        $landmark = $this->createLandmarkWithId(1, 'Far landmark', 'far-landmark', 53.9500, 27.6500);
 
         $landmarkRepository
             ->method('findActiveByCityId')
@@ -97,7 +97,7 @@ final class LandmarkProximityCalculatorTest extends TestCase
         $service->syncForProperty($property);
     }
 
-    public function testUsesLandmarkSpecificRadius(): void
+    public function testUsesFixedProximityRadius(): void
     {
         $landmarkRepository = $this->createStub(LandmarkRepositoryInterface::class);
         $propertyLandmarkRepository = $this->createMock(PropertyLandmarkRepositoryInterface::class);
@@ -105,12 +105,12 @@ final class LandmarkProximityCalculatorTest extends TestCase
         $property = $this->createPropertyWithId(102);
         $property->setStreetName('Центральная');
 
-        $smallRadius = $this->createLandmarkWithId(1, 'Small radius', 'small-radius', 53.9500, 27.6500, 0.1);
-        $largeRadius = $this->createLandmarkWithId(2, 'Large radius', 'large-radius', 53.9045, 27.5615, 5.0);
+        $farLandmark = $this->createLandmarkWithId(1, 'Far landmark', 'far-landmark', 53.9500, 27.6500);
+        $nearLandmark = $this->createLandmarkWithId(2, 'Near landmark', 'near-landmark', 53.9045, 27.5615);
 
         $landmarkRepository
             ->method('findActiveByCityId')
-            ->willReturn([$smallRadius, $largeRadius]);
+            ->willReturn([$farLandmark, $nearLandmark]);
 
         $propertyLandmarkRepository
             ->expects(self::once())
@@ -164,10 +164,8 @@ final class LandmarkProximityCalculatorTest extends TestCase
         string $slug,
         float $latitude,
         float $longitude,
-        float $radiusKm,
     ): Landmark {
         $landmark = new Landmark(1, $name, $slug, $name, $latitude, $longitude);
-        $landmark->setRadiusKm($radiusKm);
 
         $reflection = new \ReflectionProperty($landmark, 'id');
         $reflection->setAccessible(true);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Service;
 
+use App\Domain\Property\Entity\Landmark;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Entity\PropertyLandmark;
 use App\Domain\Property\Repository\LandmarkRepositoryInterface;
@@ -40,7 +41,7 @@ final readonly class LandmarkProximityCalculator
             );
             $distanceKm = $propertyCoordinates->distanceTo($landmarkCoordinates);
 
-            if ($distanceKm > $landmark->getRadiusKm()) {
+            if ($distanceKm > Landmark::PROXIMITY_RADIUS_KM) {
                 continue;
             }
 

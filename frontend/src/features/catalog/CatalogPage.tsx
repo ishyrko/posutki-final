@@ -44,10 +44,14 @@ import { useCityLandmarks } from "@/features/landmarks/hooks";
 import type { Landmark } from "@/features/landmarks/types";
 import {
   formatLandmarkDistance,
+  DEFAULT_LANDMARK_MAX_DISTANCE_KM,
   LANDMARK_DISTANCE_FILTER_OPTIONS,
   type LandmarkDistanceFilterValue,
 } from "@/features/landmarks/distance";
 import CatalogLandmarkBanner from "@/features/catalog/CatalogLandmarkBanner";
+import CatalogLandmarkDetails from "@/features/catalog/CatalogLandmarkDetails";
+import CatalogCitySeoSection from "@/features/catalog/CatalogCitySeoSection";
+import type { LandmarkListItem } from "@/features/landmarks/types";
 import type { MetroStation, NearbyMetroStation } from "@/features/metro/types";
 import { Property, formatAddress, type Currency } from "@/features/properties/types";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -267,15 +271,34 @@ function propertyToMapItem(p: Property, rates: ExchangeRates, displayCurrency: C
   };
 }
 
+interface CatalogLandmarkFooterProps {
+  landmark: Landmark;
+  citySlug: string;
+  relatedLandmarks: LandmarkListItem[];
+  descriptionHtml?: string | null;
+}
+
+interface CatalogCitySeoFooterProps {
+  heading: string;
+  html: string;
+}
+
 interface CatalogPageProps {
   parsed: ParsedSegments;
   title: string;
   landmark?: Landmark | null;
-  /** SSR SEO block under listings (RSC children slot — keeps Radix useId stable in this client tree). */
-  children?: ReactNode;
+  /** Pre-rendered on the server in page.tsx; passed as props to avoid RSC children in this client tree (Radix useId). */
+  landmarkFooter?: CatalogLandmarkFooterProps | null;
+  citySeoFooter?: CatalogCitySeoFooterProps | null;
 }
 
-export default function CatalogPage({ parsed, title, landmark, children }: CatalogPageProps) {
+export default function CatalogPage({
+  parsed,
+  title,
+  landmark,
+  landmarkFooter = null,
+  citySeoFooter = null,
+}: CatalogPageProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -286,7 +309,9 @@ export default function CatalogPage({ parsed, title, landmark, children }: Catal
   const [roomBuckets, setRoomBuckets] = useState<RoomBucket[]>([]);
   const [metroStationId, setMetroStationId] = useState("all");
   const [nearMetro, setNearMetro] = useState(false);
-  const [landmarkMaxDistanceKm, setLandmarkMaxDistanceKm] = useState<LandmarkDistanceFilterValue>(0);
+  const [landmarkMaxDistanceKm, setLandmarkMaxDistanceKm] = useState<LandmarkDistanceFilterValue>(
+    DEFAULT_LANDMARK_MAX_DISTANCE_KM,
+  );
   const [sort, setSort] = useState("default");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
@@ -393,7 +418,7 @@ export default function CatalogPage({ parsed, title, landmark, children }: Catal
     (hasPriceFilter ? 1 : 0) +
     (guestsFromQuery !== null ? 1 : 0) +
     (roomsFilterVisible && roomBuckets.length > 0 ? 1 : 0) +
-    (isLandmarkPage && landmarkMaxDistanceKm > 0 ? 1 : 0) +
+    (isLandmarkPage && landmarkMaxDistanceKm !== DEFAULT_LANDMARK_MAX_DISTANCE_KM ? 1 : 0) +
     (showMetroSidebarFilters && !nearMetroLanding && nearMetro && metroStationId !== "all" ? 1 : 0) +
     (showMetroSidebarFilters && !nearMetroLanding && nearMetro ? 1 : 0) +
     selectedAmenityIds.length +
@@ -441,9 +466,7 @@ export default function CatalogPage({ parsed, title, landmark, children }: Catal
     } else if (parsed.landmarkSlug) {
       f.citySlug = resolveCatalogCitySlug(parsed);
       f.landmarkSlug = parsed.landmarkSlug;
-      if (landmarkMaxDistanceKm > 0) {
-        f.maxLandmarkDistanceKm = landmarkMaxDistanceKm;
-      }
+      f.maxLandmarkDistanceKm = landmarkMaxDistanceKm;
     } else if (parsed.citySlug) {
       f.citySlug = parsed.citySlug;
     } else if (parsed.regionSlug) {
@@ -589,7 +612,7 @@ export default function CatalogPage({ parsed, title, landmark, children }: Catal
     setSelectedAmenityIds([]);
     setSelectedPaymentMethodIds([]);
     setShowAllAmenities(false);
-    setLandmarkMaxDistanceKm(0);
+    setLandmarkMaxDistanceKm(DEFAULT_LANDMARK_MAX_DISTANCE_KM);
     const params = new URLSearchParams(searchParams.toString());
     params.delete(GUESTS_QUERY_PARAM);
     params.delete(AMENITY_QUERY_PARAM);
@@ -1334,7 +1357,17 @@ export default function CatalogPage({ parsed, title, landmark, children }: Catal
                 )}
               </>
             )}
-            {currentPage === 1 ? children : null}
+            {currentPage === 1 && landmarkFooter ? (
+              <CatalogLandmarkDetails
+                landmark={landmarkFooter.landmark}
+                citySlug={landmarkFooter.citySlug}
+                relatedLandmarks={landmarkFooter.relatedLandmarks}
+                descriptionHtml={landmarkFooter.descriptionHtml}
+              />
+            ) : null}
+            {currentPage === 1 && citySeoFooter ? (
+              <CatalogCitySeoSection heading={citySeoFooter.heading} html={citySeoFooter.html} />
+            ) : null}
           </div>
         </div>
       </section>

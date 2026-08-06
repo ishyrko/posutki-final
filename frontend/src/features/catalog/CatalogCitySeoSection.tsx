@@ -3,7 +3,7 @@ type CatalogCitySeoSectionProps = {
   html: string;
 };
 
-/** SSR-only SEO block under the apartment catalog (no client hooks — avoids Radix useId hydration mismatch). */
+/** SEO block under the apartment catalog (rendered from CatalogPage with server-prepared HTML). */
 export default function CatalogCitySeoSection({ heading, html }: CatalogCitySeoSectionProps) {
   return (
     <section className="mt-10 pt-8 border-t border-border">

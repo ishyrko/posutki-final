@@ -8,7 +8,7 @@ test-unit:
 
 test-functional:
 	docker compose exec php sh -lc "cd /var/www/backend && composer test:functional"
-.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo admin-user frontend-install frontend-dev frontend-build frontend-build-cpanel frontend-build-cpanel-prod frontend-build-cpanel-verify-3g frontend-export-cpanel frontend-cpanel-clean clean exchange-rates sync-metro-proximity sync-landmark-proximity backfill-city-districts sync-calendars reshuffle-placement notify-vip-expiring prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-sync-landmark-proximity prod-backfill-city-districts prod-sync-calendars prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
+.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo backend-seed-demo-landmarks admin-user frontend-install frontend-dev frontend-build frontend-build-cpanel frontend-build-cpanel-prod frontend-build-cpanel-verify-3g frontend-export-cpanel frontend-cpanel-clean clean exchange-rates sync-metro-proximity sync-landmark-proximity backfill-city-districts sync-calendars reshuffle-placement notify-vip-expiring prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-sync-landmark-proximity prod-backfill-city-districts prod-sync-calendars prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
 
 PROD_ENV_FILE = .env.prod
 CPANEL_ENV_FILE = .env.cpanel
@@ -77,6 +77,10 @@ migrate: backend-migrate ## Alias: run database migrations
 backend-seed-demo: ## Replace all listings with demo data (regions/cities unchanged). Не использовать doctrine:fixtures:load — ломает справочники.
 	@echo "${GREEN}Seeding demo properties (app:seed-demo-properties)...${RESET}"
 	docker-compose exec php sh -lc "cd /var/www/backend && php bin/console app:seed-demo-properties"
+
+backend-seed-demo-landmarks: ## Upsert demo landmarks for regional cities (inactive)
+	@echo "${GREEN}Seeding demo landmarks (app:seed-demo-landmarks)...${RESET}"
+	docker-compose exec php sh -lc "cd /var/www/backend && php bin/console app:seed-demo-landmarks"
 
 admin-user: ## Create or promote admin (EMAIL=... PASSWORD=... optional FIRST= LAST=)
 	@test -n "$(EMAIL)" && test -n "$(PASSWORD)" || (echo "${YELLOW}Usage: make admin-user EMAIL=you@example.com PASSWORD=secret [FIRST=Admin] [LAST=Admin]${RESET}" && exit 1)

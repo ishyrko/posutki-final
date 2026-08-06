@@ -81,6 +81,29 @@ const CATALOG_APARTMENT_LOCATION: Record<string, string> = {
   novolukoml: 'в Новолукомле',
 };
 
+/** Именительный падеж города (баннер достопримечательности, карточки перелинковки). */
+const CATALOG_CITY_NOMINATIVE: Record<string, string> = {
+  minsk: 'Минск',
+  brest: 'Брест',
+  vitebsk: 'Витебск',
+  gomel: 'Гомел',
+  grodno: 'Гродно',
+  mogilev: 'Могилёв',
+  'minsk-region': 'Минская область',
+  orsha: 'Орша',
+  svetlogorsk: 'Светлогорск',
+  smorgon: 'Сморгонь',
+  molodechno: 'Молодечно',
+  logoysk: 'Логойск',
+  baranovichi: 'Барановичи',
+  pinsk: 'Пинск',
+  novopolotsk: 'Новополоцк',
+  bobruysk: 'Бобруйск',
+  zhlobin: 'Жлобин',
+  volkovysk: 'Волковыск',
+  novolukoml: 'Новолукомль',
+};
+
 /** Родительный падеж города для фраз «в … районе Минска» (города с адм. районами). */
 const CATALOG_CITY_GENITIVE: Record<string, string> = {
   minsk: 'Минска',
@@ -114,12 +137,7 @@ export const PROPERTY_TYPE_LABELS: Record<string, string> = {
 
 /** Именительный падеж города для подписи в баннере достопримечательности. */
 export function resolveCatalogCityNominative(citySlug: string): string {
-  const phrase = CATALOG_APARTMENT_LOCATION[citySlug];
-  if (phrase) {
-    return phrase.replace(/^в\s+/i, "");
-  }
-
-  return citySlug;
+  return CATALOG_CITY_NOMINATIVE[citySlug] ?? CATALOG_CITY_NOMINATIVE[MINSK_CITY_SLUG];
 }
 
 export interface ParsedSegments {
@@ -440,6 +458,19 @@ export function buildCatalogUrl(params: BuildCatalogUrlParams = {}): string {
   }
 
   return '/' + (parts.length > 0 ? parts.join('/') + '/' : '');
+}
+
+/** Каталог квартир возле достопримечательности (как в sitemap). */
+export function buildLandmarkCatalogUrl(citySlug: string, landmarkSlug: string): string {
+  const isCityPrefix = CITY_PREFIX_SLUGS.has(citySlug);
+  const isRegion = REGION_SLUGS.has(citySlug);
+
+  return buildCatalogUrl({
+    region: !isCityPrefix && isRegion ? citySlug : undefined,
+    city: isCityPrefix ? citySlug : undefined,
+    propertyType: "apartment",
+    landmark: landmarkSlug,
+  });
 }
 
 export function isPropertyId(segment?: string): boolean {

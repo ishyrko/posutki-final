@@ -180,9 +180,6 @@ final class LandmarkCrudController extends AbstractCrudController
         yield TextField::new('address', 'Адрес')
             ->setHelp('Используется в блоке «Информация» и для геокодинга координат, если широта/долгота не указаны')
             ->hideOnIndex();
-        yield NumberField::new('radiusKm', 'Радиус (км)')
-            ->setNumDecimals(2)
-            ->setHelp('Объявления в этом радиусе попадут в каталог «возле»');
 
         $imageField = ImageField::new('imageUrl', 'Изображение')
             ->setBasePath('uploads/landmarks')

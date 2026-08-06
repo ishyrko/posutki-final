@@ -42,6 +42,7 @@ final class LandmarkController extends AbstractController
                 'name' => $landmark->getName(),
                 'slug' => $landmark->getSlug(),
                 'category' => $landmark->getCategory(),
+                'imageUrl' => self::normalizeLandmarkImageUrl($landmark->getImageUrl()),
             ],
             $landmarks,
         )));
@@ -90,7 +91,6 @@ final class LandmarkController extends AbstractController
             'nearestMetro' => $nearestMetro,
             'latitude' => $landmark->getLatitude(),
             'longitude' => $landmark->getLongitude(),
-            'radiusKm' => $landmark->getRadiusKm(),
         ]));
     }
 
