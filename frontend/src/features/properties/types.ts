@@ -1,4 +1,5 @@
 import type { NearbyMetroStation } from "@/features/metro/types";
+import type { PropertyNearbyLandmark } from "@/features/landmarks/types";
 
 export interface PropertyImage {
     id: number;
@@ -144,6 +145,7 @@ export interface Property {
     amenities?: string[];
     nearMetro?: boolean;
     nearbyMetroStations?: NearbyMetroStation[];
+    nearbyLandmarks?: PropertyNearbyLandmark[];
     landmarkDistanceKm?: number | null;
     views?: number;
     phoneViews?: number;

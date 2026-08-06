@@ -58,6 +58,23 @@ class LandmarkRepository extends ServiceEntityRepository implements LandmarkRepo
         return $this->find($id);
     }
 
+    public function findActiveByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('l')
+            ->where('l.id IN (:ids)')
+            ->andWhere('l.isActive = :active')
+            ->setParameter('ids', array_values($ids))
+            ->setParameter('active', true)
+            ->orderBy('l.sortOrder', 'ASC')
+            ->addOrderBy('l.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function save(Landmark $landmark): void
     {
         $this->getEntityManager()->persist($landmark);

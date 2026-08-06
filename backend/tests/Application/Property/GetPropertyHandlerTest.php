@@ -16,6 +16,8 @@ use App\Domain\Property\Repository\CityDistrictRepositoryInterface;
 use App\Domain\Property\Repository\MetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyAvailabilityBlockRepositoryInterface;
+use App\Domain\Property\Repository\PropertyLandmarkRepositoryInterface;
+use App\Domain\Property\Repository\LandmarkRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\StreetRepositoryInterface;
 use App\Domain\Property\ValueObject\Address;
@@ -105,6 +107,10 @@ final class GetPropertyHandlerTest extends TestCase
         $streetRepository = $this->createStub(StreetRepositoryInterface::class);
         $propertyMetroStationRepository = $this->createStub(PropertyMetroStationRepositoryInterface::class);
         $propertyMetroStationRepository->method('findByPropertyIds')->willReturn([]);
+        $propertyLandmarkRepository = $this->createStub(PropertyLandmarkRepositoryInterface::class);
+        $propertyLandmarkRepository->method('findByPropertyId')->willReturn([]);
+        $landmarkRepository = $this->createStub(LandmarkRepositoryInterface::class);
+        $landmarkRepository->method('findActiveByIds')->willReturn([]);
         $metroStationRepository = $this->createStub(MetroStationRepositoryInterface::class);
         $metroStationRepository->method('findByIds')->willReturn([]);
 
@@ -135,6 +141,8 @@ final class GetPropertyHandlerTest extends TestCase
             $streetRepository,
             $metroStationRepository,
             $propertyMetroStationRepository,
+            $propertyLandmarkRepository,
+            $landmarkRepository,
             $userIndividualProfileRepository,
             $userBusinessProfileRepository,
             $ownerContactResolver,

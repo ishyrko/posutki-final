@@ -84,6 +84,8 @@ final class PropertyDTO implements \JsonSerializable
         public readonly bool $nearMetro,
         /** @var array<int, array{id:int,name:string,slug:string,line:int,distanceKm:float}> */
         public readonly array $nearbyMetroStations,
+        /** @var list<array{id:int,name:string,slug:string,category:?string,imageUrl:?string,distanceKm:float}> */
+        public readonly array $nearbyLandmarks = [],
         public readonly ?float $landmarkDistanceKm = null,
         public readonly int $views,
         public readonly int $phoneViews,
@@ -127,6 +129,7 @@ final class PropertyDTO implements \JsonSerializable
         ?\DateTimeImmutable $calendarLastUpdatedAt = null,
         bool $includeAllImages = false,
         ?float $landmarkDistanceKm = null,
+        array $nearbyLandmarks = [],
     ): self {
         $district = $city->getRegionDistrict();
         $region = $district?->getRegion();
@@ -224,6 +227,7 @@ final class PropertyDTO implements \JsonSerializable
             dailySellerLegalProfile: $dailySellerLegalProfile,
             nearMetro: $property->isNearMetro(),
             nearbyMetroStations: $nearbyMetroStations,
+            nearbyLandmarks: $nearbyLandmarks,
             landmarkDistanceKm: $landmarkDistanceKm,
             views: $property->getViews(),
             phoneViews: $property->getPhoneViews(),
@@ -334,6 +338,7 @@ final class PropertyDTO implements \JsonSerializable
             ],
             'nearMetro' => $this->nearMetro,
             'nearbyMetroStations' => $this->nearbyMetroStations,
+            'nearbyLandmarks' => $this->nearbyLandmarks,
             'landmarkDistanceKm' => $this->landmarkDistanceKm,
             'views' => $this->views,
             'phoneViews' => $this->phoneViews,

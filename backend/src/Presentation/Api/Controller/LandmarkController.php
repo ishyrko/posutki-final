@@ -40,6 +40,7 @@ final class LandmarkController extends AbstractController
             static fn (Landmark $landmark) => [
                 'id' => $landmark->getId(),
                 'name' => $landmark->getName(),
+                'nameGenitive' => $landmark->getNameGenitive(),
                 'slug' => $landmark->getSlug(),
                 'category' => $landmark->getCategory(),
                 'imageUrl' => self::normalizeLandmarkImageUrl($landmark->getImageUrl()),

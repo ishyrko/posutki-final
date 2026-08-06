@@ -42,6 +42,7 @@ const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
   loading: () => <div className="w-full h-full bg-muted/40 animate-pulse" aria-hidden />,
 });
 import { OwnerOtherListings } from "@/features/properties/components/OwnerOtherListings";
+import PropertyNearbyLandmarks from "@/features/properties/components/PropertyNearbyLandmarks";
 import { PropertyLightbox } from "@/features/properties/components/PropertyLightbox";
 import { PropertyMobileGallery } from "@/features/properties/components/PropertyMobileGallery";
 import {
@@ -329,6 +330,7 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   const coords = property.coordinates;
   const { ref: mapSectionRef, isNear: isMapNear } = useNearViewport();
   const nearbyMetroStations = property.nearbyMetroStations ?? [];
+  const nearbyLandmarks = property.nearbyLandmarks ?? [];
 
   const lineColorClass = (line: number): string => {
     if (line === 1) return "bg-[#E3000B]";
@@ -931,6 +933,19 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
                   {property.description}
                 </div>
               </motion.div>
+
+              {property.type === "apartment" && nearbyLandmarks.length > 0 && property.address.citySlug ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.31, duration: 0.5 }}
+                >
+                  <PropertyNearbyLandmarks
+                    citySlug={property.address.citySlug}
+                    landmarks={nearbyLandmarks}
+                  />
+                </motion.div>
+              ) : null}
 
               {property.status === "published" && (
                 <motion.div

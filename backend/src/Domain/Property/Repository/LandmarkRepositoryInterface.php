@@ -17,6 +17,9 @@ interface LandmarkRepositoryInterface
 
     public function findById(int $id): ?Landmark;
 
+    /** @param int[] $ids @return Landmark[] */
+    public function findActiveByIds(array $ids): array;
+
     public function save(Landmark $landmark): void;
 
     public function delete(Landmark $landmark): void;

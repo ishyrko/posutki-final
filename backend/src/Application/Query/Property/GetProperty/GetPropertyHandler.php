@@ -16,6 +16,8 @@ use App\Domain\Property\Repository\{
     StreetRepositoryInterface,
     MetroStationRepositoryInterface,
     PropertyMetroStationRepositoryInterface,
+    PropertyLandmarkRepositoryInterface,
+    LandmarkRepositoryInterface,
 };
 use App\Domain\Review\Repository\ReviewRepositoryInterface;
 use App\Domain\User\Repository\UserBusinessProfileRepositoryInterface;
@@ -33,6 +35,8 @@ final class GetPropertyHandler
         private readonly StreetRepositoryInterface $streetRepository,
         private readonly MetroStationRepositoryInterface $metroStationRepository,
         private readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
+        private readonly PropertyLandmarkRepositoryInterface $propertyLandmarkRepository,
+        private readonly LandmarkRepositoryInterface $landmarkRepository,
         private readonly UserIndividualProfileRepositoryInterface $userIndividualProfileRepository,
         private readonly UserBusinessProfileRepositoryInterface $userBusinessProfileRepository,
         private readonly PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
@@ -108,6 +112,36 @@ final class GetPropertyHandler
             static fn(array $a, array $b): int => $a['distanceKm'] <=> $b['distanceKm']
         );
 
+        $nearbyLandmarks = [];
+        if ($property->getType() === 'apartment') {
+            $propertyLandmarks = $this->propertyLandmarkRepository->findByPropertyId($property->getId()->getValue());
+            $landmarkIds = array_values(array_unique(array_map(
+                static fn($propertyLandmark) => $propertyLandmark->getLandmarkId(),
+                $propertyLandmarks,
+            )));
+
+            $landmarksById = [];
+            foreach ($this->landmarkRepository->findActiveByIds($landmarkIds) as $landmark) {
+                $landmarksById[$landmark->getId()] = $landmark;
+            }
+
+            foreach ($propertyLandmarks as $propertyLandmark) {
+                $landmark = $landmarksById[$propertyLandmark->getLandmarkId()] ?? null;
+                if ($landmark === null) {
+                    continue;
+                }
+
+                $nearbyLandmarks[] = [
+                    'id' => $landmark->getId(),
+                    'name' => $landmark->getName(),
+                    'slug' => $landmark->getSlug(),
+                    'category' => $landmark->getCategory(),
+                    'imageUrl' => self::normalizeLandmarkImageUrl($landmark->getImageUrl()),
+                    'distanceKm' => $propertyLandmark->getDistanceKm(),
+                ];
+            }
+        }
+
         $dailySellerLegalProfile = null;
         if ($property->getDealType() === DealType::Daily->value) {
             $sellerType = $property->getSellerType();
@@ -173,6 +207,30 @@ final class GetPropertyHandler
             $viewerReview,
             $this->propertyCalendarAggregator->getCalendarLastUpdatedAt($property),
             includeAllImages: $isOwner,
+            nearbyLandmarks: $nearbyLandmarks,
         );
+    }
+
+    private static function normalizeLandmarkImageUrl(?string $imageUrl): ?string
+    {
+        if ($imageUrl === null || trim($imageUrl) === '') {
+            return null;
+        }
+
+        if (str_contains($imageUrl, '://') || str_starts_with($imageUrl, '//')) {
+            return $imageUrl;
+        }
+
+        if (str_starts_with($imageUrl, '/uploads/')) {
+            return $imageUrl;
+        }
+
+        if (!str_starts_with($imageUrl, '/')) {
+            $cleaned = preg_replace('#^(?:uploads/)?landmarks/#', '', $imageUrl) ?? $imageUrl;
+
+            return '/uploads/landmarks/' . $cleaned;
+        }
+
+        return $imageUrl;
     }
 }

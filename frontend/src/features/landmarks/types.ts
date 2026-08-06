@@ -30,3 +30,13 @@ export interface Landmark extends LandmarkListItem {
   latitude?: number | null;
   longitude?: number | null;
 }
+
+/** Landmark linked to a property (GET /properties/{id}). */
+export interface PropertyNearbyLandmark {
+  id: number;
+  name: string;
+  slug: string;
+  category?: string | null;
+  imageUrl?: string | null;
+  distanceKm: number;
+}
