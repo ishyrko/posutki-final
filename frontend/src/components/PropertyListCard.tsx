@@ -125,6 +125,15 @@ const PropertyListCard = ({
                 </span>
               )}
             </div>
+
+            {landmarkDistanceLabel ? (
+              <div className="pointer-events-none absolute bottom-3 left-3 z-10">
+                <span className="inline-flex items-center gap-1 rounded-full bg-card/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm">
+                  <MapPin className="h-3 w-3 text-primary" />
+                  {landmarkDistanceLabel}
+                </span>
+              </div>
+            ) : null}
           </Link>
 
           <button
@@ -154,12 +163,6 @@ const PropertyListCard = ({
                 {secondaryLine && (
                   <span className="text-xs text-muted-foreground">{secondaryLine}</span>
                 )}
-                {landmarkDistanceLabel ? (
-                  <p className="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">
-                    <MapPin className="h-3.5 w-3.5 text-primary" />
-                    {landmarkDistanceLabel}
-                  </p>
-                ) : null}
               </div>
             </div>
             <div

@@ -113,6 +113,15 @@ const PropertyCard = ({
           )}
         </div>
 
+        {landmarkDistanceLabel ? (
+          <div className="pointer-events-none absolute bottom-3 left-3 z-10">
+            <span className="inline-flex items-center gap-1 rounded-full bg-card/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm">
+              <MapPin className="h-3 w-3 text-primary" />
+              {landmarkDistanceLabel}
+            </span>
+          </div>
+        ) : null}
+
         <button
           type="button"
           onClick={handleFavoriteClick}
@@ -175,28 +184,18 @@ const PropertyCard = ({
             )}
           </div>
 
-          <div className="mt-auto pt-3 border-t border-border">
-            <div className="flex items-baseline justify-between gap-2">
-              <div className="flex min-w-0 items-baseline gap-1">
-                <span className="font-display text-lg font-bold text-foreground">{price}</span>
-                {isDaily && <span className="text-sm text-muted-foreground">/ сутки</span>}
-                {!isDaily && (
-                  <span className="text-xs text-muted-foreground">
-                    {secondaryPrice ?? (primaryBynAmount != null ? formatBynWithUsd(primaryBynAmount).usd : null)}
-                  </span>
-                )}
-              </div>
-              {landmarkDistanceLabel ? (
-                <p className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-                  <MapPin className="h-3.5 w-3.5 text-primary" />
-                  {landmarkDistanceLabel}
-                </p>
-              ) : null}
-            </div>
-            {isDaily && secondaryPrice && (
-              <span className="mt-0.5 block text-xs text-muted-foreground">{secondaryPrice}</span>
+          <div className="flex items-baseline gap-1 mt-auto pt-3 border-t border-border">
+            <span className="font-display text-lg font-bold text-foreground">{price}</span>
+            {isDaily && <span className="text-sm text-muted-foreground">/ сутки</span>}
+            {!isDaily && (
+              <span className="text-xs text-muted-foreground">
+                {secondaryPrice ?? (primaryBynAmount != null ? formatBynWithUsd(primaryBynAmount).usd : null)}
+              </span>
             )}
           </div>
+          {isDaily && secondaryPrice && (
+            <span className="text-xs text-muted-foreground mt-0.5">{secondaryPrice}</span>
+          )}
       </Link>
     </motion.div>
   );
