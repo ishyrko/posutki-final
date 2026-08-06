@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Symfony\Command;
 
+use App\Application\Service\LandmarkContentPersistNormalizer;
 use App\Domain\Property\Entity\Landmark;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\LandmarkRepositoryInterface;
@@ -34,6 +35,7 @@ final class SeedDemoLandmarksCommand extends Command
         private readonly EntityManagerInterface $entityManager,
         private readonly CityRepositoryInterface $cityRepository,
         private readonly LandmarkRepositoryInterface $landmarkRepository,
+        private readonly LandmarkContentPersistNormalizer $landmarkContentPersistNormalizer,
     ) {
         parent::__construct();
     }
@@ -126,6 +128,8 @@ final class SeedDemoLandmarksCommand extends Command
         if (isset($data['imageUrl']) && $landmark->getImageUrl() === null) {
             $landmark->setImageUrl($data['imageUrl']);
         }
+
+        $this->landmarkContentPersistNormalizer->normalize($landmark);
     }
 
     /**

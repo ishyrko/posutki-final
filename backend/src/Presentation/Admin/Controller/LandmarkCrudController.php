@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Admin\Controller;
 
-use App\Application\Service\ArticleHtmlNormalizer;
-use App\Application\Service\ArticleTextSanitizer;
+use App\Application\Service\LandmarkContentPersistNormalizer;
 use App\Domain\Property\Entity\Landmark;
 use App\Domain\Property\Repository\LandmarkRepositoryInterface;
 use App\Infrastructure\Service\FileUploader;
@@ -32,8 +31,7 @@ use Symfony\Component\HttpFoundation\Request;
 final class LandmarkCrudController extends AbstractCrudController
 {
     public function __construct(
-        private readonly ArticleHtmlNormalizer $articleHtmlNormalizer,
-        private readonly ArticleTextSanitizer $articleTextSanitizer,
+        private readonly LandmarkContentPersistNormalizer $landmarkContentPersistNormalizer,
         private readonly SlugGenerator $slugGenerator,
         private readonly LandmarkRepositoryInterface $landmarkRepository,
         private readonly FileUploader $fileUploader,
@@ -380,27 +378,12 @@ final class LandmarkCrudController extends AbstractCrudController
     private function normalizeLandmark(Landmark $landmark): void
     {
         $this->normalizeLandmarkCoordinates($landmark);
+        $this->landmarkContentPersistNormalizer->normalize($landmark);
         $this->geocodeLandmarkAddressIfNeeded($landmark);
 
-        $raw = $landmark->getDescription();
-        if ($raw === null || trim($raw) === '') {
-            $landmark->setDescription(null);
-        } else {
-            $htmlNormalized = $this->articleHtmlNormalizer->normalize($raw);
-            $sanitized = $this->articleTextSanitizer->sanitizeHtml($htmlNormalized);
-            $landmark->setDescription(trim($sanitized) === '' ? null : $sanitized);
-        }
-
-        $short = $landmark->getShortDescription();
-        if ($short !== null && trim($short) === '') {
-            $landmark->setShortDescription(null);
-        }
-
-        $nameGenitive = trim($landmark->getNameGenitive());
-        if ($nameGenitive === '') {
+        if (trim($landmark->getNameGenitive()) === '') {
             throw new \InvalidArgumentException('Укажите название в родительном падеже.');
         }
-        $landmark->setNameGenitive($nameGenitive);
 
         $imageUrl = $landmark->getImageUrl();
         if ($imageUrl !== null && trim($imageUrl) === '') {
