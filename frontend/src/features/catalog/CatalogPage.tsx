@@ -39,6 +39,7 @@ import PropertyMap, { type MapProperty } from "@/components/PropertyMap";
 import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { useMetroStations } from "@/features/metro/hooks";
 import { useCityDistricts } from "@/features/city-districts/hooks";
+import { useCityLandmarks } from "@/features/landmarks/hooks";
 import type { MetroStation, NearbyMetroStation } from "@/features/metro/types";
 import { Property, formatAddress, type Currency } from "@/features/properties/types";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -52,6 +53,7 @@ import {
   buildPageTitle,
   CITY_PREFIX_SLUGS,
   isDistrictCatalogContext,
+  isLandmarkCatalogContext,
   isMetroCatalogContext,
   isNearMetroLandingPage,
   NEAR_METRO_CATALOG_INTRO,
@@ -260,11 +262,13 @@ function propertyToMapItem(p: Property, rates: ExchangeRates, displayCurrency: C
 interface CatalogPageProps {
   parsed: ParsedSegments;
   title: string;
-  /** SSR SEO block (RSC children slot — keeps Radix useId stable in this client tree). */
+  /** SSR intro block above listings (landmark photo + short text). */
+  intro?: ReactNode;
+  /** SSR SEO block under listings (RSC children slot — keeps Radix useId stable in this client tree). */
   children?: ReactNode;
 }
 
-export default function CatalogPage({ parsed, title, children }: CatalogPageProps) {
+export default function CatalogPage({ parsed, title, intro, children }: CatalogPageProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -291,14 +295,18 @@ export default function CatalogPage({ parsed, title, children }: CatalogPageProp
   const [currentPage, setCurrentPage] = useState(validPageFromQuery);
   const metroFilterVisible = isMetroCatalogContext(parsed);
   const districtFilterVisible = isDistrictCatalogContext(parsed);
+  const landmarkFilterVisible = isLandmarkCatalogContext(parsed);
   const catalogCitySlug = resolveCatalogCitySlug(parsed);
   const nearMetroLanding = isNearMetroLandingPage(parsed);
   const showMetroSidebarFilters = metroFilterVisible && !parsed.metroStationSlug;
   const showDistrictSidebarFilters = districtFilterVisible && !parsed.cityDistrictSlug;
+  const showLandmarkSidebarFilters = landmarkFilterVisible && !parsed.landmarkSlug;
   const { data: metroStationsData } = useMetroStations(1, metroFilterVisible);
   const { data: cityDistrictsData } = useCityDistricts(catalogCitySlug, districtFilterVisible);
+  const { data: cityLandmarksData } = useCityLandmarks(catalogCitySlug, landmarkFilterVisible);
   const metroStations = metroStationsData ?? EMPTY_METRO_STATIONS;
   const cityDistricts = cityDistrictsData ?? [];
+  const cityLandmarks = cityLandmarksData ?? [];
   const roomsFilterVisible = showRoomsCatalogFilter(parsed.propertyType);
 
   useEffect(() => {
@@ -409,6 +417,9 @@ export default function CatalogPage({ parsed, title, children }: CatalogPageProp
     if (parsed.dealType) f.dealType = parsed.dealType;
     if (parsed.cityDistrictSlug) {
       f.citySlug = resolveCatalogCitySlug(parsed);
+    } else if (parsed.landmarkSlug) {
+      f.citySlug = resolveCatalogCitySlug(parsed);
+      f.landmarkSlug = parsed.landmarkSlug;
     } else if (parsed.citySlug) {
       f.citySlug = parsed.citySlug;
     } else if (parsed.regionSlug) {
@@ -440,7 +451,7 @@ export default function CatalogPage({ parsed, title, children }: CatalogPageProp
     if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     return f;
-  }, [fetchAllForClientFilters, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort]);
+  }, [fetchAllForClientFilters, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.landmarkSlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort]);
 
   const { data, isLoading } = useProperties(filters);
   const { data: rates } = useExchangeRates();
@@ -741,6 +752,45 @@ export default function CatalogPage({ parsed, title, children }: CatalogPageProp
       </div>
       )}
 
+      {showLandmarkSidebarFilters && cityLandmarks.length > 0 && (
+      <div>
+        <label className="text-sm font-semibold text-foreground mb-2 block font-display">Достопримечательность</label>
+        <Select
+          value="all"
+          onValueChange={(value) => {
+            const isCityPrefix = CITY_PREFIX_SLUGS.has(catalogCitySlug);
+            const url = buildCatalogUrl({
+              region:
+                !isCityPrefix && (parsed.regionSlug || REGION_SLUGS.has(catalogCitySlug))
+                  ? (parsed.regionSlug ?? catalogCitySlug)
+                  : undefined,
+              city: isCityPrefix ? catalogCitySlug : parsed.citySlug,
+              propertyType: parsed.propertyType,
+              landmark: value === "all" ? undefined : value,
+            });
+            router.push(url);
+          }}
+        >
+          <SelectTrigger
+            className={cn(
+              filterSurfaceInput,
+              "w-full cursor-pointer justify-between gap-2 text-left [&>span]:min-w-0 [&>span]:truncate",
+            )}
+          >
+            <SelectValue placeholder="Любое место" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border z-50 max-h-72">
+            <SelectItem value="all">Любое место</SelectItem>
+            {cityLandmarks.map((landmark) => (
+              <SelectItem key={landmark.id} value={landmark.slug}>
+                {landmark.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      )}
+
       <div>
         <label className="text-sm font-semibold text-foreground mb-2 block font-display">Удобства</label>
         <div className="grid grid-cols-1 gap-2">
@@ -901,6 +951,8 @@ export default function CatalogPage({ parsed, title, children }: CatalogPageProp
                 </p>
               )}
             </div>
+
+            {currentPage === 1 ? intro : null}
 
             <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
               <p className="text-sm text-muted-foreground">

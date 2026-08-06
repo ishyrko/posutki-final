@@ -14,6 +14,7 @@ class FileUploader
     private const SCOPE_AVATARS = 'avatars';
     private const SCOPE_PROPERTIES = 'properties';
     private const SCOPE_STATIC_PAGES = 'static-pages';
+    private const SCOPE_LANDMARKS = 'landmarks';
     private const MAX_DIMENSION = 1920;
     private const CONTENT_MAX_DIMENSION = 2560;
     private const THUMB_MAX_DIMENSION = 640;
@@ -71,12 +72,34 @@ class FileUploader
      */
     public function processStoredArticleCoverImage(string $relativePathUnderUploads): ?string
     {
+        return $this->processStoredContentScopeImage($relativePathUnderUploads, self::SCOPE_ARTICLES);
+    }
+
+    /**
+     * Post-process a landmark image saved by EasyAdmin ImageField.
+     *
+     * @param string $relativePathUnderUploads e.g. "landmarks/foo.png"
+     *
+     * @return string|null Relative path under uploads (e.g. "landmarks/foo.webp"), or null if file missing
+     */
+    public function processStoredLandmarkImage(string $relativePathUnderUploads): ?string
+    {
+        return $this->processStoredContentScopeImage($relativePathUnderUploads, self::SCOPE_LANDMARKS);
+    }
+
+    /**
+     * @param string $relativePathUnderUploads e.g. "articles/foo.png"
+     *
+     * @return string|null Relative path under uploads (e.g. "articles/foo.webp"), or null if file missing
+     */
+    private function processStoredContentScopeImage(string $relativePathUnderUploads, string $scope): ?string
+    {
         $relativePathUnderUploads = trim($relativePathUnderUploads, '/');
-        if (!str_starts_with($relativePathUnderUploads, self::SCOPE_ARTICLES . '/')) {
-            $relativePathUnderUploads = self::SCOPE_ARTICLES . '/' . basename($relativePathUnderUploads);
+        if (!str_starts_with($relativePathUnderUploads, $scope . '/')) {
+            $relativePathUnderUploads = $scope . '/' . basename($relativePathUnderUploads);
         }
 
-        $this->ensureUploadDirectoryIsReady($this->targetDirectory . '/' . self::SCOPE_ARTICLES);
+        $this->ensureUploadDirectoryIsReady($this->targetDirectory . '/' . $scope);
 
         $fullPath = $this->targetDirectory . '/' . $relativePathUnderUploads;
         if (!is_file($fullPath)) {
@@ -88,7 +111,7 @@ class FileUploader
             return null;
         }
 
-        $outputFormat = $this->determineOutputFormat(self::SCOPE_ARTICLES, $mimeType);
+        $outputFormat = $this->determineOutputFormat($scope, $mimeType);
         $dir = dirname($fullPath);
         $baseName = pathinfo($fullPath, PATHINFO_FILENAME);
         $canonicalPath = $dir . '/' . $baseName . '.' . $outputFormat;
@@ -103,17 +126,17 @@ class FileUploader
             if ($oldThumb !== null && is_file($oldThumb)) {
                 @unlink($oldThumb);
             }
-            if (!$this->transformImage($fullPath, $mimeType, $canonicalPath, $outputFormat, self::CONTENT_MAX_DIMENSION, self::SCOPE_ARTICLES)) {
+            if (!$this->transformImage($fullPath, $mimeType, $canonicalPath, $outputFormat, self::CONTENT_MAX_DIMENSION, $scope)) {
                 return null;
             }
             @unlink($fullPath);
-        } elseif (!$this->transformImage($fullPath, $mimeType, $canonicalPath, $outputFormat, self::CONTENT_MAX_DIMENSION, self::SCOPE_ARTICLES)) {
+        } elseif (!$this->transformImage($fullPath, $mimeType, $canonicalPath, $outputFormat, self::CONTENT_MAX_DIMENSION, $scope)) {
             return null;
         }
 
         $this->createThumbnail($canonicalPath, $outputFormat);
 
-        return self::SCOPE_ARTICLES . '/' . basename($canonicalPath);
+        return $scope . '/' . basename($canonicalPath);
     }
 
     private function generateStorageBaseName(): string
@@ -366,6 +389,7 @@ class FileUploader
             self::SCOPE_AVATARS => self::SCOPE_AVATARS,
             self::SCOPE_PROPERTIES => self::SCOPE_PROPERTIES,
             self::SCOPE_STATIC_PAGES => self::SCOPE_STATIC_PAGES,
+            self::SCOPE_LANDMARKS => self::SCOPE_LANDMARKS,
             default => throw new \InvalidArgumentException('Недопустимая область загрузки'),
         };
     }
@@ -395,7 +419,9 @@ class FileUploader
 
     private function isContentScope(string $scope): bool
     {
-        return $scope === self::SCOPE_ARTICLES || $scope === self::SCOPE_STATIC_PAGES;
+        return $scope === self::SCOPE_ARTICLES
+            || $scope === self::SCOPE_STATIC_PAGES
+            || $scope === self::SCOPE_LANDMARKS;
     }
 
     private function getThumbMaxDimensionForScope(string $scope): int

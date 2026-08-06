@@ -89,6 +89,12 @@ services:
     App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyMetroStationRepository
 
+    App\Domain\Property\Repository\LandmarkRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\LandmarkRepository
+
+    App\Domain\Property\Repository\PropertyLandmarkRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyLandmarkRepository
+
     App\Domain\Property\Repository\PropertyDailyStatRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyDailyStatRepository
 

@@ -18,11 +18,14 @@ import {
 import {
   resolveMetroStationName,
   resolveCityDistrictName,
+  resolveLandmark,
+  resolveLandmarkPhrase,
   validatePublicSegments,
 } from "@/features/catalog/validate-segments-server";
 import { formatAddress, Property } from "@/features/properties/types";
 import CatalogPage from "@/features/catalog/CatalogPage";
 import CatalogCitySeoSection from "@/features/catalog/CatalogCitySeoSection";
+import CatalogLandmarkIntro from "@/features/catalog/CatalogLandmarkIntro";
 import HomePage from "@/features/home/HomePage";
 import FeaturesSection from "@/components/FeaturesSection";
 import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
@@ -120,13 +123,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const metroStationName = await resolveMetroStationName(parsed.metroStationSlug);
   const cityDistrictName = await resolveCityDistrictName(parsed);
-  const h1Title = buildPageTitle(parsed, undefined, metroStationName, cityDistrictName);
-  const metaTitle = buildCatalogMetaTitle(parsed, metroStationName, cityDistrictName);
-  const metaDescription = buildCatalogMetaDescription(parsed, metroStationName, cityDistrictName);
+  const landmark = await resolveLandmark(parsed);
+  const landmarkPhrase = resolveLandmarkPhrase(landmark);
+  const h1Title = buildPageTitle(parsed, undefined, metroStationName, cityDistrictName, landmarkPhrase);
+  const metaTitle = buildCatalogMetaTitle(parsed, metroStationName, cityDistrictName, landmarkPhrase);
+  const metaDescription = buildCatalogMetaDescription(parsed, metroStationName, cityDistrictName, landmarkPhrase);
 
   return {
-    title: metaTitle ?? `${h1Title} | Посутки.by`,
+    title: landmark?.metaTitle ?? metaTitle ?? `${h1Title} | Посутки.by`,
     description:
+      landmark?.metaDescription ??
       metaDescription ??
       `Каталог посуточной аренды: ${h1Title.toLowerCase()}. Актуальные объявления с ценами и фото.`,
     alternates: {
@@ -191,7 +197,9 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
 
   const metroStationName = await resolveMetroStationName(parsed.metroStationSlug);
   const cityDistrictName = await resolveCityDistrictName(parsed);
-  const title = buildPageTitle(parsed, undefined, metroStationName, cityDistrictName);
+  const landmark = await resolveLandmark(parsed);
+  const landmarkPhrase = resolveLandmarkPhrase(landmark);
+  const title = buildPageTitle(parsed, undefined, metroStationName, cityDistrictName, landmarkPhrase);
 
   const { page: pageParam } = await searchParams;
   const pageFromQuery = Number(pageParam ?? "1");
@@ -216,8 +224,33 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     }
   }
 
+  let landmarkIntro = null;
+  let landmarkSeoSection = null;
+  if (isFirstPage && landmark) {
+    landmarkIntro = (
+      <CatalogLandmarkIntro
+        name={landmark.name}
+        shortDescription={landmark.shortDescription}
+        imageUrl={landmark.imageUrl}
+      />
+    );
+
+    const sanitizedDescription = landmark.description
+      ? sanitizeArticleHtml(landmark.description)
+      : null;
+    if (sanitizedDescription) {
+      landmarkSeoSection = (
+        <CatalogCitySeoSection
+          heading={`Аренда жилья ${landmarkPhrase ?? `возле ${landmark.name}`}`}
+          html={sanitizedDescription}
+        />
+      );
+    }
+  }
+
   return (
-    <CatalogPage parsed={parsed} title={title}>
+    <CatalogPage parsed={parsed} title={title} intro={landmarkIntro}>
+      {landmarkSeoSection}
       {citySeoSection}
     </CatalogPage>
   );

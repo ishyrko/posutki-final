@@ -23,6 +23,7 @@ final class SearchPropertiesQuery
         public readonly ?int $metroStationId = null,
         public readonly bool $nearMetro = false,
         public readonly ?string $cityDistrictSlug = null,
+        public readonly ?string $landmarkSlug = null,
         /** Минимальная вместимость: объявления с maxDailyGuests >= guests */
         public readonly ?int $guests = null,
         public readonly string $sortBy = 'createdAt',

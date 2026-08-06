@@ -6,6 +6,8 @@ namespace App\Presentation\Admin\EventListener;
 
 use App\Domain\Article\Entity\Article;
 use App\Domain\Property\Entity\City;
+use App\Domain\Property\Entity\Landmark;
+use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\StaticPage\Entity\StaticPage;
 use EasyCorp\Bundle\EasyAdminBundle\Contracts\Event\EntityLifecycleEventInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Event\AfterEntityDeletedEvent;
@@ -20,6 +22,7 @@ final class RevalidateNextjsListener implements EventSubscriberInterface
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly LoggerInterface $logger,
+        private readonly CityRepositoryInterface $cityRepository,
         private readonly string $revalidateUrl,
         private readonly string $revalidationSecret,
     ) {
@@ -57,10 +60,19 @@ final class RevalidateNextjsListener implements EventSubscriberInterface
 
         if ($entity instanceof City) {
             $this->notifyNextJs('city', $entity->getSlug());
+
+            return;
+        }
+
+        if ($entity instanceof Landmark) {
+            $city = $this->cityRepository->findById($entity->getCityId());
+            if ($city !== null) {
+                $this->notifyNextJs('landmark', $entity->getSlug(), null, $city->getSlug());
+            }
         }
     }
 
-    private function notifyNextJs(string $type, string $slug, ?string $categorySlug = null): void
+    private function notifyNextJs(string $type, string $slug, ?string $categorySlug = null, ?string $citySlug = null): void
     {
         try {
             $payload = [
@@ -70,6 +82,9 @@ final class RevalidateNextjsListener implements EventSubscriberInterface
             ];
             if ($categorySlug !== null && $categorySlug !== '') {
                 $payload['categorySlug'] = $categorySlug;
+            }
+            if ($citySlug !== null && $citySlug !== '') {
+                $payload['citySlug'] = $citySlug;
             }
 
             $response = $this->httpClient->request('POST', $this->revalidateUrl, [

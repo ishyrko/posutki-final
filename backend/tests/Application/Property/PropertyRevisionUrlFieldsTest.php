@@ -16,8 +16,10 @@ use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementLevelPriceRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementScopeSettingsRepositoryInterface;
+use App\Domain\Property\Repository\LandmarkRepositoryInterface;
 use App\Domain\Property\Repository\MetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
+use App\Domain\Property\Repository\PropertyLandmarkRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
 use App\Domain\Property\Service\CityDistrictResolverInterface;
@@ -27,6 +29,7 @@ use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\ExchangeRateService;
+use App\Infrastructure\Service\LandmarkProximityCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
@@ -64,6 +67,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $revisionRepository,
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
+            $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
         );
 
@@ -114,6 +118,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $revisionRepository,
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
+            $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
             new class implements MessageBusInterface {
                 public function dispatch(object $message, array $stamps = []): Envelope
@@ -157,6 +162,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $revisionRepository,
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
+            $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
         );
 
@@ -216,6 +222,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $revisionRepository,
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
+            $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
         );
 
@@ -308,6 +315,16 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
         $metroStationRepository->method('findAll')->willReturn([]);
 
         return new MetroProximityCalculator($metroStationRepository, $propertyMetroStationRepository);
+    }
+
+    private function createLandmarkCalculator(): LandmarkProximityCalculator
+    {
+        $landmarkRepository = $this->createStub(LandmarkRepositoryInterface::class);
+        $landmarkRepository->method('findActiveByCityId')->willReturn([]);
+
+        $propertyLandmarkRepository = $this->createStub(PropertyLandmarkRepositoryInterface::class);
+
+        return new LandmarkProximityCalculator($landmarkRepository, $propertyLandmarkRepository);
     }
 
     private function createCityDistrictResolver(): CityDistrictResolverInterface

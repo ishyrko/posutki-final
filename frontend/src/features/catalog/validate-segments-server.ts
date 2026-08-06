@@ -9,6 +9,7 @@ import {
   type ParsedSegments,
 } from "@/features/catalog/slugs";
 import type { CityDistrict } from "@/features/city-districts/types";
+import type { Landmark, LandmarkListItem } from "@/features/landmarks/types";
 
 interface CityResponse {
   slug: string;
@@ -49,6 +50,28 @@ const getCityDistrictsByCitySlug = cache(async (citySlug: string): Promise<CityD
   }
 });
 
+const getCityLandmarks = cache(async (citySlug: string): Promise<LandmarkListItem[]> => {
+  try {
+    return await fetchPublicApi<LandmarkListItem[]>(
+      `/cities/${encodeURIComponent(citySlug)}/landmarks`,
+      {
+        next: { revalidate: 3600, tags: [`city-landmarks-${citySlug}`] },
+      },
+    );
+  } catch {
+    return [];
+  }
+});
+
+const getLandmarkBySlug = cache(async (citySlug: string, slug: string): Promise<Landmark | null> => {
+  return fetchPublicApiNullable<Landmark>(
+    `/cities/${encodeURIComponent(citySlug)}/landmarks/${encodeURIComponent(slug)}`,
+    {
+      next: { revalidate: 3600, tags: [`landmark-${citySlug}-${slug}`] },
+    },
+  );
+});
+
 async function validateParsedCatalogLocation(parsed: ParsedSegments): Promise<boolean> {
   if (parsed.citySlug && !CITY_PREFIX_SLUGS.has(parsed.citySlug)) {
     const city = await getCityBySlug(parsed.citySlug);
@@ -64,6 +87,14 @@ async function validateParsedCatalogLocation(parsed: ParsedSegments): Promise<bo
     const citySlug = resolveCatalogCitySlug(parsed);
     const districts = await getCityDistrictsByCitySlug(citySlug);
     if (!districts.some((district) => district.slug === parsed.cityDistrictSlug)) {
+      return false;
+    }
+  }
+
+  if (parsed.landmarkSlug) {
+    const citySlug = resolveCatalogCitySlug(parsed);
+    const landmarks = await getCityLandmarks(citySlug);
+    if (!landmarks.some((landmark) => landmark.slug === parsed.landmarkSlug)) {
       return false;
     }
   }
@@ -101,4 +132,18 @@ export async function resolveCityDistrictName(
   const citySlug = resolveCatalogCitySlug(parsed);
   const districts = await getCityDistrictsByCitySlug(citySlug);
   return districts.find((district) => district.slug === parsed.cityDistrictSlug)?.name;
+}
+
+export async function resolveLandmark(
+  parsed: ParsedSegments,
+): Promise<Landmark | null> {
+  if (!parsed.landmarkSlug) return null;
+
+  const citySlug = resolveCatalogCitySlug(parsed);
+  return getLandmarkBySlug(citySlug, parsed.landmarkSlug);
+}
+
+export function resolveLandmarkPhrase(landmark: Landmark | null): string | undefined {
+  if (!landmark) return undefined;
+  return landmark.catalogLocationPhrase ?? landmark.name;
 }

@@ -13,6 +13,8 @@ type RevalidateBody = {
   slug?: string;
   /** Present for articles — used to revalidate the full `/stati/[category]/[slug]` route. */
   categorySlug?: string;
+  /** Present for landmarks — city slug for catalog path building. */
+  citySlug?: string;
 };
 
 /** Base apartment catalog path for a city slug (SEO block lives only there). */
@@ -27,6 +29,19 @@ function catalogApartmentPathForCitySlug(citySlug: string): string {
     return buildCatalogUrl({ city: citySlug, propertyType: "apartment" });
   }
   return buildCatalogUrl({ propertyType: "apartment", city: citySlug });
+}
+
+function catalogLandmarkPathForCitySlug(citySlug: string, landmarkSlug: string): string {
+  if (citySlug === MINSK_CITY_SLUG) {
+    return buildCatalogUrl({ propertyType: "apartment", landmark: landmarkSlug });
+  }
+  if (REGION_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ region: citySlug, propertyType: "apartment", landmark: landmarkSlug });
+  }
+  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ city: citySlug, propertyType: "apartment", landmark: landmarkSlug });
+  }
+  return buildCatalogUrl({ propertyType: "apartment", landmark: landmarkSlug, city: citySlug });
 }
 
 /** POST /revalidate — intentionally NOT under /api (Symfony nginx sends all /api/* to PHP). */
@@ -47,7 +62,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { type, slug, categorySlug } = body;
+  const { type, slug, categorySlug, citySlug } = body;
 
   if (type === "article") {
     revalidateTag("articles", { expire: 0 });
@@ -87,6 +102,17 @@ export async function POST(request: Request) {
     const catalogPath = catalogApartmentPathForCitySlug(slug);
     revalidatePath(catalogPath, "page");
     return NextResponse.json({ revalidated: true, type: "city", slug, path: catalogPath });
+  }
+
+  if (type === "landmark") {
+    if (!slug || !citySlug) {
+      return NextResponse.json({ error: "slug and citySlug are required for landmark" }, { status: 400 });
+    }
+    revalidateTag(`city-landmarks-${citySlug}`, { expire: 0 });
+    revalidateTag(`landmark-${citySlug}-${slug}`, { expire: 0 });
+    const catalogPath = catalogLandmarkPathForCitySlug(citySlug, slug);
+    revalidatePath(catalogPath, "page");
+    return NextResponse.json({ revalidated: true, type: "landmark", slug, citySlug, path: catalogPath });
   }
 
   return NextResponse.json({ error: "Invalid type" }, { status: 400 });

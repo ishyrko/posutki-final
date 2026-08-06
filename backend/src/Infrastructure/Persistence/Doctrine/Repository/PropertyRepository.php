@@ -7,6 +7,7 @@ namespace App\Infrastructure\Persistence\Doctrine\Repository;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\PropertyMetroStation;
+use App\Domain\Property\Entity\PropertyLandmark;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
@@ -201,6 +202,12 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
             $qb->innerJoin(PropertyMetroStation::class, 'pms', 'WITH', 'pms.propertyId = p.id')
                 ->andWhere('pms.metroStationId = :metroStationId')
                 ->setParameter('metroStationId', $filters['metroStationId']);
+        }
+
+        if (isset($filters['landmarkId'])) {
+            $qb->innerJoin(PropertyLandmark::class, 'pl', 'WITH', 'pl.propertyId = p.id')
+                ->andWhere('pl.landmarkId = :landmarkId')
+                ->setParameter('landmarkId', $filters['landmarkId']);
         }
 
         if (isset($filters['minGuests'])) {

@@ -24,6 +24,7 @@ use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\Exception\UnauthorizedException;
 use App\Domain\Shared\ValueObject\Id;
 use App\Infrastructure\Service\ExchangeRateService;
+use App\Infrastructure\Service\LandmarkProximityCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
 
 readonly class UpdatePropertyHandler
@@ -33,6 +34,7 @@ readonly class UpdatePropertyHandler
         private PropertyRevisionRepositoryInterface $revisionRepository,
         private ExchangeRateService $exchangeRateService,
         private MetroProximityCalculator $metroProximityCalculator,
+        private LandmarkProximityCalculator $landmarkProximityCalculator,
         private CityDistrictResolverInterface $cityDistrictResolver,
     ) {
     }
@@ -218,6 +220,7 @@ readonly class UpdatePropertyHandler
 
         $this->propertyRepository->save($property);
         $this->metroProximityCalculator->syncForProperty($property);
+        $this->landmarkProximityCalculator->syncForProperty($property);
         $this->propertyRepository->save($property);
 
         return false;

@@ -21,6 +21,7 @@ use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\ValueObject\Id;
 use App\Infrastructure\Service\ExchangeRateService;
+use App\Infrastructure\Service\LandmarkProximityCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -31,6 +32,7 @@ readonly class ApproveRevisionHandler
         private PropertyRevisionRepositoryInterface $revisionRepository,
         private ExchangeRateService $exchangeRateService,
         private MetroProximityCalculator $metroProximityCalculator,
+        private LandmarkProximityCalculator $landmarkProximityCalculator,
         private CityDistrictResolverInterface $cityDistrictResolver,
         private MessageBusInterface $notificationBus,
         private PropertyPlacementService $placementService,
@@ -181,6 +183,7 @@ readonly class ApproveRevisionHandler
         $this->propertyRepository->save($property);
         $this->revisionRepository->save($revision);
         $this->metroProximityCalculator->syncForProperty($property);
+        $this->landmarkProximityCalculator->syncForProperty($property);
         $this->propertyRepository->save($property);
 
         $this->notificationBus->dispatch(new PropertyApprovedEvent($command->propertyId));

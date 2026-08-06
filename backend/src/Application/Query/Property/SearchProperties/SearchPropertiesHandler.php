@@ -12,7 +12,8 @@ use App\Domain\Property\Repository\{
     CityDistrictRepositoryInterface,
     StreetRepositoryInterface,
     MetroStationRepositoryInterface,
-    PropertyMetroStationRepositoryInterface
+    PropertyMetroStationRepositoryInterface,
+    LandmarkRepositoryInterface,
 };
 use App\Domain\Property\Service\CitiesWithDistricts;
 use App\Domain\Shared\Exception\NotFoundException;
@@ -49,6 +50,7 @@ final class SearchPropertiesHandler
         private readonly StreetRepositoryInterface $streetRepository,
         private readonly MetroStationRepositoryInterface $metroStationRepository,
         private readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
+        private readonly LandmarkRepositoryInterface $landmarkRepository,
         private readonly ExchangeRateService $exchangeRateService,
         private readonly PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
     ) {
@@ -100,6 +102,27 @@ final class SearchPropertiesHandler
                 }
 
                 $filters['cityDistrictId'] = $cityDistrict->getId();
+            }
+        }
+        if ($query->landmarkSlug !== null) {
+            $landmarkSlug = trim($query->landmarkSlug);
+            if ($landmarkSlug !== '') {
+                $resolvedCitySlug = $query->citySlug ?? $query->regionSlug;
+                if ($resolvedCitySlug === null || trim($resolvedCitySlug) === '') {
+                    throw new NotFoundException('Достопримечательность не найдена');
+                }
+
+                $city = $this->cityRepository->findBySlug(trim($resolvedCitySlug));
+                if ($city === null) {
+                    throw new NotFoundException('Достопримечательность не найдена');
+                }
+
+                $landmark = $this->landmarkRepository->findByCityIdAndSlug($city->getId(), $landmarkSlug);
+                if ($landmark === null) {
+                    throw new NotFoundException('Достопримечательность не найдена');
+                }
+
+                $filters['landmarkId'] = $landmark->getId();
             }
         }
         $filterCurrency = $query->currency ?? 'BYN';

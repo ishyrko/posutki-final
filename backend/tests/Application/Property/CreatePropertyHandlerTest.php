@@ -10,7 +10,9 @@ use App\Domain\Exchange\Repository\ExchangeRateRepositoryInterface;
 use App\Domain\Property\Event\PropertySubmittedForModerationEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Service\CityDistrictResolverInterface;
+use App\Domain\Property\Repository\LandmarkRepositoryInterface;
 use App\Domain\Property\Repository\MetroStationRepositoryInterface;
+use App\Domain\Property\Repository\PropertyLandmarkRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
@@ -18,6 +20,7 @@ use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\User\ValueObject\Email;
 use App\Infrastructure\Service\ExchangeRateService;
+use App\Infrastructure\Service\LandmarkProximityCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
@@ -61,6 +64,7 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createUserRepository(),
             $exchangeRateService,
             $metroCalculator,
+            $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
             $notificationBus,
         );
@@ -111,6 +115,7 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createUserRepository(),
             $exchangeRateService,
             $metroCalculator,
+            $this->createLandmarkCalculator(),
             $cityDistrictResolver,
             $notificationBus,
         );
@@ -133,6 +138,7 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createUserRepository(),
             $exchangeRateService,
             $metroCalculator,
+            $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
             $notificationBus,
         );
@@ -155,6 +161,7 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createUserRepository(phoneVerified: false),
             $exchangeRateService,
             $metroCalculator,
+            $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
             $notificationBus,
         );
@@ -177,6 +184,7 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createUserRepository(emailVerified: false),
             $exchangeRateService,
             $metroCalculator,
+            $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
             $notificationBus,
         );
@@ -276,6 +284,16 @@ final class CreatePropertyHandlerTest extends TestCase
         $propertyMetroStationRepository = $this->createStub(PropertyMetroStationRepositoryInterface::class);
 
         return new MetroProximityCalculator($metroStationRepository, $propertyMetroStationRepository);
+    }
+
+    private function createLandmarkCalculator(): LandmarkProximityCalculator
+    {
+        $landmarkRepository = $this->createStub(LandmarkRepositoryInterface::class);
+        $landmarkRepository->method('findActiveByCityId')->willReturn([]);
+
+        $propertyLandmarkRepository = $this->createStub(PropertyLandmarkRepositoryInterface::class);
+
+        return new LandmarkProximityCalculator($landmarkRepository, $propertyLandmarkRepository);
     }
 
     private function createCityDistrictResolver(): CityDistrictResolverInterface

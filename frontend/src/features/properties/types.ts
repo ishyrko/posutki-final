@@ -208,6 +208,7 @@ export interface PropertyFilters {
     metroStationId?: number;
     nearMetro?: boolean;
     cityDistrictSlug?: string;
+    landmarkSlug?: string;
     /** Минимальная вместимость (maxDailyGuests >= guests). */
     guests?: number;
     sortBy?: string;

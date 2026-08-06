@@ -10,6 +10,7 @@ use App\Domain\Article\Entity\Article;
 use App\Domain\Article\Entity\ArticleCategory;
 use App\Domain\StaticPage\Entity\StaticPage;
 use App\Domain\Property\Entity\City;
+use App\Domain\Property\Entity\Landmark;
 use App\Domain\Property\Entity\MetroStation;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
@@ -194,6 +195,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Города', 'fa fa-city', City::class);
         yield MenuItem::linkToCrud('Улицы', 'fa fa-road', Street::class);
         yield MenuItem::linkToCrud('Метро', 'fa fa-train-subway', MetroStation::class);
+        yield MenuItem::linkToCrud('Достопримечательности', 'fa fa-landmark', Landmark::class);
 
         yield MenuItem::section('Пользователи');
         yield MenuItem::linkToCrud('Пользователи', 'fa fa-users', User::class);

@@ -22,6 +22,7 @@ use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\ExchangeRateService;
+use App\Infrastructure\Service\LandmarkProximityCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -32,6 +33,7 @@ final class CreatePropertyHandler
         private readonly UserRepositoryInterface $userRepository,
         private readonly ExchangeRateService $exchangeRateService,
         private readonly MetroProximityCalculator $metroProximityCalculator,
+        private readonly LandmarkProximityCalculator $landmarkProximityCalculator,
         private readonly CityDistrictResolverInterface $cityDistrictResolver,
         private readonly MessageBusInterface $notificationBus,
     ) {
@@ -149,6 +151,7 @@ final class CreatePropertyHandler
         $property->setCityDistrictId($cityDistrict?->getId());
 
         $this->metroProximityCalculator->syncForProperty($property);
+        $this->landmarkProximityCalculator->syncForProperty($property);
         $this->propertyRepository->save($property);
 
         $this->notificationBus->dispatch(new PropertySubmittedForModerationEvent((string) $property->getId()->getValue()));
