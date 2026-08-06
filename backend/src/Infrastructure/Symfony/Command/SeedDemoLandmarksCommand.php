@@ -17,20 +17,10 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'app:seed-demo-landmarks',
-    description: 'Upsert demo landmarks for regional cities (inactive by default)',
+    description: 'Upsert demo landmarks for catalog apartment cities (inactive by default)',
 )]
 final class SeedDemoLandmarksCommand extends Command
 {
-    /** @var list<string> */
-    private const CITY_SLUGS = [
-        'minsk',
-        'brest',
-        'vitebsk',
-        'gomel',
-        'grodno',
-        'mogilev',
-    ];
-
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly CityRepositoryInterface $cityRepository,
@@ -68,10 +58,11 @@ final class SeedDemoLandmarksCommand extends Command
             ));
         }
 
+        $cityCount = count(self::landmarksByCitySlug()) - count($skippedCities);
         $io->success(sprintf(
             'Достопримечательности обновлены: %d шт. в %d городах (выключены). Включите нужные в админке и запустите make sync-landmark-proximity.',
             $total,
-            count(self::landmarksByCitySlug()) - count($skippedCities),
+            $cityCount,
         ));
 
         return Command::SUCCESS;
@@ -158,6 +149,19 @@ final class SeedDemoLandmarksCommand extends Command
             'gomel' => self::gomelLandmarks(),
             'grodno' => self::grodnoLandmarks(),
             'mogilev' => self::mogilevLandmarks(),
+            'baranovichi' => self::baranovichiLandmarks(),
+            'pinsk' => self::pinskLandmarks(),
+            'bobruysk' => self::bobruyskLandmarks(),
+            'molodechno' => self::molodechnoLandmarks(),
+            'logoysk' => self::logoyskLandmarks(),
+            'orsha' => self::orshaLandmarks(),
+            'novopolotsk' => self::novopolotskLandmarks(),
+            'svetlogorsk' => self::svetlogorskLandmarks(),
+            'smorgon' => self::smorgonLandmarks(),
+            'zhlobin' => self::zhlobinLandmarks(),
+            'volkovysk' => self::volkovyskLandmarks(),
+            'novolukoml' => self::novolukomlLandmarks(),
+            'krichev' => self::krichevLandmarks(),
         ];
     }
 
@@ -957,6 +961,1314 @@ final class SeedDemoLandmarksCommand extends Command
                     'Удобно совместить с прогулкой по набережной Днепра.',
                 ],
                 'sortOrder' => 50,
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   name: string,
+     *   nameGenitive: string,
+     *   slug: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   category: string,
+     *   shortDescription: string,
+     *   description: string,
+     *   address: string,
+     *   facts: list<array{label: string, value: string}>,
+     *   guestTips: list<string>,
+     *   sortOrder: int,
+     *   imageUrl?: string
+     * }>
+     */
+    private static function baranovichiLandmarks(): array
+    {
+        return [
+            [
+                'name' => 'Собор Покрова Пресвятой Богородицы',
+                'nameGenitive' => 'Собора Покрова Пресвятой Богородицы',
+                'slug' => 'pokrovskiy-sobor',
+                'latitude' => 53.1322,
+                'longitude' => 26.0040,
+                'category' => 'sight',
+                'shortDescription' => 'Белокаменный православный собор в стиле неоклассицизма — архитектурная доминанта центра Барановичей.',
+                'description' => '<p>Собор Покрова Пресвятой Богородицы построен в 1920–1930-х годах. Высокий купол хорошо виден из разных точек города и особенно эффектно смотрится вечером при подсветке.</p>',
+                'address' => 'ул. Куйбышева, 9а, Барановичи',
+                'facts' => [
+                    ['label' => 'Построен', 'value' => '1924–1931'],
+                    ['label' => 'Стиль', 'value' => 'неоклассицизм'],
+                ],
+                'guestTips' => [
+                    'Рядом центральные улицы с кафе и магазинами.',
+                ],
+                'sortOrder' => 10,
+            ],
+            [
+                'name' => 'Костёл Воздвижения Святого Креста',
+                'nameGenitive' => 'Костёла Воздвижения Святого Креста',
+                'slug' => 'kostyol-vozdvizheniya',
+                'latitude' => 53.1328,
+                'longitude' => 26.0165,
+                'category' => 'sight',
+                'shortDescription' => 'Краснокирпичный католический храм начала XX века — один из символов Барановичей.',
+                'description' => '<p>Костёл Воздвижения Святого Креста — действующий католический храм в центре города. Кирпичная неоготика и высокая башня делают его популярной точкой для фотографий.</p>',
+                'address' => 'ул. Куйбышева, 30, Барановичи',
+                'facts' => [
+                    ['label' => 'Построен', 'value' => '1903–1924'],
+                    ['label' => 'Стиль', 'value' => 'неоготика'],
+                ],
+                'guestTips' => [
+                    'Удобно совместить осмотр с прогулкой к Покровскому собору.',
+                ],
+                'sortOrder' => 20,
+            ],
+            [
+                'name' => 'Вокзал Барановичи-Центральные',
+                'nameGenitive' => 'вокзала Барановичи-Центральные',
+                'slug' => 'vokzal-baranovichi',
+                'latitude' => 53.1315,
+                'longitude' => 26.0150,
+                'category' => 'station',
+                'shortDescription' => 'Крупный железнодорожный узел на западе Беларуси — удобная точка для транзитных гостей.',
+                'description' => '<p>Вокзал Барановичи-Центральные связывает город с Минском, Брестом и другими направлениями. До центра и главных храмов — короткая поездка на такси или пешком.</p>',
+                'address' => 'пл. Ленина, 1, Барановичи',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'железнодорожный вокзал'],
+                    ['label' => 'До центра', 'value' => 'около 10 минут пешком'],
+                ],
+                'guestTips' => [
+                    'Для ранних поездов удобно снимать жильё рядом с вокзалом.',
+                ],
+                'sortOrder' => 30,
+            ],
+            [
+                'name' => 'Краеведческий музей',
+                'nameGenitive' => 'краеведческого музея',
+                'slug' => 'kraevedcheskiy-muzey',
+                'latitude' => 53.1335,
+                'longitude' => 26.0188,
+                'category' => 'sight',
+                'shortDescription' => 'Музей истории Барановичей и района — короткое знакомство с прошлым города у железнодорожного узла.',
+                'description' => '<p>Барановичский краеведческий музей рассказывает о возникновении города, железной дороге и местных традициях. Удобная остановка в маршруте по центру.</p>',
+                'address' => 'ул. Советская, 72, Барановичи',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'краеведческий музей'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'Проверьте режим работы перед визитом.',
+                ],
+                'sortOrder' => 40,
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   name: string,
+     *   nameGenitive: string,
+     *   slug: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   category: string,
+     *   shortDescription: string,
+     *   description: string,
+     *   address: string,
+     *   facts: list<array{label: string, value: string}>,
+     *   guestTips: list<string>,
+     *   sortOrder: int,
+     *   imageUrl?: string
+     * }>
+     */
+    private static function pinskLandmarks(): array
+    {
+        return [
+            [
+                'name' => 'Иезуитский коллегиум',
+                'nameGenitive' => 'Иезуитского коллегиума',
+                'slug' => 'iezuitskiy-kollegium',
+                'latitude' => 52.1128,
+                'longitude' => 26.1025,
+                'category' => 'sight',
+                'shortDescription' => 'Монументальный барочный комплекс XVII века на берегу Пины — главная достопримечательность Пинска.',
+                'description' => '<p>Пинский иезуитский коллегиум — один из крупнейших памятников барокко в Беларуси. Сейчас в здании музей, а рядом — исторический центр и набережная.</p>',
+                'address' => 'ул. Ленина, 23, Пинск',
+                'facts' => [
+                    ['label' => 'Построен', 'value' => '1631–1675'],
+                    ['label' => 'Стиль', 'value' => 'барокко'],
+                ],
+                'guestTips' => [
+                    'Лучшие фото — с набережной Пины.',
+                ],
+                'sortOrder' => 10,
+            ],
+            [
+                'name' => 'Собор Святой Варвары',
+                'nameGenitive' => 'Собора Святой Варвары',
+                'slug' => 'sobor-svyatoy-varvary',
+                'latitude' => 52.1184,
+                'longitude' => 26.1105,
+                'category' => 'sight',
+                'shortDescription' => 'Бывший бернардинский костёл XVIII века — белокаменный храм в центре Пинска.',
+                'description' => '<p>Свято-Варваринский собор входит в ансамбль бывшего монастыря бернардинцев. Фасад позднего барокко и колокольня выделяются на фоне городской застройки.</p>',
+                'address' => 'ул. Советская, 34, Пинск',
+                'facts' => [
+                    ['label' => 'Построен', 'value' => '1786–1787'],
+                    ['label' => 'Стиль', 'value' => 'позднее барокко'],
+                ],
+                'guestTips' => [
+                    'Удобно посетить вместе с коллегиумом за одну прогулку.',
+                ],
+                'sortOrder' => 20,
+            ],
+            [
+                'name' => 'Дворец Бутримовича',
+                'nameGenitive' => 'Дворца Бутримовича',
+                'slug' => 'dvorets-butrimovicha',
+                'latitude' => 52.1119,
+                'longitude' => 26.1020,
+                'category' => 'sight',
+                'shortDescription' => 'Классицистический дворец XVIII века у реки — жемчужина исторического Пинска.',
+                'description' => '<p>Дворец Бутримовича стоит у слияния Пины и Припяти. Здание в стиле классицизма окружено тихим сквером и хорошо смотрится с воды.</p>',
+                'address' => 'ул. Ленина, 37, Пинск',
+                'facts' => [
+                    ['label' => 'Построен', 'value' => '1794'],
+                    ['label' => 'Стиль', 'value' => 'классицизм'],
+                ],
+                'guestTips' => [
+                    'Совместите визит с прогулкой по набережной.',
+                ],
+                'sortOrder' => 30,
+            ],
+            [
+                'name' => 'Набережная реки Пины',
+                'nameGenitive' => 'набережной реки Пины',
+                'slug' => 'naberezhnaya-piny',
+                'latitude' => 52.1120,
+                'longitude' => 26.1005,
+                'category' => 'park',
+                'shortDescription' => 'Прогулочная набережная у исторического центра — популярное место отдыха пинчан и гостей.',
+                'description' => '<p>Набережная Пины тянется вдоль коллегиума и дворца. Здесь приятно гулять вечером, фотографировать фасады и смотреть на речные пейзажи Полесья.</p>',
+                'address' => 'наб. Пины, Пинск',
+                'facts' => [
+                    ['label' => 'Река', 'value' => 'Пина'],
+                    ['label' => 'Рядом', 'value' => 'Иезуитский коллегиум'],
+                ],
+                'guestTips' => [
+                    'На закате особенно красивые виды на воду и барокко.',
+                ],
+                'sortOrder' => 40,
+            ],
+            [
+                'name' => 'Вокзал Пинск',
+                'nameGenitive' => 'вокзала Пинск',
+                'slug' => 'vokzal-pinsk',
+                'latitude' => 52.1210,
+                'longitude' => 26.0730,
+                'category' => 'station',
+                'shortDescription' => 'Железнодорожный вокзал Пинска — удобная точка для гостей, приезжающих в полесский город на поезде.',
+                'description' => '<p>Пинский вокзал обслуживает сообщение с Брестом и другими городами. До исторического центра — короткая поездка на такси или автобусе.</p>',
+                'address' => 'ул. Брестская, 11, Пинск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'железнодорожный вокзал'],
+                    ['label' => 'До центра', 'value' => 'около 10 минут на машине'],
+                ],
+                'guestTips' => [
+                    'Для позднего прибытия удобно заранее выбрать жильё неподалёку.',
+                ],
+                'sortOrder' => 50,
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   name: string,
+     *   nameGenitive: string,
+     *   slug: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   category: string,
+     *   shortDescription: string,
+     *   description: string,
+     *   address: string,
+     *   facts: list<array{label: string, value: string}>,
+     *   guestTips: list<string>,
+     *   sortOrder: int,
+     *   imageUrl?: string
+     * }>
+     */
+    private static function bobruyskLandmarks(): array
+    {
+        return [
+            [
+                'name' => 'Бобруйская крепость',
+                'nameGenitive' => 'Бобруйской крепости',
+                'slug' => 'bobruyskaya-krepost',
+                'latitude' => 53.1397,
+                'longitude' => 29.2214,
+                'category' => 'sight',
+                'shortDescription' => 'Земляная крепость XIX века на берегу Березины — главная историческая достопримечательность Бобруйска.',
+                'description' => '<p>Бобруйская крепость заложена в 1810 году по указу Александра I. Сохранившиеся валы, казематы и панорама реки делают её must-see для гостей города.</p>',
+                'address' => 'ул. Социалистическая, Бобруйск',
+                'facts' => [
+                    ['label' => 'Основана', 'value' => '1810'],
+                    ['label' => 'Река', 'value' => 'Березина'],
+                ],
+                'guestTips' => [
+                    'Выделите на прогулку по валам минимум час.',
+                    'Удобная обувь — много неровных троп.',
+                ],
+                'sortOrder' => 10,
+            ],
+            [
+                'name' => 'Драматический театр имени В. И. Дунина-Марцинкевича',
+                'nameGenitive' => 'драматического театра имени В. И. Дунина-Марцинкевича',
+                'slug' => 'dramaticheskiy-teatr',
+                'latitude' => 53.1450,
+                'longitude' => 29.2250,
+                'category' => 'sight',
+                'shortDescription' => 'Главная театральная сцена Бобруйска в центре города — культурная точка притяжения.',
+                'description' => '<p>Бобруйский драматический театр расположен в исторической части города. Рядом площади, кафе и прогулочные маршруты к крепости и Березине.</p>',
+                'address' => 'ул. Социалистическая, 85, Бобруйск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'драматический театр'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'Билеты на популярные спектакли лучше брать заранее.',
+                ],
+                'sortOrder' => 20,
+            ],
+            [
+                'name' => 'Площадь Ленина',
+                'nameGenitive' => 'Площади Ленина',
+                'slug' => 'ploshchad-lenina',
+                'latitude' => 53.1478,
+                'longitude' => 29.2215,
+                'category' => 'sight',
+                'shortDescription' => 'Центральная площадь Бобруйска с парадной застройкой — оживлённый район города.',
+                'description' => '<p>Площадь Ленина — сердце современного Бобруйска. Здесь проходят городские мероприятия, рядом торговые улицы и остановки общественного транспорта.</p>',
+                'address' => 'пл. Ленина, Бобруйск',
+                'facts' => [
+                    ['label' => 'Рядом', 'value' => 'театр и крепость'],
+                    ['label' => 'Транспорт', 'value' => 'автобусные маршруты'],
+                ],
+                'guestTips' => [
+                    'Отсюда удобно начать маршрут к крепости.',
+                ],
+                'sortOrder' => 30,
+            ],
+            [
+                'name' => 'Вокзал Бобруйск',
+                'nameGenitive' => 'вокзала Бобруйск',
+                'slug' => 'vokzal-bobruysk',
+                'latitude' => 53.1390,
+                'longitude' => 29.2060,
+                'category' => 'station',
+                'shortDescription' => 'Железнодорожный вокзал на направлении Минск — Гомель — удобен для гостей, приезжающих на поезде.',
+                'description' => '<p>Бобруйский вокзал — транспортные ворота города. До центра и крепости — короткая поездка на такси или автобусе.</p>',
+                'address' => 'пл. Привокзальная, 1, Бобруйск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'железнодорожный вокзал'],
+                    ['label' => 'До центра', 'value' => 'около 10 минут на машине'],
+                ],
+                'guestTips' => [
+                    'Квартиры рядом удобны при раннем отъезде.',
+                ],
+                'sortOrder' => 40,
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   name: string,
+     *   nameGenitive: string,
+     *   slug: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   category: string,
+     *   shortDescription: string,
+     *   description: string,
+     *   address: string,
+     *   facts: list<array{label: string, value: string}>,
+     *   guestTips: list<string>,
+     *   sortOrder: int,
+     *   imageUrl?: string
+     * }>
+     */
+    private static function molodechnoLandmarks(): array
+    {
+        return [
+            [
+                'name' => 'Костёл Святого Казимира',
+                'nameGenitive' => 'Костёла Святого Казимира',
+                'slug' => 'kostyol-svyatogo-kazimira',
+                'latitude' => 54.3070,
+                'longitude' => 26.8385,
+                'category' => 'sight',
+                'shortDescription' => 'Краснокирпичный католический храм начала XX века — архитектурный символ Молодечно.',
+                'description' => '<p>Костёл Святого Казимира — одна из главных достопримечательностей города. Неоготический фасад и башня хорошо смотрятся на фоне центральной застройки.</p>',
+                'address' => 'ул. Великий Гостинец, 61, Молодечно',
+                'facts' => [
+                    ['label' => 'Построен', 'value' => '1902–1910'],
+                    ['label' => 'Стиль', 'value' => 'неоготика'],
+                ],
+                'guestTips' => [
+                    'Вечером включается подсветка фасада.',
+                ],
+                'sortOrder' => 10,
+            ],
+            [
+                'name' => 'Церковь Покрова Пресвятой Богородицы',
+                'nameGenitive' => 'Церкви Покрова Пресвятой Богородицы',
+                'slug' => 'pokrovskaya-tserkov',
+                'latitude' => 54.3085,
+                'longitude' => 26.8455,
+                'category' => 'sight',
+                'shortDescription' => 'Православный храм в центре Молодечно — спокойная точка для прогулки по исторической части.',
+                'description' => '<p>Покровская церковь — действующий православный храм города. Рядом удобные маршруты к костёлу, площади и вокзалу.</p>',
+                'address' => 'ул. Я. Купалы, Молодечно',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'православный храм'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'Удобно совместить с осмотром костёла Святого Казимира.',
+                ],
+                'sortOrder' => 20,
+            ],
+            [
+                'name' => 'Площадь Центральная',
+                'nameGenitive' => 'Центральной площади',
+                'slug' => 'ploshchad-tsentralnaya',
+                'latitude' => 54.3100,
+                'longitude' => 26.8410,
+                'category' => 'sight',
+                'shortDescription' => 'Главная площадь Молодечно с парадной застройкой — оживлённый район города.',
+                'description' => '<p>Центральная площадь — место городских праздников и ярмарок. Отсюда удобно дойти до храмов, парка и торговых улиц.</p>',
+                'address' => 'пл. Центральная, Молодечно',
+                'facts' => [
+                    ['label' => 'Рядом', 'value' => 'костёл и парк'],
+                    ['label' => 'Транспорт', 'value' => 'автобусные маршруты'],
+                ],
+                'guestTips' => [
+                    'В выходные площадь оживлённая — для спокойной прогулки приезжайте утром.',
+                ],
+                'sortOrder' => 30,
+            ],
+            [
+                'name' => 'Вокзал Молодечно',
+                'nameGenitive' => 'вокзала Молодечно',
+                'slug' => 'vokzal-molodechno',
+                'latitude' => 54.3075,
+                'longitude' => 26.8440,
+                'category' => 'station',
+                'shortDescription' => 'Железнодорожный вокзал на направлении Минск — Вильнюс — удобен для гостей, приезжающих на поезде.',
+                'description' => '<p>Молодечненский вокзал расположен близко к центру. Отсюда удобно добраться до костёла, площади и основных улиц города.</p>',
+                'address' => 'пл. Привокзальная, 1, Молодечно',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'железнодорожный вокзал'],
+                    ['label' => 'До центра', 'value' => 'около 10 минут пешком'],
+                ],
+                'guestTips' => [
+                    'Для короткой поездки удобно выбрать жильё рядом с вокзалом.',
+                ],
+                'sortOrder' => 40,
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   name: string,
+     *   nameGenitive: string,
+     *   slug: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   category: string,
+     *   shortDescription: string,
+     *   description: string,
+     *   address: string,
+     *   facts: list<array{label: string, value: string}>,
+     *   guestTips: list<string>,
+     *   sortOrder: int,
+     *   imageUrl?: string
+     * }>
+     */
+    private static function logoyskLandmarks(): array
+    {
+        return [
+            [
+                'name' => 'Горнолыжный комплекс «Логойск»',
+                'nameGenitive' => 'горнолыжного комплекса «Логойск»',
+                'slug' => 'gornolyzhnyy-kompleks-logoysk',
+                'latitude' => 54.2067,
+                'longitude' => 27.8267,
+                'category' => 'sight',
+                'shortDescription' => 'Популярный горнолыжный и всесезонный курорт у Логойска — трассы, прокат и отдых за городом.',
+                'description' => '<p>Горнолыжный комплекс «Логойск» — главная точка притяжения региона. Зимой здесь катаются на лыжах и сноуборде, летом работают прогулочные маршруты и активный отдых.</p>',
+                'address' => 'аг. Гайна, Логойский район',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'горнолыжный курорт'],
+                    ['label' => 'Сезон', 'value' => 'зима — пик спроса'],
+                ],
+                'guestTips' => [
+                    'В выходные и праздники бронируйте жильё заранее.',
+                    'До курорта удобнее добираться на машине.',
+                ],
+                'sortOrder' => 10,
+            ],
+            [
+                'name' => 'Усадьба Тышкевичей',
+                'nameGenitive' => 'усадьбы Тышкевичей',
+                'slug' => 'usadba-tyshkevichey',
+                'latitude' => 54.2015,
+                'longitude' => 27.8505,
+                'category' => 'sight',
+                'shortDescription' => 'Остатки дворцово-паркового ансамбля графов Тышкевичей — историческое сердце Логойска.',
+                'description' => '<p>Усадьба Тышкевичей когда-то была одной из красивейших в Минской губернии. Сохранившиеся фрагменты и парк дают представление о прошлом местечка.</p>',
+                'address' => 'ул. Советская, Логойск',
+                'facts' => [
+                    ['label' => 'Период', 'value' => 'XVIII–XIX вв.'],
+                    ['label' => 'Тип', 'value' => 'усадебно-парковый ансамбль'],
+                ],
+                'guestTips' => [
+                    'Удобно совместить с прогулкой по центру Логойска.',
+                ],
+                'sortOrder' => 20,
+            ],
+            [
+                'name' => 'Костёл Святого Казимира',
+                'nameGenitive' => 'Костёла Святого Казимира',
+                'slug' => 'kostyol-svyatogo-kazimira',
+                'latitude' => 54.2008,
+                'longitude' => 27.8480,
+                'category' => 'sight',
+                'shortDescription' => 'Католический храм в центре Логойска — спокойная архитектурная точка городка.',
+                'description' => '<p>Костёл Святого Казимира — действующий католический храм. Вместе с окрестным парком и усадебными местами он формирует исторический облик Логойска.</p>',
+                'address' => 'ул. Советская, Логойск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'католический храм'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'После осмотра удобно пройтись по парку у усадьбы.',
+                ],
+                'sortOrder' => 30,
+            ],
+            [
+                'name' => 'Церковь Святителя Николая',
+                'nameGenitive' => 'Церкви Святителя Николая',
+                'slug' => 'nikolskaya-tserkov',
+                'latitude' => 54.2025,
+                'longitude' => 27.8520,
+                'category' => 'sight',
+                'shortDescription' => 'Православный храм Логойска — часть прогулочного маршрута по центру местечка.',
+                'description' => '<p>Свято-Никольская церковь — действующий православный храм. Рядом исторические улицы и выезды к горнолыжному комплексу.</p>',
+                'address' => 'ул. Советская, Логойск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'православный храм'],
+                    ['label' => 'Рядом', 'value' => 'усадьба Тышкевичей'],
+                ],
+                'guestTips' => [
+                    'Удобная остановка по пути на курорт «Логойск».',
+                ],
+                'sortOrder' => 40,
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   name: string,
+     *   nameGenitive: string,
+     *   slug: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   category: string,
+     *   shortDescription: string,
+     *   description: string,
+     *   address: string,
+     *   facts: list<array{label: string, value: string}>,
+     *   guestTips: list<string>,
+     *   sortOrder: int,
+     *   imageUrl?: string
+     * }>
+     */
+    private static function orshaLandmarks(): array
+    {
+        return [
+            [
+                'name' => 'Кутеинский монастырь',
+                'nameGenitive' => 'Кутеинского монастыря',
+                'slug' => 'kuteinskiy-monastyr',
+                'latitude' => 54.5085,
+                'longitude' => 30.4050,
+                'category' => 'sight',
+                'shortDescription' => 'Богоявленский Кутеинский монастырь XVII века — главная духовная и историческая достопримечательность Орши.',
+                'description' => '<p>Кутеинский монастырь известен как центр книгопечатания и православной культуры. Комплекс расположен у реки и входит в обязательный маршрут гостей Орши.</p>',
+                'address' => 'ул. Кутеинская, Орша',
+                'facts' => [
+                    ['label' => 'Основан', 'value' => '1623'],
+                    ['label' => 'Река', 'value' => 'Днепр'],
+                ],
+                'guestTips' => [
+                    'Выделите время на прогулку по территории монастыря.',
+                ],
+                'sortOrder' => 10,
+            ],
+            [
+                'name' => 'Иезуитский коллегиум',
+                'nameGenitive' => 'Иезуитского коллегиума',
+                'slug' => 'iezuitskiy-kollegium',
+                'latitude' => 54.5115,
+                'longitude' => 30.4210,
+                'category' => 'sight',
+                'shortDescription' => 'Исторический комплекс иезуитов в центре Орши — памятник архитектуры и городская доминанта.',
+                'description' => '<p>Здания бывшего иезуитского коллегиума сохраняют атмосферу старой Орши. Рядом удобные прогулочные маршруты к Днепру и центру города.</p>',
+                'address' => 'ул. Ленина, Орша',
+                'facts' => [
+                    ['label' => 'Период', 'value' => 'XVII–XVIII вв.'],
+                    ['label' => 'Стиль', 'value' => 'барокко'],
+                ],
+                'guestTips' => [
+                    'Удобно совместить с визитом в Кутеинский монастырь.',
+                ],
+                'sortOrder' => 20,
+            ],
+            [
+                'name' => 'Памятник Оршанской битве',
+                'nameGenitive' => 'памятника Оршанской битве',
+                'slug' => 'pamyatnik-orshanskoy-bitve',
+                'latitude' => 54.5140,
+                'longitude' => 30.4180,
+                'category' => 'sight',
+                'shortDescription' => 'Мемориал в честь победы 1514 года — символ военной истории Орши.',
+                'description' => '<p>Памятник Оршанской битве напоминает о сражении войск Великого княжества Литовского. Это популярная точка для фотографий и короткой остановки в центре.</p>',
+                'address' => 'пр. Заслонова, Орша',
+                'facts' => [
+                    ['label' => 'Событие', 'value' => '1514 год'],
+                    ['label' => 'Тип', 'value' => 'мемориал'],
+                ],
+                'guestTips' => [
+                    'Рядом удобные выезды к вокзалу и монастырю.',
+                ],
+                'sortOrder' => 30,
+            ],
+            [
+                'name' => 'Вокзал Орша-Центральная',
+                'nameGenitive' => 'вокзала Орша-Центральная',
+                'slug' => 'vokzal-orsha',
+                'latitude' => 54.5080,
+                'longitude' => 30.4250,
+                'category' => 'station',
+                'shortDescription' => 'Крупный железнодорожный узел на востоке Беларуси — удобная точка для транзитных гостей.',
+                'description' => '<p>Орша-Центральная связывает Минск, Москву, Витебск и другие направления. До исторического центра и монастыря — короткая поездка на такси.</p>',
+                'address' => 'пл. Привокзальная, 1, Орша',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'железнодорожный вокзал'],
+                    ['label' => 'До центра', 'value' => 'около 10 минут на машине'],
+                ],
+                'guestTips' => [
+                    'Для ночных поездов удобно снимать жильё рядом с вокзалом.',
+                ],
+                'sortOrder' => 40,
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   name: string,
+     *   nameGenitive: string,
+     *   slug: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   category: string,
+     *   shortDescription: string,
+     *   description: string,
+     *   address: string,
+     *   facts: list<array{label: string, value: string}>,
+     *   guestTips: list<string>,
+     *   sortOrder: int,
+     *   imageUrl?: string
+     * }>
+     */
+    private static function novopolotskLandmarks(): array
+    {
+        return [
+            [
+                'name' => 'Дворец культуры нефтехимиков',
+                'nameGenitive' => 'Дворца культуры нефтехимиков',
+                'slug' => 'dvorets-kultury-neftekhimikov',
+                'latitude' => 55.5320,
+                'longitude' => 28.6505,
+                'category' => 'sight',
+                'shortDescription' => 'Главная культурная площадка Новополоцка — концерты, спектакли и городские мероприятия.',
+                'description' => '<p>Дворец культуры нефтехимиков — узнаваемый символ молодого промышленного города. Рядом прогулочные зоны и остановки общественного транспорта.</p>',
+                'address' => 'пр. Молодёжи, Новополоцк',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'дворец культуры'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'Проверьте афишу перед визитом.',
+                ],
+                'sortOrder' => 10,
+            ],
+            [
+                'name' => 'Набережная Западной Двины',
+                'nameGenitive' => 'набережной Западной Двины',
+                'slug' => 'naberezhnaya-zapadnoy-dviny',
+                'latitude' => 55.5310,
+                'longitude' => 28.6450,
+                'category' => 'park',
+                'shortDescription' => 'Прогулочная набережная с видом на Западную Двину — популярное место отдыха новополочан.',
+                'description' => '<p>Набережная Западной Двины — лучшее место для вечерней прогулки в Новополоцке. Отсюда открываются виды на реку и зелёные берега.</p>',
+                'address' => 'наб. Западной Двины, Новополоцк',
+                'facts' => [
+                    ['label' => 'Река', 'value' => 'Западная Двина'],
+                    ['label' => 'Сезон', 'value' => 'особенно популярна летом'],
+                ],
+                'guestTips' => [
+                    'На закате особенно красивые фотографии.',
+                ],
+                'sortOrder' => 20,
+            ],
+            [
+                'name' => 'Свято-Ефросиниевская церковь',
+                'nameGenitive' => 'Свято-Ефросиниевской церкви',
+                'slug' => 'efrosinievskaya-tserkov',
+                'latitude' => 55.5335,
+                'longitude' => 28.6550,
+                'category' => 'sight',
+                'shortDescription' => 'Православный храм Новополоцка — спокойная точка в маршруте по городу.',
+                'description' => '<p>Свято-Ефросиниевская церковь — действующий православный храм. Удобно посетить вместе с прогулкой по центру и набережной.</p>',
+                'address' => 'ул. Молодёжная, Новополоцк',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'православный храм'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'Совместите визит с прогулкой к Двине.',
+                ],
+                'sortOrder' => 30,
+            ],
+            [
+                'name' => 'Парк культуры и отдыха',
+                'nameGenitive' => 'парка культуры и отдыха',
+                'slug' => 'park-kultury',
+                'latitude' => 55.5340,
+                'longitude' => 28.6480,
+                'category' => 'park',
+                'shortDescription' => 'Городской парк с аллеями и зонами отдыха — удобное место для спокойной прогулки.',
+                'description' => '<p>Парк культуры и отдыха — зелёное сердце Новополоцка. Летом здесь много семей с детьми, зимой приятно пройтись по аллеям.</p>',
+                'address' => 'пр. Молодёжи, Новополоцк',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'городской парк'],
+                    ['label' => 'Рядом', 'value' => 'Дворец культуры'],
+                ],
+                'guestTips' => [
+                    'Для спокойной прогулки лучше приезжать утром.',
+                ],
+                'sortOrder' => 40,
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   name: string,
+     *   nameGenitive: string,
+     *   slug: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   category: string,
+     *   shortDescription: string,
+     *   description: string,
+     *   address: string,
+     *   facts: list<array{label: string, value: string}>,
+     *   guestTips: list<string>,
+     *   sortOrder: int,
+     *   imageUrl?: string
+     * }>
+     */
+    private static function svetlogorskLandmarks(): array
+    {
+        return [
+            [
+                'name' => 'Дворец культуры',
+                'nameGenitive' => 'Дворца культуры',
+                'slug' => 'dvorets-kultury',
+                'latitude' => 52.6325,
+                'longitude' => 29.3340,
+                'category' => 'sight',
+                'shortDescription' => 'Главная культурная площадка Светлогорска — концерты, праздники и городские события.',
+                'description' => '<p>Дворец культуры Светлогорска — центр общественной жизни города. Рядом парк, площадь и основные прогулочные маршруты.</p>',
+                'address' => 'ул. Ленинская, Светлогорск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'дворец культуры'],
+                    ['label' => 'Рядом', 'value' => 'городская площадь'],
+                ],
+                'guestTips' => [
+                    'Проверьте афишу мероприятий перед визитом.',
+                ],
+                'sortOrder' => 10,
+            ],
+            [
+                'name' => 'Городской парк',
+                'nameGenitive' => 'городского парка',
+                'slug' => 'gorodskoy-park',
+                'latitude' => 52.6335,
+                'longitude' => 29.3360,
+                'category' => 'park',
+                'shortDescription' => 'Зелёный парк в центре Светлогорска — аллеи, зоны отдыха и прогулки у воды.',
+                'description' => '<p>Городской парк — любимое место отдыха светлогорчан. Здесь удобно гулять с детьми и отдыхать после дороги.</p>',
+                'address' => 'ул. Ленинская, Светлогорск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'городской парк'],
+                    ['label' => 'Сезон', 'value' => 'особенно популярен летом'],
+                ],
+                'guestTips' => [
+                    'Утром в парке спокойнее, чем вечером.',
+                ],
+                'sortOrder' => 20,
+            ],
+            [
+                'name' => 'Церковь Преображения Господня',
+                'nameGenitive' => 'Церкви Преображения Господня',
+                'slug' => 'preobrazhenskaya-tserkov',
+                'latitude' => 52.6310,
+                'longitude' => 29.3320,
+                'category' => 'sight',
+                'shortDescription' => 'Православный храм Светлогорска — спокойная точка в маршруте по центру города.',
+                'description' => '<p>Преображенская церковь — действующий православный храм. Удобно посетить вместе с прогулкой по парку и площади.</p>',
+                'address' => 'ул. Советская, Светлогорск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'православный храм'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'Совместите визит с прогулкой по городскому парку.',
+                ],
+                'sortOrder' => 30,
+            ],
+            [
+                'name' => 'Вокзал Светлогорск',
+                'nameGenitive' => 'вокзала Светлогорск',
+                'slug' => 'vokzal-svetlogorsk',
+                'latitude' => 52.6280,
+                'longitude' => 29.3280,
+                'category' => 'station',
+                'shortDescription' => 'Железнодорожный вокзал Светлогорска — удобная точка для гостей, приезжающих на поезде.',
+                'description' => '<p>Светлогорский вокзал обслуживает сообщение с Гомелем, Жлобином и другими городами. До центра — короткая поездка на такси или автобусе.</p>',
+                'address' => 'пл. Привокзальная, Светлогорск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'железнодорожный вокзал'],
+                    ['label' => 'До центра', 'value' => 'около 10 минут на машине'],
+                ],
+                'guestTips' => [
+                    'Для раннего поезда удобно остановиться рядом с вокзалом.',
+                ],
+                'sortOrder' => 40,
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   name: string,
+     *   nameGenitive: string,
+     *   slug: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   category: string,
+     *   shortDescription: string,
+     *   description: string,
+     *   address: string,
+     *   facts: list<array{label: string, value: string}>,
+     *   guestTips: list<string>,
+     *   sortOrder: int,
+     *   imageUrl?: string
+     * }>
+     */
+    private static function smorgonLandmarks(): array
+    {
+        return [
+            [
+                'name' => 'Костёл Святого Михаила',
+                'nameGenitive' => 'Костёла Святого Михаила',
+                'slug' => 'kostyol-svyatogo-mikhaila',
+                'latitude' => 54.4815,
+                'longitude' => 26.4005,
+                'category' => 'sight',
+                'shortDescription' => 'Католический храм в центре Сморгони — архитектурный символ города.',
+                'description' => '<p>Костёл Святого Михаила — одна из главных достопримечательностей Сморгони. Храм и окрестные улицы хорошо подходят для короткой прогулки по центру.</p>',
+                'address' => 'ул. Советская, Сморгонь',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'католический храм'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'Вечером фасад особенно эффектен при подсветке.',
+                ],
+                'sortOrder' => 10,
+            ],
+            [
+                'name' => 'Церковь Преображения Господня',
+                'nameGenitive' => 'Церкви Преображения Господня',
+                'slug' => 'preobrazhenskaya-tserkov',
+                'latitude' => 54.4830,
+                'longitude' => 26.4030,
+                'category' => 'sight',
+                'shortDescription' => 'Православный храм Сморгони — спокойная точка маршрута по исторической части.',
+                'description' => '<p>Преображенская церковь — действующий православный храм. Удобно посетить вместе с костёлом и прогулкой по центральным улицам.</p>',
+                'address' => 'ул. Ленина, Сморгонь',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'православный храм'],
+                    ['label' => 'Рядом', 'value' => 'костёл Святого Михаила'],
+                ],
+                'guestTips' => [
+                    'Удобно осмотреть оба храма за одну прогулку.',
+                ],
+                'sortOrder' => 20,
+            ],
+            [
+                'name' => 'Памятник медведю',
+                'nameGenitive' => 'памятника медведю',
+                'slug' => 'pamyatnik-medvedyu',
+                'latitude' => 54.4820,
+                'longitude' => 26.4015,
+                'category' => 'sight',
+                'shortDescription' => 'Городской символ Сморгони — отсылка к исторической «школе медведей» и местному фольклору.',
+                'description' => '<p>Памятник медведю напоминает о знаменитой сморгонской школе дрессировки. Это популярная точка для фотографий в центре города.</p>',
+                'address' => 'центр города, Сморгонь',
+                'facts' => [
+                    ['label' => 'Символ', 'value' => 'сморгонский медведь'],
+                    ['label' => 'Тип', 'value' => 'городской памятник'],
+                ],
+                'guestTips' => [
+                    'Короткая и узнаваемая остановка для фото.',
+                ],
+                'sortOrder' => 30,
+            ],
+            [
+                'name' => 'Вокзал Сморгонь',
+                'nameGenitive' => 'вокзала Сморгонь',
+                'slug' => 'vokzal-smorgon',
+                'latitude' => 54.4795,
+                'longitude' => 26.3950,
+                'category' => 'station',
+                'shortDescription' => 'Железнодорожный вокзал на направлении Минск — Вильнюс — удобен для гостей, приезжающих на поезде.',
+                'description' => '<p>Сморгонский вокзал расположен недалеко от центра. Отсюда удобно добраться до храмов и основных улиц города.</p>',
+                'address' => 'пл. Привокзальная, Сморгонь',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'железнодорожный вокзал'],
+                    ['label' => 'До центра', 'value' => 'около 10 минут пешком'],
+                ],
+                'guestTips' => [
+                    'Для короткой поездки удобно выбрать жильё рядом с вокзалом.',
+                ],
+                'sortOrder' => 40,
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   name: string,
+     *   nameGenitive: string,
+     *   slug: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   category: string,
+     *   shortDescription: string,
+     *   description: string,
+     *   address: string,
+     *   facts: list<array{label: string, value: string}>,
+     *   guestTips: list<string>,
+     *   sortOrder: int,
+     *   imageUrl?: string
+     * }>
+     */
+    private static function zhlobinLandmarks(): array
+    {
+        return [
+            [
+                'name' => 'Вокзал Жлобин',
+                'nameGenitive' => 'вокзала Жлобин',
+                'slug' => 'vokzal-zhlobin',
+                'latitude' => 52.8920,
+                'longitude' => 30.0250,
+                'category' => 'station',
+                'shortDescription' => 'Крупный железнодорожный узел на пересечении направлений — главная транспортная точка Жлобина.',
+                'description' => '<p>Жлобинский вокзал связывает Минск, Гомель, Могилёв и другие города. Удобен для транзитных гостей и поездок по югу Беларуси.</p>',
+                'address' => 'пл. Привокзальная, 1, Жлобин',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'железнодорожный вокзал'],
+                    ['label' => 'Значение', 'value' => 'крупный узел'],
+                ],
+                'guestTips' => [
+                    'В дни пересадок спрос на жильё рядом с вокзалом растёт.',
+                ],
+                'sortOrder' => 10,
+            ],
+            [
+                'name' => 'Свято-Троицкий собор',
+                'nameGenitive' => 'Свято-Троицкого собора',
+                'slug' => 'troitskiy-sobor',
+                'latitude' => 52.8955,
+                'longitude' => 30.0380,
+                'category' => 'sight',
+                'shortDescription' => 'Православный собор в центре Жлобина — архитектурная доминанта города.',
+                'description' => '<p>Свято-Троицкий собор — главный храм Жлобина. Белые стены и купола хорошо смотрятся на фоне центральной застройки.</p>',
+                'address' => 'ул. Первомайская, Жлобин',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'православный собор'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'Удобно совместить с прогулкой по центральным улицам.',
+                ],
+                'sortOrder' => 20,
+            ],
+            [
+                'name' => 'Парк культуры и отдыха',
+                'nameGenitive' => 'парка культуры и отдыха',
+                'slug' => 'park-kultury',
+                'latitude' => 52.8970,
+                'longitude' => 30.0400,
+                'category' => 'park',
+                'shortDescription' => 'Городской парк с аллеями и зонами отдыха — популярное место прогулок в Жлобине.',
+                'description' => '<p>Парк культуры и отдыха — зелёное пространство в центре города. Летом здесь гуляют семьи, зимой приятно пройтись по аллеям.</p>',
+                'address' => 'ул. Первомайская, Жлобин',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'городской парк'],
+                    ['label' => 'Сезон', 'value' => 'особенно популярен летом'],
+                ],
+                'guestTips' => [
+                    'Для спокойной прогулки лучше приезжать утром.',
+                ],
+                'sortOrder' => 30,
+            ],
+            [
+                'name' => 'Мемориал Великой Отечественной войны',
+                'nameGenitive' => 'мемориала Великой Отечественной войны',
+                'slug' => 'memorial-vov',
+                'latitude' => 52.8940,
+                'longitude' => 30.0360,
+                'category' => 'sight',
+                'shortDescription' => 'Городской мемориал памяти — тихая точка для короткой остановки в центре Жлобина.',
+                'description' => '<p>Мемориальный комплекс напоминает о событиях войны и освобождении города. Рядом удобные маршруты к собору и парку.</p>',
+                'address' => 'центр города, Жлобин',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'мемориал'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'Короткая и важная остановка в городском маршруте.',
+                ],
+                'sortOrder' => 40,
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   name: string,
+     *   nameGenitive: string,
+     *   slug: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   category: string,
+     *   shortDescription: string,
+     *   description: string,
+     *   address: string,
+     *   facts: list<array{label: string, value: string}>,
+     *   guestTips: list<string>,
+     *   sortOrder: int,
+     *   imageUrl?: string
+     * }>
+     */
+    private static function volkovyskLandmarks(): array
+    {
+        return [
+            [
+                'name' => 'Костёл Святого Вацлава',
+                'nameGenitive' => 'Костёла Святого Вацлава',
+                'slug' => 'kostyol-svyatogo-vatslava',
+                'latitude' => 53.1565,
+                'longitude' => 24.4510,
+                'category' => 'sight',
+                'shortDescription' => 'Католический храм в центре Волковыска — одна из главных архитектурных доминант города.',
+                'description' => '<p>Костёл Святого Вацлава — действующий католический храм. Фасад и башня хорошо смотрятся на фоне исторической части Волковыска.</p>',
+                'address' => 'ул. Советская, Волковыск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'католический храм'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'Удобно совместить с посещением музея и православного храма.',
+                ],
+                'sortOrder' => 10,
+            ],
+            [
+                'name' => 'Церковь Святых Петра и Павла',
+                'nameGenitive' => 'Церкви Святых Петра и Павла',
+                'slug' => 'tserkov-petra-i-pavla',
+                'latitude' => 53.1580,
+                'longitude' => 24.4535,
+                'category' => 'sight',
+                'shortDescription' => 'Православный храм Волковыска — спокойная точка прогулочного маршрута по центру.',
+                'description' => '<p>Петропавловская церковь — действующий православный храм. Вместе с костёлом формирует архитектурный облик центральной части города.</p>',
+                'address' => 'ул. Ленина, Волковыск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'православный храм'],
+                    ['label' => 'Рядом', 'value' => 'костёл Святого Вацлава'],
+                ],
+                'guestTips' => [
+                    'Оба храма удобно осмотреть за одну прогулку.',
+                ],
+                'sortOrder' => 20,
+            ],
+            [
+                'name' => 'Краеведческий музей',
+                'nameGenitive' => 'краеведческого музея',
+                'slug' => 'kraevedcheskiy-muzey',
+                'latitude' => 53.1570,
+                'longitude' => 24.4495,
+                'category' => 'sight',
+                'shortDescription' => 'Музей истории Волковыска и района — короткое знакомство с прошлым города.',
+                'description' => '<p>Волковысский краеведческий музей рассказывает о древнем городе на западе Беларуси, археологии и местной культуре.</p>',
+                'address' => 'ул. Советская, Волковыск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'краеведческий музей'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'Проверьте режим работы перед визитом.',
+                ],
+                'sortOrder' => 30,
+            ],
+            [
+                'name' => 'Вокзал Волковыск',
+                'nameGenitive' => 'вокзала Волковыск',
+                'slug' => 'vokzal-volkovysk',
+                'latitude' => 53.1540,
+                'longitude' => 24.4450,
+                'category' => 'station',
+                'shortDescription' => 'Железнодорожный вокзал Волковыска — удобная точка для гостей, приезжающих на поезде.',
+                'description' => '<p>Волковысский вокзал обслуживает сообщение с Гродно и другими городами. До центра и храмов — короткая поездка на такси или пешком.</p>',
+                'address' => 'пл. Привокзальная, Волковыск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'железнодорожный вокзал'],
+                    ['label' => 'До центра', 'value' => 'около 10 минут пешком'],
+                ],
+                'guestTips' => [
+                    'Для раннего отъезда удобно остановиться рядом с вокзалом.',
+                ],
+                'sortOrder' => 40,
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   name: string,
+     *   nameGenitive: string,
+     *   slug: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   category: string,
+     *   shortDescription: string,
+     *   description: string,
+     *   address: string,
+     *   facts: list<array{label: string, value: string}>,
+     *   guestTips: list<string>,
+     *   sortOrder: int,
+     *   imageUrl?: string
+     * }>
+     */
+    private static function novolukomlLandmarks(): array
+    {
+        return [
+            [
+                'name' => 'Озеро Лукомльское',
+                'nameGenitive' => 'озера Лукомльского',
+                'slug' => 'ozero-lukomlskoe',
+                'latitude' => 54.6610,
+                'longitude' => 29.1520,
+                'category' => 'park',
+                'shortDescription' => 'Крупное озеро у Новолукомля — главная природная достопримечательность и место отдыха у воды.',
+                'description' => '<p>Лукомльское озеро — визитная карточка города. Летом здесь гуляют по берегу, фотографируют воду и отдыхают на свежем воздухе.</p>',
+                'address' => 'берег озера Лукомльского, Новолукомль',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'озеро'],
+                    ['label' => 'Сезон', 'value' => 'пик — лето'],
+                ],
+                'guestTips' => [
+                    'На закате особенно красивые виды на воду.',
+                ],
+                'sortOrder' => 10,
+            ],
+            [
+                'name' => 'Набережная озера',
+                'nameGenitive' => 'набережной озера',
+                'slug' => 'naberezhnaya-ozera',
+                'latitude' => 54.6595,
+                'longitude' => 29.1505,
+                'category' => 'park',
+                'shortDescription' => 'Прогулочная набережная у Лукомльского озера — популярное место вечернего отдыха.',
+                'description' => '<p>Набережная у озера — лучший маршрут для спокойной прогулки в Новолукомле. Рядом зелёные зоны и виды на воду.</p>',
+                'address' => 'наб. озера Лукомльского, Новолукомль',
+                'facts' => [
+                    ['label' => 'Рядом', 'value' => 'озеро Лукомльское'],
+                    ['label' => 'Сезон', 'value' => 'особенно популярна летом'],
+                ],
+                'guestTips' => [
+                    'Удобно совместить с отдыхом у озера.',
+                ],
+                'sortOrder' => 20,
+            ],
+            [
+                'name' => 'Церковь Святителя Николая',
+                'nameGenitive' => 'Церкви Святителя Николая',
+                'slug' => 'nikolskaya-tserkov',
+                'latitude' => 54.6570,
+                'longitude' => 29.1480,
+                'category' => 'sight',
+                'shortDescription' => 'Православный храм Новолукомля — спокойная точка в маршруте по городу.',
+                'description' => '<p>Свято-Никольская церковь — действующий православный храм. Удобно посетить вместе с прогулкой к озеру.</p>',
+                'address' => 'ул. Центральная, Новолукомль',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'православный храм'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'После осмотра удобно спуститься к набережной озера.',
+                ],
+                'sortOrder' => 30,
+            ],
+            [
+                'name' => 'Городской парк',
+                'nameGenitive' => 'городского парка',
+                'slug' => 'gorodskoy-park',
+                'latitude' => 54.6580,
+                'longitude' => 29.1490,
+                'category' => 'park',
+                'shortDescription' => 'Небольшой городской парк — зелёная зона отдыха рядом с центром Новолукомля.',
+                'description' => '<p>Городской парк подходит для короткой прогулки и отдыха с детьми. Отсюда удобно продолжить маршрут к озеру.</p>',
+                'address' => 'центр города, Новолукомль',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'городской парк'],
+                    ['label' => 'Рядом', 'value' => 'озеро Лукомльское'],
+                ],
+                'guestTips' => [
+                    'Утром в парке спокойнее.',
+                ],
+                'sortOrder' => 40,
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   name: string,
+     *   nameGenitive: string,
+     *   slug: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   category: string,
+     *   shortDescription: string,
+     *   description: string,
+     *   address: string,
+     *   facts: list<array{label: string, value: string}>,
+     *   guestTips: list<string>,
+     *   sortOrder: int,
+     *   imageUrl?: string
+     * }>
+     */
+    private static function krichevLandmarks(): array
+    {
+        return [
+            [
+                'name' => 'Усадьба Потёмкиных',
+                'nameGenitive' => 'усадьбы Потёмкиных',
+                'slug' => 'usadba-potyomkinyh',
+                'latitude' => 53.7105,
+                'longitude' => 31.7170,
+                'category' => 'sight',
+                'shortDescription' => 'Дворцово-парковый ансамбль XVIII века — главная историческая достопримечательность Кричева.',
+                'description' => '<p>Усадьба Потёмкиных — редкий для Могилёвщины дворцовый комплекс. Здание и парк сохраняют атмосферу уездного Кричева екатерининской эпохи.</p>',
+                'address' => 'ул. Ленина, Кричев',
+                'facts' => [
+                    ['label' => 'Период', 'value' => 'конец XVIII века'],
+                    ['label' => 'Стиль', 'value' => 'классицизм'],
+                ],
+                'guestTips' => [
+                    'Лучшие фото — со стороны парка.',
+                ],
+                'sortOrder' => 10,
+            ],
+            [
+                'name' => 'Свято-Никольская церковь',
+                'nameGenitive' => 'Свято-Никольской церкви',
+                'slug' => 'nikolskaya-tserkov',
+                'latitude' => 53.7120,
+                'longitude' => 31.7195,
+                'category' => 'sight',
+                'shortDescription' => 'Православный храм Кричева — спокойная точка в маршруте по центру города.',
+                'description' => '<p>Свято-Никольская церковь — действующий православный храм. Удобно посетить вместе с усадьбой Потёмкиных и прогулкой к Сожу.</p>',
+                'address' => 'ул. Советская, Кричев',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'православный храм'],
+                    ['label' => 'Рядом', 'value' => 'центр города'],
+                ],
+                'guestTips' => [
+                    'Совместите визит с осмотром усадьбы.',
+                ],
+                'sortOrder' => 20,
+            ],
+            [
+                'name' => 'Набережная реки Сож',
+                'nameGenitive' => 'набережной реки Сож',
+                'slug' => 'naberezhnaya-sozh',
+                'latitude' => 53.7090,
+                'longitude' => 31.7150,
+                'category' => 'park',
+                'shortDescription' => 'Прогулочная зона у реки Сож — популярное место отдыха кричевлян и гостей города.',
+                'description' => '<p>Набережная Сожа даёт виды на воду и зелёные берега. Приятное место для вечерней прогулки после осмотра усадьбы.</p>',
+                'address' => 'наб. Сожа, Кричев',
+                'facts' => [
+                    ['label' => 'Река', 'value' => 'Сож'],
+                    ['label' => 'Сезон', 'value' => 'особенно популярна летом'],
+                ],
+                'guestTips' => [
+                    'На закате особенно красивые виды на реку.',
+                ],
+                'sortOrder' => 30,
+            ],
+            [
+                'name' => 'Вокзал Кричев',
+                'nameGenitive' => 'вокзала Кричев',
+                'slug' => 'vokzal-krichev',
+                'latitude' => 53.7065,
+                'longitude' => 31.7100,
+                'category' => 'station',
+                'shortDescription' => 'Железнодорожный вокзал Кричева — удобная точка для гостей, приезжающих на поезде.',
+                'description' => '<p>Кричевский вокзал обслуживает сообщение с Могилёвом и другими городами. До центра и усадьбы — короткая поездка на такси.</p>',
+                'address' => 'пл. Привокзальная, Кричев',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'железнодорожный вокзал'],
+                    ['label' => 'До центра', 'value' => 'около 10 минут на машине'],
+                ],
+                'guestTips' => [
+                    'Для раннего поезда удобно остановиться рядом с вокзалом.',
+                ],
+                'sortOrder' => 40,
             ],
         ];
     }

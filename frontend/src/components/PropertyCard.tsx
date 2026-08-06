@@ -37,6 +37,8 @@ interface PropertyCardProps {
   reviewCount?: number | null;
   /** When false, skip fade-in on mount (reduces Safari flicker when parent re-renders after auth/rates). */
   animateEntrance?: boolean;
+  /** Distance to landmark on catalog landmark pages, e.g. «290 м до объекта». */
+  landmarkDistanceLabel?: string;
 }
 
 const PropertyCard = ({
@@ -60,6 +62,7 @@ const PropertyCard = ({
   rating,
   reviewCount,
   animateEntrance = true,
+  landmarkDistanceLabel,
 }: PropertyCardProps) => {
   const { data: favoriteIds = [] } = useFavoriteIds();
   const { mutate: toggleFavorite } = useToggleFavorite();
@@ -172,18 +175,28 @@ const PropertyCard = ({
             )}
           </div>
 
-          <div className="flex items-baseline gap-1 mt-auto pt-3 border-t border-border">
-            <span className="font-display text-lg font-bold text-foreground">{price}</span>
-            {isDaily && <span className="text-sm text-muted-foreground">/ сутки</span>}
-            {!isDaily && (
-              <span className="text-xs text-muted-foreground">
-                {secondaryPrice ?? (primaryBynAmount != null ? formatBynWithUsd(primaryBynAmount).usd : null)}
-              </span>
+          <div className="mt-auto pt-3 border-t border-border">
+            <div className="flex items-baseline justify-between gap-2">
+              <div className="flex min-w-0 items-baseline gap-1">
+                <span className="font-display text-lg font-bold text-foreground">{price}</span>
+                {isDaily && <span className="text-sm text-muted-foreground">/ сутки</span>}
+                {!isDaily && (
+                  <span className="text-xs text-muted-foreground">
+                    {secondaryPrice ?? (primaryBynAmount != null ? formatBynWithUsd(primaryBynAmount).usd : null)}
+                  </span>
+                )}
+              </div>
+              {landmarkDistanceLabel ? (
+                <p className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 text-primary" />
+                  {landmarkDistanceLabel}
+                </p>
+              ) : null}
+            </div>
+            {isDaily && secondaryPrice && (
+              <span className="mt-0.5 block text-xs text-muted-foreground">{secondaryPrice}</span>
             )}
           </div>
-          {isDaily && secondaryPrice && (
-            <span className="text-xs text-muted-foreground mt-0.5">{secondaryPrice}</span>
-          )}
       </Link>
     </motion.div>
   );

@@ -8,7 +8,6 @@ import {
   SlidersHorizontal,
   X,
   Map as MapIcon,
-  MapPin,
   LayoutGrid,
   Rows3,
   ChevronLeft,
@@ -1169,6 +1168,10 @@ export default function CatalogPage({
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                       {paginatedDisplayProperties.map((property, i) => {
                         const { primaryAmount, primaryCurrency, secondary } = formatPropertyPrices(property, exchangeRates, selectedCurrency);
+                        const landmarkDistanceLabel =
+                          isLandmarkPage && property.landmarkDistanceKm != null
+                            ? `${formatLandmarkDistance(property.landmarkDistanceKm)} до объекта`
+                            : undefined;
                         return (
                           <div key={property.id}>
                             <PropertyCard
@@ -1192,13 +1195,8 @@ export default function CatalogPage({
                               animateEntrance={false}
                               rating={property.ratingAvg ?? null}
                               reviewCount={property.reviewCount ?? null}
+                              landmarkDistanceLabel={landmarkDistanceLabel}
                             />
-                            {isLandmarkPage && property.landmarkDistanceKm != null ? (
-                              <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                                <MapPin className="h-3.5 w-3.5 text-primary" />
-                                {formatLandmarkDistance(property.landmarkDistanceKm)} до объекта
-                              </p>
-                            ) : null}
                           </div>
                         );
                       })}
@@ -1278,6 +1276,10 @@ export default function CatalogPage({
                     <div className="flex flex-col gap-4">
                       {paginatedDisplayProperties.map((property, i) => {
                         const card = propertyToListCard(property, exchangeRates, metroFilterStationId, selectedCurrency);
+                        const landmarkDistanceLabel =
+                          isLandmarkPage && property.landmarkDistanceKm != null
+                            ? `${formatLandmarkDistance(property.landmarkDistanceKm)} до объекта`
+                            : undefined;
                         return (
                           <div
                             key={property.id}
@@ -1288,13 +1290,8 @@ export default function CatalogPage({
                               {...card}
                               index={i}
                               metroOnSeparateLine={false}
+                              landmarkDistanceLabel={landmarkDistanceLabel}
                             />
-                            {isLandmarkPage && property.landmarkDistanceKm != null ? (
-                              <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                                <MapPin className="h-3.5 w-3.5 text-primary" />
-                                {formatLandmarkDistance(property.landmarkDistanceKm)} до объекта
-                              </p>
-                            ) : null}
                           </div>
                         );
                       })}

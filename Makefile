@@ -78,7 +78,7 @@ backend-seed-demo: ## Replace all listings with demo data (regions/cities unchan
 	@echo "${GREEN}Seeding demo properties (app:seed-demo-properties)...${RESET}"
 	docker-compose exec php sh -lc "cd /var/www/backend && php bin/console app:seed-demo-properties"
 
-backend-seed-demo-landmarks: ## Upsert demo landmarks for regional cities (inactive)
+backend-seed-demo-landmarks: ## Upsert demo landmarks for catalog apartment cities (inactive)
 	@echo "${GREEN}Seeding demo landmarks (app:seed-demo-landmarks)...${RESET}"
 	docker-compose exec php sh -lc "cd /var/www/backend && php bin/console app:seed-demo-landmarks"
 

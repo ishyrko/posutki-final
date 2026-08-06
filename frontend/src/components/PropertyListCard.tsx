@@ -35,6 +35,8 @@ interface PropertyListCardProps {
   nearbyMetroStations?: NearbyMetroStation[];
   /** When true, metro badges stay below the address (e.g. catalog "list + map" on desktop). */
   metroOnSeparateLine?: boolean;
+  /** Distance to landmark on catalog landmark pages, e.g. «290 м до объекта». */
+  landmarkDistanceLabel?: string;
 }
 
 const lineColorClass = (line: number): string => {
@@ -74,6 +76,7 @@ const PropertyListCard = ({
   regionSlug,
   nearbyMetroStations = [],
   metroOnSeparateLine = false,
+  landmarkDistanceLabel,
 }: PropertyListCardProps) => {
   const href = id ? buildPropertyUrl(propertyType, id, regionSlug) : `/property/${index}`;
   const { data: favoriteIds = [] } = useFavoriteIds();
@@ -151,6 +154,12 @@ const PropertyListCard = ({
                 {secondaryLine && (
                   <span className="text-xs text-muted-foreground">{secondaryLine}</span>
                 )}
+                {landmarkDistanceLabel ? (
+                  <p className="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5 text-primary" />
+                    {landmarkDistanceLabel}
+                  </p>
+                ) : null}
               </div>
             </div>
             <div
