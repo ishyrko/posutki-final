@@ -756,6 +756,13 @@ export function buildCatalogMetaTitle(
 
   const apartmentLocation = resolveApartmentCatalogMetaLocation(parsed, metroStationName, cityDistrictName, landmarkPhrase);
   if (apartmentLocation) {
+    if (landmarkPhrase) {
+      const cityLocation =
+        CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
+        CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+      return `Снять квартиру на сутки ${apartmentLocation} ${cityLocation}. Посуточная аренда ${apartmentLocation}.`;
+    }
+
     return `Снять квартиру на сутки ${apartmentLocation} недорого. Посуточная аренда ${apartmentLocation}.`;
   }
 
@@ -780,6 +787,13 @@ export function buildCatalogMetaDescription(
 
   const apartmentLocation = resolveApartmentCatalogMetaLocation(parsed, metroStationName, cityDistrictName, landmarkPhrase);
   if (apartmentLocation) {
+    if (landmarkPhrase) {
+      const cityLocation =
+        CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
+        CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+      return `Квартиры на сутки ${apartmentLocation} ${cityLocation}. Посуточная аренда квартир ${apartmentLocation} на Posutki.by без посредников.`;
+    }
+
     return `Квартиры на сутки ${apartmentLocation}. Посуточная аренда квартир ${apartmentLocation} на Posutki.by без посредников.`;
   }
 
