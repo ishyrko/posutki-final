@@ -944,13 +944,15 @@ export default function CatalogPage({
   );
 
   const resultsBottomPadding = viewMode !== "map" ? "pb-8" : "pb-6";
+  const showLandmarkBanner = isLandmarkPage && landmark && currentPage === 1;
+  const breadcrumbSlot = children ? (
+    <div className="container mx-auto min-w-0 px-4 pt-3 sm:pt-4 [&_nav]:mb-0">{children}</div>
+  ) : null;
 
   return (
     <div className="min-h-screen bg-background">
-      {children ? (
-        <div className="container mx-auto min-w-0 px-4 pt-3 sm:pt-4 [&_nav]:mb-0">{children}</div>
-      ) : null}
-      {isLandmarkPage && landmark && currentPage === 1 ? (
+      {!showLandmarkBanner ? breadcrumbSlot : null}
+      {showLandmarkBanner ? (
         <CatalogLandmarkBanner
           landmark={landmark}
           citySlug={catalogCitySlug}
@@ -958,6 +960,7 @@ export default function CatalogPage({
           isLoading={isLoading}
         />
       ) : null}
+      {showLandmarkBanner ? breadcrumbSlot : null}
 
       {showMobileFilters && (
         <div className="md:hidden bg-card border-b border-border animate-fade-in">
