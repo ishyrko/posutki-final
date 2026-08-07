@@ -949,6 +949,25 @@ export default function CatalogPage({
     <div className="container mx-auto min-w-0 px-4 pt-3 sm:pt-4 [&_nav]:mb-0">{children}</div>
   ) : null;
 
+  const catalogHeading = (
+    <>
+      <h1 className="font-display font-bold text-2xl md:text-3xl text-foreground tracking-tight">
+        {pageTitle}
+      </h1>
+      {nearMetroLanding && (
+        <p className="text-muted-foreground text-sm md:text-base mt-2">
+          {NEAR_METRO_CATALOG_INTRO}
+        </p>
+      )}
+    </>
+  );
+
+  const landmarkResultsHeading = (
+    <h2 className="font-display font-bold text-xl md:text-2xl text-foreground tracking-tight">
+      Квартиры рядом
+    </h2>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       {!showLandmarkBanner ? breadcrumbSlot : null}
@@ -1021,6 +1040,8 @@ export default function CatalogPage({
           resultsBottomPadding,
         )}
       >
+        {!isLandmarkPage ? <div className="mb-5">{catalogHeading}</div> : null}
+
         <div className="flex gap-8">
           <aside className="hidden md:block w-64 shrink-0">
             <div className="sticky top-36 bg-card rounded-xl p-5 shadow-card">
@@ -1040,24 +1061,7 @@ export default function CatalogPage({
           </aside>
 
           <div className="flex-1 min-w-0">
-            {!isLandmarkPage ? (
-              <div className="mb-5">
-                <h1 className="font-display font-bold text-2xl md:text-3xl text-foreground tracking-tight">
-                  {pageTitle}
-                </h1>
-                {nearMetroLanding && (
-                  <p className="text-muted-foreground text-sm md:text-base mt-2 max-w-3xl">
-                    {NEAR_METRO_CATALOG_INTRO}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="mb-5">
-                <h2 className="font-display font-bold text-xl md:text-2xl text-foreground tracking-tight">
-                  Квартиры рядом
-                </h2>
-              </div>
-            )}
+            {isLandmarkPage ? <div className="mb-5">{landmarkResultsHeading}</div> : null}
 
             <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
               <p className="text-sm text-muted-foreground">
