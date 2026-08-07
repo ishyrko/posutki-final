@@ -184,7 +184,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
         <JsonLdScript data={buildPropertyJsonLd(property)} />
         <JsonLdScript data={buildBreadcrumbJsonLd(propertyBreadcrumbs, canonicalPath)} />
         <PropertyDetailClient id={numericPropertyId} initialProperty={property}>
-          <PageBreadcrumbs items={propertyBreadcrumbs} />
+          <PageBreadcrumbs items={propertyBreadcrumbs} hideCurrentOnMobile />
         </PropertyDetailClient>
       </>
     );

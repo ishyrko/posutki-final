@@ -948,7 +948,7 @@ export default function CatalogPage({
   return (
     <div className="min-h-screen bg-background">
       {children ? (
-        <div className="container mx-auto px-4 pt-4 pb-2">{children}</div>
+        <div className="container mx-auto min-w-0 px-4 pt-3 sm:pt-4 [&_nav]:mb-0">{children}</div>
       ) : null}
       {isLandmarkPage && landmark && currentPage === 1 ? (
         <CatalogLandmarkBanner
@@ -1011,7 +1011,13 @@ export default function CatalogPage({
         </div>
       )}
 
-      <section className={cn("container mx-auto px-4 py-8", resultsBottomPadding)}>
+      <section
+        className={cn(
+          "container mx-auto px-4",
+          children ? "pt-3 pb-8 sm:pt-4" : "py-8",
+          resultsBottomPadding,
+        )}
+      >
         <div className="flex gap-8">
           <aside className="hidden md:block w-64 shrink-0">
             <div className="sticky top-36 bg-card rounded-xl p-5 shadow-card">

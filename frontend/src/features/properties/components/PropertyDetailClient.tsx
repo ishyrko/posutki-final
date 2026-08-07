@@ -525,7 +525,7 @@ export default function PropertyDetailClient({
     <div className="min-h-screen bg-background">
       <main className="min-w-0">
         {children ? (
-          <div className="container mx-auto min-w-0 px-4 py-4">{children}</div>
+          <div className="container mx-auto min-w-0 px-4 pb-1 pt-2 sm:py-4">{children}</div>
         ) : null}
 
         <section className="container mx-auto min-w-0 px-4 mb-8">
