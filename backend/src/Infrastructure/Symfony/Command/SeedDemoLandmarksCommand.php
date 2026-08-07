@@ -12,6 +12,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -30,9 +31,32 @@ final class SeedDemoLandmarksCommand extends Command
         parent::__construct();
     }
 
+    protected function configure(): void
+    {
+        $this->addOption(
+            'force',
+            'f',
+            InputOption::VALUE_NONE,
+            'Run without confirmation',
+        );
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+
+        if (!$input->getOption('force')) {
+            $confirmed = $io->confirm(
+                'Перезаписать достопримечательности демо-данными? Существующие записи с теми же slug будут обновлены и выключены (is_active=false). На проде это затрёт правки из админки.',
+                false,
+            );
+            if (!$confirmed) {
+                $io->warning('Отменено.');
+
+                return Command::SUCCESS;
+            }
+        }
+
         $total = 0;
         $skippedCities = [];
 
@@ -367,6 +391,69 @@ final class SeedDemoLandmarksCommand extends Command
                     'В дни матчей и концертов закладывайте время на дорогу к площадке.',
                 ],
                 'sortOrder' => 90,
+            ],
+            [
+                'name' => 'Парк Челюскинцев',
+                'nameGenitive' => 'Парка Челюскинцев',
+                'slug' => 'park-chelyuskintsev',
+                'latitude' => 53.9219,
+                'longitude' => 27.6168,
+                'category' => 'park',
+                'shortDescription' => 'Один из центральных парков Минска у метро «Парк Челюскинцев»: аллеи, аттракционы и зелёная зона на проспекте Независимости.',
+                'description' => '<p>Парк Челюскинцев — крупный парк культуры и отдыха в Первомайском районе Минска. Здесь удобно гулять, отдыхать с детьми и совмещать прогулку с поездкой на метро.</p><p>Рядом проспект Независимости и станция метро «Парк Челюскинцев» — удобная точка для краткосрочной аренды жилья в зелёном районе.</p>',
+                'address' => 'пр. Независимости, 84/1, Минск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'парк культуры и отдыха'],
+                    ['label' => 'Метро', 'value' => 'Парк Челюскинцев'],
+                    ['label' => 'Район', 'value' => 'Первомайский'],
+                ],
+                'guestTips' => [
+                    'От метро «Парк Челюскинцев» — несколько минут пешком.',
+                    'Удобно совместить с прогулкой по проспекту Независимости.',
+                ],
+                'sortOrder' => 100,
+            ],
+            [
+                'name' => 'Dana Mall',
+                'nameGenitive' => 'Dana Mall',
+                'slug' => 'dana-mall',
+                'latitude' => 53.9337,
+                'longitude' => 27.6525,
+                'category' => 'mall',
+                'shortDescription' => 'Крупный торгово-развлекательный центр у Национальной библиотеки и метро «Восток»: магазины, кинотеатр, фудкорт и паркинг.',
+                'description' => '<p>Dana Mall — один из популярных ТРЦ Минска рядом с Национальной библиотекой. Здесь магазины международных и белорусских брендов, кинотеатр, детская зона и большой фудкорт.</p><p>До входа — около минуты пешком от метро «Восток», поэтому район удобен для гостей, которые хотят жить рядом с шопингом и транспортом.</p>',
+                'address' => 'ул. Петра Мстиславца, 11, Минск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'торгово-развлекательный центр'],
+                    ['label' => 'Метро', 'value' => 'Восток'],
+                    ['label' => 'Рядом', 'value' => 'Национальная библиотека'],
+                ],
+                'guestTips' => [
+                    'От метро «Восток» выходите в сторону Национальной библиотеки.',
+                    'Есть подземный паркинг — удобно приезжать на машине.',
+                ],
+                'sortOrder' => 110,
+            ],
+            [
+                'name' => 'ТЦ Галерея',
+                'nameGenitive' => 'ТЦ Галерея',
+                'slug' => 'tc-galereya',
+                'latitude' => 53.9086,
+                'longitude' => 27.5486,
+                'category' => 'mall',
+                'shortDescription' => 'Galleria Minsk на проспекте Победителей — шопинг и развлечения в центре, рядом с Немигой и Дворцом спорта.',
+                'description' => '<p>ТРЦ Galleria Minsk (ТЦ Галерея) расположен на проспекте Победителей, 9 — в шаге от исторического центра, набережной Свислочи и Дворца спорта.</p><p>Удобен для гостей, которые хотят жить в центре и иметь рядом крупный торговый комплекс, кафе и транспорт.</p>',
+                'address' => 'пр. Победителей, 9, Минск',
+                'facts' => [
+                    ['label' => 'Тип', 'value' => 'торгово-развлекательный центр'],
+                    ['label' => 'Метро', 'value' => 'Немига'],
+                    ['label' => 'Рядом', 'value' => 'Дворец спорта'],
+                ],
+                'guestTips' => [
+                    'Ближайшее метро — «Немига», дальше несколько минут пешком.',
+                    'Удобно совместить с прогулкой по центру и набережной.',
+                ],
+                'sortOrder' => 120,
             ],
         ];
     }
