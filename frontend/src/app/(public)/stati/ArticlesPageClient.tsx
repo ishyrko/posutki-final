@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -27,6 +28,7 @@ type DisplayArticle = {
 type ArticlesPageClientProps = {
   categories: ArticleCategory[];
   articles: Article[];
+  children?: ReactNode;
 };
 
 function toDisplayArticle(article: Article): DisplayArticle {
@@ -46,6 +48,7 @@ function toDisplayArticle(article: Article): DisplayArticle {
 export default function ArticlesPageClient({
   categories,
   articles,
+  children,
 }: ArticlesPageClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -112,6 +115,8 @@ export default function ArticlesPageClient({
   return (
     <div className="min-h-screen bg-background pt-10 pb-16">
       <div className="container mx-auto px-4">
+        {children ? <div className="mb-8">{children}</div> : null}
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -1,9 +1,9 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, ArrowLeft, Tag, Calendar } from "lucide-react";
-import Link from "next/link";
+import { Clock, Tag, Calendar } from "lucide-react";
 import { RichContentHtml } from "@/components/RichContentHtml";
 import { Article } from "@/features/articles/types";
 import { estimateArticleReadMinutes } from "@/features/articles/articleHtmlUtils";
@@ -15,6 +15,7 @@ type ArticleContentClientProps = {
   article: Article;
   /** Pre-sanitized HTML from the server when content is HTML; otherwise null. */
   sanitizedHtml: string | null;
+  children?: ReactNode;
 };
 
 function formatDate(dateStr: string): string {
@@ -86,6 +87,7 @@ function ArticleBody({
 export default function ArticleContentClient({
   article,
   sanitizedHtml,
+  children,
 }: ArticleContentClientProps) {
   const content = typeof article.content === "string" ? article.content : "";
   const tags = Array.isArray(article.tags) ? article.tags : [];
@@ -114,15 +116,7 @@ export default function ArticleContentClient({
     <div className="min-h-screen bg-background pt-10 pb-16">
       <div className="container mx-auto px-4">
         <article>
-          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="mb-8">
-            <Link
-              href={article.categorySlug ? `/stati/${article.categorySlug}/` : "/stati/"}
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 shrink-0" />
-              {article.categoryName || "Все статьи"}
-            </Link>
-          </motion.div>
+          {children ? <div className="mb-8">{children}</div> : null}
 
           <motion.header initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-display text-foreground mb-6 leading-tight">
@@ -196,20 +190,6 @@ export default function ArticleContentClient({
             </motion.div>
           )}
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.25 }}
-            className="mt-10 pt-6 border-t border-border"
-          >
-            <Link
-              href="/stati/"
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Все статьи
-            </Link>
-          </motion.div>
         </article>
       </div>
     </div>

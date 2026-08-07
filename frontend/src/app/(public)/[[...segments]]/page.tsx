@@ -44,6 +44,12 @@ import PropertyDetailClient from "../../../features/properties/components/Proper
 import { JsonLdScript } from "@/lib/json-ld/json-ld-script";
 import { buildPropertyJsonLd } from "@/lib/json-ld/property";
 import { buildCatalogBreadcrumbJsonLd } from "@/lib/json-ld/catalog";
+import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
+import {
+  buildCatalogBreadcrumbTrail,
+  buildPropertyBreadcrumbTrail,
+  buildBreadcrumbJsonLd,
+} from "@/lib/breadcrumbs";
 
 interface PageProps {
   params: Promise<{ segments?: string[] }>;
@@ -171,10 +177,15 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
       notFound();
     }
 
+    const propertyBreadcrumbs = buildPropertyBreadcrumbTrail(property);
+
     return (
       <>
         <JsonLdScript data={buildPropertyJsonLd(property)} />
-        <PropertyDetailClient id={numericPropertyId} initialProperty={property} />
+        <JsonLdScript data={buildBreadcrumbJsonLd(propertyBreadcrumbs, canonicalPath)} />
+        <PropertyDetailClient id={numericPropertyId} initialProperty={property}>
+          <PageBreadcrumbs items={propertyBreadcrumbs} />
+        </PropertyDetailClient>
       </>
     );
   }
@@ -246,10 +257,18 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     };
   }
 
+  const breadcrumbNames = {
+    metroStationName,
+    cityDistrictName,
+    landmarkPhrase,
+    landmarkName: landmark?.name,
+  };
+  const catalogBreadcrumbs = buildCatalogBreadcrumbTrail(parsed, breadcrumbNames);
+
   return (
     <>
       {isFirstPage ? (
-        <JsonLdScript data={buildCatalogBreadcrumbJsonLd(parsed, title)} />
+        <JsonLdScript data={buildCatalogBreadcrumbJsonLd(parsed, breadcrumbNames)} />
       ) : null}
       <CatalogPage
         parsed={parsed}
@@ -257,7 +276,9 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
         landmark={landmark}
         landmarkFooter={landmarkFooter}
         citySeoFooter={citySeoFooter}
-      />
+      >
+        <PageBreadcrumbs items={catalogBreadcrumbs} />
+      </CatalogPage>
     </>
   );
 }

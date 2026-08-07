@@ -3,6 +3,9 @@ import { Suspense } from "react";
 import { Article, ArticleCategory } from "@/features/articles/types";
 import { fetchPublicApi } from "@/lib/server-api";
 import ArticlesPageClient from "./ArticlesPageClient";
+import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
+import { buildArticlesIndexBreadcrumbTrail, buildBreadcrumbJsonLd } from "@/lib/breadcrumbs";
+import { JsonLdScript } from "@/lib/json-ld/json-ld-script";
 
 export const revalidate = false;
 
@@ -38,10 +41,14 @@ export default async function ArticlesPage() {
 
   const categories = categoriesResult.status === "fulfilled" ? categoriesResult.value : [];
   const articles = articlesResult.status === "fulfilled" ? articlesResult.value : [];
+  const breadcrumbs = buildArticlesIndexBreadcrumbTrail();
 
   return (
     <Suspense fallback={<ArticlesPageFallback />}>
-      <ArticlesPageClient categories={categories} articles={articles} />
+      <JsonLdScript data={buildBreadcrumbJsonLd(breadcrumbs, "/stati/")} />
+      <ArticlesPageClient categories={categories} articles={articles}>
+        <PageBreadcrumbs items={breadcrumbs} />
+      </ArticlesPageClient>
     </Suspense>
   );
 }

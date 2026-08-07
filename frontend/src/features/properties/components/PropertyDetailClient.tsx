@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Heart, Share2, MapPin, BedDouble, Bath, Maximize,
+  Heart, Share2, MapPin, BedDouble, Bath, Maximize,
   Building2, Calendar, CalendarCheck, Layers, Phone, MessageCircle, TrainFront,
   ChevronLeft, ChevronRight, Shield, Eye, Clock, Send, CheckCircle,
   Users, Utensils, Wifi, Tv, Sofa, Car, Waves, Wind,
@@ -50,7 +50,7 @@ import {
   GalleryPortraitFrame,
   useImageClearlyLandscape,
 } from "@/features/properties/components/property-gallery-frames";
-import { buildCatalogUrl, buildCatalogUrlFromAddress } from "@/features/catalog/slugs";
+import { buildCatalogUrl } from "@/features/catalog/slugs";
 import { toast } from "sonner";
 import {
   HEADER_CITY_SLUG_SET,
@@ -83,6 +83,7 @@ import { TelegramIcon, ViberIcon, WhatsAppIcon } from "@/components/ContactMesse
 type PropertyDetailClientProps = {
   id: number;
   initialProperty: Property;
+  children?: ReactNode;
 };
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
@@ -156,7 +157,11 @@ function getContactPhones(property: Property): ContactPhoneEntry[] {
   return [];
 }
 
-export default function PropertyDetailClient({ id, initialProperty }: PropertyDetailClientProps) {
+export default function PropertyDetailClient({
+  id,
+  initialProperty,
+  children,
+}: PropertyDetailClientProps) {
   const ssrFetchedAtRef = useRef(Date.now());
   const { data: property, isLoading, isError } = useProperty(id, {
     initialData: initialProperty,
@@ -322,11 +327,6 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
     return `${day}.${month}.${year}`;
   };
   const addressStr = formatAddress(property.address);
-  const backToCatalogHref = buildCatalogUrlFromAddress(
-    property.address.regionName,
-    property.address.citySlug,
-    property.type,
-  );
   const coords = property.coordinates;
   const { ref: mapSectionRef, isNear: isMapNear } = useNearViewport();
   const nearbyMetroStations = property.nearbyMetroStations ?? [];
@@ -524,12 +524,9 @@ export default function PropertyDetailClient({ id, initialProperty }: PropertyDe
   return (
     <div className="min-h-screen bg-background">
       <main className="min-w-0">
-        <div className="container mx-auto min-w-0 px-4 py-4">
-          <Link href={backToCatalogHref} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Назад к объявлениям
-          </Link>
-        </div>
+        {children ? (
+          <div className="container mx-auto min-w-0 px-4 py-4">{children}</div>
+        ) : null}
 
         <section className="container mx-auto min-w-0 px-4 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 rounded-2xl overflow-hidden max-h-[500px]">

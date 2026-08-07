@@ -289,6 +289,7 @@ interface CatalogPageProps {
   /** Pre-rendered on the server in page.tsx; passed as props to avoid RSC children in this client tree (Radix useId). */
   landmarkFooter?: CatalogLandmarkFooterProps | null;
   citySeoFooter?: CatalogCitySeoFooterProps | null;
+  children?: ReactNode;
 }
 
 export default function CatalogPage({
@@ -297,6 +298,7 @@ export default function CatalogPage({
   landmark,
   landmarkFooter = null,
   citySeoFooter = null,
+  children,
 }: CatalogPageProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -945,6 +947,9 @@ export default function CatalogPage({
 
   return (
     <div className="min-h-screen bg-background">
+      {children ? (
+        <div className="container mx-auto px-4 pt-4 pb-2">{children}</div>
+      ) : null}
       {isLandmarkPage && landmark && currentPage === 1 ? (
         <CatalogLandmarkBanner
           landmark={landmark}

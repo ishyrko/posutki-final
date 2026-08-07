@@ -1,9 +1,10 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Search, Clock, ArrowUpRight, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import { Search, Clock, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ type CategoryPageClientProps = {
   currentCategory: ArticleCategory;
   allCategories: ArticleCategory[];
   articles: Article[];
+  children?: ReactNode;
 };
 
 export default function CategoryPageClient({
@@ -56,6 +58,7 @@ export default function CategoryPageClient({
   currentCategory,
   allCategories,
   articles,
+  children,
 }: CategoryPageClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -119,19 +122,7 @@ export default function CategoryPageClient({
   return (
     <div className="min-h-screen bg-background pt-10 pb-16">
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="mb-8"
-        >
-          <Link
-            href="/stati/"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Все статьи
-          </Link>
-        </motion.div>
+        {children ? <div className="mb-8">{children}</div> : null}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

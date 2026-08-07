@@ -9,6 +9,11 @@ import { sanitizeArticleHtml } from "@/features/articles/sanitizeArticleHtml";
 import { JsonLdScript } from "@/lib/json-ld/json-ld-script";
 import { buildArticleJsonLd } from "@/lib/json-ld/article";
 import ArticleContentClient from "./ArticleContentClient";
+import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
+import {
+  buildArticleBreadcrumbTrail,
+  buildBreadcrumbJsonLd,
+} from "@/lib/breadcrumbs";
 
 /** Fully static; cache invalidated via on-demand revalidation from admin. */
 export const revalidate = false;
@@ -100,11 +105,20 @@ export default async function ArticlePage({
 
   const content = typeof article.content === "string" ? article.content : "";
   const sanitizedHtml = sanitizeArticleHtml(content);
+  const breadcrumbs = buildArticleBreadcrumbTrail(article);
 
   return (
     <>
       <JsonLdScript data={buildArticleJsonLd(article)} />
-      <ArticleContentClient article={article} sanitizedHtml={sanitizedHtml} />
+      <JsonLdScript
+        data={buildBreadcrumbJsonLd(
+          breadcrumbs,
+          `/stati/${article.categorySlug}/${article.slug}/`,
+        )}
+      />
+      <ArticleContentClient article={article} sanitizedHtml={sanitizedHtml}>
+        <PageBreadcrumbs items={breadcrumbs} />
+      </ArticleContentClient>
     </>
   );
 }

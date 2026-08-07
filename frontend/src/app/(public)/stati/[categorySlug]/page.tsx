@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Article, ArticleCategory } from "@/features/articles/types";
 import { fetchPublicApi } from "@/lib/server-api";
 import CategoryPageClient from "../category/[slug]/CategoryPageClient";
+import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
+import {
+  buildArticleCategoryBreadcrumbTrail,
+  buildBreadcrumbJsonLd,
+} from "@/lib/breadcrumbs";
+import { JsonLdScript } from "@/lib/json-ld/json-ld-script";
 
 export const revalidate = false;
 
@@ -87,15 +93,19 @@ export default async function CategoryPage({
   const currentCategory = categoryResult.value;
   const articles = articlesResult.status === "fulfilled" ? articlesResult.value : [];
   const allCategories = categoriesResult.status === "fulfilled" ? categoriesResult.value : [];
+  const breadcrumbs = buildArticleCategoryBreadcrumbTrail(currentCategory);
 
   return (
     <Suspense fallback={<CategoryArticlesPageFallback />}>
+      <JsonLdScript data={buildBreadcrumbJsonLd(breadcrumbs, `/stati/${categorySlug}/`)} />
       <CategoryPageClient
         slug={categorySlug}
         currentCategory={currentCategory}
         allCategories={allCategories}
         articles={articles}
-      />
+      >
+        <PageBreadcrumbs items={breadcrumbs} />
+      </CategoryPageClient>
     </Suspense>
   );
 }
