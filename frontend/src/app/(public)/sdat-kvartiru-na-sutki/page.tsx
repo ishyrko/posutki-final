@@ -11,6 +11,8 @@ import { OwnerFaq } from '@/features/owner-landing/components/OwnerFaq';
 import { OwnerSeoText } from '@/features/owner-landing/components/OwnerSeoText';
 import { OwnerLandingCta } from '@/features/owner-landing/components/OwnerLandingCta';
 import { OWNER_LANDING_FAQ } from '@/features/owner-landing/faq-data';
+import { JsonLdScript } from '@/lib/json-ld/json-ld-script';
+import { buildFaqPageJsonLd } from '@/lib/json-ld/faq';
 
 const PAGE_PATH = '/sdat-kvartiru-na-sutki/';
 
@@ -24,25 +26,7 @@ export const metadata: Metadata = {
 };
 
 function OwnerFaqJsonLd() {
-    const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: OWNER_LANDING_FAQ.map((item) => ({
-            '@type': 'Question',
-            name: item.question,
-            acceptedAnswer: {
-                '@type': 'Answer',
-                text: item.answer,
-            },
-        })),
-    };
-
-    return (
-        <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-    );
+    return <JsonLdScript data={buildFaqPageJsonLd(OWNER_LANDING_FAQ)} />;
 }
 
 export default function OwnerLandingPage() {

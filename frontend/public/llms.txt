@@ -1,0 +1,37 @@
+# Посутки.by
+
+> Posutki.by - посуточная аренда квартир, домов и усадеб в Беларуси. Объявления от владельцев, без комиссии с брони. Поиск по городам, районам, метро и достопримечательностям.
+
+Гости находят жильё на сутки в Минске, Бресте, Витебске, Гомеле, Гродно, Могилёве и других городах. Владельцы размещают объявления бесплатно.
+
+## Каталог и поиск
+
+- [Главная](https://posutki.by/): поиск по городу и числу гостей
+- [Квартиры на сутки в Минске](https://posutki.by/kvartiry/): каталог квартир в Минске
+- [Квартиры на сутки в Бресте](https://posutki.by/brest/kvartiry/): каталог квартир в Бресте
+- [Квартиры на сутки в Гродно](https://posutki.by/grodno/kvartiry/): каталог квартир в Гродно
+- [Квартиры на сутки в Витебске](https://posutki.by/vitebsk/kvartiry/): каталог квартир в Витебске
+- [Квартиры на сутки в Гомеле](https://posutki.by/gomel/kvartiry/): каталог квартир в Гомеле
+- [Квартиры на сутки в Могилёве](https://posutki.by/mogilev/kvartiry/): каталог квартир в Могилёве
+- [Дома на сутки](https://posutki.by/doma/): дома, коттеджи и усадьбы
+- [Квартиры возле метро в Минске](https://posutki.by/kvartiry/vozle-metro/): квартиры рядом с метро
+
+## Для владельцев
+
+- [Сдать квартиру на сутки](https://posutki.by/sdat-kvartiru-na-sutki/): бесплатное размещение, FAQ для владельцев
+- [Разместить объявление](https://posutki.by/razmestit/): форма подачи объявления
+- [Тарифы и VIP](https://posutki.by/oplata/): VIP-уровни в каталоге
+- [Интеграция с RealtyCalendar](https://posutki.by/integratsiya-s-realty-calendar/): синхронизация календаря через iCal
+
+## Сервис и поддержка
+
+- [О нас](https://posutki.by/o-nas/): о сервисе
+- [Контакты](https://posutki.by/kontakty/): телефон, email, форма обратной связи
+- [Статьи](https://posutki.by/stati/): материалы о посуточной аренде и путешествиях по Беларуси
+
+## Optional
+
+- [Политика конфиденциальности](https://posutki.by/politika-konfidentsialnosti/)
+- [Публичная оферта](https://posutki.by/publichnaya-oferta/)
+- [Условия использования](https://posutki.by/usloviya-ispolzovaniya/)
+- [Согласие на обработку персональных данных](https://posutki.by/soglasie-na-obrabotku-personalnyh-dannyh/)

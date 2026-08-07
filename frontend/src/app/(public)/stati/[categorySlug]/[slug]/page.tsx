@@ -6,6 +6,8 @@ import { ARTICLE_FALLBACK_IMAGE } from "@/features/articles/articleCardDisplay";
 import { resolveArticleImageUrl } from "@/features/articles/image";
 import { fetchPublicApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { sanitizeArticleHtml } from "@/features/articles/sanitizeArticleHtml";
+import { JsonLdScript } from "@/lib/json-ld/json-ld-script";
+import { buildArticleJsonLd } from "@/lib/json-ld/article";
 import ArticleContentClient from "./ArticleContentClient";
 
 /** Fully static; cache invalidated via on-demand revalidation from admin. */
@@ -99,5 +101,10 @@ export default async function ArticlePage({
   const content = typeof article.content === "string" ? article.content : "";
   const sanitizedHtml = sanitizeArticleHtml(content);
 
-  return <ArticleContentClient article={article} sanitizedHtml={sanitizedHtml} />;
+  return (
+    <>
+      <JsonLdScript data={buildArticleJsonLd(article)} />
+      <ArticleContentClient article={article} sanitizedHtml={sanitizedHtml} />
+    </>
+  );
 }

@@ -36,6 +36,127 @@ Allow: /*.jpeg$
 Allow: /*.webp$
 Allow: /*.woff2$
 
+# AI search crawlers — public catalog, articles and landing pages
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /kabinet
+Disallow: /kabinet/
+Disallow: /reset-password
+Disallow: /reset-password/
+Disallow: /verify-email
+Disallow: /verify-email/
+Disallow: /verify-email-pending
+Disallow: /verify-email-pending/
+Disallow: /confirm-email-change
+Disallow: /confirm-email-change/
+Disallow: /login/
+Disallow: /api/
+Disallow: /revalidate
+Disallow: /revalidate/
+Disallow: /_next/
+Disallow: /preload/
+Disallow: /*/preload/
+
+User-agent: GPTBot
+Allow: /
+Disallow: /kabinet
+Disallow: /kabinet/
+Disallow: /reset-password
+Disallow: /reset-password/
+Disallow: /verify-email
+Disallow: /verify-email/
+Disallow: /verify-email-pending
+Disallow: /verify-email-pending/
+Disallow: /confirm-email-change
+Disallow: /confirm-email-change/
+Disallow: /login/
+Disallow: /api/
+Disallow: /revalidate
+Disallow: /revalidate/
+Disallow: /_next/
+Disallow: /preload/
+Disallow: /*/preload/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /kabinet
+Disallow: /kabinet/
+Disallow: /login/
+Disallow: /api/
+Disallow: /revalidate
+Disallow: /revalidate/
+Disallow: /_next/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /kabinet
+Disallow: /kabinet/
+Disallow: /reset-password
+Disallow: /reset-password/
+Disallow: /verify-email
+Disallow: /verify-email/
+Disallow: /verify-email-pending
+Disallow: /verify-email-pending/
+Disallow: /confirm-email-change
+Disallow: /confirm-email-change/
+Disallow: /login/
+Disallow: /api/
+Disallow: /revalidate
+Disallow: /revalidate/
+Disallow: /_next/
+Disallow: /preload/
+Disallow: /*/preload/
+
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /kabinet
+Disallow: /kabinet/
+Disallow: /login/
+Disallow: /api/
+Disallow: /revalidate
+Disallow: /revalidate/
+Disallow: /_next/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /kabinet
+Disallow: /kabinet/
+Disallow: /reset-password
+Disallow: /reset-password/
+Disallow: /verify-email
+Disallow: /verify-email/
+Disallow: /verify-email-pending
+Disallow: /verify-email-pending/
+Disallow: /confirm-email-change
+Disallow: /confirm-email-change/
+Disallow: /login/
+Disallow: /api/
+Disallow: /revalidate
+Disallow: /revalidate/
+Disallow: /_next/
+Disallow: /preload/
+Disallow: /*/preload/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /kabinet
+Disallow: /kabinet/
+Disallow: /login/
+Disallow: /api/
+Disallow: /revalidate
+Disallow: /revalidate/
+Disallow: /_next/
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /kabinet
+Disallow: /kabinet/
+Disallow: /login/
+Disallow: /api/
+Disallow: /revalidate
+Disallow: /revalidate/
+Disallow: /_next/
+
 Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content
 Clean-param: fbclid&gclid&yclid&_openstat&ref&from&next
 

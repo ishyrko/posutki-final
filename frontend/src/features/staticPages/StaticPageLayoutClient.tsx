@@ -1,16 +1,19 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { RichContentHtml } from "@/components/RichContentHtml";
 
 type StaticPageLayoutClientProps = {
   title: string;
   sanitizedHtml: string;
+  afterContent?: ReactNode;
 };
 
 export default function StaticPageLayoutClient({
   title,
   sanitizedHtml,
+  afterContent,
 }: StaticPageLayoutClientProps) {
   return (
     <section className="bg-background pt-10 pb-16">
@@ -35,6 +38,7 @@ export default function StaticPageLayoutClient({
             html={sanitizedHtml}
             className="prose prose-sm max-w-none prose-neutral prose-headings:font-semibold prose-p:text-muted-foreground prose-li:text-muted-foreground dark:prose-invert [&_a]:text-primary [&_a]:underline"
           />
+          {afterContent}
         </motion.div>
       </div>
     </section>

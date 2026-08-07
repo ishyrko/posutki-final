@@ -26,7 +26,7 @@ import { formatAddress, Property } from "@/features/properties/types";
 import CatalogPage from "@/features/catalog/CatalogPage";
 import HomePage from "@/features/home/HomePage";
 import FeaturesSection from "@/components/FeaturesSection";
-import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
+import { fetchApi, fetchPublicApiNullable, fetchPublicApiPaginated } from "@/lib/server-api";
 import { fetchFeaturedPropertiesForHome } from "@/lib/featured-properties-server";
 import { fetchCityApartmentCountsForHome } from "@/lib/city-apartment-counts-server";
 import { fetchCityCatalogSeoText } from "@/lib/city-catalog-seo-server";
@@ -41,6 +41,14 @@ import {
 import { sanitizeArticleHtml } from "@/features/articles/sanitizeArticleHtml";
 import { fetchCityLandmarks } from "@/lib/landmark-server";
 import PropertyDetailClient from "../../../features/properties/components/PropertyDetailClient";
+import { JsonLdScript } from "@/lib/json-ld/json-ld-script";
+import { buildPropertyJsonLd } from "@/lib/json-ld/property";
+import {
+  buildBaseCatalogFiltersFromParsed,
+  buildCatalogBreadcrumbJsonLd,
+  buildCatalogFiltersQuery,
+  buildCatalogItemListJsonLd,
+} from "@/lib/json-ld/catalog";
 
 interface PageProps {
   params: Promise<{ segments?: string[] }>;
@@ -168,7 +176,12 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
       notFound();
     }
 
-    return <PropertyDetailClient id={numericPropertyId} initialProperty={property} />;
+    return (
+      <>
+        <JsonLdScript data={buildPropertyJsonLd(property)} />
+        <PropertyDetailClient id={numericPropertyId} initialProperty={property} />
+      </>
+    );
   }
 
   const parsed = parseSegments(segments);
@@ -238,13 +251,37 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     };
   }
 
+  let catalogJsonLd: Record<string, unknown>[] | null = null;
+  if (isFirstPage) {
+    try {
+      const catalogFilters = buildBaseCatalogFiltersFromParsed(parsed);
+      const query = buildCatalogFiltersQuery(catalogFilters);
+      const { data: catalogProperties } = await fetchPublicApiPaginated<Property[]>(
+        `/properties?${query}`,
+        { next: { revalidate: 3600 } },
+      );
+      const catalogPath = buildCatalogCanonicalPath(parsed);
+      catalogJsonLd = [
+        buildCatalogBreadcrumbJsonLd(parsed, title),
+        buildCatalogItemListJsonLd(catalogProperties, title, catalogPath),
+      ];
+    } catch {
+      catalogJsonLd = [buildCatalogBreadcrumbJsonLd(parsed, title)];
+    }
+  }
+
   return (
-    <CatalogPage
+    <>
+      {catalogJsonLd?.map((item, index) => (
+        <JsonLdScript key={index} data={item} />
+      ))}
+      <CatalogPage
       parsed={parsed}
       title={title}
       landmark={landmark}
       landmarkFooter={landmarkFooter}
       citySeoFooter={citySeoFooter}
     />
+    </>
   );
 }

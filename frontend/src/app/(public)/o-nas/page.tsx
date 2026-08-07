@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 import { sanitizeArticleHtml } from "@/features/articles/sanitizeArticleHtml";
 import { fetchStaticPage } from "@/features/staticPages/api";
 import StaticPageLayoutClient from "@/features/staticPages/StaticPageLayoutClient";
+import { ABOUT_FAQ } from "@/features/about/faq-data";
+import { EmbeddedFaqSection } from "@/components/seo/EmbeddedFaqSection";
+import { JsonLdScript } from "@/lib/json-ld/json-ld-script";
+import { buildFaqPageJsonLd } from "@/lib/json-ld/faq";
 
 export const revalidate = false;
 
@@ -33,6 +37,13 @@ export default async function AboutPage() {
   const sanitizedHtml = sanitizeArticleHtml(raw) ?? "";
 
   return (
-    <StaticPageLayoutClient title={page.title} sanitizedHtml={sanitizedHtml} />
+    <>
+      <JsonLdScript data={buildFaqPageJsonLd(ABOUT_FAQ)} />
+      <StaticPageLayoutClient
+        title={page.title}
+        sanitizedHtml={sanitizedHtml}
+        afterContent={<EmbeddedFaqSection items={ABOUT_FAQ} />}
+      />
+    </>
   );
 }
