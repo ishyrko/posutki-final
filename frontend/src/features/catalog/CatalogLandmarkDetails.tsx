@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Lightbulb, MapPin, Train } from "lucide-react";
 import { formatLandmarkDistance } from "@/features/landmarks/distance";
-import { resolveLandmarkImageUrl } from "@/features/landmarks/image";
+import { resolveLandmarkThumbnailUrl } from "@/features/landmarks/image";
 import type { Landmark, LandmarkListItem } from "@/features/landmarks/types";
 import { buildLandmarkCatalogUrl, resolveCatalogCityNominative } from "@/features/catalog/slugs";
 
@@ -120,7 +120,7 @@ export default function CatalogLandmarkDetails({
           </h3>
           <div className="grid sm:grid-cols-3 gap-6">
             {relatedLandmarks.map((related) => {
-              const imageUrl = resolveLandmarkImageUrl(related.imageUrl);
+              const imageUrl = resolveLandmarkThumbnailUrl(related.imageUrl);
               const href = buildLandmarkCatalogUrl(citySlug, related.slug);
 
               return (
@@ -135,8 +135,8 @@ export default function CatalogLandmarkDetails({
                       <img
                         src={imageUrl}
                         alt={related.name}
-                        width={1600}
-                        height={900}
+                        width={640}
+                        height={400}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />

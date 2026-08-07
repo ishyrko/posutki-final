@@ -2,7 +2,7 @@ import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { buildLandmarkCatalogUrl } from "@/features/catalog/slugs";
 import { formatLandmarkDistance } from "@/features/landmarks/distance";
-import { resolveLandmarkImageUrl } from "@/features/landmarks/image";
+import { resolveLandmarkThumbnailUrl } from "@/features/landmarks/image";
 import type { PropertyNearbyLandmark } from "@/features/landmarks/types";
 
 type PropertyNearbyLandmarksProps = {
@@ -23,7 +23,7 @@ export default function PropertyNearbyLandmarks({
       <h2 className="mb-4 text-xl font-bold text-foreground">Достопримечательности рядом</h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {landmarks.map((landmark) => {
-          const imageUrl = resolveLandmarkImageUrl(landmark.imageUrl);
+          const imageUrl = resolveLandmarkThumbnailUrl(landmark.imageUrl);
           const href = buildLandmarkCatalogUrl(citySlug, landmark.slug);
 
           return (
@@ -38,8 +38,8 @@ export default function PropertyNearbyLandmarks({
                   <img
                     src={imageUrl}
                     alt={landmark.name}
-                    width={1600}
-                    height={900}
+                    width={640}
+                    height={400}
                     loading="lazy"
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
