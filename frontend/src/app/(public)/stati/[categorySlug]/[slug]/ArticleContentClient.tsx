@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, Tag, Calendar } from "lucide-react";
 import { RichContentHtml } from "@/components/RichContentHtml";
+import { ArticleOwnerPromoBanner } from "@/features/articles/ArticleOwnerPromoBanner";
 import { Article } from "@/features/articles/types";
 import { estimateArticleReadMinutes } from "@/features/articles/articleHtmlUtils";
 import { ARTICLE_FALLBACK_IMAGE } from "@/features/articles/articleCardDisplay";
@@ -117,6 +118,8 @@ export default function ArticleContentClient({
       <div className="container mx-auto px-4">
         <article>
           {children ? <div className="mb-8">{children}</div> : null}
+
+          <ArticleOwnerPromoBanner />
 
           <motion.header initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-display text-foreground mb-6 leading-tight">
