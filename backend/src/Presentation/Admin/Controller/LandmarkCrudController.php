@@ -6,6 +6,7 @@ namespace App\Presentation\Admin\Controller;
 
 use App\Application\Service\LandmarkContentPersistNormalizer;
 use App\Domain\Property\Entity\Landmark;
+use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\LandmarkRepositoryInterface;
 use App\Infrastructure\Service\FileUploader;
 use App\Infrastructure\Service\SlugGenerator;
@@ -34,6 +35,7 @@ final class LandmarkCrudController extends AbstractCrudController
         private readonly LandmarkContentPersistNormalizer $landmarkContentPersistNormalizer,
         private readonly SlugGenerator $slugGenerator,
         private readonly LandmarkRepositoryInterface $landmarkRepository,
+        private readonly CityRepositoryInterface $cityRepository,
         private readonly FileUploader $fileUploader,
         private readonly YandexForwardGeocoder $forwardGeocoder,
     ) {
@@ -131,7 +133,12 @@ final class LandmarkCrudController extends AbstractCrudController
         yield IdField::new('id', 'ID')
             ->hideOnForm();
 
-        yield IntegerField::new('cityId', 'ID города');
+        yield IntegerField::new('cityId', 'Город')
+            ->formatValue(function ($value, Landmark $landmark): string {
+                $city = $this->cityRepository->findById($landmark->getCityId());
+
+                return $city !== null ? $city->getName() : ('#' . $landmark->getCityId());
+            });
 
         yield TextField::new('name', 'Название');
 

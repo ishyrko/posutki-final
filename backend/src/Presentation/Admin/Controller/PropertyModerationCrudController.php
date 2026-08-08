@@ -124,7 +124,7 @@ final class PropertyModerationCrudController extends PropertyCrudController
 
         return $qb
             ->andWhere(sprintf(
-                '(%s.status IN (:moderationStatuses) OR EXISTS (
+                '(%s.status = :moderationStatus OR EXISTS (
                     SELECT 1
                     FROM App\Domain\Property\Entity\PropertyRevision revision
                     WHERE revision.property = %s
@@ -133,7 +133,7 @@ final class PropertyModerationCrudController extends PropertyCrudController
                 $rootAlias,
                 $rootAlias
             ))
-            ->setParameter('moderationStatuses', ['moderation', 'rejected'])
+            ->setParameter('moderationStatus', 'moderation')
             ->setParameter('pendingRevisionStatus', 'pending');
     }
 
