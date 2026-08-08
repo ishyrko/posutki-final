@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Heart, Share2, MapPin, BedDouble, Bath, Maximize,
   Building2, Calendar, CalendarCheck, Layers, Phone, MessageCircle, TrainFront,
-  ChevronLeft, ChevronRight, Shield, Eye, Clock, Send, CheckCircle,
+  ChevronLeft, ChevronRight, Shield, Send, CheckCircle,
   Users, Utensils, Wifi, Tv, Sofa, Car, Waves, Wind,
   ShowerHead, Flame, Coffee, Snowflake, Baby, WashingMachine,
   LogIn, LogOut, UserCheck, Sunrise, Wallet,
@@ -316,16 +316,6 @@ export default function PropertyDetailClient({
   const showExtraPhotosOverlay = images.length > 5;
   const extraPhotoCount = images.length - 4;
   const videoEmbed = useMemo(() => getVideoEmbedInfo(property.videoUrl), [property.videoUrl]);
-  const formatStableDate = (value: string) => {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-
-    const day = String(date.getUTCDate()).padStart(2, "0");
-    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-    const year = date.getUTCFullYear();
-
-    return `${day}.${month}.${year}`;
-  };
   const addressStr = formatAddress(property.address);
   const coords = property.coordinates;
   const { ref: mapSectionRef, isNear: isMapNear } = useNearViewport();
@@ -1259,15 +1249,7 @@ export default function PropertyDetailClient({
                   )}
                 </AnimatePresence>
 
-                <div className="pt-4 border-t border-border space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Eye className="w-4 h-4" />
-                    <span>Просмотры: {property.views ?? 0}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    <span>Опубликовано {formatStableDate(property.createdAt)}</span>
-                  </div>
+                <div className="pt-4 border-t border-border">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="w-4 h-4" />
                     <span>ID: {property.id}</span>
