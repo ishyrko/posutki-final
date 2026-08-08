@@ -83,6 +83,46 @@ final class GetPropertyHandlerTest extends TestCase
         self::assertSame('draft', $dto->status);
     }
 
+    public function testFreePlacementTruncatesMediaForGuestButNotForOwner(): void
+    {
+        $images = [
+            'https://example.com/1.jpg',
+            'https://example.com/2.jpg',
+            'https://example.com/3.jpg',
+            'https://example.com/4.jpg',
+            'https://example.com/5.jpg',
+            'https://example.com/6.jpg',
+            'https://example.com/7.jpg',
+        ];
+        $videoUrl = 'https://youtu.be/quYKZushRPo';
+        $instagramUrl = 'https://instagram.com/example';
+        $websiteUrl = 'https://example.com';
+
+        $property = $this->createProperty(
+            ownerId: 4,
+            images: $images,
+            videoUrl: $videoUrl,
+            instagramUrl: $instagramUrl,
+            websiteUrl: $websiteUrl,
+        );
+        // No free VIP 1 — stay on free placement (effective level 0).
+        $property->setStatus('published', grantFreeTrial: false);
+
+        $handler = $this->createHandler($property);
+
+        $guestDto = $handler(new GetPropertyQuery('20', null));
+        self::assertCount(5, $guestDto->images);
+        self::assertNull($guestDto->videoUrl);
+        self::assertNull($guestDto->instagramUrl);
+        self::assertNull($guestDto->websiteUrl);
+
+        $ownerDto = $handler(new GetPropertyQuery('20', '4'));
+        self::assertCount(7, $ownerDto->images);
+        self::assertSame($videoUrl, $ownerDto->videoUrl);
+        self::assertSame($instagramUrl, $ownerDto->instagramUrl);
+        self::assertSame($websiteUrl, $ownerDto->websiteUrl);
+    }
+
     private function createHandler(Property $property): GetPropertyHandler
     {
         $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
@@ -151,7 +191,13 @@ final class GetPropertyHandlerTest extends TestCase
         );
     }
 
-    private function createProperty(int $ownerId): Property
+    private function createProperty(
+        int $ownerId,
+        array $images = [],
+        ?string $videoUrl = null,
+        ?string $instagramUrl = null,
+        ?string $websiteUrl = null,
+    ): Property
     {
         $property = new Property(
             ownerId: Id::fromInt($ownerId),
@@ -180,6 +226,10 @@ final class GetPropertyHandlerTest extends TestCase
             address: Address::create('1', null),
             cityId: 1,
             coordinates: Coordinates::create(53.9, 27.56),
+            images: $images,
+            instagramUrl: $instagramUrl,
+            websiteUrl: $websiteUrl,
+            videoUrl: $videoUrl,
         );
 
         $idReflection = new \ReflectionProperty($property, 'id');

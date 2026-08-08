@@ -80,6 +80,12 @@ export const useProperties = (filters: PropertyFilters = {}, options?: UseProper
 };
 
 type UsePropertyOptions = {
+    /**
+     * Owner cabinet (edit / calendar): separate cache from the public card.
+     * Public SSR/client cache may be free-tier truncated (≤5 photos, no video);
+     * edit must not reuse that payload or it can wipe media on save.
+     */
+    forOwner?: boolean;
     /** SSR payload — avoids loading state on first paint. */
     initialData?: Property;
     /** Set once per mount (e.g. useRef(Date.now())) — do not pass a new timestamp every render. */
@@ -88,10 +94,13 @@ type UsePropertyOptions = {
 
 export const useProperty = (id: number, options: UsePropertyOptions = {}) => {
     const hasInitial = options.initialData !== undefined;
+    const forOwner = options.forOwner === true;
     return useQuery({
-        queryKey: ['property', id],
+        queryKey: forOwner ? (['property', id, 'owner'] as const) : (['property', id] as const),
         queryFn: () => getProperty(id),
         enabled: id > 0,
+        // Always hit the API with the owner JWT so free-tier public cache cannot leak in.
+        ...(forOwner ? { staleTime: 0 } : {}),
         ...(hasInitial
             ? {
                   initialData: options.initialData,

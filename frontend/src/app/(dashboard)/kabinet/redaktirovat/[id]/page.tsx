@@ -342,7 +342,7 @@ export default function EditPropertyPage() {
     const { id } = useParams<{ id: string }>();
     const propertyId = Number(id);
     const router = useRouter();
-    const { data: property, isLoading, isError } = useProperty(propertyId);
+    const { data: property, isLoading, isError } = useProperty(propertyId, { forOwner: true });
     const { mutateAsync: updateProperty, isPending: saving } = useUpdateProperty();
 
     const [form, setForm] = useState<EditFormData | null>(null);

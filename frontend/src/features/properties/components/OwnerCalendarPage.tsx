@@ -111,7 +111,7 @@ export function OwnerCalendarPage() {
     const params = useParams<{ id: string }>();
     const propertyId = Number(params?.id ?? 0);
 
-    const { data: property, isLoading: isLoadingProperty } = useProperty(propertyId);
+    const { data: property, isLoading: isLoadingProperty } = useProperty(propertyId, { forOwner: true });
     const { data: calendar, isLoading: isLoadingCalendar, isError } = useOwnerCalendar(propertyId);
     const createBlock = useCreateAvailabilityBlock();
     const deleteBlock = useDeleteAvailabilityBlock();
