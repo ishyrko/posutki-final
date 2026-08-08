@@ -92,6 +92,7 @@ final readonly class PropertyMailer
                 'moderationComment' => $moderationComment,
                 'editUrl' => $this->frontendUrls->editProperty($property->getId()->getValue()),
                 'dashboardUrl' => $this->frontendUrls->cabinet(),
+                'termsUrl' => $this->frontendUrls->termsOfUse(),
             ],
         );
     }

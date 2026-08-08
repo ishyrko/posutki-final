@@ -56,6 +56,12 @@ final readonly class FrontendUrlBuilder
         return $this->base() . '/kabinet/';
     }
 
+    /** Публичная страница «Условия использования». */
+    public function termsOfUse(): string
+    {
+        return $this->base() . '/usloviya-ispolzovaniya/';
+    }
+
     public function myListings(): string
     {
         return $this->base() . '/kabinet/moi-obyavleniya/aktivnye/';

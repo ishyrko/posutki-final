@@ -79,6 +79,13 @@ final class FrontendUrlBuilderTest extends TestCase
         );
     }
 
+    public function testTermsOfUseUrl(): void
+    {
+        $builder = new FrontendUrlBuilder('https://posutki.by', $this->cityRepository('minsk', 'minsk'));
+
+        self::assertSame('https://posutki.by/usloviya-ispolzovaniya/', $builder->termsOfUse());
+    }
+
     private function cityRepository(string $citySlug, string $regionSlug): CityRepositoryInterface
     {
         $region = $this->createMock(Region::class);

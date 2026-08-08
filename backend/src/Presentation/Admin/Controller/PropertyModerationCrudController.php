@@ -108,6 +108,8 @@ final class PropertyModerationCrudController extends PropertyCrudController
             ->add(Crud::PAGE_INDEX, $rejectProperty)
             ->add(Crud::PAGE_EDIT, $approveProperty)
             ->add(Crud::PAGE_EDIT, $rejectProperty)
+            ->add(Crud::PAGE_EDIT, $approveRevision)
+            ->add(Crud::PAGE_EDIT, $rejectRevision)
             ->add(Crud::PAGE_EDIT, $viewDiff);
     }
 
@@ -179,7 +181,7 @@ final class PropertyModerationCrudController extends PropertyCrudController
         return $this->redirect($this->buildIndexUrl());
     }
 
-    public function rejectRevision(AdminContext $context, Request $request): RedirectResponse
+    public function rejectRevision(AdminContext $context, Request $request): Response
     {
         $property = $this->resolvePropertyFromContext($context, $request);
         if ($property === null) {
@@ -193,14 +195,31 @@ final class PropertyModerationCrudController extends PropertyCrudController
             return $this->redirect($this->buildIndexUrl());
         }
 
-        $this->commandBus->dispatch(new RejectRevisionCommand(
-            propertyId: (string) $property->getId()->getValue(),
-            revisionId: (string) $revision->getId()->getValue(),
-            moderationComment: $property->getModerationComment(),
-        ));
+        $comment = '';
+        $error = null;
 
-        $this->addFlash('success', 'Ревизия объявления отклонена');
-        return $this->redirect($this->buildIndexUrl());
+        if ($request->isMethod('POST')) {
+            $comment = trim($request->request->getString('moderationComment'));
+            if ($comment === '') {
+                $error = 'Укажите причину отклонения';
+            } else {
+                $this->commandBus->dispatch(new RejectRevisionCommand(
+                    propertyId: (string) $property->getId()->getValue(),
+                    revisionId: (string) $revision->getId()->getValue(),
+                    moderationComment: $comment,
+                ));
+
+                $this->addFlash('success', 'Ревизия объявления отклонена');
+                return $this->redirect($this->buildIndexUrl());
+            }
+        }
+
+        return $this->render('admin/property_revision_reject.html.twig', [
+            'property' => $property,
+            'comment' => $comment,
+            'error' => $error,
+            'cancelUrl' => $this->buildIndexUrl(),
+        ]);
     }
 
     public function approveProperty(AdminContext $context, Request $request): RedirectResponse
@@ -233,7 +252,7 @@ final class PropertyModerationCrudController extends PropertyCrudController
         return $this->redirect($this->buildIndexUrl());
     }
 
-    public function rejectProperty(AdminContext $context, Request $request): RedirectResponse
+    public function rejectProperty(AdminContext $context, Request $request): Response
     {
         $property = $this->resolvePropertyFromContext($context, $request);
         if ($property === null) {
@@ -251,15 +270,32 @@ final class PropertyModerationCrudController extends PropertyCrudController
             return $this->redirect($this->buildIndexUrl());
         }
 
-        $property->reject($property->getModerationComment());
-        $this->propertyRepository->save($property);
-        $this->notificationBus->dispatch(new PropertyRejectedEvent(
-            (string) $property->getId()->getValue(),
-            $property->getModerationComment()
-        ));
+        $comment = '';
+        $error = null;
 
-        $this->addFlash('success', 'Объявление отклонено');
-        return $this->redirect($this->buildIndexUrl());
+        if ($request->isMethod('POST')) {
+            $comment = trim($request->request->getString('moderationComment'));
+            if ($comment === '') {
+                $error = 'Укажите причину отклонения';
+            } else {
+                $property->reject($comment);
+                $this->propertyRepository->save($property);
+                $this->notificationBus->dispatch(new PropertyRejectedEvent(
+                    (string) $property->getId()->getValue(),
+                    $comment
+                ));
+
+                $this->addFlash('success', 'Объявление отклонено');
+                return $this->redirect($this->buildIndexUrl());
+            }
+        }
+
+        return $this->render('admin/property_reject.html.twig', [
+            'property' => $property,
+            'comment' => $comment,
+            'error' => $error,
+            'cancelUrl' => $this->buildIndexUrl(),
+        ]);
     }
 
     public function viewRevisionDiff(AdminContext $context, Request $request): Response
