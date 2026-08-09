@@ -278,6 +278,20 @@ export function CreateListingForm() {
     const [geocoding, setGeocoding] = useState(false);
     /** Координаты, выставленные кликом или перетаскиванием маркера на карте. */
     const [coordsManuallySet, setCoordsManuallySet] = useState(false);
+    const formTopRef = useRef<HTMLDivElement>(null);
+    const skipStepScrollRef = useRef(true);
+
+    // На мобиле после «Далее»/«Назад» остаёмся у низа экрана — поднимаем к шапке формы.
+    useEffect(() => {
+        if (skipStepScrollRef.current) {
+            skipStepScrollRef.current = false;
+            return;
+        }
+        const id = requestAnimationFrame(() => {
+            formTopRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
+        });
+        return () => cancelAnimationFrame(id);
+    }, [step]);
 
     // City autocomplete state
     const [cityQuery, setCityQuery] = useState('');
@@ -981,7 +995,7 @@ export function CreateListingForm() {
     }
 
     return (
-        <div className="space-y-6 max-w-3xl">
+        <div ref={formTopRef} className="max-w-3xl scroll-mt-24 space-y-6">
             <div className="flex items-center gap-3">
                 <button
                     type="button"
