@@ -205,9 +205,9 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
       <>
         <link
           rel="preload"
-          href="/hero-apartment.jpg"
+          href="/hero-apartment.webp"
           as="image"
-          type="image/jpeg"
+          type="image/webp"
           fetchPriority="high"
         />
         <HomePage

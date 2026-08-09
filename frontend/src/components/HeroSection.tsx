@@ -70,7 +70,7 @@ const HeroSection = () => {
       <div className="absolute inset-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/hero-apartment.jpg"
+          src="/hero-apartment.webp"
           alt="Современная квартира"
           fetchPriority="high"
           decoding="async"
