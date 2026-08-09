@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Heart, Share2, MapPin, BedDouble, Bath, Maximize,
-  Building2, Calendar, Layers, MessageCircle, TrainFront,
+  Building2, Calendar, Layers, Phone, TrainFront,
   ChevronLeft, ChevronRight, Shield, CheckCircle,
   Users, Utensils, Wifi, Tv, Sofa, Car, Waves, Wind,
   ShowerHead, Flame, Coffee, Snowflake, Baby, WashingMachine,
@@ -1007,7 +1007,7 @@ export default function PropertyDetailClient({
             className="w-full h-11 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 border-0"
             onClick={() => setContactOpen(true)}
           >
-            <MessageCircle className="w-4 h-4 mr-2" />
+            <Phone className="w-4 h-4 mr-2" />
             Связаться с владельцем
           </Button>
         </div>
