@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Search, MapPin, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
-import NextImage from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -69,12 +68,13 @@ const HeroSection = () => {
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0">
-        <NextImage
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src="/hero-apartment.jpg"
           alt="Современная квартира"
-          fill
-          priority
-          className="object-cover"
+          fetchPriority="high"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/60 via-foreground/40 to-foreground/70" />
       </div>

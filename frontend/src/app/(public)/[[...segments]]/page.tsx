@@ -202,13 +202,22 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     ]);
 
     return (
-      <HomePage
-        featuredInitial={featuredInitial ?? undefined}
-        articles={articles}
-        cityApartmentCounts={cityApartmentCounts}
-        regionHouseCounts={regionHouseCounts}
-        features={<FeaturesSection />}
-      />
+      <>
+        <link
+          rel="preload"
+          href="/hero-apartment.jpg"
+          as="image"
+          type="image/jpeg"
+          fetchPriority="high"
+        />
+        <HomePage
+          featuredInitial={featuredInitial ?? undefined}
+          articles={articles}
+          cityApartmentCounts={cityApartmentCounts}
+          regionHouseCounts={regionHouseCounts}
+          features={<FeaturesSection />}
+        />
+      </>
     );
   }
 

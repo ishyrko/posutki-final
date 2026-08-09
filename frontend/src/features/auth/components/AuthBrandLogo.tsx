@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 
 type AuthBrandLogoProps = {
@@ -12,13 +11,14 @@ export function AuthBrandLogo({ variant = 'default', className }: AuthBrandLogoP
 
     return (
         <Link href="/" className={className ?? 'inline-block'}>
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
                 src={src}
                 alt="posutki.by"
                 width={599}
                 height={170}
-                priority
-                unoptimized
+                fetchPriority="high"
+                decoding="async"
                 className="mx-auto h-10 w-auto object-contain"
             />
             <span className="sr-only">posutki.by</span>

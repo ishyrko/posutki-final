@@ -103,6 +103,13 @@ export default function RootLayout({
   return (
     <html lang="ru" className={inter.variable}>
       <head>
+        <link
+          rel="preload"
+          href="/brand/logo.png"
+          as="image"
+          type="image/png"
+          fetchPriority="high"
+        />
         <Script
           id="stale-chunk-reload-guard"
           strategy="beforeInteractive"

@@ -8,7 +8,6 @@ import {
 } from "@/lib/region-header";
 import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
 import { COMPANY } from "@/lib/company";
-import Image from "next/image";
 
 const Footer = () => {
   const regionSlug = useHeaderRegionSlug();
@@ -26,12 +25,13 @@ const Footer = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           <div className="col-span-2 md:col-span-1">
             <Link href={homeHref} className="inline-flex items-center">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/brand/logo.png"
                 alt="posutki.by"
                 width={599}
                 height={170}
-                unoptimized
+                decoding="async"
                 className="h-auto w-36 sm:w-40 lg:w-[180px] brightness-0 invert"
               />
               <span className="sr-only">posutki.by</span>
@@ -139,13 +139,14 @@ const Footer = () => {
             </div>
 
             <div className="shrink-0">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/brand/payment-systems.svg"
                 alt="Платёжные системы: Visa, Mastercard, Белкарт, bePaid, Google Pay"
                 width={927}
                 height={100}
+                decoding="async"
                 className="h-11 w-auto max-w-full sm:h-14"
-                unoptimized
               />
             </div>
           </div>

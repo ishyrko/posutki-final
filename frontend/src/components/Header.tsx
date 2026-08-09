@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ListingSubmitLink } from "@/components/ListingSubmitLink";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { isAuthenticated } from "@/lib/auth";
@@ -231,13 +230,14 @@ const Header = () => {
     <header ref={megaRef} className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border relative">
       <div className="container mx-auto px-4 flex items-center justify-between h-16">
         <Link href="/" className="flex items-center gap-2">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/brand/logo.png"
             alt="posutki.by"
             width={599}
             height={170}
-            priority
-            unoptimized
+            fetchPriority="high"
+            decoding="async"
             className="h-auto w-36 sm:w-40 lg:w-[180px]"
           />
           <span className="sr-only">posutki.by</span>
