@@ -55,12 +55,16 @@ final readonly class PlacementMailer
         $this->mailer->send($email);
     }
 
+    /**
+     * @param array{phoneViews: int, messages: int, bookingInquiries: int, total: int}|null $recentEngagement
+     */
     public function sendVipExpiringSoon(
         Property $property,
         User $owner,
         string $propertyUrl,
         string $listingsUrl,
         string $dashboardUrl,
+        ?array $recentEngagement = null,
     ): void {
         $ownerEmail = $owner->getEmail()?->getValue();
         if ($ownerEmail === null) {
@@ -78,6 +82,7 @@ final readonly class PlacementMailer
             'listingsUrl' => $listingsUrl,
             'dashboardUrl' => $dashboardUrl,
             'expiresAtFormatted' => $expiresAt?->format('d.m.Y H:i'),
+            'recentEngagement' => $recentEngagement,
         ]);
 
         $email = (new Email())

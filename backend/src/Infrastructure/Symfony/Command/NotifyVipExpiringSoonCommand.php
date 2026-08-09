@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Symfony\Command;
 
+use App\Domain\BookingInquiry\Repository\BookingInquiryRepositoryInterface;
+use App\Domain\Message\Repository\MessageRepositoryInterface;
 use App\Domain\Property\Enum\PropertyType;
+use App\Domain\Property\Repository\PropertyDailyStatRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Mail\PlacementMailer;
@@ -24,9 +27,18 @@ class NotifyVipExpiringSoonCommand extends Command
     /** Minimum published apartments in a city to send VIP expiry reminders. */
     private const MIN_PUBLISHED_APARTMENTS_IN_CITY = 20;
 
+    /** Lookback for contact views / messages / inquiries shown in the email. */
+    private const ENGAGEMENT_LOOKBACK_DAYS = 14;
+
+    /** Include engagement block only when the sum exceeds this threshold. */
+    private const ENGAGEMENT_MIN_TOTAL = 10;
+
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly UserRepositoryInterface $userRepository,
+        private readonly PropertyDailyStatRepositoryInterface $propertyDailyStatRepository,
+        private readonly MessageRepositoryInterface $messageRepository,
+        private readonly BookingInquiryRepositoryInterface $bookingInquiryRepository,
         private readonly PlacementMailer $mailer,
         private readonly FrontendUrlBuilder $frontendUrls,
     ) {
@@ -62,6 +74,7 @@ class NotifyVipExpiringSoonCommand extends Command
                 propertyUrl: $this->frontendUrls->publicPropertyForListing($property),
                 listingsUrl: $this->frontendUrls->myListings(),
                 dashboardUrl: $this->frontendUrls->cabinet(),
+                recentEngagement: $this->resolveRecentEngagement($property->getId()->getValue()),
             );
 
             $property->markPlacementLevelExpiryReminded($now);
@@ -76,5 +89,38 @@ class NotifyVipExpiringSoonCommand extends Command
         ));
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * @return array{phoneViews: int, messages: int, bookingInquiries: int, total: int}|null
+     */
+    private function resolveRecentEngagement(int $propertyId): ?array
+    {
+        $days = self::ENGAGEMENT_LOOKBACK_DAYS;
+
+        $phoneViews = (int) array_sum(array_column(
+            $this->propertyDailyStatRepository->findByPropertyAndPeriod($propertyId, $days),
+            'phoneViews',
+        ));
+        $messages = (int) array_sum(array_column(
+            $this->messageRepository->findDailyReceivedCountsByProperty($propertyId, $days),
+            'count',
+        ));
+        $bookingInquiries = (int) array_sum(array_column(
+            $this->bookingInquiryRepository->findDailyCountsByProperty($propertyId, $days),
+            'count',
+        ));
+        $total = $phoneViews + $messages + $bookingInquiries;
+
+        if ($total <= self::ENGAGEMENT_MIN_TOTAL) {
+            return null;
+        }
+
+        return [
+            'phoneViews' => $phoneViews,
+            'messages' => $messages,
+            'bookingInquiries' => $bookingInquiries,
+            'total' => $total,
+        ];
     }
 }

@@ -32,7 +32,7 @@
     <p class="greeting">Здравствуйте, {{ owner.firstName }}!</p>
     <span class="status-badge">⏰ VIP истекает через сутки</span>
     <p class="text">
-      Размещение объявления <strong>«{{ property.title }}»</strong>
+      Премиум размещение объявления <strong>«{{ property.title }}»</strong>
       {% if isTrial %}(бесплатный VIP 1){% else %}(VIP {{ level }}){% endif %}
       действует до <strong>{{ expiresAtFormatted }}</strong>.
       После окончания объявление останется в каталоге на бесплатном уровне с более низкой позицией.
@@ -45,6 +45,16 @@
       <p class="details-row"><strong>Действует до:</strong> {{ expiresAtFormatted }}</p>
       {% endif %}
     </div>
+
+    {% if recentEngagement %}
+    <p class="text">
+      За последние 2 недели по этому объявлению:
+      просмотры контактов - {{ recentEngagement.phoneViews }},
+      сообщения - {{ recentEngagement.messages }},
+      заявки - {{ recentEngagement.bookingInquiries }}
+      (всего <strong>{{ recentEngagement.total }}</strong>).
+    </p>
+    {% endif %}
 
     <p class="text">Продлите VIP заранее, чтобы сохранить высокую позицию в каталоге.</p>
 
