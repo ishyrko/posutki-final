@@ -114,7 +114,7 @@ reshuffle-placement: ## Reshuffle VIP rotation order within the same VIP level
 	@echo "${GREEN}Reshuffling placement order (app:reshuffle-placement)...${RESET}"
 	docker-compose exec php sh -lc "cd /var/www/backend && php bin/console app:reshuffle-placement"
 
-notify-vip-expiring: ## Email apartment owners whose VIP expires within 24h (cities with 20+ apartments)
+notify-vip-expiring: ## Email apartment owners whose VIP expires within 24h (cities with 20+ apartments, engagement > 10)
 	@echo "${GREEN}Sending VIP expiry reminders (app:notify-vip-expiring-soon)...${RESET}"
 	docker-compose exec php sh -lc "cd /var/www/backend && php bin/console app:notify-vip-expiring-soon --no-interaction"
 

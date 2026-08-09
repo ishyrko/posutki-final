@@ -46,15 +46,14 @@
       {% endif %}
     </div>
 
-    {% if recentEngagement %}
     <p class="text">
-      За последние 2 недели по этому объявлению:
+      Количество взаимодействий за последние 2 недели по этому объявлению: <strong>{{ recentEngagement.total }}</strong>).
+      Из них
       просмотры контактов - {{ recentEngagement.phoneViews }},
       сообщения - {{ recentEngagement.messages }},
-      заявки - {{ recentEngagement.bookingInquiries }}
-      (всего <strong>{{ recentEngagement.total }}</strong>).
+      заявки - {{ recentEngagement.bookingInquiries }},
+      добавления в избранное - {{ recentEngagement.favorites }}
     </p>
-    {% endif %}
 
     <p class="text">Продлите VIP заранее, чтобы сохранить высокую позицию в каталоге.</p>
 
