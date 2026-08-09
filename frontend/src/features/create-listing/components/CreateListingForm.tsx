@@ -131,8 +131,9 @@ const LISTING_STEPS: readonly { label: string; Icon: LucideIcon }[] = [
 
 const TOTAL_STEPS = LISTING_STEPS.length;
 
+/** text-base на мобиле: iOS Safari зумит страницу при фокусе на input < 16px. */
 const inputClass =
-    'w-full px-4 py-2.5 rounded-xl bg-surface border border-border text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all';
+    'w-full px-4 py-2.5 rounded-xl bg-surface border border-border text-base md:text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all';
 const labelClass = 'text-sm font-semibold text-foreground mb-2 block font-display';
 
 const pillBtnBase = 'cursor-pointer px-3 py-1.5 rounded-lg text-sm font-medium transition-all';

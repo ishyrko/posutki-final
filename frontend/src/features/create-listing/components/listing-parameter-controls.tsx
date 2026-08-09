@@ -18,14 +18,15 @@ const pillBtnBase = 'cursor-pointer px-3 py-1.5 rounded-lg text-sm font-medium t
 const chipInactive = `${pillBtnBase} bg-surface border border-border text-foreground hover:bg-muted`;
 const chipActive = `${pillBtnBase} bg-primary text-primary-foreground border border-primary`;
 
+/** text-base на мобиле: iOS Safari зумит страницу при фокусе на input < 16px. */
 const inputClass =
-    'w-full px-4 py-2.5 rounded-xl bg-surface border border-border text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all';
+    'w-full px-4 py-2.5 rounded-xl bg-surface border border-border text-base md:text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all';
 
 /** Ряд чипов: на десктопе в одну линию; на узком экране — горизонтальная прокрутка. */
 const chipRowClass = 'flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto pb-0.5';
 
 const segmentInputClass =
-    'w-full border-0 bg-transparent px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:bg-muted/40 rounded-none';
+    'w-full border-0 bg-transparent px-3 py-2.5 text-base md:text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:bg-muted/40 rounded-none';
 
 export function NumericPillRow({
     label,
