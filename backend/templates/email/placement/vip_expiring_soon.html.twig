@@ -47,13 +47,15 @@
     </div>
 
     <p class="text">
-      Количество взаимодействий за последние 2 недели по этому объявлению: <strong>{{ recentEngagement.total }}</strong>).
-      Из них
-      просмотры контактов - {{ recentEngagement.phoneViews }},
-      сообщения - {{ recentEngagement.messages }},
-      заявки - {{ recentEngagement.bookingInquiries }},
-      добавления в избранное - {{ recentEngagement.favorites }}
+      Количество взаимодействий за последние 2 недели по этому объявлению: <strong>{{ recentEngagement.total }}</strong>.
+      Из них:
     </p>
+    <ul class="text" style="margin: 0 0 16px; padding-left: 22px; line-height: 1.6;">
+      <li>просмотры контактов — {{ recentEngagement.phoneViews }}</li>
+      <li>сообщения — {{ recentEngagement.messages }}</li>
+      <li>заявки — {{ recentEngagement.bookingInquiries }}</li>
+      <li>добавления в избранное — {{ recentEngagement.favorites }}</li>
+    </ul>
 
     <p class="text">Продлите VIP заранее, чтобы сохранить высокую позицию в каталоге.</p>
 
