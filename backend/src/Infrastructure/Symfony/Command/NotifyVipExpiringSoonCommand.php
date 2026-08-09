@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Symfony\Command;
 
-use App\Domain\BookingInquiry\Repository\BookingInquiryRepositoryInterface;
-use App\Domain\Favorite\Repository\FavoriteAddEventRepositoryInterface;
-use App\Domain\Message\Repository\MessageRepositoryInterface;
 use App\Domain\Property\Enum\PropertyType;
-use App\Domain\Property\Repository\PropertyDailyStatRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
-use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Mail\PlacementMailer;
 use App\Infrastructure\Service\FrontendUrlBuilder;
+use App\Infrastructure\Service\PropertyRecentEngagementResolver;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,19 +25,10 @@ class NotifyVipExpiringSoonCommand extends Command
     /** Minimum published apartments in a city to send VIP expiry reminders. */
     private const MIN_PUBLISHED_APARTMENTS_IN_CITY = 20;
 
-    /** Lookback for contact views / messages / inquiries / favorites shown in the email. */
-    private const ENGAGEMENT_LOOKBACK_DAYS = 14;
-
-    /** Send only when the engagement sum exceeds this threshold. */
-    private const ENGAGEMENT_MIN_TOTAL = 10;
-
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly UserRepositoryInterface $userRepository,
-        private readonly PropertyDailyStatRepositoryInterface $propertyDailyStatRepository,
-        private readonly MessageRepositoryInterface $messageRepository,
-        private readonly BookingInquiryRepositoryInterface $bookingInquiryRepository,
-        private readonly FavoriteAddEventRepositoryInterface $favoriteAddEventRepository,
+        private readonly PropertyRecentEngagementResolver $engagementResolver,
         private readonly PlacementMailer $mailer,
         private readonly FrontendUrlBuilder $frontendUrls,
     ) {
@@ -72,7 +59,9 @@ class NotifyVipExpiringSoonCommand extends Command
                 continue;
             }
 
-            $recentEngagement = $this->resolveRecentEngagement($property->getId()->getValue());
+            $recentEngagement = $this->engagementResolver->resolveIfAboveThreshold(
+                $property->getId()->getValue(),
+            );
             if ($recentEngagement === null) {
                 $property->markPlacementLevelExpiryReminded($now);
                 $this->propertyRepository->save($property);
@@ -100,47 +89,9 @@ class NotifyVipExpiringSoonCommand extends Command
             $sent,
             $skippedNoOwner,
             $skippedLowEngagement,
-            self::ENGAGEMENT_MIN_TOTAL,
+            PropertyRecentEngagementResolver::DEFAULT_MIN_TOTAL,
         ));
 
         return Command::SUCCESS;
-    }
-
-    /**
-     * @return array{phoneViews: int, messages: int, bookingInquiries: int, favorites: int, total: int}|null
-     */
-    private function resolveRecentEngagement(int $propertyId): ?array
-    {
-        $days = self::ENGAGEMENT_LOOKBACK_DAYS;
-
-        $phoneViews = (int) array_sum(array_column(
-            $this->propertyDailyStatRepository->findByPropertyAndPeriod($propertyId, $days),
-            'phoneViews',
-        ));
-        $messages = (int) array_sum(array_column(
-            $this->messageRepository->findDailyReceivedCountsByProperty($propertyId, $days),
-            'count',
-        ));
-        $bookingInquiries = (int) array_sum(array_column(
-            $this->bookingInquiryRepository->findDailyCountsByProperty($propertyId, $days),
-            'count',
-        ));
-        $favorites = (int) array_sum(array_column(
-            $this->favoriteAddEventRepository->findDailyCountsByProperty(Id::fromInt($propertyId), $days),
-            'count',
-        ));
-        $total = $phoneViews + $messages + $bookingInquiries + $favorites;
-
-        if ($total <= self::ENGAGEMENT_MIN_TOTAL) {
-            return null;
-        }
-
-        return [
-            'phoneViews' => $phoneViews,
-            'messages' => $messages,
-            'bookingInquiries' => $bookingInquiries,
-            'favorites' => $favorites,
-            'total' => $total,
-        ];
     }
 }

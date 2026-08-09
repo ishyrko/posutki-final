@@ -93,4 +93,44 @@ final readonly class PlacementMailer
 
         $this->mailer->send($email);
     }
+
+    /**
+     * @param array{phoneViews: int, messages: int, bookingInquiries: int, favorites: int, total: int} $recentEngagement
+     */
+    public function sendVipExpired(
+        Property $property,
+        User $owner,
+        int $level,
+        bool $isTrial,
+        ?\DateTimeImmutable $expiresAt,
+        string $propertyUrl,
+        string $listingsUrl,
+        string $dashboardUrl,
+        array $recentEngagement,
+    ): void {
+        $ownerEmail = $owner->getEmail()?->getValue();
+        if ($ownerEmail === null) {
+            return;
+        }
+
+        $html = $this->twig->render('email/placement/vip_expired.html.twig', [
+            'owner' => $owner,
+            'property' => $property,
+            'level' => $level,
+            'isTrial' => $isTrial,
+            'propertyUrl' => $propertyUrl,
+            'listingsUrl' => $listingsUrl,
+            'dashboardUrl' => $dashboardUrl,
+            'expiresAtFormatted' => $expiresAt?->format('d.m.Y H:i'),
+            'recentEngagement' => $recentEngagement,
+        ]);
+
+        $email = (new Email())
+            ->from($this->mailerFrom)
+            ->to($ownerEmail)
+            ->subject('VIP истёк — ' . $property->getTitle())
+            ->html($html);
+
+        $this->mailer->send($email);
+    }
 }
