@@ -133,6 +133,16 @@ export default function PropertyDetailClient({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const openBookingAfterContactCloseRef = useRef(false);
+
+  const handleContactOpenChange = (nextOpen: boolean) => {
+    setContactOpen(nextOpen);
+    if (!nextOpen && openBookingAfterContactCloseRef.current) {
+      openBookingAfterContactCloseRef.current = false;
+      // Open booking after drawer unmounts so Dialog isn't nested under vaul (goals/submit stay reliable).
+      queueMicrotask(() => setBookingOpen(true));
+    }
+  };
 
   useEffect(() => {
     if (!property) {
@@ -1004,21 +1014,28 @@ export default function PropertyDetailClient({
       )}
 
       {showMobileContactBar && (
-        <Drawer open={contactOpen} onOpenChange={setContactOpen}>
+        <Drawer
+          open={contactOpen}
+          onOpenChange={handleContactOpenChange}
+          shouldScaleBackground={false}
+        >
           <DrawerContent className="max-h-[90vh]">
             <DrawerHeader className="sr-only">
               <DrawerTitle>Связаться с владельцем</DrawerTitle>
               <DrawerDescription>Контакты владельца объявления</DrawerDescription>
             </DrawerHeader>
-            <div className="overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+            <div
+              data-vaul-no-drag
+              className="overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]"
+            >
               <PropertyOwnerContactPanel
                 property={property}
                 isOwner={isOwner}
                 loggedIn={loggedIn}
                 loginWithReturnHref={loginWithReturnHref}
                 onOpenBooking={() => {
-                  setContactOpen(false);
-                  setBookingOpen(true);
+                  openBookingAfterContactCloseRef.current = true;
+                  handleContactOpenChange(false);
                 }}
               />
             </div>
