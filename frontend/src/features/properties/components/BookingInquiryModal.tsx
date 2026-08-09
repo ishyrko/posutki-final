@@ -80,6 +80,8 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
     const { data: exchangeRates } = useExchangeRates();
     const { currency } = useCurrency();
     const [submitted, setSubmitted] = useState(false);
+    const [checkInOpen, setCheckInOpen] = useState(false);
+    const [checkOutOpen, setCheckOutOpen] = useState(false);
 
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim() ?? '';
     useRecaptchaPointerEventsFix(open && Boolean(siteKey));
@@ -332,7 +334,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                     render={({ field }) => (
                                                         <FormItem>
                                                             <FormLabel>Дата заезда</FormLabel>
-                                                            <Popover>
+                                                            <Popover open={checkInOpen} onOpenChange={setCheckInOpen}>
                                                                 <PopoverTrigger asChild>
                                                                     <FormControl>
                                                                         <Button
@@ -367,6 +369,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                             }
 
                                                                             validateBookingDates(next, form.getValues('checkOut'));
+                                                                            setCheckInOpen(false);
                                                                         }}
                                                                         disabled={(date) => {
                                                                             if (date < startOfToday()) {
@@ -395,7 +398,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                     render={({ field }) => (
                                                         <FormItem>
                                                             <FormLabel>Дата выезда</FormLabel>
-                                                            <Popover>
+                                                            <Popover open={checkOutOpen} onOpenChange={setCheckOutOpen}>
                                                                 <PopoverTrigger asChild>
                                                                     <FormControl>
                                                                         <Button
@@ -420,6 +423,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                             const next = date ? format(date, 'yyyy-MM-dd') : '';
                                                                             field.onChange(next);
                                                                             validateBookingDates(form.getValues('checkIn'), next);
+                                                                            setCheckOutOpen(false);
                                                                         }}
                                                                         disabled={(date) => isCheckOutDateDisabled(
                                                                             form.getValues('checkIn'),

@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Heart, Share2, MapPin, BedDouble, Bath, Maximize,
-  Building2, Calendar, CalendarCheck, Layers, Phone, MessageCircle, TrainFront,
-  ChevronLeft, ChevronRight, Shield, Send, CheckCircle,
+  Building2, Calendar, Layers, MessageCircle, TrainFront,
+  ChevronLeft, ChevronRight, Shield, CheckCircle,
   Users, Utensils, Wifi, Tv, Sofa, Car, Waves, Wind,
   ShowerHead, Flame, Coffee, Snowflake, Baby, WashingMachine,
   LogIn, LogOut, UserCheck, Sunrise, Wallet,
@@ -14,16 +14,13 @@ import { LISTING_AMENITY_GROUPS } from "@/features/create-listing/listing-amenit
 import { formatMinStayDays } from "@/features/create-listing/validation";
 import { PAYMENT_METHOD_LABELS, type PaymentMethodId } from "@/features/properties/payment-methods";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { notFound, usePathname } from "next/navigation";
 import { useHasAuthToken } from "@/hooks/useHasAuthToken";
 import { useProperty, useFavoriteIds, useToggleFavorite, useExchangeRates } from "@/features/properties/hooks";
-import { trackPhoneView, trackPropertyView } from "@/features/properties/api";
+import { trackPropertyView } from "@/features/properties/api";
 import { trackViewOnce } from "@/lib/view-tracking";
-import { trackPropertyContactEvent, trackPropertyEngagementEvent } from "@/lib/gtag";
-import { useSendMessage } from "@/features/messages/hooks";
 import { useUser } from "@/features/auth/hooks";
 import { formatAddress, Property } from "@/features/properties/types";
 import { PropertyAddress } from "@/features/properties/components/PropertyAddress";
@@ -36,6 +33,17 @@ import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/feature
 import { useCurrency } from "@/context/CurrencyContext";
 import { useNearViewport } from "@/hooks/useNearViewport";
 import { BookingInquiryModal } from "@/features/properties/components/BookingInquiryModal";
+import {
+  getPropertySellerName,
+  PropertyOwnerContactPanel,
+} from "@/features/properties/components/PropertyOwnerContactPanel";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 
 const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
   ssr: false,
@@ -77,9 +85,6 @@ import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { ReviewList } from "@/features/reviews/components/ReviewList";
 import { ReviewSummary } from "@/features/reviews/components/ReviewSummary";
 import { useDeletePendingReview, usePropertyReviews } from "@/features/reviews/hooks";
-import { telegramHref, viberChatHref, whatsAppHref } from "@/lib/contactLinks";
-import { TelegramIcon, ViberIcon, WhatsAppIcon } from "@/components/ContactMessengerIcons";
-
 type PropertyDetailClientProps = {
   id: number;
   initialProperty: Property;
@@ -90,72 +95,6 @@ const PROPERTY_TYPE_LABELS: Record<string, string> = {
   apartment: "Квартира",
   house: "Дом",
 };
-
-function initialsFromContactName(name: string): string {
-  const trimmed = name.trim();
-  if (!trimmed) return "?";
-  const words = trimmed.split(/\s+/).filter(Boolean);
-  if (words.length >= 2) {
-    const first = words[0][0];
-    const last = words[words.length - 1][0];
-    return `${first}${last}`.toUpperCase();
-  }
-  return trimmed.slice(0, Math.min(2, trimmed.length)).toUpperCase();
-}
-
-/** Preview line before reveal: +375 XX ***-**-67 from stored phone digits. */
-function maskContactPhone(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length < 2) return "Телефон";
-  const last2 = digits.slice(-2);
-  if (digits.startsWith("375") && digits.length >= 11) {
-    const op = digits.slice(3, 5);
-    return `+375 ${op} ***-**-${last2}`;
-  }
-  if (digits.startsWith("80") && digits.length >= 11) {
-    const op = digits.slice(2, 4);
-    return `+375 ${op} ***-**-${last2}`;
-  }
-  if (digits.length <= 4) {
-    return `***${last2}`;
-  }
-  return `***-**-${last2}`;
-}
-
-/** Build tel: href for dialing; aligns 80… Belarus numbers with +375 like maskContactPhone. */
-function phoneToTelHref(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (!digits) return "#";
-  let d = digits;
-  if (d.startsWith("80") && d.length >= 11) {
-    d = `375${d.slice(2)}`;
-  }
-  return `tel:+${d}`;
-}
-
-type ContactPhoneEntry = {
-  phone: string;
-  hasViber: boolean;
-  hasWhatsapp: boolean;
-};
-
-function getContactPhones(property: Property): ContactPhoneEntry[] {
-  const fromApi = property.contact?.phones;
-  if (fromApi && fromApi.length > 0) {
-    return fromApi
-      .map((p) => ({
-        phone: p.phone?.trim() ?? "",
-        hasViber: !!p.hasViber,
-        hasWhatsapp: !!p.hasWhatsapp,
-      }))
-      .filter((p) => p.phone !== "");
-  }
-  const legacy = property.contact?.phone?.trim();
-  if (legacy) {
-    return [{ phone: legacy, hasViber: false, hasWhatsapp: false }];
-  }
-  return [];
-}
 
 export default function PropertyDetailClient({
   id,
@@ -192,12 +131,8 @@ export default function PropertyDetailClient({
 
   const [currentImage, setCurrentImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [phoneRevealed, setPhoneRevealed] = useState(false);
-  const [messageOpen, setMessageOpen] = useState(false);
-  const [messageText, setMessageText] = useState("");
-  const [messageSent, setMessageSent] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
-  const sendMessageMutation = useSendMessage();
+  const [contactOpen, setContactOpen] = useState(false);
 
   useEffect(() => {
     if (!property) {
@@ -297,18 +232,12 @@ export default function PropertyDetailClient({
   const hasPendingOwnReview = viewerReview?.status === "pending";
   const hasApprovedOwnReview = viewerReview?.status === "approved";
 
-  const sellerName = property.contact?.name?.trim() || "Продавец";
-  const sellerInitials = property.contact?.name?.trim()
-    ? initialsFromContactName(property.contact.name)
-    : "?";
-  const contactPhones = getContactPhones(property);
-  const primaryContactPhone = contactPhones[0]?.phone ?? "";
-  const hasContactPhones = contactPhones.length > 0;
-  const contactTelegram = property.contact?.telegram?.trim() ?? "";
+  const sellerName = getPropertySellerName(property);
   const canBookInquiry = property.contact?.hasEmail === true;
   const allowsMessagesAndInquiries = property.contact?.allowsMessagesAndInquiries !== false;
   const allowsGuestInquiries = property.contact?.allowsGuestInquiries !== false;
   const canSubmitBookingInquiry = canBookInquiry && allowsMessagesAndInquiries && (loggedIn || allowsGuestInquiries);
+  const showMobileContactBar = !isOwner;
 
   const images = property.images?.map(img => img.url) || [
     "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80",
@@ -512,7 +441,7 @@ export default function PropertyDetailClient({
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background${showMobileContactBar ? " max-lg:pb-[calc(8.5rem+env(safe-area-inset-bottom,0px))]" : ""}`}>
       <main className="min-w-0">
         {children ? (
           <div className="container mx-auto min-w-0 px-4 pb-1 pt-2 sm:py-4">{children}</div>
@@ -1036,230 +965,66 @@ export default function PropertyDetailClient({
               <motion.div
                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="bg-card rounded-2xl p-6 shadow-card sticky top-20"
+                className="hidden lg:block bg-card rounded-2xl p-6 shadow-card sticky top-20"
               >
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
-                    {sellerInitials}
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Контакт:</p>
-                    <p className="font-semibold text-foreground">{sellerName}</p>
-                  </div>
-                </div>
-
-                <p className="text-xs text-muted-foreground leading-relaxed mb-5">
-                  Для уточнения деталей свяжитесь с владельцем и сообщите, что вы нашли объявление на{" "}
-                  <span className="font-medium text-foreground">Посутки.by</span>.
-                </p>
-
-                <div className="space-y-2.5 mb-5">
-                  {!phoneRevealed ? (
-                    <Button
-                      className="w-full bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 border-0 h-11"
-                      disabled={!hasContactPhones}
-                      onClick={() => {
-                        if (!hasContactPhones) return;
-                        void trackPhoneView(property.id);
-                        trackPropertyContactEvent("show_phone", property);
-                        setPhoneRevealed(true);
-                      }}
-                    >
-                      <Phone className="w-4 h-4 mr-2" />
-                      {!hasContactPhones
-                        ? "Телефон не указан"
-                        : `${maskContactPhone(primaryContactPhone)} · Показать`}
-                    </Button>
-                  ) : (
-                    <>
-                      {contactPhones.map((entry, index) => {
-                        const showTelegram = index === 0 && !!contactTelegram;
-                        const showMessengers =
-                          entry.hasViber || entry.hasWhatsapp || showTelegram;
-
-                        return (
-                          <div key={`${entry.phone}-${index}`} className="flex gap-2">
-                            <Button
-                              className="min-w-0 flex-1 basis-0 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 border-0 h-11"
-                              asChild
-                            >
-                              <a
-                                href={phoneToTelHref(entry.phone)}
-                                onClick={() => trackPropertyContactEvent("click_phone", property)}
-                              >
-                                <Phone className="w-4 h-4 shrink-0" />
-                                <span className="truncate">{entry.phone}</span>
-                              </a>
-                            </Button>
-                            <div className="flex w-[9.25rem] shrink-0 justify-start gap-2">
-                            {showMessengers && (
-                              <>
-                                {entry.hasViber && (
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-11 w-11 shrink-0 hover:bg-muted"
-                                    asChild
-                                  >
-                                    <a
-                                      href={viberChatHref(entry.phone)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      aria-label="Написать в Viber"
-                                      onClick={() => trackPropertyContactEvent("click_viber", property)}
-                                    >
-                                      <ViberIcon className="h-7 w-7" />
-                                    </a>
-                                  </Button>
-                                )}
-                                {entry.hasWhatsapp && (
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-11 w-11 shrink-0 text-[#25D366] hover:text-[#25D366] hover:bg-[#25D366]/10"
-                                    asChild
-                                  >
-                                    <a
-                                      href={whatsAppHref(entry.phone)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      aria-label="Написать в WhatsApp"
-                                      onClick={() => trackPropertyContactEvent("click_whatsapp", property)}
-                                    >
-                                      <WhatsAppIcon className="!h-7 !w-7" />
-                                    </a>
-                                  </Button>
-                                )}
-                                {showTelegram && (
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-11 w-11 shrink-0 text-[#229ED9] hover:text-[#229ED9] hover:bg-[#229ED9]/10"
-                                    asChild
-                                  >
-                                    <a
-                                      href={telegramHref(contactTelegram)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      aria-label="Написать в Telegram"
-                                      onClick={() => trackPropertyContactEvent("click_telegram", property)}
-                                    >
-                                      <TelegramIcon className="!h-7 !w-7" />
-                                    </a>
-                                  </Button>
-                                )}
-                              </>
-                            )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </>
-                  )}
-                  {!isOwner && allowsMessagesAndInquiries && canSubmitBookingInquiry && (
-                    <Button
-                      variant="outline"
-                      className="w-full h-11"
-                      onClick={() => setBookingOpen(true)}
-                    >
-                      <CalendarCheck className="w-4 h-4 mr-2" />
-                      Заявка на бронирование
-                    </Button>
-                  )}
-                  {!isOwner && allowsMessagesAndInquiries && canBookInquiry && !allowsGuestInquiries && !loggedIn && (
-                    <Button variant="outline" className="w-full h-11" asChild>
-                      <Link href={loginWithReturnHref}>
-                        <CalendarCheck className="w-4 h-4 mr-2" />
-                        Войти, чтобы оставить заявку
-                      </Link>
-                    </Button>
-                  )}
-                  {!isOwner && allowsMessagesAndInquiries && loggedIn && (
-                    <Button
-                      variant="outline"
-                      className="w-full h-11"
-                      onClick={() => { setMessageOpen(true); setMessageSent(false); }}
-                    >
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Написать сообщение
-                    </Button>
-                  )}
-                  {!isOwner && allowsMessagesAndInquiries && !loggedIn && (
-                    <Button variant="outline" className="w-full h-11" asChild>
-                      <Link href={loginWithReturnHref}>
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        Войти, чтобы написать
-                      </Link>
-                    </Button>
-                  )}
-                </div>
-
-                <AnimatePresence>
-                  {!isOwner && allowsMessagesAndInquiries && loggedIn && messageOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden mb-5"
-                    >
-                      {messageSent ? (
-                        <div className="flex flex-col items-center gap-2 py-4 text-center">
-                          <CheckCircle className="w-8 h-8 text-primary" />
-                          <p className="text-sm font-medium text-foreground">Сообщение отправлено!</p>
-                          <p className="text-xs text-muted-foreground">Продавец получит уведомление</p>
-                          <Button variant="ghost" size="sm" onClick={() => setMessageOpen(false)} className="mt-1 text-xs">Закрыть</Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-3 pt-3 border-t border-border">
-                          <p className="text-sm font-medium text-foreground">Сообщение продавцу</p>
-                          <Textarea
-                            placeholder="Например: Здравствуйте! Интересует ваш объект..."
-                            value={messageText}
-                            onChange={(e) => setMessageText(e.target.value)}
-                            className="min-h-[80px] resize-none text-sm border border-border ring-0 ring-offset-0 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
-                            maxLength={1000}
-                          />
-                          <div className="flex items-center gap-2">
-                            <Button
-                              className="flex-1 bg-gradient-primary text-primary-foreground border-0 h-9"
-                              disabled={!messageText.trim() || sendMessageMutation.isPending}
-                              onClick={() => {
-                                sendMessageMutation.mutate(
-                                  { text: messageText, propertyId: id },
-                                  {
-                                    onSuccess: () => {
-                                      trackPropertyEngagementEvent("send_owner_message", property);
-                                      setMessageSent(true);
-                                      setMessageText("");
-                                    },
-                                  }
-                                );
-                              }}
-                            >
-                              <Send className="w-3.5 h-3.5 mr-1.5" />
-                              Отправить
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setMessageOpen(false)} className="h-9">
-                              Отмена
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <div className="pt-4 border-t border-border">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    <span>ID: {property.id}</span>
-                  </div>
-                </div>
+                <PropertyOwnerContactPanel
+                  property={property}
+                  isOwner={isOwner}
+                  loggedIn={loggedIn}
+                  loginWithReturnHref={loginWithReturnHref}
+                  onOpenBooking={() => setBookingOpen(true)}
+                />
               </motion.div>
             </div>
           </div>
         </div>
       </main>
+
+      {showMobileContactBar && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-xl px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+          <div className="flex items-baseline gap-1.5 flex-wrap mb-2.5">
+            {property.dealType === "daily" && (
+              <span className="text-sm text-muted-foreground">от</span>
+            )}
+            <span className="text-xl font-bold text-primary">
+              <PriceDisplay amount={priceDisplay.primaryAmount} currency={priceDisplay.primaryCurrency} />
+            </span>
+            {property.dealType === "daily" && (
+              <span className="text-sm text-muted-foreground">/ сутки</span>
+            )}
+          </div>
+          <Button
+            className="w-full h-11 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 border-0"
+            onClick={() => setContactOpen(true)}
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            Связаться с владельцем
+          </Button>
+        </div>
+      )}
+
+      {showMobileContactBar && (
+        <Drawer open={contactOpen} onOpenChange={setContactOpen}>
+          <DrawerContent className="max-h-[90vh]">
+            <DrawerHeader className="sr-only">
+              <DrawerTitle>Связаться с владельцем</DrawerTitle>
+              <DrawerDescription>Контакты владельца объявления</DrawerDescription>
+            </DrawerHeader>
+            <div className="overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+              <PropertyOwnerContactPanel
+                property={property}
+                isOwner={isOwner}
+                loggedIn={loggedIn}
+                loginWithReturnHref={loginWithReturnHref}
+                onOpenBooking={() => {
+                  setContactOpen(false);
+                  setBookingOpen(true);
+                }}
+              />
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
 
       {property.type === "apartment" && (
         <OwnerOtherListings propertyId={property.id} ownerName={sellerName} />
