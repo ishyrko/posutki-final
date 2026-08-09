@@ -59,7 +59,10 @@ final class LandmarkCrudController extends AbstractCrudController
     {
         return $assets
             ->addJsFile('https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js')
-            ->addJsFile('js/admin-article-tinymce.js');
+            ->addJsFile('js/admin-article-tinymce.js')
+            ->addCssFile('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css')
+            ->addJsFile('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js')
+            ->addJsFile('js/admin-landmark-map.js');
     }
 
     public function createEntity(string $entityFqcn): Landmark

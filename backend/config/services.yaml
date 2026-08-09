@@ -457,6 +457,11 @@ services:
             $apiKey: '%app.yandex_geocoder_api_key%'
             $referer: '%app.frontend_url%'
 
+    App\Infrastructure\Symfony\Command\AuditLandmarkGeocodeCommand:
+        arguments:
+            $apiKey: '%app.yandex_geocoder_api_key%'
+            $referer: '%app.frontend_url%'
+
     App\Infrastructure\Service\NearestMetroStationResolver: ~
 
     App\Infrastructure\Payment\BePaid\BePaidGatewayClient:
