@@ -6,7 +6,7 @@ import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from '@/feature
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ListingSubmitLink } from '@/components/ListingSubmitLink';
-import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, CalendarDays, Rocket, Star } from 'lucide-react';
+import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, CalendarDays, Rocket, Star, User, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -275,6 +275,36 @@ function ListingCard({
                                         Изменения на проверке
                                     </span>
                                 )}
+                                <TooltipProvider delayDuration={300}>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <span
+                                                className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-muted text-emerald-600 cursor-default"
+                                            >
+                                                <User className="w-3.5 h-3.5" />
+                                                {property.views ?? 0}
+                                            </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom">
+                                            Просмотры объявления
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                                <TooltipProvider delayDuration={300}>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <span
+                                                className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-muted text-emerald-600 cursor-default"
+                                            >
+                                                <Phone className="w-3.5 h-3.5" />
+                                                {property.phoneViews ?? 0}
+                                            </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom">
+                                            Просмотры контактов
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
                             </div>
                         </div>
                         <div className="text-lg font-bold text-foreground whitespace-nowrap sm:text-right space-y-0.5">
