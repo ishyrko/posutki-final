@@ -29,9 +29,11 @@ import { usePlacementLevels } from '@/features/placement/hooks';
 import {
     FREE_PLACEMENT_LIMITS_HREF,
     formatCatalogPositionRange,
+    formatFreeVsVip1CatalogHint,
     formatPlacementStatus,
     isPlacementBoostActive,
     placementBadgeLabel,
+    type FreeVsVip1CatalogHint,
     type PlacementTariffScope,
 } from '@/features/placement/types';
 import {
@@ -157,15 +159,35 @@ function ListingCard({
     const placementLevels = placementLevelsData?.levels ?? [];
     const freeTierBand = placementLevelsData?.freeTier;
     const effectiveVipLevel = property.placementEffectiveLevel ?? property.placementBaseLevel ?? 0;
-    const catalogPositionHint = useMemo(() => {
+    const catalogPositionHint = useMemo((): string | FreeVsVip1CatalogHint | null => {
         if (effectiveVipLevel <= 0) {
-            return freeTierBand
-                ? formatCatalogPositionRange(freeTierBand, locationLabel)
-                : null;
+            if (!freeTierBand) {
+                return null;
+            }
+            if (!isHouse) {
+                const vip1Level = placementLevels.find((item) => item.level === 1);
+                if (vip1Level) {
+                    const compared = formatFreeVsVip1CatalogHint(
+                        freeTierBand,
+                        vip1Level,
+                        locationLabel,
+                    );
+                    if (compared) {
+                        return compared;
+                    }
+                }
+            }
+            return formatCatalogPositionRange(freeTierBand, locationLabel);
         }
         const levelRow = placementLevels.find((item) => item.level === effectiveVipLevel);
         return levelRow ? formatCatalogPositionRange(levelRow, locationLabel) : null;
-    }, [effectiveVipLevel, placementLevels, freeTierBand, locationLabel]);
+    }, [effectiveVipLevel, placementLevels, freeTierBand, locationLabel, isHouse]);
+    const freeVsVip1Hint =
+        catalogPositionHint && typeof catalogPositionHint === 'object'
+            ? catalogPositionHint
+            : null;
+    const plainCatalogPositionHint =
+        typeof catalogPositionHint === 'string' ? catalogPositionHint : null;
 
     const imageBlock = (
         <>
@@ -287,15 +309,19 @@ function ListingCard({
                         </p>
                     )}
                     {property.status === 'published' && (
-                        <p className="mt-2 text-xs text-muted-foreground bg-muted/50 border border-border rounded-md px-2 py-1.5">
-                            Размещение: {formatPlacementStatus(property)}
-                            {catalogPositionHint ? (
+                        <div className="mt-2 text-xs text-muted-foreground bg-muted/50 border border-border rounded-md px-2 py-1.5 space-y-1.5">
+                            <p>Размещение: {formatPlacementStatus(property)}</p>
+                            {freeVsVip1Hint ? (
                                 <>
-                                    <br />
-                                    {catalogPositionHint}
+                                    <p>{freeVsVip1Hint.current}</p>
+                                    <p className="font-medium text-foreground rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5">
+                                        {freeVsVip1Hint.vip1}
+                                    </p>
                                 </>
+                            ) : plainCatalogPositionHint ? (
+                                <p>{plainCatalogPositionHint}</p>
                             ) : null}
-                        </p>
+                        </div>
                     )}
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-3 pt-3 border-t border-border">

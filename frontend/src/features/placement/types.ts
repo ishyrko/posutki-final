@@ -360,6 +360,59 @@ export function formatCatalogPositionRange(
     return `${base} · ротация каждые 5 мин.`;
 }
 
+function formatCatalogPlaceSpan(from: number, to: number): string {
+    return from === to ? `позиция ${from}` : `случайная позиция от ${from} до ${to}`;
+}
+
+export type FreeVsVip1CatalogHint = {
+    current: string;
+    vip1: string;
+};
+
+/**
+ * Free-tier catalog hint with VIP 1 projection for apartment cards in the cabinet.
+ * Returns null when free or VIP 1 bands are incomplete.
+ */
+export function formatFreeVsVip1CatalogHint(
+    freeTier: {
+        catalogPositionFrom?: number | null;
+        catalogPositionTo?: number | null;
+        catalogListingsAtLevel?: number | null;
+    },
+    vip1Level: {
+        catalogPositionFrom?: number | null;
+        catalogPositionTo?: number | null;
+        catalogListingsAtLevel?: number | null;
+    },
+    locationLabel: string,
+): FreeVsVip1CatalogHint | null {
+    const freeFrom = freeTier.catalogPositionFrom;
+    const freeTo = freeTier.catalogPositionTo;
+    if (freeFrom == null || freeTo == null || freeFrom < 1 || freeTo < freeFrom) {
+        return null;
+    }
+
+    const vipBand = withListingInCatalogBand(vip1Level, false);
+    const vipFrom = vipBand.catalogPositionFrom;
+    const vipTo = vipBand.catalogPositionTo;
+    if (vipFrom == null || vipTo == null || vipFrom < 1 || vipTo < vipFrom) {
+        return null;
+    }
+
+    const freeSpan =
+        freeFrom === freeTo
+            ? `место ${freeFrom}`
+            : `место с ${freeFrom} по ${freeTo}`;
+    const vipSpan = formatCatalogPlaceSpan(vipFrom, vipTo);
+    const freeRotation = freeFrom === freeTo ? '' : ' · ротация каждые 5 мин.';
+    const vipRotation = vipFrom === vipTo ? '' : ' · ротация каждые 5 мин.';
+
+    return {
+        current: `Сейчас ${freeSpan} (${locationLabel})${freeRotation}`,
+        vip1: `С VIP 1 будет ${vipSpan}${vipRotation}`,
+    };
+}
+
 /**
  * Adjust a catalog band for a listing that is about to join this level
  * (buy / boost). If it is already at the level, the live band already includes it.
