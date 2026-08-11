@@ -389,7 +389,7 @@ function ListingCard({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="justify-start"
+                                className="justify-start bg-amber-500 text-white hover:bg-amber-600 hover:text-white"
                                 onClick={() => setPlacementDialog('level')}
                             >
                                 <Star className="w-3.5 h-3.5 mr-1" />
