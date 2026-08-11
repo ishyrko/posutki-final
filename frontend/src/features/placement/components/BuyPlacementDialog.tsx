@@ -254,7 +254,7 @@ export function BuyPlacementDialog({
                 onOpenChange(next);
             }}
         >
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain">
                 <DialogHeader>
                     <DialogTitle>
                         {mode === 'boost' ? 'Купить VIP-буст на 24 часа' : 'Купить VIP-размещение'}
