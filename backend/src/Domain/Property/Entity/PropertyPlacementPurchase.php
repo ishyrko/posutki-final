@@ -20,6 +20,10 @@ class PropertyPlacementPurchase
     public const RESERVATION_HOURS = 48;
     public const BOOST_HOURS = 24;
     public const MIN_BOOST_PRICE_BYN = 3;
+    /** Minimum remaining VIP days required before an upgrade is allowed. */
+    public const MIN_UPGRADE_REMAINING_DAYS = 3;
+    /** Max subscription horizon from today for renewals (unless less than 1 month remains). */
+    public const MAX_HORIZON_MONTHS = 12;
 
     /** @var list<int> */
     public const ALLOWED_DURATIONS = [1, 3, 6, 12];

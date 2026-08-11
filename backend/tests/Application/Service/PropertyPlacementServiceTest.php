@@ -244,6 +244,174 @@ final class PropertyPlacementServiceTest extends TestCase
         self::assertSame(3, $service->quoteBoostPurchase($property));
     }
 
+    public function testQuoteLevelPurchaseBlocksUpgradeWhenLessThanThreeDaysRemain(): void
+    {
+        $ownerId = Id::fromInt(7);
+        $property = $this->createProperty($ownerId);
+        $now = new \DateTimeImmutable('2026-07-16 12:00:00');
+        $this->setPlacementState($property, level: 1, expiresAt: $now->modify('+2 days'));
+
+        $targetLevelPrice = new PropertyPlacementLevelPrice('apartment', 1, null, 2, 99);
+        $this->setEntityId($targetLevelPrice, 102);
+
+        $levelPriceRepository = $this->createMock(PropertyPlacementLevelPriceRepositoryInterface::class);
+        $levelPriceRepository->method('findActiveByCityId')->willReturn([
+            new PropertyPlacementLevelPrice('apartment', 1, null, 1, 49),
+            $targetLevelPrice,
+        ]);
+
+        $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
+        $purchaseRepository->method('findActiveLevelByPropertyId')->willReturn(null);
+
+        $service = new PropertyPlacementService(
+            $this->createStub(PropertyRepositoryInterface::class),
+            $purchaseRepository,
+            $levelPriceRepository,
+            $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
+            $this->createStub(CityRepositoryInterface::class),
+            $this->createStub(UserRepositoryInterface::class),
+        );
+
+        $this->expectException(\App\Domain\Shared\Exception\DomainException::class);
+        $this->expectExceptionMessage('Апгрейд недоступен');
+
+        $service->quoteLevelPurchase($property, $targetLevelPrice, 1, $now);
+    }
+
+    public function testQuoteLevelPurchaseAllowsUpgradeWhenThreeOrMoreDaysRemain(): void
+    {
+        $ownerId = Id::fromInt(7);
+        $property = $this->createProperty($ownerId);
+        $now = new \DateTimeImmutable('2026-07-16 12:00:00');
+        $expiresAt = $now->modify('+3 days');
+        $this->setPlacementState($property, level: 1, expiresAt: $expiresAt);
+
+        $targetLevelPrice = new PropertyPlacementLevelPrice('apartment', 1, null, 2, 99);
+        $this->setEntityId($targetLevelPrice, 102);
+
+        $levelPriceRepository = $this->createMock(PropertyPlacementLevelPriceRepositoryInterface::class);
+        $levelPriceRepository->method('findActiveByCityId')->willReturn([
+            new PropertyPlacementLevelPrice('apartment', 1, null, 1, 49),
+            $targetLevelPrice,
+        ]);
+
+        $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
+        $purchaseRepository->method('findActiveLevelByPropertyId')->willReturn(null);
+
+        $service = new PropertyPlacementService(
+            $this->createStub(PropertyRepositoryInterface::class),
+            $purchaseRepository,
+            $levelPriceRepository,
+            $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
+            $this->createStub(CityRepositoryInterface::class),
+            $this->createStub(UserRepositoryInterface::class),
+        );
+
+        $quote = $service->quoteLevelPurchase($property, $targetLevelPrice, 1, $now);
+
+        self::assertSame('upgrade', $quote['mode']);
+        self::assertEquals($expiresAt, $quote['expiresAtPreview']);
+        // (99 - 49) * 3 / 30 = 5
+        self::assertSame(5, $quote['priceByn']);
+    }
+
+    public function testQuoteLevelPurchaseAllowsYearRenewalWhenLessThanOneMonthRemains(): void
+    {
+        $ownerId = Id::fromInt(7);
+        $property = $this->createProperty($ownerId);
+        $now = new \DateTimeImmutable('2026-07-16 12:00:00');
+        $expiresAt = $now->modify('+20 days');
+        $this->setPlacementState($property, level: 2, expiresAt: $expiresAt);
+
+        $levelPrice = new PropertyPlacementLevelPrice('apartment', 1, null, 2, 99);
+        $this->setEntityId($levelPrice, 102);
+
+        $levelPriceRepository = $this->createMock(PropertyPlacementLevelPriceRepositoryInterface::class);
+        $levelPriceRepository->method('findActiveByCityId')->willReturn([$levelPrice]);
+
+        $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
+        $purchaseRepository->method('findActiveLevelByPropertyId')->willReturn(null);
+
+        $service = new PropertyPlacementService(
+            $this->createStub(PropertyRepositoryInterface::class),
+            $purchaseRepository,
+            $levelPriceRepository,
+            $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
+            $this->createStub(CityRepositoryInterface::class),
+            $this->createStub(UserRepositoryInterface::class),
+        );
+
+        $quote = $service->quoteLevelPurchase($property, $levelPrice, 12, $now);
+        $expectedExpiresAt = $expiresAt->modify('+12 months');
+
+        self::assertSame('renewal', $quote['mode']);
+        self::assertEquals($expectedExpiresAt, $quote['expiresAtPreview']);
+        self::assertGreaterThan($now->modify('+12 months'), $quote['expiresAtPreview']);
+    }
+
+    public function testActivateRenewalDoesNotClipWhenLessThanOneMonthRemains(): void
+    {
+        $ownerId = Id::fromInt(7);
+        $property = $this->createProperty($ownerId);
+        $now = new \DateTimeImmutable('2026-07-16 12:00:00');
+        $anchorExpiresAt = $now->modify('+20 days');
+        $this->setPlacementState($property, level: 2, expiresAt: $anchorExpiresAt);
+
+        $anchor = new PropertyPlacementPurchase(
+            propertyId: 10,
+            ownerId: $ownerId,
+            kind: PlacementPurchaseKind::Level->value,
+            priceByn: 99,
+            source: 'self_service',
+            level: 2,
+            levelPriceId: 102,
+            durationMonths: 1,
+        );
+        $anchor->activate(null, $now->modify('-1 month'), $anchorExpiresAt);
+        $this->setEntityId($anchor, 50);
+
+        $renewalPurchase = new PropertyPlacementPurchase(
+            propertyId: 10,
+            ownerId: $ownerId,
+            kind: PlacementPurchaseKind::Level->value,
+            priceByn: PropertyPlacementPurchase::priceForDuration(99, 12),
+            source: 'self_service',
+            level: 2,
+            levelPriceId: 102,
+            durationMonths: 12,
+            basePurchaseId: 50,
+        );
+
+        $levelPrice = new PropertyPlacementLevelPrice('apartment', 1, null, 2, 99);
+        $this->setEntityId($levelPrice, 102);
+
+        $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
+        $purchaseRepository->method('findById')->with(50)->willReturn($anchor);
+        $purchaseRepository->expects(self::exactly(2))->method('save');
+
+        $levelPriceRepository = $this->createMock(PropertyPlacementLevelPriceRepositoryInterface::class);
+        $levelPriceRepository->method('findById')->with(102)->willReturn($levelPrice);
+
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository->expects(self::atLeastOnce())->method('save')->with($property);
+
+        $service = new PropertyPlacementService(
+            $propertyRepository,
+            $purchaseRepository,
+            $levelPriceRepository,
+            $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
+            $this->createStub(CityRepositoryInterface::class),
+            $this->createStub(UserRepositoryInterface::class),
+        );
+
+        $service->activatePurchase($renewalPurchase, $property, null, $now);
+
+        $expectedExpiresAt = $anchorExpiresAt->modify('+12 months');
+        self::assertEquals($expectedExpiresAt, $renewalPurchase->getExpiresAt());
+        self::assertEquals($expectedExpiresAt, $property->getPlacementLevelExpiresAt());
+        self::assertGreaterThan($now->modify('+12 months'), $property->getPlacementLevelExpiresAt());
+    }
+
     public function testActivateBoostKeepsExistingBaseLevelFromProperty(): void
     {
         $ownerId = Id::fromInt(7);

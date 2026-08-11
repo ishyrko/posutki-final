@@ -30,12 +30,14 @@ import {
 import {
     calcBoostPriceByn,
     canRenewPlacementLevel,
+    canUpgradePlacementLevel,
     calcPlacementLevelPriceByn,
     formatCatalogPositionRange,
     formatPlacementDurationLabel,
     isPlacementBoostActive,
     placementDurationDiscountPercent,
     PLACEMENT_DURATIONS,
+    PLACEMENT_UPGRADE_MIN_REMAINING_DAYS,
     renewalMonthsAvailable,
     withListingInCatalogBand,
     type PlacementTariffScope,
@@ -109,6 +111,7 @@ export function BuyPlacementDialog({
         property.placementEffectiveLevel ?? property.placementBaseLevel ?? 0;
     const renewalAllowed = canRenewPlacementLevel(property.placementLevelExpiresAt);
     const renewalMonthsLeft = renewalMonthsAvailable(property.placementLevelExpiresAt);
+    const upgradeAllowed = canUpgradePlacementLevel(property.placementLevelExpiresAt);
 
     const selectedLevel = useMemo(
         () => levels.find((item) => item.level === level) ?? null,
@@ -131,11 +134,18 @@ export function BuyPlacementDialog({
         }
     }, [durationOptions, durationMonths]);
 
+    useEffect(() => {
+        if (level != null && level > currentLevel && currentLevel > 0 && !upgradeAllowed) {
+            setLevel(null);
+        }
+    }, [level, currentLevel, upgradeAllowed]);
+
     const quoteEnabled =
         open &&
         mode === 'level' &&
         level != null &&
         !(level === currentLevel && currentLevel > 0 && !renewalAllowed) &&
+        !(level > currentLevel && currentLevel > 0 && !upgradeAllowed) &&
         durationOptions.length > 0;
 
     const {
@@ -283,11 +293,13 @@ export function BuyPlacementDialog({
                                         const isDowngrade =
                                             currentLevel > 0 && item.level < currentLevel;
                                         const isCurrentLevel = item.level === currentLevel;
+                                        const isUpgrade = currentLevel > 0 && item.level > currentLevel;
                                         const renewalBlocked =
                                             isCurrentLevel && currentLevel > 0 && !renewalAllowed;
-                                        const disabled = full || isDowngrade || renewalBlocked;
-                                        const isUpgrade = currentLevel > 0 && item.level > currentLevel;
-                                        const positionHint = !isDowngrade
+                                        const upgradeBlocked = isUpgrade && !upgradeAllowed;
+                                        const disabled =
+                                            full || isDowngrade || renewalBlocked || upgradeBlocked;
+                                        const positionHint = !isDowngrade && !upgradeBlocked
                                             ? formatCatalogPositionRange(
                                                   withListingInCatalogBand(
                                                       item,
@@ -322,7 +334,7 @@ export function BuyPlacementDialog({
                                                                 · продление
                                                             </span>
                                                         )}
-                                                        {isUpgrade && (
+                                                        {isUpgrade && !upgradeBlocked && (
                                                             <span className="ml-1.5 text-xs font-normal text-primary">
                                                                 · апгрейд
                                                             </span>
@@ -331,7 +343,9 @@ export function BuyPlacementDialog({
                                                     <p className="text-xs text-muted-foreground">
                                                         {isDowngrade
                                                             ? 'Уровень ниже текущего недоступен'
-                                                            : renewalBlocked
+                                                            : upgradeBlocked
+                                                              ? `Апгрейд недоступен: до конца VIP менее ${PLACEMENT_UPGRADE_MIN_REMAINING_DAYS} дней`
+                                                              : renewalBlocked
                                                               ? 'Продление недоступно: до конца VIP больше 11 месяцев (макс. 12 мес. от сегодня)'
                                                               : full
                                                                 ? 'Нет свободных мест'

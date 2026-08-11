@@ -195,14 +195,16 @@ final class PropertyPlacementService
         }
 
         if ($targetLevel === $currentLevel) {
-            $cap = $now->modify('+12 months');
+            $cap = $now->modify('+' . PropertyPlacementPurchase::MAX_HORIZON_MONTHS . ' months');
             $candidate = $currentExpiresAt->modify('+' . $durationMonths . ' months');
+            $shortRemaining = $currentExpiresAt < $now->modify('+1 month');
 
-            if ($candidate > $cap) {
+            if ($candidate > $cap && !$shortRemaining) {
                 $availableMonths = $this->monthsBetween($currentExpiresAt, $cap);
                 throw new DomainException(sprintf(
-                    'Продление недоступно на %d мес.: максимальный срок подписки — 12 месяцев от сегодня. Доступно ещё %d мес.',
+                    'Продление недоступно на %d мес.: максимальный срок подписки — %d месяцев от сегодня. Доступно ещё %d мес.',
                     $durationMonths,
+                    PropertyPlacementPurchase::MAX_HORIZON_MONTHS,
                     $availableMonths,
                 ));
             }
@@ -218,6 +220,14 @@ final class PropertyPlacementService
             ];
         }
 
+        $remainingDays = max(0.0, ($currentExpiresAt->getTimestamp() - $now->getTimestamp()) / 86400);
+        if ($remainingDays < PropertyPlacementPurchase::MIN_UPGRADE_REMAINING_DAYS) {
+            throw new DomainException(sprintf(
+                'Апгрейд недоступен: до окончания текущего VIP осталось менее %d дней. Можно продлить текущий уровень.',
+                PropertyPlacementPurchase::MIN_UPGRADE_REMAINING_DAYS,
+            ));
+        }
+
         $oldLevelPrice = null;
         foreach ($this->findLevelPricesForProperty($property) as $candidate) {
             if ($candidate->getLevel() === $currentLevel) {
@@ -229,7 +239,6 @@ final class PropertyPlacementService
             throw new DomainException('Тариф текущего VIP-уровня не найден');
         }
 
-        $remainingDays = max(0.0, ($currentExpiresAt->getTimestamp() - $now->getTimestamp()) / 86400);
         $diffPerMonth = $levelPrice->getPriceBynPerMonth() - $oldLevelPrice->getPriceBynPerMonth();
         $priceByn = max(0, (int) round($diffPerMonth * $remainingDays / 30));
 
@@ -261,8 +270,9 @@ final class PropertyPlacementService
             if ($purchase->getLevel() === $currentLevel) {
                 $durationMonths = $purchase->getDurationMonths() ?? 0;
                 $candidate = $currentExpiresAt->modify('+' . $durationMonths . ' months');
-                $cap = $now->modify('+12 months');
-                $expiresAtOverride = $candidate > $cap ? $cap : $candidate;
+                $cap = $now->modify('+' . PropertyPlacementPurchase::MAX_HORIZON_MONTHS . ' months');
+                $shortRemaining = $currentExpiresAt < $now->modify('+1 month');
+                $expiresAtOverride = (!$shortRemaining && $candidate > $cap) ? $cap : $candidate;
             } elseif ($purchase->getLevel() !== null && $purchase->getLevel() > $currentLevel) {
                 $expiresAtOverride = $currentExpiresAt;
             }

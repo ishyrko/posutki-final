@@ -135,8 +135,29 @@ export function formatPlacementDurationLabel(durationMonths: number): string {
 export const PLACEMENT_MAX_HORIZON_MONTHS = 12;
 
 /**
+ * When less than 1 month of VIP remains, renewals may extend past the usual
+ * 12‑month-from-today cap (including a full year).
+ */
+export function hasShortVipRemainingForFullRenewal(
+    expiresAt: string | null | undefined,
+    now: Date = new Date(),
+): boolean {
+    if (!expiresAt) {
+        return false;
+    }
+    const expires = new Date(expiresAt);
+    if (Number.isNaN(expires.getTime()) || expires <= now) {
+        return false;
+    }
+    const oneMonthFromNow = new Date(now);
+    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+    return expires < oneMonthFromNow;
+}
+
+/**
  * How many months can still be added on renewal before hitting the 12‑month-from-today cap.
  * 0 → продление недоступно (текущий VIP уже дальше чем на 11 мес.).
+ * If less than 1 month remains — full set of durations (up to 12 months) is available.
  */
 export function renewalMonthsAvailable(
     expiresAt: string | null | undefined,
@@ -147,6 +168,10 @@ export function renewalMonthsAvailable(
     }
     const expires = new Date(expiresAt);
     if (Number.isNaN(expires.getTime()) || expires <= now) {
+        return PLACEMENT_MAX_HORIZON_MONTHS;
+    }
+
+    if (hasShortVipRemainingForFullRenewal(expiresAt, now)) {
         return PLACEMENT_MAX_HORIZON_MONTHS;
     }
 
@@ -174,6 +199,36 @@ export function canRenewPlacementLevel(
     now: Date = new Date(),
 ): boolean {
     return renewalMonthsAvailable(expiresAt, now) >= 1;
+}
+
+/** Minimum remaining VIP days required before an upgrade is allowed. */
+export const PLACEMENT_UPGRADE_MIN_REMAINING_DAYS = 3;
+
+/** Remaining VIP days until expiry, or null when there is no active VIP. */
+export function placementVipRemainingDays(
+    expiresAt: string | null | undefined,
+    now: Date = new Date(),
+): number | null {
+    if (!expiresAt) {
+        return null;
+    }
+    const expires = new Date(expiresAt);
+    if (Number.isNaN(expires.getTime()) || expires <= now) {
+        return null;
+    }
+    return (expires.getTime() - now.getTime()) / (86400 * 1000);
+}
+
+/** Upgrade to a higher VIP level is allowed only when ≥ 3 days remain. */
+export function canUpgradePlacementLevel(
+    expiresAt: string | null | undefined,
+    now: Date = new Date(),
+): boolean {
+    const remainingDays = placementVipRemainingDays(expiresAt, now);
+    if (remainingDays == null) {
+        return false;
+    }
+    return remainingDays >= PLACEMENT_UPGRADE_MIN_REMAINING_DAYS;
 }
 
 export function formatPlacementPurchasePeriod(
