@@ -198,7 +198,7 @@ final class CreatePlacementPurchaseHandlerTest extends TestCase
         self::assertSame(53, $savedPurchase->getBasePurchaseId());
     }
 
-    public function testCreatesBoostPurchaseWithTwiceDailyLevelGap(): void
+    public function testCreatesBoostPurchaseWithThriceDailyLevelGap(): void
     {
         $baseLevelReflection = new \ReflectionProperty($this->property, 'placementBaseLevel');
         $baseLevelReflection->setAccessible(true);
@@ -218,11 +218,11 @@ final class CreatePlacementPurchaseHandlerTest extends TestCase
             kind: PlacementPurchaseKind::Boost->value,
         ));
 
-        // (119 - 49) / 30 * 2 = 4.666... → ceil 5
-        self::assertSame(5, $result['priceByn']);
+        // (119 - 49) / 30 * 3 = 7 → ceil 7
+        self::assertSame(7, $result['priceByn']);
         self::assertSame(PlacementPurchaseKind::Boost->value, $result['kind']);
         self::assertNotNull($savedPurchase);
-        self::assertSame(5, $savedPurchase->getPriceByn());
+        self::assertSame(7, $savedPurchase->getPriceByn());
     }
 
     private function createHandler(

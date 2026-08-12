@@ -266,7 +266,7 @@ export function formatPlacementPurchaseSummary(
 /** Minimum VIP-boost (24h) price in BYN. */
 export const MIN_BOOST_PRICE_BYN = 3;
 
-/** 2 × daily tariff gap between current and next VIP level (monthly / 30), rounded up. */
+/** 3 × daily tariff gap between current and next VIP level (monthly / 30), rounded up. */
 export function calcBoostPriceByn(
     currentLevel: number,
     levels: Array<{ level: number; priceBynPerMonth: number }>,
@@ -287,7 +287,7 @@ export function calcBoostPriceByn(
 
     return Math.max(
         MIN_BOOST_PRICE_BYN,
-        Math.ceil((2 * (next.priceBynPerMonth - currentPrice)) / 30),
+        Math.ceil((3 * (next.priceBynPerMonth - currentPrice)) / 30),
     );
 }
 

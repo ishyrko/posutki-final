@@ -153,7 +153,7 @@ final class PropertyPlacementServiceTest extends TestCase
         self::assertEquals($expectedExpiresAt, $property->getPlacementLevelExpiresAt());
     }
 
-    public function testQuoteBoostPurchaseIsTwiceDailyGapToNextLevel(): void
+    public function testQuoteBoostPurchaseIsThriceDailyGapToNextLevel(): void
     {
         $ownerId = Id::fromInt(7);
         $property = $this->createProperty($ownerId);
@@ -180,8 +180,8 @@ final class PropertyPlacementServiceTest extends TestCase
             $this->createStub(UserRepositoryInterface::class),
         );
 
-        // (159 - 119) / 30 * 2 = 2.666... ? ceil 3
-        self::assertSame(3, $service->quoteBoostPurchase($property));
+        // (159 - 119) / 30 * 3 = 4 → ceil 4
+        self::assertSame(4, $service->quoteBoostPurchase($property));
     }
 
     public function testQuoteBoostPurchaseFromFreeLevelUsesZeroAsCurrentPrice(): void
@@ -210,8 +210,8 @@ final class PropertyPlacementServiceTest extends TestCase
             $this->createStub(UserRepositoryInterface::class),
         );
 
-        // (49 - 0) / 30 * 2 = 3.266... ? ceil 4
-        self::assertSame(4, $service->quoteBoostPurchase($property));
+        // (49 - 0) / 30 * 3 = 4.9 → ceil 5
+        self::assertSame(5, $service->quoteBoostPurchase($property));
     }
 
     public function testQuoteBoostPurchaseNeverBelowMinimum(): void
@@ -240,7 +240,7 @@ final class PropertyPlacementServiceTest extends TestCase
             $this->createStub(UserRepositoryInterface::class),
         );
 
-        // (69 - 49) / 30 * 2 = 1.333... ? ceil 2, but minimum is 3 BYN
+        // (69 - 49) / 30 * 3 = 2 → ceil 2, but minimum is 3 BYN
         self::assertSame(3, $service->quoteBoostPurchase($property));
     }
 

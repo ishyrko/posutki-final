@@ -108,7 +108,7 @@ final class PropertyPlacementService
     }
 
     /**
-     * VIP-boost (24h) price: twice the daily tariff gap between the current level and the next one.
+     * VIP-boost (24h) price: three times the daily tariff gap between the current level and the next one.
      * Daily rate is monthly price / 30. Level 0 (free) is treated as 0 BYN/month.
      * Never below {@see PropertyPlacementPurchase::MIN_BOOST_PRICE_BYN}.
      */
@@ -143,7 +143,7 @@ final class PropertyPlacementService
 
         return max(
             PropertyPlacementPurchase::MIN_BOOST_PRICE_BYN,
-            (int) ceil($dailyDiff * 2),
+            (int) ceil($dailyDiff * 3),
         );
     }
 
