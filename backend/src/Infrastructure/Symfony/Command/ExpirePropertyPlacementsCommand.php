@@ -74,7 +74,10 @@ class ExpirePropertyPlacementsCommand extends Command
             }
 
             if ($this->shouldNotifyVipExpired($property, $now, $publishedApartmentCountByCity)) {
-                $emailsSent += $this->notifyVipExpired($property) ? 1 : 0;
+                if ($this->notifyVipExpired($property)) {
+                    ++$emailsSent;
+                    sleep(2);
+                }
             }
 
             $this->placementService->recomputeForProperty($property, $now);
