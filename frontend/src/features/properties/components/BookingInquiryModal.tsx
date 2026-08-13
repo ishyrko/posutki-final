@@ -92,6 +92,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
     const [submitted, setSubmitted] = useState(false);
     const [checkInOpen, setCheckInOpen] = useState(false);
     const [checkOutOpen, setCheckOutOpen] = useState(false);
+    const [checkOutMonth, setCheckOutMonth] = useState<Date>(() => startOfToday());
 
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim() ?? '';
     useRecaptchaPointerEventsFix(open && Boolean(siteKey));
@@ -444,7 +445,24 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                     render={({ field }) => (
                                                         <FormItem>
                                                             <FormLabel>Дата выезда *</FormLabel>
-                                                            <Popover open={checkOutOpen} onOpenChange={setCheckOutOpen}>
+                                                            <Popover
+                                                                open={checkOutOpen}
+                                                                onOpenChange={(open) => {
+                                                                    setCheckOutOpen(open);
+                                                                    if (!open) {
+                                                                        return;
+                                                                    }
+                                                                    const checkOut = form.getValues('checkOut')?.trim();
+                                                                    const checkIn = form.getValues('checkIn')?.trim();
+                                                                    if (checkOut) {
+                                                                        setCheckOutMonth(new Date(`${checkOut}T00:00:00`));
+                                                                    } else if (checkIn) {
+                                                                        setCheckOutMonth(new Date(`${checkIn}T00:00:00`));
+                                                                    } else {
+                                                                        setCheckOutMonth(startOfToday());
+                                                                    }
+                                                                }}
+                                                            >
                                                                 <PopoverTrigger asChild>
                                                                     <FormControl>
                                                                         <Button
@@ -464,6 +482,8 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                     <Calendar
                                                                         mode="single"
                                                                         locale={ru}
+                                                                        month={checkOutMonth}
+                                                                        onMonthChange={setCheckOutMonth}
                                                                         selected={field.value ? new Date(`${field.value}T00:00:00`) : undefined}
                                                                         onSelect={(date) => {
                                                                             const next = date ? format(date, 'yyyy-MM-dd') : '';
