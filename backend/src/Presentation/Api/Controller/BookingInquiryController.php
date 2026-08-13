@@ -58,6 +58,13 @@ class BookingInquiryController extends AbstractController
             );
         }
 
+        if ($checkIn === '' || $checkOut === '') {
+            return $this->json(
+                ApiResponse::error('Укажите даты заезда и выезда', 422),
+                422,
+            );
+        }
+
         if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             return $this->json(
                 ApiResponse::error('Неверный формат email', 422),
@@ -65,7 +72,14 @@ class BookingInquiryController extends AbstractController
             );
         }
 
-        if ($guests !== null && $guests < 1) {
+        if ($guests === null) {
+            return $this->json(
+                ApiResponse::error('Укажите количество гостей', 422),
+                422,
+            );
+        }
+
+        if ($guests < 1) {
             return $this->json(
                 ApiResponse::error('Количество гостей должно быть не меньше 1', 422),
                 422,

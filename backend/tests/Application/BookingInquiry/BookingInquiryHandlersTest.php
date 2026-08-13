@@ -144,7 +144,7 @@ final class BookingInquiryHandlersTest extends TestCase
         $inquiry = $this->createInquiry(email: null);
         $this->setEntityId($inquiry, 1);
 
-        $repository = $this->createMock(BookingInquiryRepositoryInterface::class);
+        $repository = $this->createStub(BookingInquiryRepositoryInterface::class);
         $repository->method('findById')->willReturn($inquiry);
 
         $handler = new ReplyToBookingInquiryHandler(
@@ -174,7 +174,7 @@ final class BookingInquiryHandlersTest extends TestCase
         );
         $this->setEntityId($inquiry, 1);
 
-        $repository = $this->createMock(BookingInquiryRepositoryInterface::class);
+        $repository = $this->createStub(BookingInquiryRepositoryInterface::class);
         $repository->method('findById')->willReturn($inquiry);
 
         $handler = new ReplyToBookingInquiryHandler(
@@ -205,12 +205,8 @@ final class BookingInquiryHandlersTest extends TestCase
         );
         $this->setEntityId($inquiry, 1);
 
-        $property = $this->createPropertyMock();
-
-        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
-        $propertyRepository->method('findById')->willReturn($property);
-
-        $calendarAggregator = $this->createCalendarAggregator([]);
+        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
+        $propertyRepository->method('findById')->willReturn($this->createPropertyStub());
 
         $commandBus = $this->createMock(CommandBusInterface::class);
         $commandBus
@@ -231,7 +227,7 @@ final class BookingInquiryHandlersTest extends TestCase
         $handler = new AcceptBookingInquiryHandler(
             $repository,
             $propertyRepository,
-            $calendarAggregator,
+            $this->createCalendarAggregator([]),
             $commandBus,
         );
 
@@ -257,10 +253,8 @@ final class BookingInquiryHandlersTest extends TestCase
         );
         $this->setEntityId($inquiry, 1);
 
-        $property = $this->createPropertyMock();
-
-        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
-        $propertyRepository->method('findById')->willReturn($property);
+        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
+        $propertyRepository->method('findById')->willReturn($this->createPropertyStub());
 
         $commandBus = $this->createMock(CommandBusInterface::class);
         $commandBus->expects(self::never())->method('dispatch');
@@ -300,10 +294,8 @@ final class BookingInquiryHandlersTest extends TestCase
         );
         $this->setEntityId($inquiry, 1);
 
-        $property = $this->createPropertyMock();
-
-        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
-        $propertyRepository->method('findById')->willReturn($property);
+        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
+        $propertyRepository->method('findById')->willReturn($this->createPropertyStub());
 
         $occupiedBlock = new PropertyAvailabilityBlock(
             propertyId: Id::fromInt(100),
@@ -311,15 +303,13 @@ final class BookingInquiryHandlersTest extends TestCase
             endDate: new \DateTimeImmutable('2026-08-16'),
         );
 
-        $calendarAggregator = $this->createCalendarAggregator([$occupiedBlock]);
-
-        $repository = $this->createMock(BookingInquiryRepositoryInterface::class);
+        $repository = $this->createStub(BookingInquiryRepositoryInterface::class);
         $repository->method('findById')->willReturn($inquiry);
 
         $handler = new AcceptBookingInquiryHandler(
             $repository,
             $propertyRepository,
-            $calendarAggregator,
+            $this->createCalendarAggregator([$occupiedBlock]),
             $this->createStub(CommandBusInterface::class),
         );
 
@@ -365,17 +355,17 @@ final class BookingInquiryHandlersTest extends TestCase
 
     public function testSubmitFailsWhenOwnerDisabledMessagesAndInquiries(): void
     {
-        $property = $this->createPropertyMock();
+        $property = $this->createPropertyStub();
         $property->method('getOwnerId')->willReturn(Id::fromInt(10));
 
-        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
         $propertyRepository->method('findById')->willReturn($property);
 
         $owner = User::register(Email::fromString('owner@example.com'), '', 'Owner', 'User');
         $owner->verify();
         $owner->setAllowMessagesAndInquiries(false);
 
-        $userRepository = $this->createMock(UserRepositoryInterface::class);
+        $userRepository = $this->createStub(UserRepositoryInterface::class);
         $userRepository->method('findById')->willReturn($owner);
 
         $handler = new SubmitBookingInquiryHandler(
@@ -397,11 +387,145 @@ final class BookingInquiryHandlersTest extends TestCase
         ));
     }
 
-    private function createPropertyMock(): Property
+    public function testSubmitFailsWithoutCheckIn(): void
     {
-        $property = $this->createMock(Property::class);
+        $handler = $this->createSubmitHandler(minStayDays: 1);
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Укажите дату заезда');
+
+        ($handler)(new SubmitBookingInquiryCommand(
+            propertyId: '100',
+            name: 'Гость',
+            phone: '+375291112233',
+            email: 'guest@example.com',
+            guests: 2,
+            checkOut: '2026-08-18',
+        ));
+    }
+
+    public function testSubmitFailsWithoutCheckOut(): void
+    {
+        $handler = $this->createSubmitHandler(minStayDays: 1);
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Укажите дату выезда');
+
+        ($handler)(new SubmitBookingInquiryCommand(
+            propertyId: '100',
+            name: 'Гость',
+            phone: '+375291112233',
+            email: 'guest@example.com',
+            guests: 2,
+            checkIn: '2026-08-15',
+        ));
+    }
+
+    public function testSubmitFailsWhenStayShorterThanMinStayDays(): void
+    {
+        $handler = $this->createSubmitHandler(minStayDays: 3);
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Минимальный срок проживания — 3 суток');
+
+        ($handler)(new SubmitBookingInquiryCommand(
+            propertyId: '100',
+            name: 'Гость',
+            phone: '+375291112233',
+            email: 'guest@example.com',
+            guests: 2,
+            checkIn: '2026-08-15',
+            checkOut: '2026-08-17',
+        ));
+    }
+
+    public function testSubmitFailsWhenGuestsExceedMaxDailyGuests(): void
+    {
+        $handler = $this->createSubmitHandler(minStayDays: 1, maxDailyGuests: 2);
+
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Максимум гостей для этого объявления — 2');
+
+        ($handler)(new SubmitBookingInquiryCommand(
+            propertyId: '100',
+            name: 'Гость',
+            phone: '+375291112233',
+            email: 'guest@example.com',
+            guests: 3,
+            checkIn: '2026-08-15',
+            checkOut: '2026-08-17',
+        ));
+    }
+
+    public function testSubmitSucceedsWithRequiredDates(): void
+    {
+        $saved = null;
+        $repository = $this->createMock(BookingInquiryRepositoryInterface::class);
+        $repository
+            ->expects(self::once())
+            ->method('save')
+            ->with(self::callback(function (BookingInquiry $inquiry) use (&$saved): bool {
+                $this->setEntityId($inquiry, 42);
+                $saved = $inquiry;
+
+                return true;
+            }));
+
+        $handler = $this->createSubmitHandler(minStayDays: 2, maxDailyGuests: 4, repository: $repository);
+
+        $result = ($handler)(new SubmitBookingInquiryCommand(
+            propertyId: '100',
+            name: 'Гость',
+            phone: '+375291112233',
+            email: 'guest@example.com',
+            guests: 2,
+            checkIn: '2026-08-15',
+            checkOut: '2026-08-17',
+        ));
+
+        self::assertSame(['id' => '42'], $result);
+        self::assertInstanceOf(BookingInquiry::class, $saved);
+        self::assertSame(2, $saved->getGuests());
+        self::assertSame('2026-08-15', $saved->getCheckIn()?->format('Y-m-d'));
+        self::assertSame('2026-08-17', $saved->getCheckOut()?->format('Y-m-d'));
+    }
+
+    private function createSubmitHandler(
+        int $minStayDays,
+        int $maxDailyGuests = 4,
+        ?BookingInquiryRepositoryInterface $repository = null,
+    ): SubmitBookingInquiryHandler {
+        $property = $this->createPropertyStub($minStayDays, $maxDailyGuests);
+        $property->method('getOwnerId')->willReturn(Id::fromInt(10));
+
+        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
+        $propertyRepository->method('findById')->willReturn($property);
+
+        $owner = User::register(Email::fromString('owner@example.com'), '', 'Owner', 'User');
+        $owner->verify();
+
+        $userRepository = $this->createStub(UserRepositoryInterface::class);
+        $userRepository->method('findById')->willReturn($owner);
+
+        $notificationBus = $this->createStub(MessageBusInterface::class);
+        $notificationBus->method('dispatch')->willReturn(new Envelope(new \stdClass()));
+
+        return new SubmitBookingInquiryHandler(
+            $repository ?? $this->createStub(BookingInquiryRepositoryInterface::class),
+            $propertyRepository,
+            $userRepository,
+            $notificationBus,
+            $this->createCalendarAggregator([]),
+        );
+    }
+
+    private function createPropertyStub(int $minStayDays = 1, int $maxDailyGuests = 4): Property
+    {
+        $property = $this->createStub(Property::class);
         $property->method('getId')->willReturn(Id::fromInt(100));
         $property->method('getDealType')->willReturn('daily');
+        $property->method('getMinStayDays')->willReturn($minStayDays);
+        $property->method('getMaxDailyGuests')->willReturn($maxDailyGuests);
         $property->method('getExternalCalendarUrls')->willReturn([]);
         $property->method('getExternalCalendarSnapshot')->willReturn(null);
         $property->method('getExternalCalendarSyncedAt')->willReturn(null);
@@ -414,7 +538,7 @@ final class BookingInquiryHandlersTest extends TestCase
      */
     private function createCalendarAggregator(array $manualBlocks): PropertyCalendarAggregator
     {
-        $availabilityBlockRepository = $this->createMock(PropertyAvailabilityBlockRepositoryInterface::class);
+        $availabilityBlockRepository = $this->createStub(PropertyAvailabilityBlockRepositoryInterface::class);
         $availabilityBlockRepository
             ->method('findByPropertyId')
             ->willReturn($manualBlocks);

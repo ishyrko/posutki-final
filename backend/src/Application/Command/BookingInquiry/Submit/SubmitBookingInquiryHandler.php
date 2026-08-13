@@ -56,11 +56,34 @@ final class SubmitBookingInquiryHandler
             throw new DomainException('Укажите email — на него придёт ответ владельца');
         }
 
-        $checkIn = $this->parseDate($command->checkIn);
-        $checkOut = $this->parseDate($command->checkOut);
+        $guests = $command->guests;
+        if ($guests === null || $guests < 1) {
+            throw new DomainException('Укажите количество гостей');
+        }
 
-        if ($checkIn !== null && $checkOut !== null && $checkOut < $checkIn) {
-            throw new DomainException('Дата выезда не может быть раньше даты заезда');
+        $maxGuests = $property->getMaxDailyGuests();
+        if ($maxGuests !== null && $maxGuests > 0 && $guests > $maxGuests) {
+            throw new DomainException(sprintf(
+                'Максимум гостей для этого объявления — %d',
+                $maxGuests,
+            ));
+        }
+
+        if ($guests > 20) {
+            throw new DomainException('Количество гостей не может быть больше 20');
+        }
+
+        $checkIn = $this->parseRequiredDate($command->checkIn, 'Укажите дату заезда');
+        $checkOut = $this->parseRequiredDate($command->checkOut, 'Укажите дату выезда');
+
+        if ($checkOut <= $checkIn) {
+            throw new DomainException('Дата выезда должна быть позже даты заезда');
+        }
+
+        $nights = (int) $checkIn->diff($checkOut)->days;
+        $minStayDays = max(1, $property->getMinStayDays() ?? 1);
+        if ($nights < $minStayDays) {
+            throw new DomainException($this->minStayMessage($minStayDays));
         }
 
         $this->assertDatesNotBlocked($property, $checkIn, $checkOut);
@@ -72,7 +95,7 @@ final class SubmitBookingInquiryHandler
             phone: $command->phone,
             userId: $command->userId !== null ? Id::fromString($command->userId) : null,
             email: $command->email,
-            guests: $command->guests,
+            guests: $guests,
             checkIn: $checkIn,
             checkOut: $checkOut,
             notes: $command->notes,
@@ -89,13 +112,13 @@ final class SubmitBookingInquiryHandler
         ];
     }
 
-    private function parseDate(?string $value): ?\DateTimeImmutable
+    private function parseRequiredDate(?string $value, string $emptyMessage): \DateTimeImmutable
     {
         if ($value === null || trim($value) === '') {
-            return null;
+            throw new DomainException($emptyMessage);
         }
 
-        $date = \DateTimeImmutable::createFromFormat('Y-m-d', trim($value));
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', trim($value));
         if ($date === false) {
             throw new DomainException('Некорректный формат даты');
         }
@@ -103,24 +126,33 @@ final class SubmitBookingInquiryHandler
         return $date;
     }
 
-    private function assertDatesNotBlocked(
-        Property $property,
-        ?\DateTimeImmutable $checkIn,
-        ?\DateTimeImmutable $checkOut,
-    ): void {
-        if ($checkIn === null && $checkOut === null) {
-            return;
+    private function minStayMessage(int $minStayDays): string
+    {
+        $mod100 = $minStayDays % 100;
+        $mod10 = $minStayDays % 10;
+        if ($mod100 > 10 && $mod100 < 20) {
+            $label = 'суток';
+        } elseif ($mod10 > 1 && $mod10 < 5) {
+            $label = 'суток';
+        } elseif ($mod10 === 1) {
+            $label = 'сутки';
+        } else {
+            $label = 'суток';
         }
 
+        return sprintf('Минимальный срок проживания — %d %s', $minStayDays, $label);
+    }
+
+    private function assertDatesNotBlocked(
+        Property $property,
+        \DateTimeImmutable $checkIn,
+        \DateTimeImmutable $checkOut,
+    ): void {
         $calendarData = $this->propertyCalendarAggregator->getPublicCalendarData($property);
         $blockedKeys = $this->blockedDateKeys($calendarData['blockedRanges']);
 
-        if ($checkIn !== null && isset($blockedKeys[$checkIn->format('Y-m-d')])) {
+        if (isset($blockedKeys[$checkIn->format('Y-m-d')])) {
             throw new DomainException('Дата заезда занята');
-        }
-
-        if ($checkIn === null || $checkOut === null) {
-            return;
         }
 
         $cursor = $checkIn;

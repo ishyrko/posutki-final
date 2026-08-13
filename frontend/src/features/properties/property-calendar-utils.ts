@@ -59,14 +59,30 @@ export function isBookedDate(date: Date, bookedKeys: Set<string>): boolean {
     return bookedKeys.has(format(date, 'yyyy-MM-dd'));
 }
 
-/** Дата выезда недоступна: раньше заезда, сама занята или период [checkIn, date) включает занятую ночь. */
+/** Число ночей между датами заезда и выезда (Y-m-d). */
+export function nightsBetween(checkIn: string, checkOut: string): number {
+    const start = new Date(`${checkIn}T00:00:00`);
+    const end = new Date(`${checkOut}T00:00:00`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        return 0;
+    }
+    return Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+}
+
+/** Дата выезда недоступна: раньше мин. срока, сама занята или период [checkIn, date) включает занятую ночь. */
 export function isCheckOutDateDisabled(
     checkIn: string | undefined,
     date: Date,
     bookedKeys: Set<string>,
+    minStayDays = 1,
 ): boolean {
+    const minNights = Math.max(1, minStayDays);
     const minDate = checkIn?.trim()
-        ? new Date(`${checkIn.trim()}T00:00:00`)
+        ? (() => {
+            const d = new Date(`${checkIn.trim()}T00:00:00`);
+            d.setDate(d.getDate() + minNights);
+            return d;
+        })()
         : startOfToday();
 
     if (date < minDate) {

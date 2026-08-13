@@ -5,10 +5,18 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth';
+import { formatMinStayDays, MAX_DAILY_GUESTS } from '@/features/create-listing/validation';
 
 export type BookingInquiryStatus = 'new' | 'replied' | 'accepted' | 'declined';
 
-export function createBookingInquirySchema(requireEmail: boolean) {
+export function createBookingInquirySchema(
+    requireEmail: boolean,
+    minStayDays = 1,
+    maxGuests = MAX_DAILY_GUESTS,
+) {
+    const minNights = Math.max(1, minStayDays);
+    const guestsMax = Math.max(1, Math.min(MAX_DAILY_GUESTS, maxGuests));
+
     return z.object({
         propertyId: z.number().int().positive(),
         name: z.string().trim().min(2, 'Введите имя'),
@@ -16,10 +24,36 @@ export function createBookingInquirySchema(requireEmail: boolean) {
         email: requireEmail
             ? z.string().trim().min(1, 'Укажите email').email('Введите корректный email')
             : z.union([z.literal(''), z.string().email('Введите корректный email')]).optional(),
-        guests: z.number().int().min(1).max(50).optional(),
-        checkIn: z.string().optional(),
-        checkOut: z.string().optional(),
+        guests: z
+            .number()
+            .int()
+            .min(1, 'Укажите количество гостей')
+            .max(guestsMax, `Максимум гостей для этого объявления — ${guestsMax}`),
+        checkIn: z.string().trim().min(1, 'Укажите дату заезда'),
+        checkOut: z.string().trim().min(1, 'Укажите дату выезда'),
         notes: z.string().max(1000).optional(),
+    }).superRefine((data, ctx) => {
+        const checkIn = new Date(`${data.checkIn}T00:00:00`);
+        const checkOut = new Date(`${data.checkOut}T00:00:00`);
+        if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
+            return;
+        }
+        if (checkOut <= checkIn) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Дата выезда должна быть позже даты заезда',
+                path: ['checkOut'],
+            });
+            return;
+        }
+        const nights = Math.round((checkOut.getTime() - checkIn.getTime()) / (24 * 60 * 60 * 1000));
+        if (nights < minNights) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `Минимальный срок проживания — ${formatMinStayDays(minNights)}`,
+                path: ['checkOut'],
+            });
+        }
     });
 }
 

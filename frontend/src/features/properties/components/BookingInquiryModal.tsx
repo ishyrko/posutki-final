@@ -45,12 +45,14 @@ import {
     hasBookedNightInStay,
     isBookedDate,
     isCheckOutDateDisabled,
+    nightsBetween,
     startOfToday,
     bookedDayModifierClassNames,
     isCalendarRecentlyActive,
 } from '@/features/properties/property-calendar-utils';
 import { useCurrency } from '@/context/CurrencyContext';
 import { trackPropertyEngagementEvent } from '@/lib/gtag';
+import { formatMinStayDays, MAX_DAILY_GUESTS } from '@/features/create-listing/validation';
 import {
     createBookingInquirySchema,
     BookingInquiryFormData,
@@ -75,7 +77,15 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
     const { data: user } = useUser();
     const isLoggedIn = Boolean(user);
     const requireEmail = !isLoggedIn;
-    const inquirySchema = useMemo(() => createBookingInquirySchema(requireEmail), [requireEmail]);
+    const minStayDays = Math.max(1, property.specifications.minStayDays ?? 1);
+    const maxGuests = Math.max(
+        1,
+        Math.min(MAX_DAILY_GUESTS, property.specifications.maxDailyGuests ?? MAX_DAILY_GUESTS),
+    );
+    const inquirySchema = useMemo(
+        () => createBookingInquirySchema(requireEmail, minStayDays, maxGuests),
+        [requireEmail, minStayDays, maxGuests],
+    );
     const { mutate: submitInquiry, isPending } = useSubmitBookingInquiry();
     const { data: exchangeRates } = useExchangeRates();
     const { currency } = useCurrency();
@@ -112,11 +122,11 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
         name: user ? `${user.firstName} ${user.lastName}`.trim() : '',
         phone: user?.phone ?? '+375',
         email: user?.email ?? '',
-        guests: 2,
+        guests: Math.min(2, maxGuests),
         checkIn: '',
         checkOut: '',
         notes: '',
-    }), [property.id, user]);
+    }), [property.id, user, maxGuests]);
 
     const form = useForm<BookingInquiryFormData>({
         resolver: zodResolver(inquirySchema),
@@ -124,31 +134,38 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
     });
 
     const validateBookingDates = (checkIn?: string, checkOut?: string): boolean => {
+        const checkInValue = checkIn?.trim() ?? '';
+        const checkOutValue = checkOut?.trim() ?? '';
+
+        if (!checkInValue || !checkOutValue) {
+            return true;
+        }
+
+        if (nightsBetween(checkInValue, checkOutValue) < minStayDays) {
+            form.setError('checkOut', {
+                message: `Минимальный срок проживания — ${formatMinStayDays(minStayDays)}`,
+            });
+            return false;
+        }
+
         if (!hasActiveCalendar || bookedDateKeys.size === 0) {
             form.clearErrors(['checkIn', 'checkOut']);
             return true;
         }
 
-        const checkInValue = checkIn?.trim() ?? '';
-        const checkOutValue = checkOut?.trim() ?? '';
-
-        if (checkInValue && isBookedDate(new Date(`${checkInValue}T00:00:00`), bookedDateKeys)) {
+        if (isBookedDate(new Date(`${checkInValue}T00:00:00`), bookedDateKeys)) {
             form.setError('checkIn', { message: 'Дата заезда занята' });
             return false;
         }
 
         form.clearErrors('checkIn');
 
-        if (
-            checkInValue
-            && checkOutValue
-            && hasBookedNightInStay(checkInValue, checkOutValue, bookedDateKeys)
-        ) {
+        if (hasBookedNightInStay(checkInValue, checkOutValue, bookedDateKeys)) {
             form.setError('checkOut', { message: 'Выбранный период включает занятые даты' });
             return false;
         }
 
-        if (checkOutValue && isBookedDate(new Date(`${checkOutValue}T00:00:00`), bookedDateKeys)) {
+        if (isBookedDate(new Date(`${checkOutValue}T00:00:00`), bookedDateKeys)) {
             form.setError('checkOut', { message: 'Дата выезда занята' });
             return false;
         }
@@ -184,8 +201,24 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                     } else if (
                         message === 'Выбранный период включает занятые даты'
                         || message === 'Дата выезда занята'
+                        || message.startsWith('Минимальный срок проживания')
+                        || message === 'Дата выезда должна быть позже даты заезда'
                     ) {
                         form.setError('checkOut', { message });
+                    } else if (
+                        message === 'Укажите дату заезда'
+                        || message === 'Укажите даты заезда и выезда'
+                    ) {
+                        form.setError('checkIn', { message: 'Укажите дату заезда' });
+                    } else if (message === 'Укажите дату выезда') {
+                        form.setError('checkOut', { message });
+                    } else if (
+                        message === 'Укажите количество гостей'
+                        || message.startsWith('Максимум гостей')
+                        || message === 'Количество гостей не может быть больше 20'
+                        || message === 'Количество гостей должно быть не меньше 1'
+                    ) {
+                        form.setError('guests', { message });
                     }
                 },
             },
@@ -290,7 +323,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                 name="guests"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>Количество гостей</FormLabel>
+                                                        <FormLabel>Количество гостей *</FormLabel>
                                                         <FormControl>
                                                             <div className="flex h-10 w-[8.75rem] items-stretch overflow-hidden rounded-md border border-input bg-background">
                                                                 <Button
@@ -310,16 +343,26 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                     variant="ghost"
                                                                     size="icon"
                                                                     className="h-full w-9 shrink-0 rounded-none"
-                                                                    onClick={() => field.onChange(Math.min(50, (field.value ?? 1) + 1))}
+                                                                    disabled={(field.value ?? 1) >= maxGuests}
+                                                                    onClick={() => field.onChange(Math.min(maxGuests, (field.value ?? 1) + 1))}
                                                                 >
                                                                     <Plus className="w-4 h-4" />
                                                                 </Button>
                                                             </div>
                                                         </FormControl>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Максимум — {maxGuests}
+                                                        </p>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
                                             />
+
+                                            {minStayDays > 1 && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    Минимальный срок проживания — {formatMinStayDays(minStayDays)}
+                                                </p>
+                                            )}
 
                                             {hasActiveCalendar && bookedDateKeys.size > 0 && (
                                                 <p className="text-xs text-muted-foreground">
@@ -333,7 +376,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                     name="checkIn"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>Дата заезда</FormLabel>
+                                                            <FormLabel>Дата заезда *</FormLabel>
                                                             <Popover open={checkInOpen} onOpenChange={setCheckInOpen}>
                                                                 <PopoverTrigger asChild>
                                                                     <FormControl>
@@ -363,7 +406,10 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                             if (
                                                                                 next
                                                                                 && checkOut
-                                                                                && hasBookedNightInStay(next, checkOut, bookedDateKeys)
+                                                                                && (
+                                                                                    nightsBetween(next, checkOut) < minStayDays
+                                                                                    || hasBookedNightInStay(next, checkOut, bookedDateKeys)
+                                                                                )
                                                                             ) {
                                                                                 form.setValue('checkOut', '');
                                                                             }
@@ -397,7 +443,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                     name="checkOut"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>Дата выезда</FormLabel>
+                                                            <FormLabel>Дата выезда *</FormLabel>
                                                             <Popover open={checkOutOpen} onOpenChange={setCheckOutOpen}>
                                                                 <PopoverTrigger asChild>
                                                                     <FormControl>
@@ -429,6 +475,7 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                                                             form.getValues('checkIn'),
                                                                             date,
                                                                             bookedDateKeys,
+                                                                            minStayDays,
                                                                         )}
                                                                         modifiers={
                                                                             bookedDatesForPicker.length > 0
