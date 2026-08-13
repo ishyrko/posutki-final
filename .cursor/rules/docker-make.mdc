@@ -20,3 +20,5 @@ alwaysApply: true
 - **`doctrine:fixtures:load` и любые фикстуры в этом проекте не запускать** — команда по умолчанию чистит все таблицы сущностей Doctrine, включая справочники адресов, при почти пустых `AppFixtures`. Для демо-данных только `make backend-seed-demo`.
 
 Если нужна одноразовая команда без нового target в Makefile, выполни её через `docker compose exec <service> sh -lc '...'` с тем же контекстом, что и в существующих рецептах Makefile.
+
+**БД:** рабочие данные — в MySQL **на хосте** (`posutki_db`), credentials в **`backend/.env.local`**. Docker-сервис `mysql` для этих данных не использовать (см. правило `local-database`).

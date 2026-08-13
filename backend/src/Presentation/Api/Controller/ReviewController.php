@@ -96,12 +96,12 @@ class ReviewController extends AbstractController
         }
 
         $text = $payload['text'] ?? null;
-        if ($text !== null && !is_string($text)) {
-            return $this->json(ApiResponse::error('Поле text должно быть строкой', 400), 400);
+        if (!is_string($text)) {
+            return $this->json(ApiResponse::error('Укажите текст отзыва', 400), 400);
         }
-        $text = is_string($text) ? trim($text) : null;
+        $text = trim($text);
         if ($text === '') {
-            $text = null;
+            return $this->json(ApiResponse::error('Укажите текст отзыва', 400), 400);
         }
 
         $existing = $this->reviewRepository->findByAuthorAndProperty($user->getId(), $pid);

@@ -8,7 +8,7 @@ export async function getPropertyReviews(propertyId: number): Promise<PropertyRe
 
 export async function submitReview(
     propertyId: number,
-    payload: { rating: number; text?: string | null },
+    payload: { rating: number; text: string },
 ): Promise<{ id: number; status: string; message: string }> {
     const response = await api.post<{ data: { id: number; status: string; message: string } }>(
         `/properties/${propertyId}/reviews`,

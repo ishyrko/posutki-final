@@ -1,0 +1,13 @@
+---
+description: Локальная MySQL на хосте, credentials из env
+alwaysApply: true
+---
+
+# База данных (локальная разработка)
+
+- **Данные живут в MySQL на компьютере разработчика**, не в Docker-сервисе `mysql`.
+- Контейнерный `mysql` из `docker-compose.yml` — вспомогательный (тесты и т.п.); **не** ищи там продуктовые/dev-данные объявлений и геокодера.
+- Credentials и DSN бери из **`backend/.env.local`** (`DATABASE_URL`). Не угадывай пароль и не подключайся к `rnb_db` в Docker, если задача про реальные данные.
+- Не полагайся на committed `backend/.env` или на `DATABASE_URL` из `docker-compose.yml`, если они расходятся с `.env.local` — источник правды: **`backend/.env.local`**.
+- Типичный DSN: `mysql://…@host.docker.internal:3306/posutki_db` (из PHP-контейнера) или тот же хост/порт/`posutki_db` с хоста (`127.0.0.1`).
+- Для SQL/Doctrine из контейнера PHP: `docker compose exec php …` (убедись, что в контейнер попадает URL из `.env.local`, а не устаревший override). С хоста — клиент по `DATABASE_URL` из `.env.local` (для TCP обычно `127.0.0.1` вместо `host.docker.internal`).

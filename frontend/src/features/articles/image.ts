@@ -14,7 +14,7 @@ function normalizeArticleUploadUrl(imageUrl: string): string | null {
     return null;
 }
 
-/** Full-size cover image for article detail pages and Open Graph. */
+/** Full-size cover image for article detail pages. */
 export function resolveArticleImageUrl(imageUrl: string | null): string | null {
     if (!imageUrl) {
         return null;

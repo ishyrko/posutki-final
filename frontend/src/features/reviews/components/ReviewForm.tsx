@@ -26,8 +26,13 @@ export function ReviewForm({ propertyId }: ReviewFormProps) {
             toast.error('Выберите оценку от 1 до 5');
             return;
         }
+        const trimmed = text.trim();
+        if (!trimmed) {
+            toast.error('Напишите текст отзыва');
+            return;
+        }
         submit.mutate(
-            { rating, text: text.trim() || null },
+            { rating, text: trimmed },
             {
                 onSuccess: (data) => {
                     toast.success(data.message ?? 'Отзыв отправлен на модерацию');
@@ -71,7 +76,7 @@ export function ReviewForm({ propertyId }: ReviewFormProps) {
             </div>
             <div>
                 <Label htmlFor="review-text" className="text-foreground mb-2 block">
-                    Комментарий (необязательно)
+                    Комментарий
                 </Label>
                 <Textarea
                     id="review-text"
@@ -80,6 +85,7 @@ export function ReviewForm({ propertyId }: ReviewFormProps) {
                     rows={4}
                     placeholder="Расскажите о своём опыте…"
                     className="resize-y min-h-[100px]"
+                    required
                 />
             </div>
             <Button type="submit" className="bg-gradient-primary text-primary-foreground" disabled={submit.isPending}>

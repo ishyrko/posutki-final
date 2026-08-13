@@ -91,7 +91,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       buildApartmentPropertyMetaTitle(property) ?? `${property.title} | Посутки.by`;
     const metaDescription =
       buildApartmentPropertyMetaDescription(property) ?? `${address} — ${bynPrice}`;
-    const firstImage = property.images?.[0]?.url;
+    const firstImage =
+      property.images?.[0]?.thumbnailUrl || property.images?.[0]?.url;
     const canonicalPath = buildPropertyUrlFromRegionName(
       property.type,
       Number(propertyId),

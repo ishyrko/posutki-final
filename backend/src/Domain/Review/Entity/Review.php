@@ -47,16 +47,21 @@ class Review
     #[ORM\Column(type: 'datetime_immutable', name: 'updated_at')]
     private \DateTimeImmutable $updatedAt;
 
-    public function __construct(Property $property, User $author, int $rating, ?string $text = null)
+    public function __construct(Property $property, User $author, int $rating, string $text)
     {
         if ($rating < 1 || $rating > 5) {
             throw new \InvalidArgumentException('Оценка должна быть от 1 до 5');
         }
 
+        $normalizedText = trim($text);
+        if ($normalizedText === '') {
+            throw new \InvalidArgumentException('Текст отзыва обязателен');
+        }
+
         $this->property = $property;
         $this->author = $author;
         $this->rating = $rating;
-        $this->text = $text;
+        $this->text = $normalizedText;
         $this->status = ReviewStatus::Pending;
         $now = new \DateTimeImmutable();
         $this->createdAt = $now;
@@ -122,14 +127,19 @@ class Review
     }
 
     /** Повторная отправка после отклонения модератором. */
-    public function resubmitToPending(int $rating, ?string $text): void
+    public function resubmitToPending(int $rating, string $text): void
     {
         if ($rating < 1 || $rating > 5) {
             throw new \InvalidArgumentException('Оценка должна быть от 1 до 5');
         }
 
+        $normalizedText = trim($text);
+        if ($normalizedText === '') {
+            throw new \InvalidArgumentException('Текст отзыва обязателен');
+        }
+
         $this->rating = $rating;
-        $this->text = $text;
+        $this->text = $normalizedText;
         $this->status = ReviewStatus::Pending;
         $this->moderationComment = null;
         $this->updatedAt = new \DateTimeImmutable();
