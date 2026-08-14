@@ -100,6 +100,13 @@ final class LandmarkCrudController extends AbstractCrudController
     public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
         $request = $this->container->get('request_stack')->getCurrentRequest();
+
+        if ($entityInstance instanceof Landmark && $this->isLandmarkAjaxFieldToggle($request)) {
+            parent::updateEntity($entityManager, $entityInstance);
+
+            return;
+        }
+
         $formData = $request?->request->all('Landmark') ?: $request?->request->all() ?? [];
 
         if ($entityInstance instanceof Landmark && isset($formData['imageUrl']) && is_string($formData['imageUrl']) && $formData['imageUrl'] !== '') {
@@ -261,6 +268,19 @@ final class LandmarkCrudController extends AbstractCrudController
             ->add(BooleanFilter::new('isActive'));
     }
 
+    /**
+     * EasyAdmin toggles boolean fields from the index via PATCH with fieldName/newValue query params.
+     * That path must not run edit-form normalization (unmapped factsText/guestTipsText would wipe JSON fields).
+     */
+    private function isLandmarkAjaxFieldToggle(?Request $request): bool
+    {
+        if ($request === null || !$request->isMethod('PATCH')) {
+            return false;
+        }
+
+        return $request->query->has('fieldName') && $request->query->has('newValue');
+    }
+
     private function restoreLandmarkImageIfClearedWithoutIntent(
         EntityManagerInterface $entityManager,
         Landmark $landmark,
@@ -352,7 +372,11 @@ final class LandmarkCrudController extends AbstractCrudController
 
     private function applyLandmarkSlugFromFormOrName(Landmark $landmark, array $formData): void
     {
-        $slugText = isset($formData['slugText']) ? trim((string) $formData['slugText']) : '';
+        if (!array_key_exists('slugText', $formData)) {
+            return;
+        }
+
+        $slugText = trim((string) $formData['slugText']);
         if ($slugText !== '') {
             $slug = $this->slugGenerator->generate($slugText);
         } else {
@@ -434,7 +458,11 @@ final class LandmarkCrudController extends AbstractCrudController
 
     private function applyLandmarkFactsFromForm(Landmark $landmark, array $formData): void
     {
-        $raw = isset($formData['factsText']) ? trim((string) $formData['factsText']) : '';
+        if (!array_key_exists('factsText', $formData)) {
+            return;
+        }
+
+        $raw = trim((string) $formData['factsText']);
         if ($raw === '') {
             $landmark->setFacts(null);
 
@@ -462,7 +490,11 @@ final class LandmarkCrudController extends AbstractCrudController
 
     private function applyLandmarkGuestTipsFromForm(Landmark $landmark, array $formData): void
     {
-        $raw = isset($formData['guestTipsText']) ? trim((string) $formData['guestTipsText']) : '';
+        if (!array_key_exists('guestTipsText', $formData)) {
+            return;
+        }
+
+        $raw = trim((string) $formData['guestTipsText']);
         if ($raw === '') {
             $landmark->setGuestTips(null);
 
