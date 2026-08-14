@@ -1789,4 +1789,9 @@ class Property
     {
         return (string) $this->ownerId->getValue() === $userId;
     }
+
+    public function __toString(): string
+    {
+        return $this->title . ' (#' . $this->id->getValue() . ')';
+    }
 }

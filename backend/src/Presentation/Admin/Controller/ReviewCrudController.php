@@ -52,11 +52,7 @@ final class ReviewCrudController extends AbstractCrudController
     public function configureFilters(Filters $filters): Filters
     {
         return $filters
-            ->add(ChoiceFilter::new('status')->setChoices([
-                'На модерации' => ReviewStatus::Pending->value,
-                'Одобрен' => ReviewStatus::Approved->value,
-                'Отклонён' => ReviewStatus::Rejected->value,
-            ]));
+            ->add(ChoiceFilter::new('status')->setChoices(ReviewStatus::filterChoices()));
     }
 
     public function configureActions(Actions $actions): Actions
@@ -100,11 +96,7 @@ final class ReviewCrudController extends AbstractCrudController
         yield TextareaField::new('text', 'Текст');
 
         yield ChoiceField::new('status', 'Статус')
-            ->setChoices([
-                'На модерации' => ReviewStatus::Pending->value,
-                'Одобрен' => ReviewStatus::Approved->value,
-                'Отклонён' => ReviewStatus::Rejected->value,
-            ]);
+            ->setChoices(ReviewStatus::choices());
 
         yield TextareaField::new('moderationComment', 'Комментарий модерации');
 
