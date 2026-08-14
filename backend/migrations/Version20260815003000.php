@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
+use App\Application\Service\ArticleHtmlNormalizer;
+use App\Application\Service\ArticleTextSanitizer;
+use App\Application\Service\CatalogPlaceContentNormalizer;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -36,8 +39,11 @@ final class Version20260815003000 extends AbstractMigration
         }
 
         foreach ($content as $slug => $cityContent) {
+            $normalizer = $this->catalogContentNormalizer();
+            $seo = $normalizer->normalizeSeoText($cityContent['seo']);
+            $faq = $normalizer->normalizeFaq($cityContent['faq']);
             $faqJson = json_encode(
-                $cityContent['faq'],
+                $faq,
                 JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
             );
 
@@ -45,9 +51,17 @@ final class Version20260815003000 extends AbstractMigration
                 'UPDATE cities
                  SET catalog_seo_text = ?, catalog_faq = ?, catalog_seo_visible = 0
                  WHERE slug = ?',
-                [$cityContent['seo'], $faqJson, $slug],
+                [$seo, $faqJson, $slug],
             );
         }
+    }
+
+    private function catalogContentNormalizer(): CatalogPlaceContentNormalizer
+    {
+        return new CatalogPlaceContentNormalizer(
+            new ArticleHtmlNormalizer(),
+            new ArticleTextSanitizer(),
+        );
     }
 
     public function down(Schema $schema): void

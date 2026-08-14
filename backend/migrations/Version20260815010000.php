@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
+use App\Application\Service\ArticleHtmlNormalizer;
+use App\Application\Service\ArticleTextSanitizer;
+use App\Application\Service\CatalogPlaceContentNormalizer;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -56,8 +59,11 @@ final class Version20260815010000 extends AbstractMigration
                     ));
                 }
 
+                $normalizer = $this->catalogContentNormalizer();
+                $seo = $normalizer->normalizeSeoText($placeContent['seo']);
+                $faq = $normalizer->normalizeFaq($placeContent['faq']);
                 $faqJson = json_encode(
-                    $placeContent['faq'],
+                    $faq,
                     JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
                 );
 
@@ -66,10 +72,18 @@ final class Version20260815010000 extends AbstractMigration
                      INNER JOIN cities c ON c.id = p.city_id
                      SET p.catalog_seo_text = ?, p.catalog_faq = ?, p.catalog_seo_visible = 0
                      WHERE c.slug = ? AND p.slug = ?",
-                    [$placeContent['seo'], $faqJson, $citySlug, $placeSlug],
+                    [$seo, $faqJson, $citySlug, $placeSlug],
                 );
             }
         }
+    }
+
+    private function catalogContentNormalizer(): CatalogPlaceContentNormalizer
+    {
+        return new CatalogPlaceContentNormalizer(
+            new ArticleHtmlNormalizer(),
+            new ArticleTextSanitizer(),
+        );
     }
 
     /**

@@ -445,6 +445,8 @@ services:
 
     App\Application\Service\ArticleContentPersistNormalizer: ~
 
+    App\Application\Service\CatalogPlaceContentNormalizer: ~
+
     App\Application\Service\StaticPageContentPersistNormalizer: ~
 
     App\Infrastructure\Recaptcha\RecaptchaVerifier:
@@ -492,6 +494,10 @@ services:
             $publicKey: '%app.bepaid.public_key%'
 
     App\Infrastructure\Persistence\Doctrine\ArticleContentSubscriber:
+        tags:
+            - { name: doctrine.event_subscriber }
+
+    App\Infrastructure\Persistence\Doctrine\CatalogPlaceContentSubscriber:
         tags:
             - { name: doctrine.event_subscriber }
     

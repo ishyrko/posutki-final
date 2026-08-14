@@ -15,6 +15,42 @@ final class CatalogPlaceContentNormalizer
     ) {
     }
 
+    public function normalizeEntity(object $entity): void
+    {
+        if (!method_exists($entity, 'getCatalogSeoText') || !method_exists($entity, 'setCatalogSeoText')) {
+            return;
+        }
+
+        /** @var callable $getSeoText */
+        $getSeoText = [$entity, 'getCatalogSeoText'];
+        /** @var callable $setSeoText */
+        $setSeoText = [$entity, 'setCatalogSeoText'];
+        $setSeoText($this->normalizeSeoText($getSeoText()));
+
+        if (!method_exists($entity, 'getCatalogFaq') || !method_exists($entity, 'setCatalogFaq')) {
+            return;
+        }
+
+        /** @var callable $getFaq */
+        $getFaq = [$entity, 'getCatalogFaq'];
+        /** @var callable $setFaq */
+        $setFaq = [$entity, 'setCatalogFaq'];
+
+        $faq = $getFaq();
+        if (is_string($faq)) {
+            $decoded = json_decode($faq, true);
+            $faq = is_array($decoded) ? $decoded : null;
+        }
+        if (is_array($faq)) {
+            $faq = array_values(array_filter(
+                $faq,
+                static fn ($item): bool => is_array($item),
+            ));
+        }
+
+        $setFaq($this->normalizeFaq($faq));
+    }
+
     public function normalizeSeoText(?string $raw): ?string
     {
         if ($raw === null || trim($raw) === '') {
@@ -48,7 +84,7 @@ final class CatalogPlaceContentNormalizer
                 continue;
             }
             $normalized[] = [
-                'question' => $question,
+                'question' => $this->articleTextSanitizer->sanitizePlainText($question),
                 'answer' => $this->articleTextSanitizer->sanitizePlainText($answer),
             ];
         }

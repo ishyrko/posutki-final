@@ -66,37 +66,6 @@ final class CatalogContentAdminFields
 
     public static function normalize(object $entity, CatalogPlaceContentNormalizer $normalizer): void
     {
-        if (!method_exists($entity, 'getCatalogSeoText') || !method_exists($entity, 'setCatalogSeoText')) {
-            return;
-        }
-
-        /** @var callable $getSeoText */
-        $getSeoText = [$entity, 'getCatalogSeoText'];
-        /** @var callable $setSeoText */
-        $setSeoText = [$entity, 'setCatalogSeoText'];
-        $setSeoText($normalizer->normalizeSeoText($getSeoText()));
-
-        if (!method_exists($entity, 'getCatalogFaq') || !method_exists($entity, 'setCatalogFaq')) {
-            return;
-        }
-
-        /** @var callable $getFaq */
-        $getFaq = [$entity, 'getCatalogFaq'];
-        /** @var callable $setFaq */
-        $setFaq = [$entity, 'setCatalogFaq'];
-
-        $faq = $getFaq();
-        if (is_string($faq)) {
-            $decoded = json_decode($faq, true);
-            $faq = is_array($decoded) ? $decoded : null;
-        }
-        if (is_array($faq)) {
-            $faq = array_values(array_filter(
-                $faq,
-                static fn ($item): bool => is_array($item),
-            ));
-        }
-
-        $setFaq($normalizer->normalizeFaq($faq));
+        $normalizer->normalizeEntity($entity);
     }
 }
