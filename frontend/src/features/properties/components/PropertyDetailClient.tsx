@@ -548,45 +548,45 @@ export default function PropertyDetailClient({
           <div className="grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-3">
             <div className="min-w-0 space-y-8 lg:col-span-2">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                <div className="mb-3 flex min-w-0 items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <span className="inline-block px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-3">
+                <div className="mb-3 min-w-0">
+                  <div className="mb-3 flex items-start justify-between gap-4">
+                    <span className="inline-block px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                       {formatPropertyDealHeading(property.dealType, property.type)}
                     </span>
-                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">{property.title}</h1>
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          toggleFavorite({
+                            propertyId: id,
+                            isFavorited,
+                            property: {
+                              type: property.type,
+                              address: { cityName: property.address?.cityName },
+                            },
+                          });
+                        }}
+                        aria-label={isFavorited ? "Убрать из избранного" : "Добавить в избранное"}
+                        aria-pressed={isFavorited}
+                        className={`cursor-pointer rounded-xl p-2.5 transition-colors ${
+                          isFavorited
+                            ? 'bg-primary/10 hover:bg-primary/20'
+                            : 'bg-muted hover:bg-muted/80'
+                        }`}
+                      >
+                        <Heart aria-hidden="true" className={`w-5 h-5 ${isFavorited ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { void handleShare(); }}
+                        aria-label="Поделиться объявлением"
+                        className="cursor-pointer rounded-xl bg-muted p-2.5 transition-colors hover:bg-muted/80"
+                      >
+                        <Share2 aria-hidden="true" className="w-5 h-5 text-muted-foreground" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        toggleFavorite({
-                          propertyId: id,
-                          isFavorited,
-                          property: {
-                            type: property.type,
-                            address: { cityName: property.address?.cityName },
-                          },
-                        });
-                      }}
-                      aria-label={isFavorited ? "Убрать из избранного" : "Добавить в избранное"}
-                      aria-pressed={isFavorited}
-                      className={`p-2.5 rounded-xl transition-colors cursor-pointer ${
-                        isFavorited
-                          ? 'bg-primary/10 hover:bg-primary/20'
-                          : 'bg-muted hover:bg-muted/80'
-                      }`}
-                    >
-                      <Heart aria-hidden="true" className={`w-5 h-5 ${isFavorited ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { void handleShare(); }}
-                      aria-label="Поделиться объявлением"
-                      className="p-2.5 rounded-xl bg-muted hover:bg-muted/80 transition-colors cursor-pointer"
-                    >
-                      <Share2 aria-hidden="true" className="w-5 h-5 text-muted-foreground" />
-                    </button>
-                  </div>
+                  <h1 className="text-2xl font-bold text-foreground md:text-3xl">{property.title}</h1>
                 </div>
                 <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
                   <p className="flex min-w-0 items-start gap-1.5 text-muted-foreground md:items-center">
