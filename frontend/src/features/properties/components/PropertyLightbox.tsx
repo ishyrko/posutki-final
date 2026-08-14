@@ -4,9 +4,13 @@ import { useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import {
+  getLightboxSlideSrc,
+  type GalleryImageSource,
+} from './property-gallery-frames';
 
 interface PropertyLightboxProps {
-  images: string[];
+  images: GalleryImageSource[];
   currentIndex: number;
   onIndexChange: (index: number) => void;
   onClose: () => void;
@@ -126,19 +130,27 @@ export function PropertyLightbox({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex">
-          {images.map((src, i) => (
-            <div
-              key={i}
-              className="flex min-w-0 flex-[0_0_100%] items-center justify-center"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={src}
-                alt=""
-                className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg"
-              />
-            </div>
-          ))}
+          {images.map((image, i) => {
+            const src = getLightboxSlideSrc(image, i, currentIndex, images.length);
+            return (
+              <div
+                key={i}
+                className="flex min-w-0 flex-[0_0_100%] items-center justify-center"
+              >
+                {src ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={src}
+                    alt=""
+                    decoding="async"
+                    className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg"
+                  />
+                ) : (
+                  <div className="h-[50vh] w-[60vw] max-w-[90vw] rounded-lg bg-background/10" aria-hidden />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
       <div className="absolute bottom-6 text-background/70 text-sm pointer-events-none">

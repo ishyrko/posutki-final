@@ -176,10 +176,6 @@ class FileUploader
 
     private function determineOutputFormat(string $scope, string $originalMimeType): string
     {
-        if ($this->isContentScope($scope) && $originalMimeType === 'image/jpeg') {
-            return 'jpg';
-        }
-
         // Prefer WebP when GD supports encoding it: better compression with similar visual quality.
         return function_exists('imagewebp') ? 'webp' : 'jpg';
     }

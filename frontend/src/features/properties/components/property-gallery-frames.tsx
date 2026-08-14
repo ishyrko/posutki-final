@@ -2,38 +2,65 @@
 
 import { useEffect, useState } from 'react';
 
+export type GalleryImageSource = {
+  url: string;
+  thumbnailUrl?: string | null;
+};
+
+export function galleryThumbSrc(image: GalleryImageSource): string {
+  return image.thumbnailUrl || image.url;
+}
+
+export function galleryFullSrc(image: GalleryImageSource): string {
+  return image.url;
+}
+
+type GalleryImgProps = {
+  loading?: 'lazy' | 'eager';
+  fetchPriority?: 'high' | 'low' | 'auto';
+  decoding?: 'async' | 'sync' | 'auto';
+};
+
 /** Side-column letterbox with blurred edges. Parent must be `relative` with explicit size. */
 export function GalleryPortraitFrame({
   src,
   alt,
   className = 'absolute inset-0 flex min-h-0 min-w-0',
+  loading,
+  fetchPriority,
+  decoding = 'async',
 }: {
   src: string;
   alt: string;
   className?: string;
-}) {
+} & GalleryImgProps) {
+  const blurStyle = { backgroundImage: `url("${src}")` };
+
   return (
     <div className={`${className} overflow-hidden`}>
       <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt=""
+        <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover object-left blur-md"
+          className="pointer-events-none absolute inset-0 scale-110 bg-cover bg-left blur-md"
+          style={blurStyle}
         />
       </div>
       <div className="relative z-[1] flex h-full min-w-0 max-w-full shrink items-center justify-center overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className="max-h-full w-auto max-w-full object-contain" />
-      </div>
-      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
-          alt=""
+          alt={alt}
+          loading={loading}
+          fetchPriority={fetchPriority}
+          decoding={decoding}
+          className="max-h-full w-auto max-w-full object-contain"
+        />
+      </div>
+      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
+        <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover object-right blur-md"
+          className="pointer-events-none absolute inset-0 scale-110 bg-cover bg-right blur-md"
+          style={blurStyle}
         />
       </div>
     </div>
@@ -68,21 +95,50 @@ export function GalleryGridThumb({
   src,
   alt,
   preferCover = false,
+  loading = 'lazy',
+  decoding = 'async',
 }: {
   src: string;
   alt: string;
   preferCover?: boolean;
-}) {
+} & GalleryImgProps) {
   const clearlyLandscape = useImageClearlyLandscape(src);
 
   return (
     <div className="relative aspect-[4/3] w-full overflow-hidden">
       {preferCover || clearlyLandscape === true ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover" />
+        <img
+          src={src}
+          alt={alt}
+          loading={loading}
+          decoding={decoding}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
       ) : (
-        <GalleryPortraitFrame src={src} alt={alt} />
+        <GalleryPortraitFrame src={src} alt={alt} loading={loading} decoding={decoding} />
       )}
     </div>
   );
+}
+
+function lightboxNeighborIndexes(currentIndex: number, total: number): Set<number> {
+  if (total <= 1) {
+    return new Set([0]);
+  }
+  const prev = (currentIndex - 1 + total) % total;
+  const next = (currentIndex + 1) % total;
+  return new Set([currentIndex, prev, next]);
+}
+
+export function getLightboxSlideSrc(
+  image: GalleryImageSource,
+  index: number,
+  currentIndex: number,
+  total: number,
+): string | undefined {
+  if (lightboxNeighborIndexes(currentIndex, total).has(index)) {
+    return galleryFullSrc(image);
+  }
+  return image.thumbnailUrl ?? undefined;
 }

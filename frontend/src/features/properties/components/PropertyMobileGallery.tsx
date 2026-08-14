@@ -2,10 +2,14 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
-import { GalleryPortraitFrame } from './property-gallery-frames';
+import {
+  GalleryPortraitFrame,
+  galleryThumbSrc,
+  type GalleryImageSource,
+} from './property-gallery-frames';
 
 interface PropertyMobileGalleryProps {
-  images: string[];
+  images: GalleryImageSource[];
   currentIndex: number;
   onIndexChange: (index: number) => void;
   onOpenLightbox: () => void;
@@ -73,12 +77,18 @@ export function PropertyMobileGallery({
   };
 
   if (images.length <= 1) {
+    const src = galleryThumbSrc(images[0]);
     return (
       <div
         className="absolute inset-0 overflow-hidden cursor-pointer"
         onClick={handleOpenLightbox}
       >
-        <GalleryPortraitFrame src={images[0]} alt="Главное фото" />
+        <GalleryPortraitFrame
+          src={src}
+          alt="Главное фото"
+          fetchPriority="high"
+          loading="eager"
+        />
       </div>
     );
   }
@@ -92,9 +102,14 @@ export function PropertyMobileGallery({
       onClick={handleOpenLightbox}
     >
       <div className="flex h-full">
-        {images.map((src, i) => (
+        {images.map((image, i) => (
           <div key={i} className="relative min-w-0 flex-[0_0_100%] h-full">
-            <GalleryPortraitFrame src={src} alt={`Фото ${i + 1}`} />
+            <GalleryPortraitFrame
+              src={galleryThumbSrc(image)}
+              alt={`Фото ${i + 1}`}
+              loading={i === currentIndex ? 'eager' : 'lazy'}
+              fetchPriority={i === currentIndex ? 'high' : undefined}
+            />
           </div>
         ))}
       </div>

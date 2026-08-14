@@ -32,6 +32,7 @@ import { PriceDisplay, BynCurrencyMark } from "@/components/BynCurrency";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useNearViewport } from "@/hooks/useNearViewport";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { BookingInquiryModal } from "@/features/properties/components/BookingInquiryModal";
 import {
   getPropertySellerName,
@@ -56,7 +57,10 @@ import { PropertyMobileGallery } from "@/features/properties/components/Property
 import {
   GalleryGridThumb,
   GalleryPortraitFrame,
+  galleryFullSrc,
+  galleryThumbSrc,
   useImageClearlyLandscape,
+  type GalleryImageSource,
 } from "@/features/properties/components/property-gallery-frames";
 import { buildCatalogUrl } from "@/features/catalog/slugs";
 import { toast } from "sonner";
@@ -134,6 +138,31 @@ export default function PropertyDetailClient({
   const [bookingOpen, setBookingOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const openBookingAfterContactCloseRef = useRef(false);
+  const isMobile = useIsMobile();
+
+  const galleryImages: GalleryImageSource[] = useMemo(() => {
+    const fromProperty = property?.images?.map((img) => ({
+      url: img.url,
+      thumbnailUrl: img.thumbnailUrl,
+    }));
+    if (fromProperty && fromProperty.length > 0) {
+      return fromProperty;
+    }
+    const fromInitial = initialProperty.images?.map((img) => ({
+      url: img.url,
+      thumbnailUrl: img.thumbnailUrl,
+    }));
+    if (fromInitial && fromInitial.length > 0) {
+      return fromInitial;
+    }
+    return [{
+      url: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80",
+    }];
+  }, [property?.images, initialProperty.images]);
+
+  const mainImageThumbSrc = galleryThumbSrc(galleryImages[0]);
+  const mainImageFullSrc = galleryFullSrc(galleryImages[0]);
+  const mainImageClearlyLandscape = useImageClearlyLandscape(mainImageThumbSrc);
 
   const handleContactOpenChange = (nextOpen: boolean) => {
     setContactOpen(nextOpen);
@@ -166,12 +195,6 @@ export default function PropertyDetailClient({
       trackPropertyView(property.id, visitorId),
     ).catch(() => null);
   }, [property, currentUser?.id]);
-
-  const mainImageSrc =
-    property?.images?.[0]?.url ??
-    initialProperty.images?.[0]?.url ??
-    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80";
-  const mainImageClearlyLandscape = useImageClearlyLandscape(mainImageSrc);
 
   useEffect(() => {
     if (!property) return;
@@ -249,11 +272,8 @@ export default function PropertyDetailClient({
   const canSubmitBookingInquiry = canBookInquiry && allowsMessagesAndInquiries && (loggedIn || allowsGuestInquiries);
   const showMobileContactBar = !isOwner;
 
-  const images = property.images?.map(img => img.url) || [
-    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80",
-  ];
-  const showExtraPhotosOverlay = images.length > 5;
-  const extraPhotoCount = images.length - 4;
+  const showExtraPhotosOverlay = galleryImages.length > 5;
+  const extraPhotoCount = galleryImages.length - 4;
   const videoEmbed = useMemo(() => getVideoEmbedInfo(property.videoUrl), [property.videoUrl]);
   const addressStr = formatAddress(property.address);
   const coords = property.coordinates;
@@ -422,8 +442,8 @@ export default function PropertyDetailClient({
   const activeAmenities = property.amenities ?? [];
   const hasAmenities = activeAmenities.length > 0;
 
-  const prevImage = () => setCurrentImage((p) => (p === 0 ? images.length - 1 : p - 1));
-  const nextImage = () => setCurrentImage((p) => (p === images.length - 1 ? 0 : p + 1));
+  const prevImage = () => setCurrentImage((p) => (p === 0 ? galleryImages.length - 1 : p - 1));
+  const nextImage = () => setCurrentImage((p) => (p === galleryImages.length - 1 ? 0 : p + 1));
   const handleShare = async () => {
     const shareUrl = window.location.href;
     const shareData = {
@@ -464,83 +484,109 @@ export default function PropertyDetailClient({
               onClick={() => setLightboxOpen(true)}
               whileHover={{ scale: 1.005 }}
             >
-              {mainImageClearlyLandscape === true ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={images[0]}
-                  alt="Главное фото"
-                  className="hidden md:block absolute inset-0 h-full w-full object-cover"
-                />
-              ) : (
+              {isMobile === undefined ? (
                 <GalleryPortraitFrame
-                  src={images[0]}
+                  src={mainImageThumbSrc}
                   alt="Главное фото"
-                  className="absolute inset-0 hidden md:flex"
+                  fetchPriority="high"
+                  loading="eager"
                 />
-              )}
-              <div className="md:hidden absolute inset-0">
+              ) : isMobile ? (
                 <PropertyMobileGallery
-                  images={images}
+                  images={galleryImages}
                   currentIndex={currentImage}
                   onIndexChange={setCurrentImage}
                   onOpenLightbox={() => setLightboxOpen(true)}
                 />
-              </div>
+              ) : mainImageClearlyLandscape === true ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={mainImageFullSrc}
+                  alt="Главное фото"
+                  fetchPriority="high"
+                  loading="eager"
+                  decoding="async"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <GalleryPortraitFrame
+                  src={mainImageFullSrc}
+                  alt="Главное фото"
+                  fetchPriority="high"
+                  loading="eager"
+                />
+              )}
               <div className="pointer-events-none absolute inset-0 z-[2] bg-foreground/0 group-hover:bg-foreground/10 transition-colors" />
             </motion.div>
-            {images.slice(1, 5).map((img, i) => (
-              <div
-                key={i}
-                className="relative cursor-pointer group hidden md:block overflow-hidden"
-                onClick={() => { setCurrentImage(i + 1); setLightboxOpen(true); }}
-              >
-                <GalleryGridThumb src={img} alt={`Фото ${i + 2}`} preferCover={i === 3 && showExtraPhotosOverlay} />
-                <div className="absolute inset-0 z-[1] bg-foreground/0 group-hover:bg-foreground/10 transition-colors pointer-events-none" />
-                {i === 3 && showExtraPhotosOverlay && (
-                  <div className="absolute inset-0 z-[2] flex items-center justify-center bg-foreground/50 pointer-events-none">
-                    <span className="text-primary-foreground font-medium text-sm">Ещё {extraPhotoCount} фото</span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="md:hidden flex items-center justify-center gap-2 mt-3">
-            <button
-              type="button"
-              aria-label="Предыдущее фото"
-              onClick={prevImage}
-              className="cursor-pointer p-1.5 rounded-full bg-muted touch-manipulation transition-[transform,background-color,color] duration-150 ease-out active:scale-95 active:bg-primary/25 active:text-primary"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-sm text-muted-foreground">{currentImage + 1} / {images.length}</span>
-            <button
-              type="button"
-              aria-label="Следующее фото"
-              onClick={nextImage}
-              className="cursor-pointer p-1.5 rounded-full bg-muted touch-manipulation transition-[transform,background-color,color] duration-150 ease-out active:scale-95 active:bg-primary/25 active:text-primary"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          {images.length > 1 && (
-            <div className="md:hidden mt-3 min-w-0 max-w-full overflow-hidden">
-              <div className="flex items-center justify-center gap-1.5 overflow-x-auto scrollbar-hide px-1">
-                {images.map((_, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => setCurrentImage(index)}
-                    aria-label={`Перейти к фото ${index + 1}`}
-                    className={`h-2 shrink-0 rounded-full transition-all ${
-                      currentImage === index
-                        ? "w-5 bg-primary"
-                        : "w-2 bg-muted-foreground/40 hover:bg-muted-foreground/60"
-                    }`}
+            {isMobile === false &&
+              galleryImages.slice(1, 5).map((image, i) => (
+                <div
+                  key={i}
+                  className="relative cursor-pointer group overflow-hidden"
+                  onClick={() => {
+                    setCurrentImage(i + 1);
+                    setLightboxOpen(true);
+                  }}
+                >
+                  <GalleryGridThumb
+                    src={galleryThumbSrc(image)}
+                    alt={`Фото ${i + 2}`}
+                    preferCover={i === 3 && showExtraPhotosOverlay}
                   />
-                ))}
+                  <div className="absolute inset-0 z-[1] bg-foreground/0 group-hover:bg-foreground/10 transition-colors pointer-events-none" />
+                  {i === 3 && showExtraPhotosOverlay && (
+                    <div className="absolute inset-0 z-[2] flex items-center justify-center bg-foreground/50 pointer-events-none">
+                      <span className="text-primary-foreground font-medium text-sm">
+                        Ещё {extraPhotoCount} фото
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+          </div>
+          {isMobile === true && (
+            <>
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <button
+                  type="button"
+                  aria-label="Предыдущее фото"
+                  onClick={prevImage}
+                  className="cursor-pointer p-1.5 rounded-full bg-muted touch-manipulation transition-[transform,background-color,color] duration-150 ease-out active:scale-95 active:bg-primary/25 active:text-primary"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-sm text-muted-foreground">
+                  {currentImage + 1} / {galleryImages.length}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Следующее фото"
+                  onClick={nextImage}
+                  className="cursor-pointer p-1.5 rounded-full bg-muted touch-manipulation transition-[transform,background-color,color] duration-150 ease-out active:scale-95 active:bg-primary/25 active:text-primary"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
-            </div>
+              {galleryImages.length > 1 && (
+                <div className="mt-3 min-w-0 max-w-full overflow-hidden">
+                  <div className="flex items-center justify-center gap-1.5 overflow-x-auto scrollbar-hide px-1">
+                    {galleryImages.map((_, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => setCurrentImage(index)}
+                        aria-label={`Перейти к фото ${index + 1}`}
+                        className={`h-2 shrink-0 rounded-full transition-all ${
+                          currentImage === index
+                            ? "w-5 bg-primary"
+                            : "w-2 bg-muted-foreground/40 hover:bg-muted-foreground/60"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </section>
 
@@ -958,7 +1004,7 @@ export default function PropertyDetailClient({
                           title: property.title,
                           price: priceDisplay.primaryPlain,
                           address: addressStr,
-                          image: images[0],
+                          image: mainImageThumbSrc,
                           dealType: property.dealType,
                           propertyType: property.type,
                         }]}
@@ -1062,7 +1108,7 @@ export default function PropertyDetailClient({
       <AnimatePresence>
         {lightboxOpen && (
           <PropertyLightbox
-            images={images}
+            images={galleryImages}
             currentIndex={currentImage}
             onIndexChange={setCurrentImage}
             onClose={() => setLightboxOpen(false)}
