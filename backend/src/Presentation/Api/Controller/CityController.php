@@ -152,6 +152,7 @@ class CityController extends AbstractController
             'longitude' => $city->getLongitude(),
             'isMain' => $city->isMain(),
             'catalogSeoText' => $city->getCatalogSeoText(),
+            'faq' => $city->getCatalogFaq() ?? [],
             'district' => $district ? [
                 'id' => $district->getId(),
                 'name' => $district->getName(),

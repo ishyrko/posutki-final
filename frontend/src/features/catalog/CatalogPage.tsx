@@ -286,6 +286,7 @@ interface CatalogLandmarkFooterProps {
 interface CatalogCitySeoFooterProps {
   heading: string;
   html: string;
+  faq?: FaqItem[];
 }
 
 interface CatalogPlaceSeoFooterProps {
@@ -1499,7 +1500,14 @@ export default function CatalogPage({
               />
             ) : null}
             {currentPage === 1 && citySeoFooter ? (
-              <CatalogCitySeoSection heading={citySeoFooter.heading} html={citySeoFooter.html} />
+              <>
+                {citySeoFooter.html ? (
+                  <CatalogCitySeoSection heading={citySeoFooter.heading} html={citySeoFooter.html} />
+                ) : null}
+                {citySeoFooter.faq && citySeoFooter.faq.length > 0 ? (
+                  <EmbeddedFaqSection items={citySeoFooter.faq} />
+                ) : null}
+              </>
             ) : null}
             {currentPage === 1 && placeSeoFooter ? (
               <>

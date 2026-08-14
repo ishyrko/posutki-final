@@ -34,7 +34,7 @@ import FeaturesSection from "@/components/FeaturesSection";
 import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { fetchFeaturedPropertiesForHome } from "@/lib/featured-properties-server";
 import { fetchCityApartmentCountsForHome } from "@/lib/city-apartment-counts-server";
-import { fetchCityCatalogSeoText } from "@/lib/city-catalog-seo-server";
+import { fetchCityCatalogContent } from "@/lib/city-catalog-seo-server";
 import {
   fetchDistrictCatalogSeo,
   fetchMicrodistrictCatalogSeo,
@@ -284,21 +284,31 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     Number.isFinite(pageFromQuery) && pageFromQuery > 0 ? Math.floor(pageFromQuery) : 1;
   const isFirstPage = validPage <= 1;
 
-  let citySeoFooter = null;
+  let citySeoFooter: { heading: string; html: string; faq?: FaqItem[] } | null = null;
   let placeSeoFooter: { heading: string; html: string; faq?: FaqItem[] } | null = null;
+  let cityFaqJsonLd: Record<string, unknown> | null = null;
   let placeFaqJsonLd: Record<string, unknown> | null = null;
   const catalogCitySlug = resolveCatalogCitySlug(parsed);
 
   if (isFirstPage && isBaseCityApartmentCatalogPage(parsed)) {
-    const rawSeoText = await fetchCityCatalogSeoText(catalogCitySlug);
-    if (rawSeoText) {
-      const sanitizedHtml = sanitizeArticleHtml(rawSeoText);
-      if (sanitizedHtml) {
-        citySeoFooter = {
-          heading: buildCatalogCitySeoHeading(catalogCitySlug),
-          html: sanitizedHtml,
-        };
-      }
+    const cityCatalogContent = await fetchCityCatalogContent(catalogCitySlug);
+    const rawSeoText = cityCatalogContent?.catalogSeoText?.trim() ?? null;
+    const faqItems = (cityCatalogContent?.faq ?? []).filter(
+      (item): item is FaqItem =>
+        Boolean(item?.question?.trim()) && Boolean(item?.answer?.trim()),
+    );
+    const sanitizedHtml = rawSeoText ? sanitizeArticleHtml(rawSeoText) : null;
+
+    if (sanitizedHtml || faqItems.length > 0) {
+      citySeoFooter = {
+        heading: buildCatalogCitySeoHeading(catalogCitySlug),
+        html: sanitizedHtml ?? "",
+        faq: faqItems.length > 0 ? faqItems : undefined,
+      };
+    }
+
+    if (faqItems.length > 0) {
+      cityFaqJsonLd = buildFaqPageJsonLd(faqItems);
     }
   }
 
@@ -378,6 +388,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
       {isFirstPage ? (
         <JsonLdScript data={buildCatalogBreadcrumbJsonLd(parsed, breadcrumbNames)} />
       ) : null}
+      {isFirstPage && cityFaqJsonLd ? <JsonLdScript data={cityFaqJsonLd} /> : null}
       {isFirstPage && placeFaqJsonLd ? <JsonLdScript data={placeFaqJsonLd} /> : null}
       <CatalogPage
         parsed={parsed}

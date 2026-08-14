@@ -46,6 +46,10 @@ class City
     #[ORM\Column(type: 'text', nullable: true, name: 'catalog_seo_text')]
     private ?string $catalogSeoText = null;
 
+    /** @var list<array{question: string, answer: string}>|null */
+    #[ORM\Column(type: 'json', nullable: true, name: 'catalog_faq')]
+    private ?array $catalogFaq = null;
+
     public function getId(): int
     {
         return $this->id;
@@ -104,6 +108,22 @@ class City
     public function setCatalogSeoText(?string $catalogSeoText): void
     {
         $this->catalogSeoText = $catalogSeoText;
+    }
+
+    /**
+     * @return list<array{question: string, answer: string}>|null
+     */
+    public function getCatalogFaq(): ?array
+    {
+        return $this->catalogFaq;
+    }
+
+    /**
+     * @param list<array{question: string, answer: string}>|null $catalogFaq
+     */
+    public function setCatalogFaq(?array $catalogFaq): void
+    {
+        $this->catalogFaq = $catalogFaq;
     }
 
     public function __toString(): string

@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Admin\Controller;
 
-use App\Application\Service\ArticleHtmlNormalizer;
-use App\Application\Service\ArticleTextSanitizer;
+use App\Application\Service\CatalogPlaceContentNormalizer;
 use App\Domain\Property\Entity\City;
 use App\Domain\Property\Service\CatalogApartmentCitySlugs;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,14 +20,12 @@ use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
 class CityCrudController extends AbstractCrudController
 {
     public function __construct(
-        private readonly ArticleHtmlNormalizer $articleHtmlNormalizer,
-        private readonly ArticleTextSanitizer $articleTextSanitizer,
+        private readonly CatalogPlaceContentNormalizer $catalogPlaceContentNormalizer,
     ) {
     }
 
@@ -67,15 +64,13 @@ class CityCrudController extends AbstractCrudController
 
     public function configureAssets(Assets $assets): Assets
     {
-        return $assets
-            ->addJsFile('https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js')
-            ->addJsFile('js/admin-article-tinymce.js');
+        return CatalogContentAdminFields::configureAssets($assets);
     }
 
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
         if ($entityInstance instanceof City) {
-            $this->normalizeCatalogSeoText($entityInstance);
+            CatalogContentAdminFields::normalize($entityInstance, $this->catalogPlaceContentNormalizer);
         }
 
         parent::persistEntity($entityManager, $entityInstance);
@@ -84,7 +79,7 @@ class CityCrudController extends AbstractCrudController
     public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
         if ($entityInstance instanceof City) {
-            $this->normalizeCatalogSeoText($entityInstance);
+            CatalogContentAdminFields::normalize($entityInstance, $this->catalogPlaceContentNormalizer);
         }
 
         parent::updateEntity($entityManager, $entityInstance);
@@ -114,33 +109,14 @@ class CityCrudController extends AbstractCrudController
         yield TextField::new('externalId', 'Внешний ID')
             ->hideOnIndex();
 
-        yield TextareaField::new('catalogSeoText', 'SEO-текст под каталогом квартир')
-            ->setFormTypeOption('attr', [
-                'class' => 'ea-static-page-content-rte form-control',
-                'rows' => 16,
-                'data-upload-scope' => 'static-pages',
-            ])
-            ->setHelp('Показывается на первой странице каталога квартир этого города (под списком объявлений). Если пусто — блок не отображается.')
-            ->hideOnIndex();
+        yield CatalogContentAdminFields::seoTextField('SEO-текст под каталогом квартир')
+            ->setHelp('Показывается на первой странице каталога квартир этого города (под списком объявлений). Если пусто — блок не отображается.');
+        yield CatalogContentAdminFields::faqField();
     }
 
     public function configureFilters(Filters $filters): Filters
     {
         return $filters
             ->add('regionDistrict');
-    }
-
-    private function normalizeCatalogSeoText(City $city): void
-    {
-        $raw = $city->getCatalogSeoText();
-        if ($raw === null || trim($raw) === '') {
-            $city->setCatalogSeoText(null);
-
-            return;
-        }
-
-        $htmlNormalized = $this->articleHtmlNormalizer->normalize($raw);
-        $sanitized = $this->articleTextSanitizer->sanitizeHtml($htmlNormalized);
-        $city->setCatalogSeoText(trim($sanitized) === '' ? null : $sanitized);
     }
 }
