@@ -10,6 +10,9 @@ interface CityDistrictRepositoryInterface
 {
     public function findById(int $id): ?CityDistrict;
 
+    public function findByCityIdAndOfficialName(int $cityId, string $officialName): ?CityDistrict;
+
+    /** @deprecated use findByCityIdAndOfficialName */
     public function findByCityIdAndName(int $cityId, string $name): ?CityDistrict;
 
     public function findByCityIdAndSlug(int $cityId, string $slug): ?CityDistrict;

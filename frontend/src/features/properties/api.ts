@@ -40,6 +40,8 @@ export const getProperties = async (filters: PropertyFilters = {}): Promise<Prop
         if (filters.metroStationId) params.append('metroStationId', filters.metroStationId.toString());
         if (filters.nearMetro) params.append('nearMetro', '1');
         if (filters.cityDistrictSlug) params.append('cityDistrictSlug', filters.cityDistrictSlug);
+        if (filters.microdistrictSlug) params.append('microdistrictSlug', filters.microdistrictSlug);
+        if (filters.residentialComplexSlug) params.append('residentialComplexSlug', filters.residentialComplexSlug);
         if (filters.landmarkSlug) params.append('landmarkSlug', filters.landmarkSlug);
         if (filters.maxLandmarkDistanceKm) {
             params.append('maxLandmarkDistanceKm', filters.maxLandmarkDistanceKm.toString());

@@ -13,6 +13,8 @@ use App\Domain\Property\Repository\{
     PropertyRepositoryInterface,
     CityRepositoryInterface,
     CityDistrictRepositoryInterface,
+    CityMicrodistrictRepositoryInterface,
+    ResidentialComplexRepositoryInterface,
     StreetRepositoryInterface,
     MetroStationRepositoryInterface,
     PropertyMetroStationRepositoryInterface,
@@ -32,6 +34,8 @@ final class GetPropertyHandler
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly CityRepositoryInterface $cityRepository,
         private readonly CityDistrictRepositoryInterface $cityDistrictRepository,
+        private readonly CityMicrodistrictRepositoryInterface $cityMicrodistrictRepository,
+        private readonly ResidentialComplexRepositoryInterface $residentialComplexRepository,
         private readonly StreetRepositoryInterface $streetRepository,
         private readonly MetroStationRepositoryInterface $metroStationRepository,
         private readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
@@ -78,6 +82,16 @@ final class GetPropertyHandler
         $cityDistrict = null;
         if ($property->getCityDistrictId() !== null) {
             $cityDistrict = $this->cityDistrictRepository->findById($property->getCityDistrictId());
+        }
+
+        $cityMicrodistrict = null;
+        if ($property->getCityMicrodistrictId() !== null) {
+            $cityMicrodistrict = $this->cityMicrodistrictRepository->findById($property->getCityMicrodistrictId());
+        }
+
+        $residentialComplex = null;
+        if ($property->getResidentialComplexId() !== null) {
+            $residentialComplex = $this->residentialComplexRepository->findById($property->getResidentialComplexId());
         }
 
         $propertyMetroStations = $this->propertyMetroStationRepository->findByPropertyIds([$property->getId()->getValue()]);
@@ -198,6 +212,8 @@ final class GetPropertyHandler
             $city,
             $street,
             $cityDistrict,
+            $cityMicrodistrict,
+            $residentialComplex,
             $nearbyMetroStations,
             0,
             $dailySellerLegalProfile,

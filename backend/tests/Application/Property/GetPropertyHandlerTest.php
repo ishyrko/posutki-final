@@ -13,6 +13,8 @@ use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\CityDistrictRepositoryInterface;
+use App\Domain\Property\Repository\CityMicrodistrictRepositoryInterface;
+use App\Domain\Property\Repository\ResidentialComplexRepositoryInterface;
 use App\Domain\Property\Repository\MetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyAvailabilityBlockRepositoryInterface;
@@ -144,6 +146,8 @@ final class GetPropertyHandlerTest extends TestCase
         $cityRepository->method('findById')->willReturn($city);
 
         $cityDistrictRepository = $this->createStub(CityDistrictRepositoryInterface::class);
+        $cityMicrodistrictRepository = $this->createStub(CityMicrodistrictRepositoryInterface::class);
+        $residentialComplexRepository = $this->createStub(ResidentialComplexRepositoryInterface::class);
         $streetRepository = $this->createStub(StreetRepositoryInterface::class);
         $propertyMetroStationRepository = $this->createStub(PropertyMetroStationRepositoryInterface::class);
         $propertyMetroStationRepository->method('findByPropertyIds')->willReturn([]);
@@ -178,6 +182,8 @@ final class GetPropertyHandlerTest extends TestCase
             $propertyRepository,
             $cityRepository,
             $cityDistrictRepository,
+            $cityMicrodistrictRepository,
+            $residentialComplexRepository,
             $streetRepository,
             $metroStationRepository,
             $propertyMetroStationRepository,

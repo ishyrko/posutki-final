@@ -84,6 +84,8 @@ final class GetMyPropertiesHandler
                     $cities[$property->getCityId()] ?? null,
                     $streets[$property->getStreetId()] ?? null,
                     $cityDistricts[$property->getCityDistrictId()] ?? null,
+                    null,
+                    null,
                     [],
                     $this->favoriteRepository->countByProperty($property->getId()),
                     null,

@@ -17,6 +17,8 @@ export type Crumb = { label: string; href?: string };
 export type CatalogBreadcrumbNames = {
   metroStationName?: string;
   cityDistrictName?: string;
+  microdistrictName?: string;
+  residentialComplexName?: string;
   landmarkPhrase?: string;
   landmarkName?: string;
 };
@@ -34,6 +36,8 @@ function stripCatalogFacets(parsed: ParsedSegments): ParsedSegments {
     nearMetro: undefined,
     metroStationSlug: undefined,
     cityDistrictSlug: undefined,
+    microdistrictSlug: undefined,
+    residentialComplexSlug: undefined,
     landmarkSlug: undefined,
   };
 }
@@ -43,6 +47,8 @@ function hasCatalogFacets(parsed: ParsedSegments): boolean {
     parsed.nearMetro ||
       parsed.metroStationSlug ||
       parsed.cityDistrictSlug ||
+      parsed.microdistrictSlug ||
+      parsed.residentialComplexSlug ||
       parsed.landmarkSlug,
   );
 }
@@ -82,6 +88,20 @@ export function buildCatalogBreadcrumbTrail(
   if (parsed.landmarkSlug) {
     crumbs.push({
       label: names.landmarkName ?? names.landmarkPhrase ?? parsed.landmarkSlug,
+    });
+    return crumbs;
+  }
+
+  if (parsed.residentialComplexSlug) {
+    crumbs.push({
+      label: names.residentialComplexName ?? parsed.residentialComplexSlug,
+    });
+    return crumbs;
+  }
+
+  if (parsed.microdistrictSlug) {
+    crumbs.push({
+      label: names.microdistrictName ?? parsed.microdistrictSlug,
     });
     return crumbs;
   }

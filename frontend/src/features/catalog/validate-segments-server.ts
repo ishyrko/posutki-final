@@ -9,6 +9,7 @@ import {
   type ParsedSegments,
 } from "@/features/catalog/slugs";
 import type { CityDistrict } from "@/features/city-districts/types";
+import type { CityPlace } from "@/features/city-places/types";
 import type { Landmark, LandmarkListItem } from "@/features/landmarks/types";
 
 interface CityResponse {
@@ -43,6 +44,19 @@ const getCityDistrictsByCitySlug = cache(async (citySlug: string): Promise<CityD
       `/cities/${encodeURIComponent(citySlug)}/districts`,
       {
         next: { revalidate: 3600, tags: [`city-districts-${citySlug}`] },
+      },
+    );
+  } catch {
+    return [];
+  }
+});
+
+const getCityPlacesByCitySlug = cache(async (citySlug: string): Promise<CityPlace[]> => {
+  try {
+    return await fetchPublicApi<CityPlace[]>(
+      `/cities/${encodeURIComponent(citySlug)}/places`,
+      {
+        next: { revalidate: 3600, tags: [`city-places-${citySlug}`] },
       },
     );
   } catch {
@@ -91,6 +105,25 @@ async function validateParsedCatalogLocation(parsed: ParsedSegments): Promise<bo
     }
   }
 
+  if (parsed.microdistrictSlug || parsed.residentialComplexSlug) {
+    const citySlug = resolveCatalogCitySlug(parsed);
+    const places = await getCityPlacesByCitySlug(citySlug);
+    if (parsed.microdistrictSlug) {
+      if (!places.some((place) => place.type === 'microdistrict' && place.slug === parsed.microdistrictSlug)) {
+        return false;
+      }
+    }
+    if (parsed.residentialComplexSlug) {
+      if (
+        !places.some(
+          (place) => place.type === 'residential_complex' && place.slug === parsed.residentialComplexSlug,
+        )
+      ) {
+        return false;
+      }
+    }
+  }
+
   if (parsed.landmarkSlug) {
     const citySlug = resolveCatalogCitySlug(parsed);
     const landmarks = await getCityLandmarks(citySlug);
@@ -132,6 +165,30 @@ export async function resolveCityDistrictName(
   const citySlug = resolveCatalogCitySlug(parsed);
   const districts = await getCityDistrictsByCitySlug(citySlug);
   return districts.find((district) => district.slug === parsed.cityDistrictSlug)?.name;
+}
+
+export async function resolveMicrodistrictPlace(
+  parsed: ParsedSegments,
+): Promise<CityPlace | undefined> {
+  if (!parsed.microdistrictSlug) return undefined;
+
+  const citySlug = resolveCatalogCitySlug(parsed);
+  const places = await getCityPlacesByCitySlug(citySlug);
+  return places.find(
+    (place) => place.type === 'microdistrict' && place.slug === parsed.microdistrictSlug,
+  );
+}
+
+export async function resolveResidentialComplexPlace(
+  parsed: ParsedSegments,
+): Promise<CityPlace | undefined> {
+  if (!parsed.residentialComplexSlug) return undefined;
+
+  const citySlug = resolveCatalogCitySlug(parsed);
+  const places = await getCityPlacesByCitySlug(citySlug);
+  return places.find(
+    (place) => place.type === 'residential_complex' && place.slug === parsed.residentialComplexSlug,
+  );
 }
 
 export async function resolveLandmark(

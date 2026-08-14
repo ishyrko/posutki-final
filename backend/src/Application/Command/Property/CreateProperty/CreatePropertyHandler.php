@@ -9,6 +9,8 @@ use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Event\PropertySubmittedForModerationEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Service\CityDistrictResolverInterface;
+use App\Domain\Property\Service\CityMicrodistrictResolverInterface;
+use App\Domain\Property\Service\ResidentialComplexResolverInterface;
 use App\Domain\Property\Validation\DailyRentDetailsValidator;
 use App\Domain\Property\Validation\DealConditionsValidator;
 use App\Domain\Property\Validation\PaymentMethodsValidator;
@@ -35,6 +37,8 @@ final class CreatePropertyHandler
         private readonly MetroProximityCalculator $metroProximityCalculator,
         private readonly LandmarkProximityCalculator $landmarkProximityCalculator,
         private readonly CityDistrictResolverInterface $cityDistrictResolver,
+        private readonly CityMicrodistrictResolverInterface $cityMicrodistrictResolver,
+        private readonly ResidentialComplexResolverInterface $residentialComplexResolver,
         private readonly MessageBusInterface $notificationBus,
     ) {
     }
@@ -149,6 +153,22 @@ final class CreatePropertyHandler
             $property->getId()->getValue(),
         );
         $property->setCityDistrictId($cityDistrict?->getId());
+
+        $microdistrict = $this->cityMicrodistrictResolver->resolve(
+            $command->latitude,
+            $command->longitude,
+            $command->cityId,
+            $property->getId()->getValue(),
+        );
+        $property->setCityMicrodistrictId($microdistrict?->getId());
+
+        $complex = $this->residentialComplexResolver->resolve(
+            $command->latitude,
+            $command->longitude,
+            $command->cityId,
+            $property->getId()->getValue(),
+        );
+        $property->setResidentialComplexId($complex?->getId());
 
         $this->metroProximityCalculator->syncForProperty($property);
         $this->landmarkProximityCalculator->syncForProperty($property);

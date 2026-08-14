@@ -11,6 +11,7 @@ import {
   buildPropertyUrlFromRegionName,
 } from "@/features/catalog/slugs";
 import type { CityDistrict } from "@/features/city-districts/types";
+import type { CityPlace } from "@/features/city-places/types";
 import type { LandmarkListItem } from "@/features/landmarks/types";
 import type { Article, ArticleCategory } from "@/features/articles/types";
 import type { Property } from "@/features/properties/types";
@@ -190,6 +191,48 @@ async function landmarkEntries(now: Date): Promise<Entry[]> {
   return entries;
 }
 
+async function placeEntries(now: Date): Promise<Entry[]> {
+  const entries: Entry[] = [];
+  const citySlugs = new Set<string>([MINSK_CITY_SLUG, ...REGION_SLUGS, ...CITY_PREFIX_SLUG_LIST]);
+
+  for (const citySlug of citySlugs) {
+    try {
+      const places = await fetchPublicApi<CityPlace[]>(
+        `/cities/${encodeURIComponent(citySlug)}/places`,
+        { next: { revalidate: 3600, tags: [`city-places-${citySlug}`] } },
+      );
+
+      const isCityPrefix = CITY_PREFIX_SLUG_LIST.includes(
+        citySlug as (typeof CITY_PREFIX_SLUG_LIST)[number],
+      );
+      const isRegion = REGION_SLUGS.has(citySlug);
+
+      for (const place of places) {
+        if (!place.slug) continue;
+
+        const path = buildCatalogUrl({
+          region: !isCityPrefix && isRegion ? citySlug : undefined,
+          city: isCityPrefix ? citySlug : undefined,
+          propertyType: "apartment",
+          microdistrict: place.type === "microdistrict" ? place.slug : undefined,
+          residentialComplex: place.type === "residential_complex" ? place.slug : undefined,
+        });
+
+        entries.push({
+          url: toAbsolute(path),
+          lastModified: now,
+          changeFrequency: "weekly",
+          priority: 0.6,
+        });
+      }
+    } catch {
+      // Soft-fail per city.
+    }
+  }
+
+  return entries;
+}
+
 async function articleEntries(now: Date): Promise<Entry[]> {
   try {
     const [categories, articles] = await Promise.all([
@@ -271,11 +314,12 @@ async function propertyEntries(now: Date): Promise<Entry[]> {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
-  const [articles, properties, districts, landmarks] = await Promise.all([
+  const [articles, properties, districts, landmarks, places] = await Promise.all([
     articleEntries(now),
     propertyEntries(now),
     districtEntries(now),
     landmarkEntries(now),
+    placeEntries(now),
   ]);
 
   return [
@@ -283,6 +327,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...catalogEntries(now),
     ...districts,
     ...landmarks,
+    ...places,
     ...articles,
     ...properties,
   ];

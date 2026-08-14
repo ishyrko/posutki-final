@@ -10,6 +10,8 @@ use App\Domain\Exchange\Repository\ExchangeRateRepositoryInterface;
 use App\Domain\Property\Event\PropertySubmittedForModerationEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Service\CityDistrictResolverInterface;
+use App\Domain\Property\Service\CityMicrodistrictResolverInterface;
+use App\Domain\Property\Service\ResidentialComplexResolverInterface;
 use App\Domain\Property\Repository\LandmarkRepositoryInterface;
 use App\Domain\Property\Repository\MetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyLandmarkRepositoryInterface;
@@ -66,6 +68,8 @@ final class CreatePropertyHandlerTest extends TestCase
             $metroCalculator,
             $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
             $notificationBus,
         );
 
@@ -93,7 +97,7 @@ final class CreatePropertyHandlerTest extends TestCase
                 }
             });
 
-        $cityDistrict = new \App\Domain\Property\Entity\CityDistrict(1, 'Советский район', 'sovetskiy');
+        $cityDistrict = new \App\Domain\Property\Entity\CityDistrict(1, 'Советский район', 'Советский район', 'sovetskiy');
         $districtIdReflection = new \ReflectionProperty($cityDistrict, 'id');
         $districtIdReflection->setAccessible(true);
         $districtIdReflection->setValue($cityDistrict, 7);
@@ -117,6 +121,8 @@ final class CreatePropertyHandlerTest extends TestCase
             $metroCalculator,
             $this->createLandmarkCalculator(),
             $cityDistrictResolver,
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
             $notificationBus,
         );
 
@@ -140,6 +146,8 @@ final class CreatePropertyHandlerTest extends TestCase
             $metroCalculator,
             $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
             $notificationBus,
         );
 
@@ -163,6 +171,8 @@ final class CreatePropertyHandlerTest extends TestCase
             $metroCalculator,
             $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
             $notificationBus,
         );
 
@@ -186,6 +196,8 @@ final class CreatePropertyHandlerTest extends TestCase
             $metroCalculator,
             $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
             $notificationBus,
         );
 
@@ -299,5 +311,15 @@ final class CreatePropertyHandlerTest extends TestCase
     private function createCityDistrictResolver(): CityDistrictResolverInterface
     {
         return $this->createStub(CityDistrictResolverInterface::class);
+    }
+
+    private function createCityMicrodistrictResolver(): CityMicrodistrictResolverInterface
+    {
+        return $this->createStub(CityMicrodistrictResolverInterface::class);
+    }
+
+    private function createResidentialComplexResolver(): ResidentialComplexResolverInterface
+    {
+        return $this->createStub(ResidentialComplexResolverInterface::class);
     }
 }

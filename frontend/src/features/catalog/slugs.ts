@@ -152,6 +152,8 @@ export interface ParsedSegments {
   nearMetro?: boolean;
   metroStationSlug?: string;
   cityDistrictSlug?: string;
+  microdistrictSlug?: string;
+  residentialComplexSlug?: string;
   landmarkSlug?: string;
 }
 
@@ -174,6 +176,8 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
   let nearMetro: boolean | undefined;
   let metroStationSlug: string | undefined;
   let cityDistrictSlug: string | undefined;
+  let microdistrictSlug: string | undefined;
+  let residentialComplexSlug: string | undefined;
   let landmarkSlug: string | undefined;
 
   if (i < segments.length) {
@@ -191,6 +195,18 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
       i++;
       if (segments[i]) {
         cityDistrictSlug = segments[i]!;
+        i++;
+      }
+    } else if (segments[i] === 'mikroraion') {
+      i++;
+      if (segments[i]) {
+        microdistrictSlug = segments[i]!;
+        i++;
+      }
+    } else if (segments[i] === 'zhiloy-kompleks') {
+      i++;
+      if (segments[i]) {
+        residentialComplexSlug = segments[i]!;
         i++;
       }
     } else if (segments[i] === 'vozle') {
@@ -217,6 +233,8 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
     nearMetro,
     metroStationSlug,
     cityDistrictSlug,
+    microdistrictSlug,
+    residentialComplexSlug,
     landmarkSlug,
   };
 }
@@ -231,6 +249,9 @@ export function isValidMetroCatalogSegments(parsed: ParsedSegments): boolean {
     return true;
   }
   if (parsed.cityDistrictSlug) {
+    return false;
+  }
+  if (parsed.microdistrictSlug || parsed.residentialComplexSlug) {
     return false;
   }
   if (parsed.landmarkSlug) {
@@ -256,6 +277,9 @@ export function isValidDistrictCatalogSegments(parsed: ParsedSegments): boolean 
   if (parsed.nearMetro || parsed.metroStationSlug || parsed.landmarkSlug) {
     return false;
   }
+  if (parsed.microdistrictSlug || parsed.residentialComplexSlug) {
+    return false;
+  }
   if (parsed.propertyType !== 'apartment') {
     return false;
   }
@@ -263,12 +287,60 @@ export function isValidDistrictCatalogSegments(parsed: ParsedSegments): boolean 
   return CITIES_WITH_DISTRICTS_SLUGS.has(resolveCatalogCitySlug(parsed));
 }
 
+/** Микрорайон в URL — только квартиры, без метро, района, ЖК и достопримечательности. */
+export function isValidMicrodistrictCatalogSegments(parsed: ParsedSegments): boolean {
+  if (!parsed.microdistrictSlug) {
+    return true;
+  }
+  if (
+    parsed.nearMetro ||
+    parsed.metroStationSlug ||
+    parsed.cityDistrictSlug ||
+    parsed.residentialComplexSlug ||
+    parsed.landmarkSlug
+  ) {
+    return false;
+  }
+  if (parsed.propertyType !== 'apartment') {
+    return false;
+  }
+
+  return true;
+}
+
+/** Жилой комплекс в URL — только квартиры, без метро, района, микрорайона и достопримечательности. */
+export function isValidResidentialComplexCatalogSegments(parsed: ParsedSegments): boolean {
+  if (!parsed.residentialComplexSlug) {
+    return true;
+  }
+  if (
+    parsed.nearMetro ||
+    parsed.metroStationSlug ||
+    parsed.cityDistrictSlug ||
+    parsed.microdistrictSlug ||
+    parsed.landmarkSlug
+  ) {
+    return false;
+  }
+  if (parsed.propertyType !== 'apartment') {
+    return false;
+  }
+
+  return true;
+}
+
 /** Достопримечательность в URL — только квартиры, без метро и района. */
 export function isValidLandmarkCatalogSegments(parsed: ParsedSegments): boolean {
   if (!parsed.landmarkSlug) {
     return true;
   }
-  if (parsed.nearMetro || parsed.metroStationSlug || parsed.cityDistrictSlug) {
+  if (
+    parsed.nearMetro ||
+    parsed.metroStationSlug ||
+    parsed.cityDistrictSlug ||
+    parsed.microdistrictSlug ||
+    parsed.residentialComplexSlug
+  ) {
     return false;
   }
   if (parsed.propertyType !== 'apartment') {
@@ -289,6 +361,8 @@ export function isBaseCityApartmentCatalogPage(parsed: ParsedSegments): boolean 
     !parsed.nearMetro &&
     !parsed.metroStationSlug &&
     !parsed.cityDistrictSlug &&
+    !parsed.microdistrictSlug &&
+    !parsed.residentialComplexSlug &&
     !parsed.landmarkSlug
   );
 }
@@ -329,6 +403,14 @@ export function validateCatalogSegmentsStructure(segments: string[] = []): boole
       i++;
       if (segments[i]) i++;
       else return false;
+    } else if (segments[i] === 'mikroraion') {
+      i++;
+      if (segments[i]) i++;
+      else return false;
+    } else if (segments[i] === 'zhiloy-kompleks') {
+      i++;
+      if (segments[i]) i++;
+      else return false;
     } else if (segments[i] === 'vozle') {
       i++;
       if (segments[i]) i++;
@@ -354,13 +436,27 @@ export function validatePublicSegmentsStructure(segments: string[] = []): boolea
     if (!validateCatalogSegmentsStructure(catalogSegments)) return false;
 
     const parsed = parseSegments(catalogSegments);
-    return parsed.propertyType !== undefined && isValidMetroCatalogSegments(parsed) && isValidDistrictCatalogSegments(parsed) && isValidLandmarkCatalogSegments(parsed);
+    return (
+      parsed.propertyType !== undefined &&
+      isValidMetroCatalogSegments(parsed) &&
+      isValidDistrictCatalogSegments(parsed) &&
+      isValidMicrodistrictCatalogSegments(parsed) &&
+      isValidResidentialComplexCatalogSegments(parsed) &&
+      isValidLandmarkCatalogSegments(parsed)
+    );
   }
 
   if (!validateCatalogSegmentsStructure(segments)) return false;
 
   const parsed = parseSegments(segments);
-  return isCatalogRoute(parsed) && isValidMetroCatalogSegments(parsed) && isValidDistrictCatalogSegments(parsed) && isValidLandmarkCatalogSegments(parsed);
+  return (
+    isCatalogRoute(parsed) &&
+    isValidMetroCatalogSegments(parsed) &&
+    isValidDistrictCatalogSegments(parsed) &&
+    isValidMicrodistrictCatalogSegments(parsed) &&
+    isValidResidentialComplexCatalogSegments(parsed) &&
+    isValidLandmarkCatalogSegments(parsed)
+  );
 }
 
 /** Фильтр метро — только квартиры в Минске (не дома, не другие области/города). */
@@ -385,8 +481,47 @@ export function isDistrictCatalogContext(parsed: ParsedSegments): boolean {
   if (parsed.nearMetro || parsed.metroStationSlug || parsed.landmarkSlug) {
     return false;
   }
+  if (parsed.microdistrictSlug || parsed.residentialComplexSlug) {
+    return false;
+  }
 
   return CITIES_WITH_DISTRICTS_SLUGS.has(resolveCatalogCitySlug(parsed));
+}
+
+/** Микрорайон в каталоге — только квартиры, без других геофильтров в URL. */
+export function isMicrodistrictCatalogContext(parsed: ParsedSegments): boolean {
+  if (parsed.propertyType !== 'apartment') {
+    return false;
+  }
+  if (
+    parsed.nearMetro ||
+    parsed.metroStationSlug ||
+    parsed.cityDistrictSlug ||
+    parsed.residentialComplexSlug ||
+    parsed.landmarkSlug
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+/** Жилой комплекс в каталоге — только квартиры, без других геофильтров в URL. */
+export function isResidentialComplexCatalogContext(parsed: ParsedSegments): boolean {
+  if (parsed.propertyType !== 'apartment') {
+    return false;
+  }
+  if (
+    parsed.nearMetro ||
+    parsed.metroStationSlug ||
+    parsed.cityDistrictSlug ||
+    parsed.microdistrictSlug ||
+    parsed.landmarkSlug
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 /** Достопримечательность в каталоге — только квартиры, без метро и района. */
@@ -394,7 +529,13 @@ export function isLandmarkCatalogContext(parsed: ParsedSegments): boolean {
   if (parsed.propertyType !== 'apartment') {
     return false;
   }
-  if (parsed.nearMetro || parsed.metroStationSlug || parsed.cityDistrictSlug) {
+  if (
+    parsed.nearMetro ||
+    parsed.metroStationSlug ||
+    parsed.cityDistrictSlug ||
+    parsed.microdistrictSlug ||
+    parsed.residentialComplexSlug
+  ) {
     return false;
   }
 
@@ -408,6 +549,8 @@ export interface BuildCatalogUrlParams {
   nearMetro?: boolean;
   metroStation?: string;
   cityDistrict?: string;
+  microdistrict?: string;
+  residentialComplex?: string;
   landmark?: string;
 }
 
@@ -420,6 +563,8 @@ export function buildCatalogCanonicalPath(parsed: ParsedSegments): string {
     nearMetro: parsed.nearMetro,
     metroStation: parsed.metroStationSlug,
     cityDistrict: parsed.cityDistrictSlug,
+    microdistrict: parsed.microdistrictSlug,
+    residentialComplex: parsed.residentialComplexSlug,
     landmark: parsed.landmarkSlug,
   });
 }
@@ -446,6 +591,12 @@ export function buildCatalogUrl(params: BuildCatalogUrlParams = {}): string {
   if (params.cityDistrict) {
     parts.push('raion');
     parts.push(params.cityDistrict);
+  } else if (params.microdistrict) {
+    parts.push('mikroraion');
+    parts.push(params.microdistrict);
+  } else if (params.residentialComplex) {
+    parts.push('zhiloy-kompleks');
+    parts.push(params.residentialComplex);
   } else if (params.landmark) {
     parts.push('vozle');
     parts.push(params.landmark);
@@ -557,6 +708,75 @@ export function buildDistrictCatalogUrlFromAddress(
   return undefined;
 }
 
+function buildPlaceCatalogUrlFromAddress(
+  regionName: string | undefined,
+  citySlug: string | undefined,
+  placeSlug: string | undefined,
+  placeKind: 'microdistrict' | 'residentialComplex',
+): string | undefined {
+  if (!placeSlug || !citySlug) {
+    return undefined;
+  }
+
+  const placeParam =
+    placeKind === 'microdistrict'
+      ? { microdistrict: placeSlug }
+      : { residentialComplex: placeSlug };
+
+  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({
+      city: citySlug,
+      propertyType: 'apartment',
+      ...placeParam,
+    });
+  }
+
+  const region = propertyUrlRegionSlug(regionName, citySlug, 'apartment');
+  if (region && REGION_SLUGS.has(region)) {
+    return buildCatalogUrl({
+      region,
+      propertyType: 'apartment',
+      ...placeParam,
+    });
+  }
+
+  if (citySlug === MINSK_CITY_SLUG) {
+    return buildCatalogUrl({
+      propertyType: 'apartment',
+      ...placeParam,
+    });
+  }
+
+  return buildCatalogUrl({
+    propertyType: 'apartment',
+    city: citySlug,
+    ...placeParam,
+  });
+}
+
+/** Каталог квартир по микрорайону из адреса объявления. */
+export function buildMicrodistrictCatalogUrlFromAddress(
+  regionName?: string,
+  citySlug?: string,
+  microdistrictSlug?: string,
+): string | undefined {
+  return buildPlaceCatalogUrlFromAddress(regionName, citySlug, microdistrictSlug, 'microdistrict');
+}
+
+/** Каталог квартир по жилому комплексу из адреса объявления. */
+export function buildResidentialComplexCatalogUrlFromAddress(
+  regionName?: string,
+  citySlug?: string,
+  residentialComplexSlug?: string,
+): string | undefined {
+  return buildPlaceCatalogUrlFromAddress(
+    regionName,
+    citySlug,
+    residentialComplexSlug,
+    'residentialComplex',
+  );
+}
+
 /** Страница объявления: …/kvartiry/123 или …/vitebsk/kvartiry/123 */
 export function isPropertyDetailPath(pathname: string): boolean {
   const segments = pathname.split('/').filter(Boolean);
@@ -639,12 +859,31 @@ export function formatCityDistrictCatalogLocation(
   return `${prep} ${adjective} районе ${cityGenitive}`;
 }
 
+/** «в Уручье» / «во Фрунзенском» — namePrepositional из API без предлога. */
+export function formatMicrodistrictCatalogLocation(
+  namePrepositional: string,
+  _citySlug?: string,
+): string {
+  const place = namePrepositional.trim();
+  const prep = districtLocationPreposition(place);
+  return `${prep} ${place}`;
+}
+
+/** «в Минск-Мире» — namePrepositional из API без предлога. */
+export function formatResidentialComplexCatalogLocation(namePrepositional: string): string {
+  const place = namePrepositional.trim();
+  const prep = districtLocationPreposition(place);
+  return `${prep} ${place}`;
+}
+
 function resolveCatalogLocation(
   parsed: ParsedSegments,
   cityName?: string,
   metroStationName?: string,
   cityDistrictName?: string,
   landmarkPhrase?: string,
+  microdistrictNamePrepositional?: string,
+  residentialComplexNamePrepositional?: string,
 ): string {
   if (landmarkPhrase) {
     return landmarkPhrase.startsWith('возле ') || landmarkPhrase.startsWith('рядом ')
@@ -663,6 +902,13 @@ function resolveCatalogLocation(
 
   const key = catalogLocationKey(parsed);
 
+  if (residentialComplexNamePrepositional) {
+    return formatResidentialComplexCatalogLocation(residentialComplexNamePrepositional);
+  }
+  if (microdistrictNamePrepositional) {
+    return formatMicrodistrictCatalogLocation(microdistrictNamePrepositional, key);
+  }
+
   if (cityDistrictName) {
     return formatCityDistrictCatalogLocation(cityDistrictName, key);
   }
@@ -680,13 +926,23 @@ export function buildPageTitle(
   metroStationName?: string,
   cityDistrictName?: string,
   landmarkPhrase?: string,
+  microdistrictNamePrepositional?: string,
+  residentialComplexNamePrepositional?: string,
 ): string {
   const typePart =
     parsed.propertyType && parsed.propertyType in DAILY_DEAL_PAGE_TITLES
       ? DAILY_DEAL_PAGE_TITLES[parsed.propertyType]
       : 'Посуточная аренда';
 
-  const location = resolveCatalogLocation(parsed, cityName, metroStationName, cityDistrictName, landmarkPhrase);
+  const location = resolveCatalogLocation(
+    parsed,
+    cityName,
+    metroStationName,
+    cityDistrictName,
+    landmarkPhrase,
+    microdistrictNamePrepositional,
+    residentialComplexNamePrepositional,
+  );
   if (!location) {
     return typePart || 'Посуточная аренда в Беларуси';
   }
@@ -707,6 +963,8 @@ function resolveApartmentCatalogMetaLocation(
   metroStationName?: string,
   cityDistrictName?: string,
   landmarkPhrase?: string,
+  microdistrictNamePrepositional?: string,
+  residentialComplexNamePrepositional?: string,
 ): string | null {
   if (parsed.propertyType !== 'apartment') {
     return null;
@@ -722,6 +980,13 @@ function resolveApartmentCatalogMetaLocation(
   }
 
   const key = catalogLocationKey(parsed);
+
+  if (residentialComplexNamePrepositional) {
+    return formatResidentialComplexCatalogLocation(residentialComplexNamePrepositional);
+  }
+  if (microdistrictNamePrepositional) {
+    return formatMicrodistrictCatalogLocation(microdistrictNamePrepositional, key);
+  }
 
   if (cityDistrictName) {
     return formatCityDistrictCatalogLocation(cityDistrictName, key);
@@ -749,12 +1014,21 @@ export function buildCatalogMetaTitle(
   metroStationName?: string,
   cityDistrictName?: string,
   landmarkPhrase?: string,
+  microdistrictNamePrepositional?: string,
+  residentialComplexNamePrepositional?: string,
 ): string | null {
   if (isNearMetroLandingPage(parsed)) {
     return 'Снять квартиру на сутки возле метро в Минске недорого. Посуточная аренда у метро в Минске на Посутки.by.';
   }
 
-  const apartmentLocation = resolveApartmentCatalogMetaLocation(parsed, metroStationName, cityDistrictName, landmarkPhrase);
+  const apartmentLocation = resolveApartmentCatalogMetaLocation(
+    parsed,
+    metroStationName,
+    cityDistrictName,
+    landmarkPhrase,
+    microdistrictNamePrepositional,
+    residentialComplexNamePrepositional,
+  );
   if (apartmentLocation) {
     if (landmarkPhrase) {
       const cityLocation =
@@ -780,12 +1054,21 @@ export function buildCatalogMetaDescription(
   metroStationName?: string,
   cityDistrictName?: string,
   landmarkPhrase?: string,
+  microdistrictNamePrepositional?: string,
+  residentialComplexNamePrepositional?: string,
 ): string | null {
   if (isNearMetroLandingPage(parsed)) {
     return 'Квартиры на сутки возле метро в Минске. Посуточная аренда квартир у станций минского метро на Posutki.by без посредников.';
   }
 
-  const apartmentLocation = resolveApartmentCatalogMetaLocation(parsed, metroStationName, cityDistrictName, landmarkPhrase);
+  const apartmentLocation = resolveApartmentCatalogMetaLocation(
+    parsed,
+    metroStationName,
+    cityDistrictName,
+    landmarkPhrase,
+    microdistrictNamePrepositional,
+    residentialComplexNamePrepositional,
+  );
   if (apartmentLocation) {
     if (landmarkPhrase) {
       const cityLocation =

@@ -11,7 +11,7 @@ final class CityDistrictCatalogTest extends ApiTestCase
     public function testListDistrictsByCitySlug(): void
     {
         $city = $this->createCity('Minsk', 'minsk', 'г. Минск');
-        $district = new CityDistrict($city->getId(), 'Советский район', 'sovetskiy');
+        $district = new CityDistrict($city->getId(), 'Советский район', 'Советский район', 'sovetskiy');
         $this->entityManager()->persist($district);
         $this->entityManager()->flush();
 
@@ -40,7 +40,7 @@ final class CityDistrictCatalogTest extends ApiTestCase
     {
         $owner = $this->createUser('district-filter@example.com', 'Password123!');
         $city = $this->createCity('Minsk', 'minsk', 'г. Минск');
-        $district = new CityDistrict($city->getId(), 'Советский район', 'sovetskiy');
+        $district = new CityDistrict($city->getId(), 'Советский район', 'Советский район', 'sovetskiy');
         $this->entityManager()->persist($district);
         $this->entityManager()->flush();
 

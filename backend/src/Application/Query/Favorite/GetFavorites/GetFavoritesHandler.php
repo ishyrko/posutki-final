@@ -68,6 +68,8 @@ final class GetFavoritesHandler
                     $r['city'],
                     $r['street'],
                     $r['cityDistrict'],
+                    null,
+                    null,
                     [],
                     0,
                     null,

@@ -96,6 +96,8 @@ class PropertyController extends AbstractController
             metroStationId: $request->query->getInt('metroStationId') ?: null,
             nearMetro: $request->query->getBoolean('nearMetro', false),
             cityDistrictSlug: $request->query->get('cityDistrictSlug') ?: null,
+            microdistrictSlug: $request->query->get('microdistrictSlug') ?: null,
+            residentialComplexSlug: $request->query->get('residentialComplexSlug') ?: null,
             landmarkSlug: $request->query->get('landmarkSlug') ?: null,
             maxLandmarkDistanceKm: $request->query->get('maxLandmarkDistanceKm')
                 ? (float) $request->query->get('maxLandmarkDistanceKm')

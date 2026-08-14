@@ -13,11 +13,16 @@ import {
   isPropertyId,
   isBaseCityApartmentCatalogPage,
   buildCatalogCitySeoHeading,
+  formatCityDistrictCatalogLocation,
+  formatMicrodistrictCatalogLocation,
+  formatResidentialComplexCatalogLocation,
   resolveCatalogCitySlug,
 } from "@/features/catalog/slugs";
 import {
   resolveMetroStationName,
   resolveCityDistrictName,
+  resolveMicrodistrictPlace,
+  resolveResidentialComplexPlace,
   resolveLandmark,
   resolveLandmarkPhrase,
   validatePublicSegments,
@@ -30,6 +35,11 @@ import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { fetchFeaturedPropertiesForHome } from "@/lib/featured-properties-server";
 import { fetchCityApartmentCountsForHome } from "@/lib/city-apartment-counts-server";
 import { fetchCityCatalogSeoText } from "@/lib/city-catalog-seo-server";
+import {
+  fetchDistrictCatalogSeo,
+  fetchMicrodistrictCatalogSeo,
+  fetchResidentialComplexCatalogSeo,
+} from "@/lib/place-catalog-seo-server";
 import { fetchRegionHouseCountsForHome } from "@/lib/region-house-counts-server";
 import { fetchRecentArticlesForHome } from "@/lib/articles-server";
 import { HEADER_REGION_MINSK_SLUG } from "@/lib/region-header";
@@ -44,6 +54,8 @@ import PropertyDetailClient from "../../../features/properties/components/Proper
 import { JsonLdScript } from "@/lib/json-ld/json-ld-script";
 import { buildPropertyJsonLd } from "@/lib/json-ld/property";
 import { buildCatalogBreadcrumbJsonLd } from "@/lib/json-ld/catalog";
+import { buildFaqPageJsonLd } from "@/lib/json-ld/faq";
+import type { FaqItem } from "@/lib/json-ld/faq";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import {
   buildCatalogBreadcrumbTrail,
@@ -132,11 +144,37 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const metroStationName = await resolveMetroStationName(parsed.metroStationSlug);
   const cityDistrictName = await resolveCityDistrictName(parsed);
+  const microdistrictPlace = await resolveMicrodistrictPlace(parsed);
+  const residentialComplexPlace = await resolveResidentialComplexPlace(parsed);
   const landmark = await resolveLandmark(parsed);
   const landmarkPhrase = resolveLandmarkPhrase(landmark);
-  const h1Title = buildPageTitle(parsed, undefined, metroStationName, cityDistrictName, landmarkPhrase);
-  const metaTitle = buildCatalogMetaTitle(parsed, metroStationName, cityDistrictName, landmarkPhrase);
-  const metaDescription = buildCatalogMetaDescription(parsed, metroStationName, cityDistrictName, landmarkPhrase);
+  const microdistrictNamePrepositional = microdistrictPlace?.namePrepositional ?? undefined;
+  const residentialComplexNamePrepositional = residentialComplexPlace?.namePrepositional ?? undefined;
+  const h1Title = buildPageTitle(
+    parsed,
+    undefined,
+    metroStationName,
+    cityDistrictName,
+    landmarkPhrase,
+    microdistrictNamePrepositional,
+    residentialComplexNamePrepositional,
+  );
+  const metaTitle = buildCatalogMetaTitle(
+    parsed,
+    metroStationName,
+    cityDistrictName,
+    landmarkPhrase,
+    microdistrictNamePrepositional,
+    residentialComplexNamePrepositional,
+  );
+  const metaDescription = buildCatalogMetaDescription(
+    parsed,
+    metroStationName,
+    cityDistrictName,
+    landmarkPhrase,
+    microdistrictNamePrepositional,
+    residentialComplexNamePrepositional,
+  );
 
   return {
     title: metaTitle ?? `${h1Title} | Посутки.by`,
@@ -224,9 +262,21 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
 
   const metroStationName = await resolveMetroStationName(parsed.metroStationSlug);
   const cityDistrictName = await resolveCityDistrictName(parsed);
+  const microdistrictPlace = await resolveMicrodistrictPlace(parsed);
+  const residentialComplexPlace = await resolveResidentialComplexPlace(parsed);
   const landmark = await resolveLandmark(parsed);
   const landmarkPhrase = resolveLandmarkPhrase(landmark);
-  const title = buildPageTitle(parsed, undefined, metroStationName, cityDistrictName, landmarkPhrase);
+  const microdistrictNamePrepositional = microdistrictPlace?.namePrepositional ?? undefined;
+  const residentialComplexNamePrepositional = residentialComplexPlace?.namePrepositional ?? undefined;
+  const title = buildPageTitle(
+    parsed,
+    undefined,
+    metroStationName,
+    cityDistrictName,
+    landmarkPhrase,
+    microdistrictNamePrepositional,
+    residentialComplexNamePrepositional,
+  );
 
   const { page: pageParam } = await searchParams;
   const pageFromQuery = Number(pageParam ?? "1");
@@ -235,23 +285,69 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
   const isFirstPage = validPage <= 1;
 
   let citySeoFooter = null;
+  let placeSeoFooter: { heading: string; html: string; faq?: FaqItem[] } | null = null;
+  let placeFaqJsonLd: Record<string, unknown> | null = null;
+  const catalogCitySlug = resolveCatalogCitySlug(parsed);
+
   if (isFirstPage && isBaseCityApartmentCatalogPage(parsed)) {
-    const citySlug = resolveCatalogCitySlug(parsed);
-    const rawSeoText = await fetchCityCatalogSeoText(citySlug);
+    const rawSeoText = await fetchCityCatalogSeoText(catalogCitySlug);
     if (rawSeoText) {
       const sanitizedHtml = sanitizeArticleHtml(rawSeoText);
       if (sanitizedHtml) {
         citySeoFooter = {
-          heading: buildCatalogCitySeoHeading(citySlug),
+          heading: buildCatalogCitySeoHeading(catalogCitySlug),
           html: sanitizedHtml,
         };
       }
     }
   }
 
+  if (isFirstPage && (parsed.cityDistrictSlug || parsed.microdistrictSlug || parsed.residentialComplexSlug)) {
+    const placeDetail = parsed.cityDistrictSlug
+      ? await fetchDistrictCatalogSeo(catalogCitySlug, parsed.cityDistrictSlug)
+      : parsed.microdistrictSlug
+        ? await fetchMicrodistrictCatalogSeo(catalogCitySlug, parsed.microdistrictSlug)
+        : parsed.residentialComplexSlug
+          ? await fetchResidentialComplexCatalogSeo(catalogCitySlug, parsed.residentialComplexSlug)
+          : null;
+
+    if (placeDetail) {
+      const namePrepositional = placeDetail.namePrepositional?.trim();
+      const headingLocation = parsed.residentialComplexSlug && namePrepositional
+        ? formatResidentialComplexCatalogLocation(namePrepositional)
+        : parsed.microdistrictSlug && namePrepositional
+          ? formatMicrodistrictCatalogLocation(namePrepositional, catalogCitySlug)
+          : parsed.cityDistrictSlug && namePrepositional
+            ? `${namePrepositional.startsWith("в ") || namePrepositional.startsWith("во ") ? namePrepositional : `в ${namePrepositional}`}`
+            : parsed.cityDistrictSlug && cityDistrictName
+              ? formatCityDistrictCatalogLocation(cityDistrictName, catalogCitySlug)
+              : placeDetail.name;
+
+      const sanitizedHtml = placeDetail.catalogSeoText
+        ? sanitizeArticleHtml(placeDetail.catalogSeoText)
+        : null;
+      const faqItems = (placeDetail.faq ?? []).filter(
+        (item): item is FaqItem =>
+          Boolean(item?.question?.trim()) && Boolean(item?.answer?.trim()),
+      );
+
+      if (sanitizedHtml || faqItems.length > 0) {
+        placeSeoFooter = {
+          heading: `Аренда жилья посуточно ${headingLocation}`,
+          html: sanitizedHtml ?? "",
+          faq: faqItems.length > 0 ? faqItems : undefined,
+        };
+      }
+
+      if (faqItems.length > 0) {
+        placeFaqJsonLd = buildFaqPageJsonLd(faqItems);
+      }
+    }
+  }
+
   let landmarkFooter = null;
   if (isFirstPage && landmark) {
-    const citySlug = resolveCatalogCitySlug(parsed);
+    const citySlug = catalogCitySlug;
     const cityLandmarks = await fetchCityLandmarks(citySlug);
     const relatedLandmarks = cityLandmarks
       .filter((item) => item.slug !== landmark.slug)
@@ -270,6 +366,8 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
   const breadcrumbNames = {
     metroStationName,
     cityDistrictName,
+    microdistrictName: microdistrictPlace?.name,
+    residentialComplexName: residentialComplexPlace?.name,
     landmarkPhrase,
     landmarkName: landmark?.name,
   };
@@ -280,12 +378,14 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
       {isFirstPage ? (
         <JsonLdScript data={buildCatalogBreadcrumbJsonLd(parsed, breadcrumbNames)} />
       ) : null}
+      {isFirstPage && placeFaqJsonLd ? <JsonLdScript data={placeFaqJsonLd} /> : null}
       <CatalogPage
         parsed={parsed}
         title={title}
         landmark={landmark}
         landmarkFooter={landmarkFooter}
         citySeoFooter={citySeoFooter}
+        placeSeoFooter={placeSeoFooter}
       >
         <PageBreadcrumbs items={catalogBreadcrumbs} />
       </CatalogPage>

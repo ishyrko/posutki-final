@@ -158,6 +158,8 @@ final class GetOwnerListingsHandler
                     $cities[$item->getCityId()] ?? null,
                     $streets[$item->getStreetId()] ?? null,
                     $cityDistricts[$item->getCityDistrictId()] ?? null,
+                    null,
+                    null,
                     $nearbyMetroByPropertyId[$item->getId()->getValue()] ?? [],
                     0,
                     null,

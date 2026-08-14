@@ -39,6 +39,8 @@ import PropertyMap, { type MapProperty } from "@/components/PropertyMap";
 import { useProperties, useExchangeRates } from "@/features/properties/hooks";
 import { useMetroStations } from "@/features/metro/hooks";
 import { useCityDistricts } from "@/features/city-districts/hooks";
+import { useCityPlaces } from "@/features/city-places/hooks";
+import type { CityPlace } from "@/features/city-places/types";
 import { useCityLandmarks } from "@/features/landmarks/hooks";
 import type { Landmark } from "@/features/landmarks/types";
 import {
@@ -50,6 +52,8 @@ import {
 import CatalogLandmarkBanner from "@/features/catalog/CatalogLandmarkBanner";
 import CatalogLandmarkDetails from "@/features/catalog/CatalogLandmarkDetails";
 import CatalogCitySeoSection from "@/features/catalog/CatalogCitySeoSection";
+import { EmbeddedFaqSection } from "@/components/seo/EmbeddedFaqSection";
+import type { FaqItem } from "@/lib/json-ld/faq";
 import type { LandmarkListItem } from "@/features/landmarks/types";
 import type { MetroStation, NearbyMetroStation } from "@/features/metro/types";
 import { Property, formatAddress, type Currency } from "@/features/properties/types";
@@ -66,6 +70,8 @@ import {
   isDistrictCatalogContext,
   isLandmarkCatalogContext,
   isMetroCatalogContext,
+  isMicrodistrictCatalogContext,
+  isResidentialComplexCatalogContext,
   isNearMetroLandingPage,
   NEAR_METRO_CATALOG_INTRO,
   propertyUrlRegionSlug,
@@ -282,6 +288,12 @@ interface CatalogCitySeoFooterProps {
   html: string;
 }
 
+interface CatalogPlaceSeoFooterProps {
+  heading: string;
+  html: string;
+  faq?: FaqItem[];
+}
+
 interface CatalogPageProps {
   parsed: ParsedSegments;
   title: string;
@@ -289,6 +301,7 @@ interface CatalogPageProps {
   /** Pre-rendered on the server in page.tsx; passed as props to avoid RSC children in this client tree (Radix useId). */
   landmarkFooter?: CatalogLandmarkFooterProps | null;
   citySeoFooter?: CatalogCitySeoFooterProps | null;
+  placeSeoFooter?: CatalogPlaceSeoFooterProps | null;
   children?: ReactNode;
 }
 
@@ -298,6 +311,7 @@ export default function CatalogPage({
   landmark,
   landmarkFooter = null,
   citySeoFooter = null,
+  placeSeoFooter = null,
   children,
 }: CatalogPageProps) {
   const router = useRouter();
@@ -330,17 +344,24 @@ export default function CatalogPage({
   const [currentPage, setCurrentPage] = useState(validPageFromQuery);
   const metroFilterVisible = isMetroCatalogContext(parsed);
   const districtFilterVisible = isDistrictCatalogContext(parsed);
+  const microdistrictFilterVisible = isMicrodistrictCatalogContext(parsed);
+  const residentialComplexFilterVisible = isResidentialComplexCatalogContext(parsed);
+  const placesFilterVisible = microdistrictFilterVisible || residentialComplexFilterVisible;
   const landmarkFilterVisible = isLandmarkCatalogContext(parsed);
   const catalogCitySlug = resolveCatalogCitySlug(parsed);
   const nearMetroLanding = isNearMetroLandingPage(parsed);
   const showMetroSidebarFilters = metroFilterVisible && !parsed.metroStationSlug;
   const showDistrictSidebarFilters = districtFilterVisible && !parsed.cityDistrictSlug;
+  const showPlacesSidebarFilters =
+    placesFilterVisible && !parsed.microdistrictSlug && !parsed.residentialComplexSlug;
   const showLandmarkSidebarFilters = landmarkFilterVisible && !parsed.landmarkSlug;
   const { data: metroStationsData } = useMetroStations(1, metroFilterVisible);
   const { data: cityDistrictsData } = useCityDistricts(catalogCitySlug, districtFilterVisible);
+  const { data: cityPlacesData } = useCityPlaces(catalogCitySlug, placesFilterVisible);
   const { data: cityLandmarksData } = useCityLandmarks(catalogCitySlug, landmarkFilterVisible);
   const metroStations = metroStationsData ?? EMPTY_METRO_STATIONS;
   const cityDistricts = cityDistrictsData ?? [];
+  const cityPlaces = cityPlacesData ?? [];
   const cityLandmarks = cityLandmarksData ?? [];
   const roomsFilterVisible = showRoomsCatalogFilter(parsed.propertyType);
 
@@ -426,6 +447,24 @@ export default function CatalogPage({
     selectedPaymentMethodIds.length;
 
   const pageTitle = useMemo(() => {
+    if (parsed.residentialComplexSlug) {
+      const place = cityPlaces.find(
+        (item) => item.type === "residential_complex" && item.slug === parsed.residentialComplexSlug,
+      );
+      if (place?.namePrepositional) {
+        return buildPageTitle(parsed, undefined, undefined, undefined, undefined, undefined, place.namePrepositional);
+      }
+      if (place) return buildPageTitle(parsed, undefined, undefined, undefined, undefined, undefined, place.name);
+    }
+    if (parsed.microdistrictSlug) {
+      const place = cityPlaces.find(
+        (item) => item.type === "microdistrict" && item.slug === parsed.microdistrictSlug,
+      );
+      if (place?.namePrepositional) {
+        return buildPageTitle(parsed, undefined, undefined, undefined, undefined, place.namePrepositional);
+      }
+      if (place) return buildPageTitle(parsed, undefined, undefined, undefined, undefined, place.name);
+    }
     if (parsed.cityDistrictSlug) {
       const district = cityDistricts.find((d) => d.slug === parsed.cityDistrictSlug);
       if (district) return buildPageTitle(parsed, undefined, undefined, district.name);
@@ -433,7 +472,7 @@ export default function CatalogPage({
     if (!parsed.metroStationSlug) return title;
     const station = metroStations.find((s) => s.slug === parsed.metroStationSlug);
     return station ? buildPageTitle(parsed, undefined, station.name) : title;
-  }, [parsed, metroStations, cityDistricts, title]);
+  }, [parsed, metroStations, cityDistricts, cityPlaces, title]);
 
   /** Same station id as sent to the API when filtering by metro (URL or sidebar). */
   const metroFilterStationId = useMemo((): number | null => {
@@ -462,7 +501,7 @@ export default function CatalogPage({
       : undefined;
 
     if (parsed.dealType) f.dealType = parsed.dealType;
-    if (parsed.cityDistrictSlug) {
+    if (parsed.cityDistrictSlug || parsed.microdistrictSlug || parsed.residentialComplexSlug) {
       f.citySlug = resolveCatalogCitySlug(parsed);
     } else if (parsed.landmarkSlug) {
       f.citySlug = resolveCatalogCitySlug(parsed);
@@ -492,6 +531,12 @@ export default function CatalogPage({
     if (parsed.cityDistrictSlug) {
       f.cityDistrictSlug = parsed.cityDistrictSlug;
     }
+    if (parsed.microdistrictSlug) {
+      f.microdistrictSlug = parsed.microdistrictSlug;
+    }
+    if (parsed.residentialComplexSlug) {
+      f.residentialComplexSlug = parsed.residentialComplexSlug;
+    }
     if (minPrice) f.minPrice = Number(minPrice);
     if (maxPrice) f.maxPrice = Number(maxPrice);
     if (guestsFromQuery !== null) f.guests = guestsFromQuery;
@@ -500,7 +545,7 @@ export default function CatalogPage({
     else if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     return f;
-  }, [fetchAllForClientFilters, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.landmarkSlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort, landmarkMaxDistanceKm]);
+  }, [fetchAllForClientFilters, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.microdistrictSlug, parsed.residentialComplexSlug, parsed.landmarkSlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort, landmarkMaxDistanceKm]);
 
   const { data, isLoading } = useProperties(filters);
   const { data: rates } = useExchangeRates();
@@ -825,6 +870,79 @@ export default function CatalogPage({
                 {district.name}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+      </div>
+      )}
+
+      {showPlacesSidebarFilters && cityPlaces.length > 0 && (
+      <div>
+        <label className="text-sm font-semibold text-foreground mb-2 block font-display">Микрорайон / ЖК</label>
+        <Select
+          value="all"
+          onValueChange={(value) => {
+            const isCityPrefix = CITY_PREFIX_SLUGS.has(catalogCitySlug);
+            const baseParams = {
+              region:
+                !isCityPrefix && (parsed.regionSlug || REGION_SLUGS.has(catalogCitySlug))
+                  ? (parsed.regionSlug ?? catalogCitySlug)
+                  : undefined,
+              city: isCityPrefix ? catalogCitySlug : parsed.citySlug,
+              propertyType: parsed.propertyType,
+            } as const;
+
+            if (value === "all") {
+              router.push(buildCatalogUrl(baseParams));
+              return;
+            }
+
+            const [type, slug] = value.split(":");
+            if (type === "microdistrict") {
+              router.push(buildCatalogUrl({ ...baseParams, microdistrict: slug }));
+              return;
+            }
+            if (type === "residential_complex") {
+              router.push(buildCatalogUrl({ ...baseParams, residentialComplex: slug }));
+            }
+          }}
+        >
+          <SelectTrigger
+            className={cn(
+              filterSurfaceInput,
+              "w-full cursor-pointer justify-between gap-2 text-left [&>span]:min-w-0 [&>span]:truncate",
+            )}
+          >
+            <SelectValue placeholder="Любой микрорайон или ЖК" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border z-50 max-h-72">
+            <SelectItem value="all">Любой микрорайон или ЖК</SelectItem>
+            {cityPlaces.some((place) => place.type === "microdistrict") ? (
+              <SelectGroup>
+                <SelectLabel className="pl-6">Микрорайоны</SelectLabel>
+                {cityPlaces
+                  .filter((place): place is CityPlace & { type: "microdistrict" } => place.type === "microdistrict")
+                  .map((place) => (
+                    <SelectItem key={`microdistrict-${place.id}`} value={`microdistrict:${place.slug}`}>
+                      {place.name}
+                    </SelectItem>
+                  ))}
+              </SelectGroup>
+            ) : null}
+            {cityPlaces.some((place) => place.type === "residential_complex") ? (
+              <SelectGroup>
+                <SelectLabel className="pl-6">Жилые комплексы</SelectLabel>
+                {cityPlaces
+                  .filter(
+                    (place): place is CityPlace & { type: "residential_complex" } =>
+                      place.type === "residential_complex",
+                  )
+                  .map((place) => (
+                    <SelectItem key={`residential-complex-${place.id}`} value={`residential_complex:${place.slug}`}>
+                      {place.name}
+                    </SelectItem>
+                  ))}
+              </SelectGroup>
+            ) : null}
           </SelectContent>
         </Select>
       </div>
@@ -1382,6 +1500,16 @@ export default function CatalogPage({
             ) : null}
             {currentPage === 1 && citySeoFooter ? (
               <CatalogCitySeoSection heading={citySeoFooter.heading} html={citySeoFooter.html} />
+            ) : null}
+            {currentPage === 1 && placeSeoFooter ? (
+              <>
+                {placeSeoFooter.html ? (
+                  <CatalogCitySeoSection heading={placeSeoFooter.heading} html={placeSeoFooter.html} />
+                ) : null}
+                {placeSeoFooter.faq && placeSeoFooter.faq.length > 0 ? (
+                  <EmbeddedFaqSection items={placeSeoFooter.faq} />
+                ) : null}
+              </>
             ) : null}
           </div>
         </div>

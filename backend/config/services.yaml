@@ -80,6 +80,12 @@ services:
     App\Domain\Property\Repository\CityDistrictRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\CityDistrictRepository
 
+    App\Domain\Property\Repository\CityMicrodistrictRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\CityMicrodistrictRepository
+
+    App\Domain\Property\Repository\ResidentialComplexRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\ResidentialComplexRepository
+
     App\Domain\Property\Repository\PropertyGeocoderResultRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyGeocoderResultRepository
 
@@ -448,9 +454,19 @@ services:
 
     App\Domain\Property\Service\CityDistrictResolverInterface:
         class: App\Infrastructure\Service\YandexCityDistrictResolver
+
+    App\Domain\Property\Service\CityMicrodistrictResolverInterface:
+        class: App\Infrastructure\Service\YandexCityMicrodistrictResolver
+
+    App\Domain\Property\Service\ResidentialComplexResolverInterface:
+        class: App\Infrastructure\Service\YandexResidentialComplexResolver
+
+    App\Infrastructure\Service\YandexGeocoderResponseProvider:
         arguments:
             $apiKey: '%app.yandex_geocoder_api_key%'
             $referer: '%app.frontend_url%'
+
+    App\Domain\Property\Service\GeocoderResponseProviderInterface: '@App\Infrastructure\Service\YandexGeocoderResponseProvider'
 
     App\Infrastructure\Service\YandexForwardGeocoder:
         arguments:

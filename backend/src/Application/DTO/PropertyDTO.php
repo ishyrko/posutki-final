@@ -7,6 +7,8 @@ namespace App\Application\DTO;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\CityDistrict;
+use App\Domain\Property\Entity\CityMicrodistrict;
+use App\Domain\Property\Entity\ResidentialComplex;
 use App\Domain\Property\Entity\Street;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\DealType;
@@ -59,6 +61,10 @@ final class PropertyDTO implements \JsonSerializable
         public readonly ?string $districtName,
         public readonly ?string $cityDistrictName,
         public readonly ?string $cityDistrictSlug,
+        public readonly ?string $cityMicrodistrictName,
+        public readonly ?string $cityMicrodistrictSlug,
+        public readonly ?string $residentialComplexName,
+        public readonly ?string $residentialComplexSlug,
         public readonly ?int $regionId,
         public readonly ?string $regionName,
         public readonly float $latitude,
@@ -118,6 +124,8 @@ final class PropertyDTO implements \JsonSerializable
         City $city,
         ?Street $street = null,
         ?CityDistrict $cityDistrict = null,
+        ?CityMicrodistrict $cityMicrodistrict = null,
+        ?ResidentialComplex $residentialComplex = null,
         array $nearbyMetroStations = [],
         int $favoritesCount = 0,
         ?array $dailySellerLegalProfile = null,
@@ -206,6 +214,10 @@ final class PropertyDTO implements \JsonSerializable
             districtName: $district?->getName(),
             cityDistrictName: $cityDistrict?->getName(),
             cityDistrictSlug: $cityDistrict?->getSlug(),
+            cityMicrodistrictName: $cityMicrodistrict?->getName(),
+            cityMicrodistrictSlug: $cityMicrodistrict?->getSlug(),
+            residentialComplexName: $residentialComplex?->getName(),
+            residentialComplexSlug: $residentialComplex?->getSlug(),
             regionId: $region?->getId(),
             regionName: $region?->getName(),
             latitude: $property->getCoordinates()->getLatitude(),
@@ -278,6 +290,10 @@ final class PropertyDTO implements \JsonSerializable
                 'districtName' => $this->districtName,
                 'cityDistrictName' => $this->cityDistrictName,
                 'cityDistrictSlug' => $this->cityDistrictSlug,
+                'cityMicrodistrictName' => $this->cityMicrodistrictName,
+                'cityMicrodistrictSlug' => $this->cityMicrodistrictSlug,
+                'residentialComplexName' => $this->residentialComplexName,
+                'residentialComplexSlug' => $this->residentialComplexSlug,
                 'cityId' => $this->cityId,
                 'cityName' => $this->cityName,
                 'citySlug' => $this->citySlug,

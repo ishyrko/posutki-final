@@ -31,7 +31,7 @@ final class CityDistrictSlugGeneratorTest extends TestCase
 
     public function testGenerateSlugEnsuresUniquenessWithinCity(): void
     {
-        $existing = new \App\Domain\Property\Entity\CityDistrict(1, 'Советский район', 'sovetskiy');
+        $existing = new \App\Domain\Property\Entity\CityDistrict(1, 'Советский район', 'Советский район', 'sovetskiy');
 
         $repository = $this->createMock(CityDistrictRepositoryInterface::class);
         $repository

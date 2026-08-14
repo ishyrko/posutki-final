@@ -118,6 +118,12 @@ class Property
     #[ORM\Column(type: 'integer', nullable: true, name: 'city_district_id')]
     private ?int $cityDistrictId = null;
 
+    #[ORM\Column(type: 'integer', nullable: true, name: 'city_microdistrict_id')]
+    private ?int $cityMicrodistrictId = null;
+
+    #[ORM\Column(type: 'integer', nullable: true, name: 'residential_complex_id')]
+    private ?int $residentialComplexId = null;
+
     #[ORM\Column(type: 'integer', nullable: true, name: 'street_id')]
     private ?int $streetId = null;
 
@@ -1150,6 +1156,26 @@ class Property
     public function setCityDistrictId(?int $cityDistrictId): void
     {
         $this->cityDistrictId = $cityDistrictId;
+    }
+
+    public function getCityMicrodistrictId(): ?int
+    {
+        return $this->cityMicrodistrictId;
+    }
+
+    public function setCityMicrodistrictId(?int $cityMicrodistrictId): void
+    {
+        $this->cityMicrodistrictId = $cityMicrodistrictId;
+    }
+
+    public function getResidentialComplexId(): ?int
+    {
+        return $this->residentialComplexId;
+    }
+
+    public function setResidentialComplexId(?int $residentialComplexId): void
+    {
+        $this->residentialComplexId = $residentialComplexId;
     }
 
     public function getStreetId(): ?int

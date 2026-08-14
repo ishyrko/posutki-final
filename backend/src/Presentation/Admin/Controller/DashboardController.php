@@ -10,12 +10,15 @@ use App\Domain\Article\Entity\Article;
 use App\Domain\Article\Entity\ArticleCategory;
 use App\Domain\StaticPage\Entity\StaticPage;
 use App\Domain\Property\Entity\City;
+use App\Domain\Property\Entity\CityDistrict;
+use App\Domain\Property\Entity\CityMicrodistrict;
 use App\Domain\Property\Entity\Landmark;
 use App\Domain\Property\Entity\MetroStation;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
 use App\Domain\Property\Entity\PropertyPlacementPurchase;
 use App\Domain\Property\Entity\PropertyPlacementScopeSettings;
+use App\Domain\Property\Entity\ResidentialComplex;
 use App\Domain\Review\Entity\Review;
 use App\Domain\Property\Entity\Street;
 use App\Domain\Property\Enum\PropertyType;
@@ -193,6 +196,9 @@ class DashboardController extends AbstractDashboardController
 
         yield MenuItem::section('Справочники');
         yield MenuItem::linkToCrud('Города', 'fa fa-city', City::class);
+        yield MenuItem::linkToCrud('Районы города', 'fa fa-map', CityDistrict::class);
+        yield MenuItem::linkToCrud('Микрорайоны', 'fa fa-map-location-dot', CityMicrodistrict::class);
+        yield MenuItem::linkToCrud('Жилые комплексы', 'fa fa-building', ResidentialComplex::class);
         yield MenuItem::linkToCrud('Улицы', 'fa fa-road', Street::class);
         yield MenuItem::linkToCrud('Метро', 'fa fa-train-subway', MetroStation::class);
         yield MenuItem::linkToCrud('Достопримечательности', 'fa fa-landmark', Landmark::class);

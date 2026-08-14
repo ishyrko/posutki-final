@@ -1,0 +1,23 @@
+.field-collection[data-ea-collection-field="catalogFaq"] .accordion-item {
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    background: #fff;
+}
+
+.field-collection[data-ea-collection-field="catalogFaq"] .accordion-header {
+    background: #f9fafb;
+}
+
+.field-collection[data-ea-collection-field="catalogFaq"] .accordion-button {
+    font-weight: 600;
+}
+
+.field-collection[data-ea-collection-field="catalogFaq"] .accordion-body {
+    padding-top: 1rem;
+}
+
+.field-collection[data-ea-collection-field="catalogFaq"] .field-collection-add-button {
+    margin-top: 0.25rem;
+}

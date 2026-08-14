@@ -16,6 +16,8 @@ use App\Domain\Property\Repository\PropertyLandmarkRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
 use App\Domain\Property\Service\CityDistrictResolverInterface;
+use App\Domain\Property\Service\CityMicrodistrictResolverInterface;
+use App\Domain\Property\Service\ResidentialComplexResolverInterface;
 use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
@@ -69,6 +71,8 @@ final class UpdatePropertyHandlerTest extends TestCase
             $metroCalculator,
             $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
         );
 
         $requiresModeration = $handler(new UpdatePropertyCommand(
@@ -103,6 +107,8 @@ final class UpdatePropertyHandlerTest extends TestCase
             $metroCalculator,
             $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
         );
 
         $this->expectException(DomainException::class);
@@ -137,6 +143,8 @@ final class UpdatePropertyHandlerTest extends TestCase
             $metroCalculator,
             $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
         );
 
         $this->expectException(DomainException::class);
@@ -179,6 +187,8 @@ final class UpdatePropertyHandlerTest extends TestCase
             $metroCalculator,
             $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
         );
 
         $requiresModeration = $handler(new UpdatePropertyCommand(
@@ -241,6 +251,8 @@ final class UpdatePropertyHandlerTest extends TestCase
             $metroCalculator,
             $this->createLandmarkCalculator(),
             $this->createCityDistrictResolver(),
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
         );
 
         $handler(new UpdatePropertyCommand(
@@ -333,5 +345,15 @@ final class UpdatePropertyHandlerTest extends TestCase
     private function createCityDistrictResolver(): CityDistrictResolverInterface
     {
         return $this->createStub(CityDistrictResolverInterface::class);
+    }
+
+    private function createCityMicrodistrictResolver(): CityMicrodistrictResolverInterface
+    {
+        return $this->createStub(CityMicrodistrictResolverInterface::class);
+    }
+
+    private function createResidentialComplexResolver(): ResidentialComplexResolverInterface
+    {
+        return $this->createStub(ResidentialComplexResolverInterface::class);
     }
 }

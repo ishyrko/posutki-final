@@ -1,6 +1,10 @@
 import { Fragment } from "react";
 import Link from "next/link";
-import { buildDistrictCatalogUrlFromAddress } from "@/features/catalog/slugs";
+import {
+  buildDistrictCatalogUrlFromAddress,
+  buildMicrodistrictCatalogUrlFromAddress,
+  buildResidentialComplexCatalogUrlFromAddress,
+} from "@/features/catalog/slugs";
 import { formatCityDistrictLabel, type Address } from "../types";
 
 interface PropertyAddressProps {
@@ -28,14 +32,55 @@ export function PropertyAddress({
     parts.push(`корп. ${address.block}`);
   }
 
-  const districtUrl =
-    propertyType === "apartment"
-      ? buildDistrictCatalogUrlFromAddress(
-          address.regionName,
-          address.citySlug,
-          address.cityDistrictSlug,
-        )
-      : undefined;
+  const isApartment = propertyType === "apartment";
+
+  const microdistrictUrl = isApartment
+    ? buildMicrodistrictCatalogUrlFromAddress(
+        address.regionName,
+        address.citySlug,
+        address.cityMicrodistrictSlug,
+      )
+    : undefined;
+
+  if (address.cityMicrodistrictName) {
+    parts.push(
+      microdistrictUrl ? (
+        <Link key="microdistrict" href={microdistrictUrl} className={linkClassName}>
+          {address.cityMicrodistrictName}
+        </Link>
+      ) : (
+        address.cityMicrodistrictName
+      ),
+    );
+  }
+
+  const residentialComplexUrl = isApartment
+    ? buildResidentialComplexCatalogUrlFromAddress(
+        address.regionName,
+        address.citySlug,
+        address.residentialComplexSlug,
+      )
+    : undefined;
+
+  if (address.residentialComplexName) {
+    parts.push(
+      residentialComplexUrl ? (
+        <Link key="residential-complex" href={residentialComplexUrl} className={linkClassName}>
+          {address.residentialComplexName}
+        </Link>
+      ) : (
+        address.residentialComplexName
+      ),
+    );
+  }
+
+  const districtUrl = isApartment
+    ? buildDistrictCatalogUrlFromAddress(
+        address.regionName,
+        address.citySlug,
+        address.cityDistrictSlug,
+      )
+    : undefined;
 
   if (address.cityDistrictName) {
     const label = formatCityDistrictLabel(address.cityDistrictName);

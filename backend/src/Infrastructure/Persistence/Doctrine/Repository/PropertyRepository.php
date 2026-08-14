@@ -167,6 +167,16 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
                 ->setParameter('cityDistrictId', $filters['cityDistrictId']);
         }
 
+        if (isset($filters['cityMicrodistrictId'])) {
+            $qb->andWhere('p.cityMicrodistrictId = :cityMicrodistrictId')
+                ->setParameter('cityMicrodistrictId', $filters['cityMicrodistrictId']);
+        }
+
+        if (isset($filters['residentialComplexId'])) {
+            $qb->andWhere('p.residentialComplexId = :residentialComplexId')
+                ->setParameter('residentialComplexId', $filters['residentialComplexId']);
+        }
+
         if (
             isset($filters['excludeCitySlugs'])
             && \is_array($filters['excludeCitySlugs'])

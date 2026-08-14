@@ -13,6 +13,10 @@ export interface Address {
     districtName?: string;
     cityDistrictName?: string;
     cityDistrictSlug?: string;
+    cityMicrodistrictName?: string;
+    cityMicrodistrictSlug?: string;
+    residentialComplexName?: string;
+    residentialComplexSlug?: string;
     cityId: number;
     cityName: string;
     citySlug?: string;
@@ -211,6 +215,8 @@ export interface PropertyFilters {
     metroStationId?: number;
     nearMetro?: boolean;
     cityDistrictSlug?: string;
+    microdistrictSlug?: string;
+    residentialComplexSlug?: string;
     landmarkSlug?: string;
     maxLandmarkDistanceKm?: number;
     /** Минимальная вместимость (maxDailyGuests >= guests). */

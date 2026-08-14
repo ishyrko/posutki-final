@@ -106,6 +106,18 @@ backfill-city-district-slugs: ## Generate URL slugs for existing city_districts 
 	@echo "${GREEN}Backfilling city district slugs...${RESET}"
 	docker-compose exec php php bin/console app:backfill-city-district-slugs --no-interaction
 
+backend-seed-city-places: ## Seed curated microdistricts/residential complexes from geocoder cache
+	@echo "${GREEN}Seeding city places (apply)...${RESET}"
+	docker-compose exec php sh -lc "cd /var/www/backend && php bin/console app:seed-city-places --apply --no-interaction"
+
+backend-seed-city-places-dry-run: ## Preview city places candidates without writing
+	@echo "${GREEN}Dry-run city places seed...${RESET}"
+	docker-compose exec php sh -lc "cd /var/www/backend && php bin/console app:seed-city-places --no-interaction"
+
+backfill-city-places: ## Fill microdistrict/residential complex FKs for apartments
+	@echo "${GREEN}Backfilling city places on properties...${RESET}"
+	docker-compose exec php php bin/console app:backfill-city-places --no-interaction
+
 sync-calendars: ## Sync external iCal calendars for all properties
 	@echo "${GREEN}Syncing external calendars...${RESET}"
 	docker-compose exec php php bin/console app:sync-external-calendars --no-interaction

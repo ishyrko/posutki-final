@@ -10,6 +10,8 @@ use App\Domain\Property\Repository\{
     PropertyRepositoryInterface,
     CityRepositoryInterface,
     CityDistrictRepositoryInterface,
+    CityMicrodistrictRepositoryInterface,
+    ResidentialComplexRepositoryInterface,
     StreetRepositoryInterface,
     MetroStationRepositoryInterface,
     PropertyMetroStationRepositoryInterface,
@@ -49,6 +51,8 @@ final class SearchPropertiesHandler
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly CityRepositoryInterface $cityRepository,
         private readonly CityDistrictRepositoryInterface $cityDistrictRepository,
+        private readonly CityMicrodistrictRepositoryInterface $cityMicrodistrictRepository,
+        private readonly ResidentialComplexRepositoryInterface $residentialComplexRepository,
         private readonly StreetRepositoryInterface $streetRepository,
         private readonly MetroStationRepositoryInterface $metroStationRepository,
         private readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
@@ -105,6 +109,48 @@ final class SearchPropertiesHandler
                 }
 
                 $filters['cityDistrictId'] = $cityDistrict->getId();
+            }
+        }
+        if ($query->microdistrictSlug !== null) {
+            $microSlug = trim($query->microdistrictSlug);
+            if ($microSlug !== '') {
+                $resolvedCitySlug = $query->citySlug ?? $query->regionSlug;
+                if ($resolvedCitySlug === null || trim($resolvedCitySlug) === '') {
+                    throw new NotFoundException('Микрорайон не найден');
+                }
+
+                $city = $this->cityRepository->findBySlug(trim($resolvedCitySlug));
+                if ($city === null) {
+                    throw new NotFoundException('Микрорайон не найден');
+                }
+
+                $microdistrict = $this->cityMicrodistrictRepository->findByCityIdAndSlug($city->getId(), $microSlug);
+                if ($microdistrict === null) {
+                    throw new NotFoundException('Микрорайон не найден');
+                }
+
+                $filters['cityMicrodistrictId'] = $microdistrict->getId();
+            }
+        }
+        if ($query->residentialComplexSlug !== null) {
+            $complexSlug = trim($query->residentialComplexSlug);
+            if ($complexSlug !== '') {
+                $resolvedCitySlug = $query->citySlug ?? $query->regionSlug;
+                if ($resolvedCitySlug === null || trim($resolvedCitySlug) === '') {
+                    throw new NotFoundException('Жилой комплекс не найден');
+                }
+
+                $city = $this->cityRepository->findBySlug(trim($resolvedCitySlug));
+                if ($city === null) {
+                    throw new NotFoundException('Жилой комплекс не найден');
+                }
+
+                $complex = $this->residentialComplexRepository->findByCityIdAndSlug($city->getId(), $complexSlug);
+                if ($complex === null) {
+                    throw new NotFoundException('Жилой комплекс не найден');
+                }
+
+                $filters['residentialComplexId'] = $complex->getId();
             }
         }
         if ($query->landmarkSlug !== null) {
@@ -189,6 +235,16 @@ final class SearchPropertiesHandler
             $properties
         )));
 
+        $cityMicrodistrictIds = array_filter(array_unique(array_map(
+            fn($p) => $p->getCityMicrodistrictId(),
+            $properties
+        )));
+
+        $residentialComplexIds = array_filter(array_unique(array_map(
+            fn($p) => $p->getResidentialComplexId(),
+            $properties
+        )));
+
         $cities = [];
         foreach ($cityIds as $cityId) {
             $city = $this->cityRepository->findById($cityId);
@@ -210,6 +266,22 @@ final class SearchPropertiesHandler
             $cityDistrict = $this->cityDistrictRepository->findById($cityDistrictId);
             if ($cityDistrict !== null) {
                 $cityDistricts[$cityDistrictId] = $cityDistrict;
+            }
+        }
+
+        $cityMicrodistricts = [];
+        foreach ($cityMicrodistrictIds as $cityMicrodistrictId) {
+            $microdistrict = $this->cityMicrodistrictRepository->findById($cityMicrodistrictId);
+            if ($microdistrict !== null) {
+                $cityMicrodistricts[$cityMicrodistrictId] = $microdistrict;
+            }
+        }
+
+        $residentialComplexes = [];
+        foreach ($residentialComplexIds as $residentialComplexId) {
+            $complex = $this->residentialComplexRepository->findById($residentialComplexId);
+            if ($complex !== null) {
+                $residentialComplexes[$residentialComplexId] = $complex;
             }
         }
 
@@ -279,6 +351,8 @@ final class SearchPropertiesHandler
                     $cities[$property->getCityId()],
                     $streets[$property->getStreetId()] ?? null,
                     $cityDistricts[$property->getCityDistrictId()] ?? null,
+                    $cityMicrodistricts[$property->getCityMicrodistrictId()] ?? null,
+                    $residentialComplexes[$property->getResidentialComplexId()] ?? null,
                     $nearbyMetroByPropertyId[$property->getId()->getValue()] ?? [],
                     0,
                     null,

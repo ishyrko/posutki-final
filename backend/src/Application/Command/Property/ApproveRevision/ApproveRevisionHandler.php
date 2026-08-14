@@ -10,6 +10,8 @@ use App\Domain\Property\Event\PropertyApprovedEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
 use App\Domain\Property\Service\CityDistrictResolverInterface;
+use App\Domain\Property\Service\CityMicrodistrictResolverInterface;
+use App\Domain\Property\Service\ResidentialComplexResolverInterface;
 use App\Domain\Property\Validation\DailyRentDetailsValidator;
 use App\Domain\Property\Validation\DealConditionsValidator;
 use App\Domain\Property\Validation\PaymentMethodsValidator;
@@ -34,6 +36,8 @@ readonly class ApproveRevisionHandler
         private MetroProximityCalculator $metroProximityCalculator,
         private LandmarkProximityCalculator $landmarkProximityCalculator,
         private CityDistrictResolverInterface $cityDistrictResolver,
+        private CityMicrodistrictResolverInterface $cityMicrodistrictResolver,
+        private ResidentialComplexResolverInterface $residentialComplexResolver,
         private MessageBusInterface $notificationBus,
         private PropertyPlacementService $placementService,
     ) {
@@ -158,6 +162,22 @@ readonly class ApproveRevisionHandler
                 $property->getId()->getValue(),
             );
             $property->setCityDistrictId($cityDistrict?->getId());
+
+            $microdistrict = $this->cityMicrodistrictResolver->resolve(
+                $coordinates->getLatitude(),
+                $coordinates->getLongitude(),
+                $effectiveCityId,
+                $property->getId()->getValue(),
+            );
+            $property->setCityMicrodistrictId($microdistrict?->getId());
+
+            $complex = $this->residentialComplexResolver->resolve(
+                $coordinates->getLatitude(),
+                $coordinates->getLongitude(),
+                $effectiveCityId,
+                $property->getId()->getValue(),
+            );
+            $property->setResidentialComplexId($complex?->getId());
         }
 
         if ($priceAmount !== null) {
