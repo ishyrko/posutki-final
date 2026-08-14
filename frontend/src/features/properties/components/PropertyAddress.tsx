@@ -85,13 +85,15 @@ export function PropertyAddress({
   if (address.cityDistrictName) {
     const label = formatCityDistrictLabel(address.cityDistrictName);
     parts.push(
-      districtUrl ? (
-        <Link key="district" href={districtUrl} className={linkClassName}>
-          {label}
-        </Link>
-      ) : (
-        label
-      ),
+      <span key="district" className="whitespace-nowrap">
+        {districtUrl ? (
+          <Link href={districtUrl} className={linkClassName}>
+            {label}
+          </Link>
+        ) : (
+          label
+        )}
+      </span>,
     );
   }
 
