@@ -50,6 +50,7 @@ abstract class AbstractCatalogPlaceCrudController extends AbstractCrudController
         yield TextField::new('name', 'Название');
         yield TextField::new('namePrepositional', 'Предложный падеж');
         yield TextField::new('slug', 'Slug');
+        yield CatalogContentAdminFields::visibilityField();
         yield CatalogContentAdminFields::seoTextField();
         yield CatalogContentAdminFields::faqField();
     }

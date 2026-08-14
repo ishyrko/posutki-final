@@ -39,6 +39,9 @@ class CityDistrict
     #[ORM\Column(type: 'json', nullable: true, name: 'catalog_faq')]
     private ?array $catalogFaq = null;
 
+    #[ORM\Column(type: 'boolean', name: 'catalog_seo_visible', options: ['default' => false])]
+    private bool $catalogSeoVisible = false;
+
     #[ORM\Column(type: 'datetime_immutable', name: 'created_at')]
     private \DateTimeImmutable $createdAt;
 
@@ -118,6 +121,16 @@ class CityDistrict
     public function setCatalogFaq(?array $catalogFaq): void
     {
         $this->catalogFaq = $catalogFaq;
+    }
+
+    public function isCatalogSeoVisible(): bool
+    {
+        return $this->catalogSeoVisible;
+    }
+
+    public function setCatalogSeoVisible(bool $catalogSeoVisible): void
+    {
+        $this->catalogSeoVisible = $catalogSeoVisible;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

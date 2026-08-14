@@ -7,6 +7,7 @@ namespace App\Presentation\Admin\Controller;
 use App\Application\Service\CatalogPlaceContentNormalizer;
 use App\Presentation\Admin\Form\CatalogFaqItemType;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
+use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\CollectionField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 
@@ -18,6 +19,13 @@ final class CatalogContentAdminFields
             ->addJsFile('https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js')
             ->addJsFile('js/admin-article-tinymce.js')
             ->addCssFile('css/admin-catalog-faq.css');
+    }
+
+    public static function visibilityField(): BooleanField
+    {
+        return BooleanField::new('catalogSeoVisible', 'Показывать SEO-текст и FAQ')
+            ->renderAsSwitch(false)
+            ->setHelp('Если выключено, блок под каталогом на сайте не отображается, даже при заполненных полях.');
     }
 
     public static function seoTextField(string $label = 'SEO-текст'): TextareaField

@@ -16,6 +16,7 @@ export interface CatalogPlaceDetail {
   slug: string;
   officialName?: string | null;
   namePrepositional?: string | null;
+  catalogSeoVisible?: boolean;
   catalogSeoText?: string | null;
   faq?: FaqItem[];
 }

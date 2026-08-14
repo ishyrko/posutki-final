@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Api\Controller;
 
+use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\CityDistrict;
 use App\Domain\Property\Entity\CityMicrodistrict;
 use App\Domain\Property\Entity\ResidentialComplex;
@@ -151,8 +152,7 @@ class CityController extends AbstractController
             'latitude' => $city->getLatitude(),
             'longitude' => $city->getLongitude(),
             'isMain' => $city->isMain(),
-            'catalogSeoText' => $city->getCatalogSeoText(),
-            'faq' => $city->getCatalogFaq() ?? [],
+            ...$this->serializeCatalogSeoContent($city),
             'district' => $district ? [
                 'id' => $district->getId(),
                 'name' => $district->getName(),
@@ -187,8 +187,22 @@ class CityController extends AbstractController
             'namePrepositional' => $place instanceof CityDistrict
                 ? $place->getNamePrepositional()
                 : $place->getNamePrepositional(),
-            'catalogSeoText' => $place->getCatalogSeoText(),
-            'faq' => $place->getCatalogFaq() ?? [],
+            ...$this->serializeCatalogSeoContent($place),
+        ];
+    }
+
+    /**
+     * @return array{catalogSeoVisible: bool, catalogSeoText: ?string, faq: list<array{question: string, answer: string}>}
+     */
+    private function serializeCatalogSeoContent(
+        City|CityDistrict|CityMicrodistrict|ResidentialComplex $entity,
+    ): array {
+        $visible = $entity->isCatalogSeoVisible();
+
+        return [
+            'catalogSeoVisible' => $visible,
+            'catalogSeoText' => $visible ? $entity->getCatalogSeoText() : null,
+            'faq' => $visible ? ($entity->getCatalogFaq() ?? []) : [],
         ];
     }
 }

@@ -292,23 +292,25 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
 
   if (isFirstPage && isBaseCityApartmentCatalogPage(parsed)) {
     const cityCatalogContent = await fetchCityCatalogContent(catalogCitySlug);
-    const rawSeoText = cityCatalogContent?.catalogSeoText?.trim() ?? null;
-    const faqItems = (cityCatalogContent?.faq ?? []).filter(
-      (item): item is FaqItem =>
-        Boolean(item?.question?.trim()) && Boolean(item?.answer?.trim()),
-    );
-    const sanitizedHtml = rawSeoText ? sanitizeArticleHtml(rawSeoText) : null;
+    if (cityCatalogContent?.catalogSeoVisible) {
+      const rawSeoText = cityCatalogContent.catalogSeoText?.trim() ?? null;
+      const faqItems = (cityCatalogContent.faq ?? []).filter(
+        (item): item is FaqItem =>
+          Boolean(item?.question?.trim()) && Boolean(item?.answer?.trim()),
+      );
+      const sanitizedHtml = rawSeoText ? sanitizeArticleHtml(rawSeoText) : null;
 
-    if (sanitizedHtml || faqItems.length > 0) {
-      citySeoFooter = {
-        heading: buildCatalogCitySeoHeading(catalogCitySlug),
-        html: sanitizedHtml ?? "",
-        faq: faqItems.length > 0 ? faqItems : undefined,
-      };
-    }
+      if (sanitizedHtml || faqItems.length > 0) {
+        citySeoFooter = {
+          heading: buildCatalogCitySeoHeading(catalogCitySlug),
+          html: sanitizedHtml ?? "",
+          faq: faqItems.length > 0 ? faqItems : undefined,
+        };
+      }
 
-    if (faqItems.length > 0) {
-      cityFaqJsonLd = buildFaqPageJsonLd(faqItems);
+      if (faqItems.length > 0) {
+        cityFaqJsonLd = buildFaqPageJsonLd(faqItems);
+      }
     }
   }
 
@@ -321,7 +323,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
           ? await fetchResidentialComplexCatalogSeo(catalogCitySlug, parsed.residentialComplexSlug)
           : null;
 
-    if (placeDetail) {
+    if (placeDetail?.catalogSeoVisible) {
       const namePrepositional = placeDetail.namePrepositional?.trim();
       const headingLocation = parsed.residentialComplexSlug && namePrepositional
         ? formatResidentialComplexCatalogLocation(namePrepositional)

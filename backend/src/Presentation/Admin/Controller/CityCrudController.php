@@ -109,6 +109,7 @@ class CityCrudController extends AbstractCrudController
         yield TextField::new('externalId', 'Внешний ID')
             ->hideOnIndex();
 
+        yield CatalogContentAdminFields::visibilityField();
         yield CatalogContentAdminFields::seoTextField('SEO-текст под каталогом квартир')
             ->setHelp('Показывается на первой странице каталога квартир этого города (под списком объявлений). Если пусто — блок не отображается.');
         yield CatalogContentAdminFields::faqField();
