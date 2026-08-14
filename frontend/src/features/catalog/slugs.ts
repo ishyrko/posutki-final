@@ -859,14 +859,13 @@ export function formatCityDistrictCatalogLocation(
   return `${prep} ${adjective} районе ${cityGenitive}`;
 }
 
-/** «в Уручье» / «во Фрунзенском» — namePrepositional из API без предлога. */
+/** «в мкр-не Уручье» — name в именительном падеже из API. */
 export function formatMicrodistrictCatalogLocation(
-  namePrepositional: string,
+  name: string,
   _citySlug?: string,
 ): string {
-  const place = namePrepositional.trim();
-  const prep = districtLocationPreposition(place);
-  return `${prep} ${place}`;
+  const microdistrict = name.trim();
+  return microdistrict ? `в мкр-не ${microdistrict}` : microdistrict;
 }
 
 /** «в Минск-Мире» — namePrepositional из API без предлога. */
@@ -882,7 +881,7 @@ function resolveCatalogLocation(
   metroStationName?: string,
   cityDistrictName?: string,
   landmarkPhrase?: string,
-  microdistrictNamePrepositional?: string,
+  microdistrictName?: string,
   residentialComplexNamePrepositional?: string,
 ): string {
   if (landmarkPhrase) {
@@ -905,8 +904,8 @@ function resolveCatalogLocation(
   if (residentialComplexNamePrepositional) {
     return formatResidentialComplexCatalogLocation(residentialComplexNamePrepositional);
   }
-  if (microdistrictNamePrepositional) {
-    return formatMicrodistrictCatalogLocation(microdistrictNamePrepositional, key);
+  if (microdistrictName) {
+    return formatMicrodistrictCatalogLocation(microdistrictName, key);
   }
 
   if (cityDistrictName) {
@@ -926,7 +925,7 @@ export function buildPageTitle(
   metroStationName?: string,
   cityDistrictName?: string,
   landmarkPhrase?: string,
-  microdistrictNamePrepositional?: string,
+  microdistrictName?: string,
   residentialComplexNamePrepositional?: string,
 ): string {
   const typePart =
@@ -940,7 +939,7 @@ export function buildPageTitle(
     metroStationName,
     cityDistrictName,
     landmarkPhrase,
-    microdistrictNamePrepositional,
+    microdistrictName,
     residentialComplexNamePrepositional,
   );
   if (!location) {
@@ -963,7 +962,7 @@ function resolveApartmentCatalogMetaLocation(
   metroStationName?: string,
   cityDistrictName?: string,
   landmarkPhrase?: string,
-  microdistrictNamePrepositional?: string,
+  microdistrictName?: string,
   residentialComplexNamePrepositional?: string,
 ): string | null {
   if (parsed.propertyType !== 'apartment') {
@@ -984,8 +983,8 @@ function resolveApartmentCatalogMetaLocation(
   if (residentialComplexNamePrepositional) {
     return formatResidentialComplexCatalogLocation(residentialComplexNamePrepositional);
   }
-  if (microdistrictNamePrepositional) {
-    return formatMicrodistrictCatalogLocation(microdistrictNamePrepositional, key);
+  if (microdistrictName) {
+    return formatMicrodistrictCatalogLocation(microdistrictName, key);
   }
 
   if (cityDistrictName) {
@@ -1014,7 +1013,7 @@ export function buildCatalogMetaTitle(
   metroStationName?: string,
   cityDistrictName?: string,
   landmarkPhrase?: string,
-  microdistrictNamePrepositional?: string,
+  microdistrictName?: string,
   residentialComplexNamePrepositional?: string,
 ): string | null {
   if (isNearMetroLandingPage(parsed)) {
@@ -1026,7 +1025,7 @@ export function buildCatalogMetaTitle(
     metroStationName,
     cityDistrictName,
     landmarkPhrase,
-    microdistrictNamePrepositional,
+    microdistrictName,
     residentialComplexNamePrepositional,
   );
   if (apartmentLocation) {
@@ -1054,7 +1053,7 @@ export function buildCatalogMetaDescription(
   metroStationName?: string,
   cityDistrictName?: string,
   landmarkPhrase?: string,
-  microdistrictNamePrepositional?: string,
+  microdistrictName?: string,
   residentialComplexNamePrepositional?: string,
 ): string | null {
   if (isNearMetroLandingPage(parsed)) {
@@ -1066,7 +1065,7 @@ export function buildCatalogMetaDescription(
     metroStationName,
     cityDistrictName,
     landmarkPhrase,
-    microdistrictNamePrepositional,
+    microdistrictName,
     residentialComplexNamePrepositional,
   );
   if (apartmentLocation) {

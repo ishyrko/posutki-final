@@ -461,10 +461,9 @@ export default function CatalogPage({
       const place = cityPlaces.find(
         (item) => item.type === "microdistrict" && item.slug === parsed.microdistrictSlug,
       );
-      if (place?.namePrepositional) {
-        return buildPageTitle(parsed, undefined, undefined, undefined, undefined, place.namePrepositional);
+      if (place?.name) {
+        return buildPageTitle(parsed, undefined, undefined, undefined, undefined, place.name);
       }
-      if (place) return buildPageTitle(parsed, undefined, undefined, undefined, undefined, place.name);
     }
     if (parsed.cityDistrictSlug) {
       const district = cityDistricts.find((d) => d.slug === parsed.cityDistrictSlug);

@@ -148,7 +148,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const residentialComplexPlace = await resolveResidentialComplexPlace(parsed);
   const landmark = await resolveLandmark(parsed);
   const landmarkPhrase = resolveLandmarkPhrase(landmark);
-  const microdistrictNamePrepositional = microdistrictPlace?.namePrepositional ?? undefined;
+  const microdistrictName = microdistrictPlace?.name ?? undefined;
   const residentialComplexNamePrepositional = residentialComplexPlace?.namePrepositional ?? undefined;
   const h1Title = buildPageTitle(
     parsed,
@@ -156,7 +156,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     metroStationName,
     cityDistrictName,
     landmarkPhrase,
-    microdistrictNamePrepositional,
+    microdistrictName,
     residentialComplexNamePrepositional,
   );
   const metaTitle = buildCatalogMetaTitle(
@@ -164,7 +164,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     metroStationName,
     cityDistrictName,
     landmarkPhrase,
-    microdistrictNamePrepositional,
+    microdistrictName,
     residentialComplexNamePrepositional,
   );
   const metaDescription = buildCatalogMetaDescription(
@@ -172,7 +172,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     metroStationName,
     cityDistrictName,
     landmarkPhrase,
-    microdistrictNamePrepositional,
+    microdistrictName,
     residentialComplexNamePrepositional,
   );
 
@@ -266,7 +266,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
   const residentialComplexPlace = await resolveResidentialComplexPlace(parsed);
   const landmark = await resolveLandmark(parsed);
   const landmarkPhrase = resolveLandmarkPhrase(landmark);
-  const microdistrictNamePrepositional = microdistrictPlace?.namePrepositional ?? undefined;
+  const microdistrictName = microdistrictPlace?.name ?? undefined;
   const residentialComplexNamePrepositional = residentialComplexPlace?.namePrepositional ?? undefined;
   const title = buildPageTitle(
     parsed,
@@ -274,7 +274,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     metroStationName,
     cityDistrictName,
     landmarkPhrase,
-    microdistrictNamePrepositional,
+    microdistrictName,
     residentialComplexNamePrepositional,
   );
 
@@ -327,8 +327,8 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
       const namePrepositional = placeDetail.namePrepositional?.trim();
       const headingLocation = parsed.residentialComplexSlug && namePrepositional
         ? formatResidentialComplexCatalogLocation(namePrepositional)
-        : parsed.microdistrictSlug && namePrepositional
-          ? formatMicrodistrictCatalogLocation(namePrepositional, catalogCitySlug)
+        : parsed.microdistrictSlug && placeDetail.name
+          ? formatMicrodistrictCatalogLocation(placeDetail.name, catalogCitySlug)
           : parsed.cityDistrictSlug && namePrepositional
             ? `${namePrepositional.startsWith("в ") || namePrepositional.startsWith("во ") ? namePrepositional : `в ${namePrepositional}`}`
             : parsed.cityDistrictSlug && cityDistrictName
