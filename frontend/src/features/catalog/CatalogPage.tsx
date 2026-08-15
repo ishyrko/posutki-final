@@ -287,12 +287,14 @@ interface CatalogCitySeoFooterProps {
   heading: string;
   html: string;
   faq?: FaqItem[];
+  faqTitle?: string;
 }
 
 interface CatalogPlaceSeoFooterProps {
   heading: string;
   html: string;
   faq?: FaqItem[];
+  faqTitle?: string;
 }
 
 interface CatalogPageProps {
@@ -1504,7 +1506,11 @@ export default function CatalogPage({
                   <CatalogCitySeoSection heading={citySeoFooter.heading} html={citySeoFooter.html} />
                 ) : null}
                 {citySeoFooter.faq && citySeoFooter.faq.length > 0 ? (
-                  <EmbeddedFaqSection items={citySeoFooter.faq} variant="catalog" />
+                  <EmbeddedFaqSection
+                    items={citySeoFooter.faq}
+                    title={citySeoFooter.faqTitle}
+                    variant="catalog"
+                  />
                 ) : null}
               </>
             ) : null}
@@ -1514,7 +1520,11 @@ export default function CatalogPage({
                   <CatalogCitySeoSection heading={placeSeoFooter.heading} html={placeSeoFooter.html} />
                 ) : null}
                 {placeSeoFooter.faq && placeSeoFooter.faq.length > 0 ? (
-                  <EmbeddedFaqSection items={placeSeoFooter.faq} variant="catalog" />
+                  <EmbeddedFaqSection
+                    items={placeSeoFooter.faq}
+                    title={placeSeoFooter.faqTitle}
+                    variant="catalog"
+                  />
                 ) : null}
               </>
             ) : null}

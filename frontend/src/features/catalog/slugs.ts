@@ -377,6 +377,18 @@ export function buildCatalogCitySeoHeading(citySlug: string): string {
   return `Снять квартиру ${location} посуточно`;
 }
 
+/** Заголовок FAQ под каталогом квартир (город, район, микрорайон, ЖК). */
+export function buildCatalogApartmentFaqHeading(location: string): string {
+  return `Частые вопросы о посуточной аренде квартир ${location}`;
+}
+
+/** Заголовок FAQ под базовым каталогом квартир города. */
+export function buildCatalogCityFaqHeading(citySlug: string): string {
+  const location =
+    CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+  return buildCatalogApartmentFaqHeading(location);
+}
+
 /** Структура URL каталога: регион → тип → город / метро (без проверки slug в API). */
 export function validateCatalogSegmentsStructure(segments: string[] = []): boolean {
   if (segments.length === 0) {

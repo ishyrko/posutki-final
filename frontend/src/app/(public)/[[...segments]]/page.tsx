@@ -13,6 +13,8 @@ import {
   isPropertyId,
   isBaseCityApartmentCatalogPage,
   buildCatalogCitySeoHeading,
+  buildCatalogCityFaqHeading,
+  buildCatalogApartmentFaqHeading,
   formatCityDistrictCatalogLocation,
   formatMicrodistrictCatalogLocation,
   formatResidentialComplexCatalogLocation,
@@ -284,8 +286,8 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     Number.isFinite(pageFromQuery) && pageFromQuery > 0 ? Math.floor(pageFromQuery) : 1;
   const isFirstPage = validPage <= 1;
 
-  let citySeoFooter: { heading: string; html: string; faq?: FaqItem[] } | null = null;
-  let placeSeoFooter: { heading: string; html: string; faq?: FaqItem[] } | null = null;
+  let citySeoFooter: { heading: string; html: string; faq?: FaqItem[]; faqTitle?: string } | null = null;
+  let placeSeoFooter: { heading: string; html: string; faq?: FaqItem[]; faqTitle?: string } | null = null;
   let cityFaqJsonLd: Record<string, unknown> | null = null;
   let placeFaqJsonLd: Record<string, unknown> | null = null;
   const catalogCitySlug = resolveCatalogCitySlug(parsed);
@@ -305,6 +307,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
           heading: buildCatalogCitySeoHeading(catalogCitySlug),
           html: sanitizedHtml ?? "",
           faq: faqItems.length > 0 ? faqItems : undefined,
+          faqTitle: faqItems.length > 0 ? buildCatalogCityFaqHeading(catalogCitySlug) : undefined,
         };
       }
 
@@ -348,6 +351,8 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
           heading: `Снять квартиру ${headingLocation} посуточно`,
           html: sanitizedHtml ?? "",
           faq: faqItems.length > 0 ? faqItems : undefined,
+          faqTitle:
+            faqItems.length > 0 ? buildCatalogApartmentFaqHeading(headingLocation) : undefined,
         };
       }
 
