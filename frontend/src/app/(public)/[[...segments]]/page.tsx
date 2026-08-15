@@ -345,7 +345,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
 
       if (sanitizedHtml || faqItems.length > 0) {
         placeSeoFooter = {
-          heading: `Аренда жилья посуточно ${headingLocation}`,
+          heading: `Снять квартиру ${headingLocation} посуточно`,
           html: sanitizedHtml ?? "",
           faq: faqItems.length > 0 ? faqItems : undefined,
         };

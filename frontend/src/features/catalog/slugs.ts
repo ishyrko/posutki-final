@@ -374,7 +374,7 @@ export function isBaseCityApartmentCatalogPage(parsed: ParsedSegments): boolean 
 export function buildCatalogCitySeoHeading(citySlug: string): string {
   const location =
     CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
-  return `Аренда жилья посуточно ${location}`;
+  return `Снять квартиру ${location} посуточно`;
 }
 
 /** Структура URL каталога: регион → тип → город / метро (без проверки slug в API). */
