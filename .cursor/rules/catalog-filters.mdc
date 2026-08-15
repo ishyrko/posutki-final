@@ -1,0 +1,46 @@
+---
+description: Новые фильтры и сущности каталога — query key, URL, revalidate
+globs: frontend/src/features/catalog/**,frontend/src/features/properties/**,backend/src/Presentation/Admin/EventListener/RevalidateNextjsListener.php,frontend/src/app/revalidate/**
+alwaysApply: false
+---
+
+# Каталог: новые сущности и фильтры
+
+При добавлении нового измерения каталога (район, микрорайон, ЖК, достопримечательность, метро и т.п.) обновляй **все** связанные места — иначе клиент покажет старые объявления до перезагрузки или SEO не обновится на проде.
+
+## 1. React Query — `propertyFiltersQueryKey`
+
+Файл: `frontend/src/features/properties/hooks.ts`
+
+Ключ запроса **должен включать каждое поле `PropertyFilters`**, которое уходит в API и меняет выдачу. Иначе при client-side навигации React Query отдаст кэш предыдущего URL (`placeholderData` усилит эффект).
+
+При добавлении поля в `PropertyFilters` и в `CatalogPage` filters — **сразу добавь его в `propertyFiltersQueryKey`**.
+
+## 2. URL и парсинг
+
+- `frontend/src/features/catalog/slugs.ts` — `parseSegments`, `buildCatalogUrl`, валидаторы контекста
+- `frontend/src/features/catalog/CatalogPage.tsx` — сбор `filters` из `parsed`
+- `frontend/src/features/catalog/validate-segments-server.ts` — проверка slug в API
+
+## 3. SEO-блоки под каталогом
+
+- API: сериализация `catalogSeoVisible` / `catalogSeoText` / `faq`
+- `frontend/src/lib/place-catalog-seo-server.ts` или `city-catalog-seo-server.ts`
+- `frontend/src/app/(public)/[[...segments]]/page.tsx` — `placeSeoFooter` / `citySeoFooter`
+
+## 4. Инвалидация кэша Next.js (прод)
+
+При редактировании SEO в админке кэш сбрасывается через `/revalidate`:
+
+- `backend/.../RevalidateNextjsListener.php` — новый тип сущности
+- `frontend/src/app/revalidate/route.ts` — теги (`place-seo`, `city-seo-…`) и `revalidatePath` для страницы каталога
+
+Без этого на проде SEO/FAQ не появятся до пересборки frontend.
+
+## Чеклист
+
+- [ ] Поле в `PropertyFilters` + API-параметр
+- [ ] **`propertyFiltersQueryKey`** — новое поле
+- [ ] `CatalogPage` — фильтр из `parsed`
+- [ ] URL parse/build + server validation
+- [ ] Revalidate listener + route (если есть SEO в админке)

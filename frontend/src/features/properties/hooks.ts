@@ -48,6 +48,8 @@ export function propertyFiltersQueryKey(filters: PropertyFilters = {}) {
         filters.citySlug ?? null,
         filters.cityId ?? null,
         filters.cityDistrictSlug ?? null,
+        filters.microdistrictSlug ?? null,
+        filters.residentialComplexSlug ?? null,
         filters.landmarkSlug ?? null,
         filters.maxLandmarkDistanceKm ?? null,
         filters.minPrice ?? null,
