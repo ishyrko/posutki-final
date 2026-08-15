@@ -55,14 +55,20 @@ final class Version20260815130200 extends AbstractMigration
                     JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
                 );
 
-                $updated = $this->connection->executeStatement(
-                    'UPDATE city_room_catalog_contents
-                     SET catalog_seo_text = ?, catalog_faq = ?
+                $rowExists = $this->connection->fetchOne(
+                    'SELECT 1 FROM city_room_catalog_contents
                      WHERE city_id = ? AND rooms_bucket = ?',
-                    [$seo, $faqJson, (int) $cityId, $bucket],
+                    [(int) $cityId, $bucket],
                 );
 
-                if ($updated === 0) {
+                if ($rowExists !== false) {
+                    $this->connection->executeStatement(
+                        'UPDATE city_room_catalog_contents
+                         SET catalog_seo_text = ?, catalog_faq = ?
+                         WHERE city_id = ? AND rooms_bucket = ?',
+                        [$seo, $faqJson, (int) $cityId, $bucket],
+                    );
+                } else {
                     $this->connection->executeStatement(
                         'INSERT INTO city_room_catalog_contents
                             (city_id, rooms_bucket, catalog_seo_text, catalog_faq, catalog_seo_visible, created_at)
