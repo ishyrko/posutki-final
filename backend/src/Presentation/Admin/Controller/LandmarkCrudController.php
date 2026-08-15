@@ -182,6 +182,7 @@ final class LandmarkCrudController extends AbstractCrudController
                 'Стадион / арена' => 'stadium',
                 'Парк' => 'park',
                 'Торговый центр' => 'mall',
+                'Аквапарк' => 'aquapark',
             ])
             ->allowMultipleChoices(false)
             ->renderExpanded(false);

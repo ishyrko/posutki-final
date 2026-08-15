@@ -4,6 +4,7 @@ const LANDMARK_CATEGORY_LABELS: Record<string, string> = {
   stadium: "Стадион / арена",
   park: "Парк",
   mall: "Торговый центр",
+  aquapark: "Аквапарк",
 };
 
 export function resolveLandmarkCategoryLabel(category?: string | null): string | null {
