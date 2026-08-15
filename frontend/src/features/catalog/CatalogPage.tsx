@@ -1504,7 +1504,7 @@ export default function CatalogPage({
                   <CatalogCitySeoSection heading={citySeoFooter.heading} html={citySeoFooter.html} />
                 ) : null}
                 {citySeoFooter.faq && citySeoFooter.faq.length > 0 ? (
-                  <EmbeddedFaqSection items={citySeoFooter.faq} />
+                  <EmbeddedFaqSection items={citySeoFooter.faq} variant="catalog" />
                 ) : null}
               </>
             ) : null}
@@ -1514,7 +1514,7 @@ export default function CatalogPage({
                   <CatalogCitySeoSection heading={placeSeoFooter.heading} html={placeSeoFooter.html} />
                 ) : null}
                 {placeSeoFooter.faq && placeSeoFooter.faq.length > 0 ? (
-                  <EmbeddedFaqSection items={placeSeoFooter.faq} />
+                  <EmbeddedFaqSection items={placeSeoFooter.faq} variant="catalog" />
                 ) : null}
               </>
             ) : null}
