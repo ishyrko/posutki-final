@@ -862,18 +862,34 @@ export function formatCityDistrictCatalogLocation(
   return `${prep} ${adjective} районе ${cityGenitive}`;
 }
 
+/** «в мкр-не Уручье» — name в именительном падеже из API, без города. */
+export function formatMicrodistrictCatalogPlace(name: string): string {
+  const microdistrict = name.trim();
+  return microdistrict ? `в мкр-не ${microdistrict}` : microdistrict;
+}
+
 /** «в мкр-не Уручье в Минске» — name в именительном падеже из API. */
 export function formatMicrodistrictCatalogLocation(
   name: string,
   citySlug: string,
 ): string {
-  const microdistrict = name.trim();
-  if (!microdistrict) {
-    return microdistrict;
+  const place = formatMicrodistrictCatalogPlace(name);
+  if (!place) {
+    return place;
   }
   const cityLocation =
     CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
-  return `в мкр-не ${microdistrict} ${cityLocation}`;
+  return `${place} ${cityLocation}`;
+}
+
+/** «в Минск-Мире» — namePrepositional из API без предлога и без города. */
+export function formatResidentialComplexCatalogPlace(namePrepositional: string): string {
+  const place = namePrepositional.trim();
+  if (!place) {
+    return place;
+  }
+  const prep = districtLocationPreposition(place);
+  return `${prep} ${place}`;
 }
 
 /** «в Минск-Мире в Минске» — namePrepositional из API без предлога. */
@@ -881,14 +897,13 @@ export function formatResidentialComplexCatalogLocation(
   namePrepositional: string,
   citySlug: string,
 ): string {
-  const place = namePrepositional.trim();
+  const place = formatResidentialComplexCatalogPlace(namePrepositional);
   if (!place) {
     return place;
   }
-  const prep = districtLocationPreposition(place);
   const cityLocation =
     CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
-  return `${prep} ${place} ${cityLocation}`;
+  return `${place} ${cityLocation}`;
 }
 
 function resolveCatalogLocation(
@@ -1087,11 +1102,23 @@ export function buildCatalogMetaDescription(
     residentialComplexNamePrepositional,
   );
   if (apartmentLocation) {
+    const cityLocation =
+      CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
+      CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+
     if (landmarkPhrase) {
-      const cityLocation =
-        CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
-        CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
       return `Квартиры на сутки ${apartmentLocation} ${cityLocation}. Посуточная аренда квартир ${apartmentLocation} на Posutki.by без посредников.`;
+    }
+
+    if (parsed.microdistrictSlug || parsed.residentialComplexSlug) {
+      const placeLocation = residentialComplexNamePrepositional
+        ? formatResidentialComplexCatalogPlace(residentialComplexNamePrepositional)
+        : microdistrictName
+          ? formatMicrodistrictCatalogPlace(microdistrictName)
+          : null;
+      if (placeLocation) {
+        return `Квартиры на сутки ${placeLocation} ${cityLocation}. Посуточная аренда квартир ${placeLocation} ${cityLocation} на Posutki.by без посредников.`;
+      }
     }
 
     return `Квартиры на сутки ${apartmentLocation}. Посуточная аренда квартир ${apartmentLocation} на Posutki.by без посредников.`;
