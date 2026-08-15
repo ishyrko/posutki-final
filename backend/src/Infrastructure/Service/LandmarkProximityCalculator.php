@@ -30,7 +30,7 @@ final readonly class LandmarkProximityCalculator
             return;
         }
 
-        foreach ($this->landmarkRepository->findActiveByCityId($property->getCityId()) as $landmark) {
+        foreach ($this->landmarkRepository->findByCityId($property->getCityId()) as $landmark) {
             if (!$landmark->hasCoordinates()) {
                 continue;
             }

@@ -28,7 +28,7 @@ final class LandmarkProximityCalculatorTest extends TestCase
         $landmark = $this->createLandmarkWithId(1, 'National Library', 'national-library', 53.9045, 27.5615);
 
         $landmarkRepository
-            ->method('findActiveByCityId')
+            ->method('findByCityId')
             ->willReturn([$landmark]);
 
         $propertyLandmarkRepository
@@ -55,7 +55,7 @@ final class LandmarkProximityCalculatorTest extends TestCase
         $landmark = $this->createLandmarkWithId(1, 'Far landmark', 'far-landmark', 53.9500, 27.6500);
 
         $landmarkRepository
-            ->method('findActiveByCityId')
+            ->method('findByCityId')
             ->willReturn([$landmark]);
 
         $propertyLandmarkRepository
@@ -79,7 +79,7 @@ final class LandmarkProximityCalculatorTest extends TestCase
         $property = $this->createPropertyWithId(103);
 
         $landmarkRepository
-            ->method('findActiveByCityId')
+            ->method('findByCityId')
             ->willReturn([
                 new Landmark(1, 'Near landmark', 'near-landmark', 'Near landmark', 53.9042, 27.5608),
             ]);
@@ -109,8 +109,36 @@ final class LandmarkProximityCalculatorTest extends TestCase
         $nearLandmark = $this->createLandmarkWithId(2, 'Near landmark', 'near-landmark', 53.9045, 27.5615);
 
         $landmarkRepository
-            ->method('findActiveByCityId')
+            ->method('findByCityId')
             ->willReturn([$farLandmark, $nearLandmark]);
+
+        $propertyLandmarkRepository
+            ->expects(self::once())
+            ->method('save');
+
+        $service = new LandmarkProximityCalculator($landmarkRepository, $propertyLandmarkRepository);
+        $service->syncForProperty($property);
+    }
+
+    public function testSavesLandmarkWhenInactive(): void
+    {
+        $landmarkRepository = $this->createStub(LandmarkRepositoryInterface::class);
+        $propertyLandmarkRepository = $this->createMock(PropertyLandmarkRepositoryInterface::class);
+
+        $property = $this->createPropertyWithId(104);
+        $property->setStreetName('Немига');
+
+        $landmark = $this->createLandmarkWithId(3, 'Inactive landmark', 'inactive-landmark', 53.9045, 27.5615);
+        $landmark->setIsActive(false);
+
+        $landmarkRepository
+            ->method('findByCityId')
+            ->willReturn([$landmark]);
+
+        $propertyLandmarkRepository
+            ->expects(self::once())
+            ->method('deleteByPropertyId')
+            ->with(104);
 
         $propertyLandmarkRepository
             ->expects(self::once())

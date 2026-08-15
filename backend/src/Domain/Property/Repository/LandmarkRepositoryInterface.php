@@ -11,6 +11,9 @@ interface LandmarkRepositoryInterface
     /** @return Landmark[] */
     public function findActiveByCityId(int $cityId): array;
 
+    /** @return Landmark[] */
+    public function findByCityId(int $cityId): array;
+
     public function findByCityIdAndSlug(int $cityId, string $slug): ?Landmark;
 
     public function findAnyByCityIdAndSlug(int $cityId, string $slug): ?Landmark;

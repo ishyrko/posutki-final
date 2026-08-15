@@ -29,6 +29,17 @@ class LandmarkRepository extends ServiceEntityRepository implements LandmarkRepo
             ->getResult();
     }
 
+    public function findByCityId(int $cityId): array
+    {
+        return $this->createQueryBuilder('l')
+            ->where('l.cityId = :cityId')
+            ->setParameter('cityId', $cityId)
+            ->orderBy('l.sortOrder', 'ASC')
+            ->addOrderBy('l.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findByCityIdAndSlug(int $cityId, string $slug): ?Landmark
     {
         return $this->createQueryBuilder('l')
