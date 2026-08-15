@@ -37,8 +37,8 @@ class CityRoomCatalogContent
 
     public function __construct(int $cityId, int $roomsBucket)
     {
-        if ($roomsBucket < 1 || $roomsBucket > 4) {
-            throw new \InvalidArgumentException('rooms_bucket must be between 1 and 4.');
+        if ($roomsBucket < 1 || $roomsBucket > 3) {
+            throw new \InvalidArgumentException('rooms_bucket must be between 1 and 3.');
         }
 
         $this->cityId = $cityId;

@@ -30,7 +30,6 @@ class CityRoomCatalogContentCrudController extends AbstractCrudController
         '1-комнатные' => 1,
         '2-комнатные' => 2,
         '3-комнатные' => 3,
-        '4-комнатные и более' => 4,
     ];
 
     public function __construct(

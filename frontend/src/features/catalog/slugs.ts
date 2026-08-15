@@ -60,22 +60,36 @@ export const PROPERTY_TYPE_VALUE_TO_SLUG = Object.fromEntries(
 /** Slug города Минска в URL каталога и API (`citySlug`). */
 export const MINSK_CITY_SLUG = 'minsk';
 
-/** Бакеты комнатности в path-каталоге (только квартиры). */
-export const ROOM_BUCKET_VALUES = [1, 2, 3, 4] as const;
+/** SEO path-лендинги по комнатности — только 1–3 комнаты (4+ только через фильтр `?rooms=`). */
+export const ROOM_BUCKET_VALUES = [1, 2, 3] as const;
 export type RoomBucket = (typeof ROOM_BUCKET_VALUES)[number];
+
+export const FOUR_PLUS_ROOM_BUCKET = 4 as const;
+export const DEPRECATED_ROOM_CATALOG_SLUG = '4-komnatnye';
 
 export const ROOM_BUCKET_TO_SLUG: Record<RoomBucket, string> = {
   1: '1-komnatnye',
   2: '2-komnatnye',
   3: '3-komnatnye',
-  4: '4-komnatnye',
 };
 
-export const ROOM_SLUG_TO_BUCKET: Record<string, RoomBucket> = Object.fromEntries(
-  Object.entries(ROOM_BUCKET_TO_SLUG).map(([bucket, slug]) => [slug, Number(bucket) as RoomBucket]),
-) as Record<string, RoomBucket>;
+/** Slug → bucket для parse/validate (включая устаревший `/4-komnatnye/` → редирект). */
+export const ROOM_PATH_SLUG_TO_BUCKET: Record<string, RoomBucket | typeof FOUR_PLUS_ROOM_BUCKET> = {
+  ...Object.fromEntries(
+    Object.entries(ROOM_BUCKET_TO_SLUG).map(([bucket, slug]) => [slug, Number(bucket) as RoomBucket]),
+  ),
+  [DEPRECATED_ROOM_CATALOG_SLUG]: FOUR_PLUS_ROOM_BUCKET,
+};
 
-export const ROOM_BUCKET_SLUGS: ReadonlySet<string> = new Set(Object.values(ROOM_BUCKET_TO_SLUG));
+export const ROOM_BUCKET_SLUGS: ReadonlySet<string> = new Set(Object.keys(ROOM_PATH_SLUG_TO_BUCKET));
+
+export function isRoomSeoBucket(bucket: number | undefined): bucket is RoomBucket {
+  return bucket === 1 || bucket === 2 || bucket === 3;
+}
+
+export function isDeprecatedFourPlusRoomCatalogPage(parsed: ParsedSegments): boolean {
+  return parsed.roomsBucket === FOUR_PLUS_ROOM_BUCKET;
+}
 
 /** Города с посуточным каталогом квартир (зеркало backend CatalogApartmentCitySlugs). */
 export const CATALOG_APARTMENT_CITY_SLUGS: readonly string[] = [
@@ -90,42 +104,36 @@ const ROOM_PAGE_TITLE: Record<RoomBucket, string> = {
   1: 'Однокомнатные квартиры на сутки',
   2: 'Двухкомнатные квартиры на сутки',
   3: 'Трёхкомнатные квартиры на сутки',
-  4: 'Многокомнатные квартиры на сутки',
 };
 
 const ROOM_META_TITLE_ROOM: Record<RoomBucket, string> = {
   1: 'однокомнатную квартиру',
   2: 'двухкомнатную квартиру',
   3: 'трёхкомнатную квартиру',
-  4: 'многокомнатную квартиру (4 и более)',
 };
 
 const ROOM_META_TITLE_ROOM_PLURAL: Record<RoomBucket, string> = {
   1: '1-комнатных квартир',
   2: '2-комнатных квартир',
   3: '3-комнатных квартир',
-  4: 'многокомнатных квартир',
 };
 
 const ROOM_SEO_HEADING_ROOM: Record<RoomBucket, string> = {
   1: 'однокомнатную квартиру',
   2: 'двухкомнатную квартиру',
   3: 'трёхкомнатную квартиру',
-  4: 'многокомнатную квартиру',
 };
 
 const ROOM_FAQ_HEADING_ROOM: Record<RoomBucket, string> = {
   1: 'однокомнатных квартир',
   2: 'двухкомнатных квартир',
   3: 'трёхкомнатных квартир',
-  4: 'многокомнатных квартир',
 };
 
 const ROOM_BREADCRUMB_LABEL: Record<RoomBucket, string> = {
   1: 'Однокомнатные',
   2: 'Двухкомнатные',
   3: 'Трёхкомнатные',
-  4: '4-комнатные и более',
 };
 
 /** H1 / meta: локация в предложном падеже (с предлогом «в»). */
@@ -227,7 +235,7 @@ export interface ParsedSegments {
   residentialComplexSlug?: string;
   landmarkSlug?: string;
   /** Path-фасет комнатности: 1–3 точное число, 4 — «четыре и более». */
-  roomsBucket?: RoomBucket;
+  roomsBucket?: RoomBucket | typeof FOUR_PLUS_ROOM_BUCKET;
 }
 
 export function parseSegments(segments: string[] = []): ParsedSegments {
@@ -256,8 +264,8 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
 
   if (i < segments.length) {
     const roomSlug = segments[i];
-    if (roomSlug != null && ROOM_SLUG_TO_BUCKET[roomSlug] != null) {
-      roomsBucket = ROOM_SLUG_TO_BUCKET[roomSlug];
+    if (roomSlug != null && ROOM_PATH_SLUG_TO_BUCKET[roomSlug] != null) {
+      roomsBucket = ROOM_PATH_SLUG_TO_BUCKET[roomSlug];
       i++;
     } else if (segments[i] === 'vozle-metro') {
       nearMetro = true;
@@ -439,6 +447,13 @@ export function isValidRoomsCatalogSegments(parsed: ParsedSegments): boolean {
     return false;
   }
 
+  if (parsed.roomsBucket === FOUR_PLUS_ROOM_BUCKET) {
+    return false;
+  }
+  if (!isRoomSeoBucket(parsed.roomsBucket)) {
+    return true;
+  }
+
   return CATALOG_APARTMENT_CITY_SLUG_SET.has(resolveCatalogCitySlug(parsed));
 }
 
@@ -482,9 +497,9 @@ export function isBaseCityApartmentCatalogPage(parsed: ParsedSegments): boolean 
   );
 }
 
-/** Страница каталога квартир по числу комнат (path-лендинг). */
+/** Страница каталога квартир по числу комнат (path-лендинг, только 1–3). */
 export function isRoomCatalogPage(parsed: ParsedSegments): boolean {
-  return parsed.propertyType === 'apartment' && parsed.roomsBucket != null;
+  return parsed.propertyType === 'apartment' && isRoomSeoBucket(parsed.roomsBucket);
 }
 
 export function buildRoomCatalogUrl(citySlug: string, roomsBucket: RoomBucket): string {
@@ -571,7 +586,7 @@ export function validateCatalogSegmentsStructure(segments: string[] = []): boole
 
   if (i < segments.length) {
     const roomSlug = segments[i];
-    if (roomSlug != null && ROOM_SLUG_TO_BUCKET[roomSlug] != null) {
+    if (roomSlug != null && ROOM_PATH_SLUG_TO_BUCKET[roomSlug] != null) {
       i++;
     } else if (segments[i] === 'vozle-metro') {
       i++;
@@ -1142,7 +1157,7 @@ export function buildPageTitle(
   microdistrictName?: string,
   residentialComplexNamePrepositional?: string,
 ): string {
-  if (parsed.roomsBucket && parsed.propertyType === 'apartment') {
+  if (isRoomSeoBucket(parsed.roomsBucket) && parsed.propertyType === 'apartment') {
     const location = resolveCatalogLocation(
       parsed,
       cityName,
@@ -1248,7 +1263,7 @@ export function buildCatalogMetaTitle(
     return 'Снять квартиру на сутки возле метро в Минске недорого. Посуточная аренда у метро в Минске на Посутки.by.';
   }
 
-  if (parsed.roomsBucket && parsed.propertyType === 'apartment') {
+  if (isRoomSeoBucket(parsed.roomsBucket) && parsed.propertyType === 'apartment') {
     const location =
       CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
       CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
@@ -1298,7 +1313,7 @@ export function buildCatalogMetaDescription(
     return 'Квартиры на сутки возле метро в Минске. Посуточная аренда квартир у станций минского метро на Posutki.by без посредников.';
   }
 
-  if (parsed.roomsBucket && parsed.propertyType === 'apartment') {
+  if (isRoomSeoBucket(parsed.roomsBucket) && parsed.propertyType === 'apartment') {
     const location =
       CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
       CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];

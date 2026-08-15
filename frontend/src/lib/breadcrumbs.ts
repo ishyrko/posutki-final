@@ -3,14 +3,11 @@ import {
   buildCatalogUrlFromAddress,
   buildPageTitle,
   buildRoomBreadcrumbLabel,
-  buildRoomCatalogUrl,
   CITY_PREFIX_SLUGS,
   IMPLICIT_DEAL_TYPE,
   propertyUrlRegionSlug,
   REGION_SLUGS,
-  resolveCatalogCitySlug,
   type ParsedSegments,
-  type RoomBucket,
 } from "@/features/catalog/slugs";
 import type { Article } from "@/features/articles/types";
 import type { Property } from "@/features/properties/types";
@@ -173,20 +170,6 @@ export function buildPropertyBreadcrumbTrail(property: Property): Crumb[] {
       ),
     },
   ];
-
-  const rooms = property.specifications.rooms;
-  if (property.type === "apartment" && rooms != null && rooms > 0) {
-    const citySlug = resolveCatalogCitySlug({
-      ...parsed,
-      citySlug: property.address.citySlug ?? parsed.citySlug,
-      regionSlug: parsed.regionSlug,
-    });
-    const bucket = (rooms >= 4 ? 4 : rooms) as RoomBucket;
-    crumbs.push({
-      label: buildRoomBreadcrumbLabel(bucket),
-      href: buildRoomCatalogUrl(citySlug, bucket),
-    });
-  }
 
   crumbs.push({ label: property.title });
   return crumbs;

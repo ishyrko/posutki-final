@@ -77,18 +77,19 @@ import {
   isResidentialComplexCatalogContext,
   isNearMetroLandingPage,
   isRoomCatalogPage,
+  isRoomSeoBucket,
   NEAR_METRO_CATALOG_INTRO,
   propertyUrlRegionSlug,
   REGION_SLUGS,
   resolveCatalogCitySlug,
   resolveCatalogUrlParamsFromCitySlug,
   type ParsedSegments,
-  type RoomBucket,
 } from "@/features/catalog/slugs";
 import {
   canUseRoomPathNavigation,
   parseRoomsFromQuery,
   roomFilterBucketToApiValue,
+  roomFilterBucketToSeoBucket,
   serializeRoomsToQuery,
   type RoomFilterBucket,
 } from "@/features/catalog/catalog-rooms-filter";
@@ -569,7 +570,17 @@ export default function CatalogPage({
       };
 
       if (sorted.length === 1) {
-        router.push(buildRoomCatalogUrl(citySlug, roomFilterBucketToApiValue(sorted[0]!) as RoomBucket));
+        const seoBucket = roomFilterBucketToSeoBucket(sorted[0]!);
+        if (seoBucket != null) {
+          router.push(buildRoomCatalogUrl(citySlug, seoBucket));
+          return;
+        }
+
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete("page");
+        params.set("rooms", sorted[0]!);
+        const query = params.toString();
+        router.push(query ? `${buildCatalogUrl(baseParams)}?${query}` : buildCatalogUrl(baseParams));
         return;
       }
 
@@ -1610,7 +1621,7 @@ export default function CatalogPage({
             {currentPage === 1 && showRoomLinksSection ? (
               <CatalogRoomLinksSection
                 parsed={parsed}
-                activeBucket={parsed.roomsBucket}
+                activeBucket={isRoomSeoBucket(parsed.roomsBucket) ? parsed.roomsBucket : undefined}
               />
             ) : null}
           </div>

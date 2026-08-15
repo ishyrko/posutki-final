@@ -135,7 +135,7 @@ class CityController extends AbstractController
         return $this->json(ApiResponse::success($this->serializeCatalogPlace($complex)));
     }
 
-    #[Route('/{slug}/rooms/{roomsBucket}', name: 'room_catalog_by_city_slug', requirements: ['roomsBucket' => '[1-4]'], methods: ['GET'])]
+    #[Route('/{slug}/rooms/{roomsBucket}', name: 'room_catalog_by_city_slug', requirements: ['roomsBucket' => '[1-3]'], methods: ['GET'])]
     public function roomCatalogByCitySlug(string $slug, int $roomsBucket): JsonResponse
     {
         $city = $this->requireCity($slug);

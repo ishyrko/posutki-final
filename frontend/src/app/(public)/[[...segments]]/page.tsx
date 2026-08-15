@@ -13,6 +13,7 @@ import {
   isPropertyId,
   isBaseCityApartmentCatalogPage,
   isRoomCatalogPage,
+  isRoomSeoBucket,
   buildCatalogCitySeoHeading,
   buildCatalogCityFaqHeading,
   buildCatalogApartmentFaqHeading,
@@ -23,7 +24,11 @@ import {
   formatResidentialComplexCatalogLocation,
   resolveCatalogCitySlug,
 } from "@/features/catalog/slugs";
-import { buildRoomLandingRedirectPath } from "@/features/catalog/catalog-rooms-filter";
+import {
+  buildFourPlusRoomCatalogRedirectPath,
+  buildRoomLandingRedirectPath,
+  isDeprecatedFourPlusRoomCatalogPage,
+} from "@/features/catalog/catalog-rooms-filter";
 import {
   resolveMetroStationName,
   resolveCityDistrictName,
@@ -86,8 +91,19 @@ const getPropertyById = cache(async (id: number): Promise<Property | null> => {
   }
 });
 
+function redirectDeprecatedFourPlusRoomCatalog(segments: string[] | undefined): void {
+  const parsed = parseSegments(segments ?? []);
+  if (!isDeprecatedFourPlusRoomCatalogPage(parsed)) {
+    return;
+  }
+
+  permanentRedirect(buildFourPlusRoomCatalogRedirectPath(parsed, new URLSearchParams()));
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { segments } = await params;
+
+  redirectDeprecatedFourPlusRoomCatalog(segments);
 
   if (!(await validatePublicSegments(segments))) {
     notFound();
@@ -196,6 +212,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SegmentsPage({ params, searchParams }: PageProps) {
   const { segments } = await params;
+
+  redirectDeprecatedFourPlusRoomCatalog(segments);
 
   if (!(await validatePublicSegments(segments))) {
     notFound();
@@ -340,8 +358,9 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     }
   }
 
-  if (isFirstPage && isRoomCatalogPage(parsed) && parsed.roomsBucket) {
-    const roomDetail = await fetchRoomCatalogSeo(catalogCitySlug, parsed.roomsBucket);
+  if (isFirstPage && isRoomCatalogPage(parsed) && isRoomSeoBucket(parsed.roomsBucket)) {
+    const roomsBucket = parsed.roomsBucket;
+    const roomDetail = await fetchRoomCatalogSeo(catalogCitySlug, roomsBucket);
     if (roomDetail?.catalogSeoVisible) {
       const sanitizedHtml = roomDetail.catalogSeoText
         ? sanitizeArticleHtml(roomDetail.catalogSeoText)
@@ -353,12 +372,12 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
 
       if (sanitizedHtml || faqItems.length > 0) {
         roomSeoFooter = {
-          heading: buildCatalogRoomSeoHeading(catalogCitySlug, parsed.roomsBucket),
+          heading: buildCatalogRoomSeoHeading(catalogCitySlug, roomsBucket),
           html: sanitizedHtml ?? "",
           faq: faqItems.length > 0 ? faqItems : undefined,
           faqTitle:
             faqItems.length > 0
-              ? buildCatalogRoomFaqHeading(catalogCitySlug, parsed.roomsBucket)
+              ? buildCatalogRoomFaqHeading(catalogCitySlug, roomsBucket)
               : undefined,
         };
       }

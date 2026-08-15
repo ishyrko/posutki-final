@@ -1,8 +1,12 @@
 import {
+  buildCatalogUrl,
   buildRoomCatalogUrl,
   isBaseCityApartmentCatalogPage,
+  isDeprecatedFourPlusRoomCatalogPage,
   isRoomCatalogPage,
+  isRoomSeoBucket,
   resolveCatalogCitySlug,
+  resolveCatalogUrlParamsFromCitySlug,
   type ParsedSegments,
   type RoomBucket,
 } from "@/features/catalog/slugs";
@@ -34,6 +38,29 @@ export function roomFilterBucketToApiValue(bucket: RoomFilterBucket): number {
   return bucket === "4" ? 4 : Number(bucket);
 }
 
+export function roomFilterBucketToSeoBucket(bucket: RoomFilterBucket): RoomBucket | null {
+  if (bucket === "4") return null;
+  return Number(bucket) as RoomBucket;
+}
+
+/** 301 с устаревших path `/4-komnatnye/` на каталог с `?rooms=4`. */
+export function buildFourPlusRoomCatalogRedirectPath(
+  parsed: ParsedSegments,
+  preservedParams: URLSearchParams,
+): string {
+  const citySlug = resolveCatalogCitySlug(parsed);
+  const path = buildCatalogUrl({
+    propertyType: "apartment",
+    ...resolveCatalogUrlParamsFromCitySlug(citySlug),
+  });
+  preservedParams.set("rooms", "4");
+  preservedParams.delete("page");
+  const query = preservedParams.toString();
+  return query ? `${path}?${query}` : `${path}?rooms=4`;
+}
+
+export { isDeprecatedFourPlusRoomCatalogPage };
+
 export function canUseRoomPathNavigation(parsed: ParsedSegments): boolean {
   return isBaseCityApartmentCatalogPage(parsed) || isRoomCatalogPage(parsed);
 }
@@ -56,9 +83,13 @@ export function buildRoomLandingRedirectPath(
     return null;
   }
 
-  const apiBucket = roomFilterBucketToApiValue(buckets[0]!) as RoomBucket;
+  const seoBucket = roomFilterBucketToSeoBucket(buckets[0]!);
+  if (seoBucket == null) {
+    return null;
+  }
+
   const citySlug = resolveCatalogCitySlug(parsed);
-  const path = buildRoomCatalogUrl(citySlug, apiBucket);
+  const path = buildRoomCatalogUrl(citySlug, seoBucket);
 
   preservedParams.delete("rooms");
   preservedParams.delete("page");

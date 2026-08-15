@@ -215,8 +215,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "slug and citySlug are required for city-rooms" }, { status: 400 });
     }
     const roomsBucket = Number(slug);
-    if (!Number.isInteger(roomsBucket) || roomsBucket < 1 || roomsBucket > 4) {
-      return NextResponse.json({ error: "slug must be a room bucket 1-4 for city-rooms" }, { status: 400 });
+    if (!Number.isInteger(roomsBucket) || roomsBucket < 1 || roomsBucket > 3) {
+      return NextResponse.json({ error: "slug must be a room bucket 1-3 for city-rooms" }, { status: 400 });
     }
     revalidateTag("room-seo", { expire: 0 });
     revalidateTag(`room-seo-${citySlug}-${roomsBucket}`, { expire: 0 });
