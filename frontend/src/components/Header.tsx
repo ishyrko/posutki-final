@@ -62,9 +62,9 @@ function buildMegaMenu(
       {
         title: "По количеству комнат",
         items: [
-          { label: "Однокомнатные", desc: "Уютные студии и 1-комнатные", icon: <BedDouble className="h-4 w-4" />, href: r("/kvartiry/?rooms=1") },
-          { label: "Двухкомнатные", desc: "Просторные квартиры для семей", icon: <Home className="h-4 w-4" />, href: r("/kvartiry/?rooms=2") },
-          { label: "Трёхкомнатные+", desc: "Большие апартаменты", icon: <Building2 className="h-4 w-4" />, href: r("/kvartiry/?rooms=3%2B") },
+          { label: "Однокомнатные", desc: "Уютные студии и 1-комнатные", icon: <BedDouble className="h-4 w-4" />, href: r("/kvartiry/1-komnatnye/") },
+          { label: "Двухкомнатные", desc: "Просторные квартиры для семей", icon: <Home className="h-4 w-4" />, href: r("/kvartiry/2-komnatnye/") },
+          { label: "Трёхкомнатные+", desc: "Большие апартаменты", icon: <Building2 className="h-4 w-4" />, href: r("/kvartiry/3-komnatnye/") },
         ],
       },
       {

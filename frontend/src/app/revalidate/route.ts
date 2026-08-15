@@ -5,6 +5,7 @@ import {
   CITY_PREFIX_SLUGS,
   MINSK_CITY_SLUG,
   REGION_SLUGS,
+  type RoomBucket,
 } from "@/features/catalog/slugs";
 
 type RevalidateBody = {
@@ -68,6 +69,19 @@ function catalogMicrodistrictPathForCitySlug(citySlug: string, microdistrictSlug
     return buildCatalogUrl({ city: citySlug, propertyType: "apartment", microdistrict: microdistrictSlug });
   }
   return buildCatalogUrl({ propertyType: "apartment", microdistrict: microdistrictSlug, city: citySlug });
+}
+
+function catalogRoomPathForCitySlug(citySlug: string, roomsBucket: RoomBucket): string {
+  if (citySlug === MINSK_CITY_SLUG) {
+    return buildCatalogUrl({ propertyType: "apartment", rooms: roomsBucket });
+  }
+  if (REGION_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ region: citySlug, propertyType: "apartment", rooms: roomsBucket });
+  }
+  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ city: citySlug, propertyType: "apartment", rooms: roomsBucket });
+  }
+  return buildCatalogUrl({ propertyType: "apartment", city: citySlug, rooms: roomsBucket });
 }
 
 function catalogResidentialComplexPathForCitySlug(citySlug: string, residentialComplexSlug: string): string {
@@ -194,6 +208,21 @@ export async function POST(request: Request) {
     const catalogPath = catalogResidentialComplexPathForCitySlug(citySlug, slug);
     revalidateCatalogPlaceSeo("residential-complex-seo", citySlug, slug, catalogPath);
     return NextResponse.json({ revalidated: true, type: "residential-complex", slug, citySlug, path: catalogPath });
+  }
+
+  if (type === "city-rooms") {
+    if (!slug || !citySlug) {
+      return NextResponse.json({ error: "slug and citySlug are required for city-rooms" }, { status: 400 });
+    }
+    const roomsBucket = Number(slug);
+    if (!Number.isInteger(roomsBucket) || roomsBucket < 1 || roomsBucket > 4) {
+      return NextResponse.json({ error: "slug must be a room bucket 1-4 for city-rooms" }, { status: 400 });
+    }
+    revalidateTag("room-seo", { expire: 0 });
+    revalidateTag(`room-seo-${citySlug}-${roomsBucket}`, { expire: 0 });
+    const catalogPath = catalogRoomPathForCitySlug(citySlug, roomsBucket as RoomBucket);
+    revalidatePath(catalogPath, "page");
+    return NextResponse.json({ revalidated: true, type: "city-rooms", slug, citySlug, path: catalogPath });
   }
 
   return NextResponse.json({ error: "Invalid type" }, { status: 400 });

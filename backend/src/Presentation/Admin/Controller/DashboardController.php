@@ -18,6 +18,7 @@ use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
 use App\Domain\Property\Entity\PropertyPlacementPurchase;
 use App\Domain\Property\Entity\PropertyPlacementScopeSettings;
+use App\Domain\Property\Entity\CityRoomCatalogContent;
 use App\Domain\Property\Entity\ResidentialComplex;
 use App\Domain\Review\Entity\Review;
 use App\Domain\Property\Entity\Street;
@@ -196,6 +197,7 @@ class DashboardController extends AbstractDashboardController
 
         yield MenuItem::section('Справочники');
         yield MenuItem::linkToCrud('Города', 'fa fa-city', City::class);
+        yield MenuItem::linkToCrud('SEO по комнатам', 'fa fa-bed', CityRoomCatalogContent::class);
         yield MenuItem::linkToCrud('Районы города', 'fa fa-map', CityDistrict::class);
         yield MenuItem::linkToCrud('Микрорайоны', 'fa fa-map-location-dot', CityMicrodistrict::class);
         yield MenuItem::linkToCrud('Жилые комплексы', 'fa fa-building', ResidentialComplex::class);

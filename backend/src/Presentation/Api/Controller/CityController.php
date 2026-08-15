@@ -11,6 +11,8 @@ use App\Domain\Property\Entity\ResidentialComplex;
 use App\Domain\Property\Repository\CityDistrictRepositoryInterface;
 use App\Domain\Property\Repository\CityMicrodistrictRepositoryInterface;
 use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Domain\Property\Entity\CityRoomCatalogContent;
+use App\Domain\Property\Repository\CityRoomCatalogContentRepositoryInterface;
 use App\Domain\Property\Repository\ResidentialComplexRepositoryInterface;
 use App\Domain\Property\Service\CitiesWithDistricts;
 use App\Presentation\Api\Response\ApiResponse;
@@ -26,6 +28,7 @@ class CityController extends AbstractController
         private readonly CityDistrictRepositoryInterface $cityDistrictRepository,
         private readonly CityMicrodistrictRepositoryInterface $microdistrictRepository,
         private readonly ResidentialComplexRepositoryInterface $residentialComplexRepository,
+        private readonly CityRoomCatalogContentRepositoryInterface $roomCatalogContentRepository,
     ) {
     }
 
@@ -132,6 +135,25 @@ class CityController extends AbstractController
         return $this->json(ApiResponse::success($this->serializeCatalogPlace($complex)));
     }
 
+    #[Route('/{slug}/rooms/{roomsBucket}', name: 'room_catalog_by_city_slug', requirements: ['roomsBucket' => '[1-4]'], methods: ['GET'])]
+    public function roomCatalogByCitySlug(string $slug, int $roomsBucket): JsonResponse
+    {
+        $city = $this->requireCity($slug);
+        if ($city instanceof JsonResponse) {
+            return $city;
+        }
+
+        $content = $this->roomCatalogContentRepository->findByCityIdAndRoomsBucket($city->getId(), $roomsBucket);
+        if ($content === null) {
+            return $this->json(ApiResponse::error('Страница по комнатам не найдена', 404), 404);
+        }
+
+        return $this->json(ApiResponse::success([
+            'roomsBucket' => $content->getRoomsBucket(),
+            ...$this->serializeCatalogSeoContent($content),
+        ]));
+    }
+
     #[Route('/{slug}', name: 'get_by_slug', methods: ['GET'])]
     public function getBySlug(string $slug): JsonResponse
     {
@@ -195,7 +217,7 @@ class CityController extends AbstractController
      * @return array{catalogSeoVisible: bool, catalogSeoText: ?string, faq: list<array{question: string, answer: string}>}
      */
     private function serializeCatalogSeoContent(
-        City|CityDistrict|CityMicrodistrict|ResidentialComplex $entity,
+        City|CityDistrict|CityMicrodistrict|ResidentialComplex|CityRoomCatalogContent $entity,
     ): array {
         $visible = $entity->isCatalogSeoVisible();
 

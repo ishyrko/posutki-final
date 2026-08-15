@@ -60,6 +60,74 @@ export const PROPERTY_TYPE_VALUE_TO_SLUG = Object.fromEntries(
 /** Slug города Минска в URL каталога и API (`citySlug`). */
 export const MINSK_CITY_SLUG = 'minsk';
 
+/** Бакеты комнатности в path-каталоге (только квартиры). */
+export const ROOM_BUCKET_VALUES = [1, 2, 3, 4] as const;
+export type RoomBucket = (typeof ROOM_BUCKET_VALUES)[number];
+
+export const ROOM_BUCKET_TO_SLUG: Record<RoomBucket, string> = {
+  1: '1-komnatnye',
+  2: '2-komnatnye',
+  3: '3-komnatnye',
+  4: '4-komnatnye',
+};
+
+export const ROOM_SLUG_TO_BUCKET: Record<string, RoomBucket> = Object.fromEntries(
+  Object.entries(ROOM_BUCKET_TO_SLUG).map(([bucket, slug]) => [slug, Number(bucket) as RoomBucket]),
+) as Record<string, RoomBucket>;
+
+export const ROOM_BUCKET_SLUGS: ReadonlySet<string> = new Set(Object.values(ROOM_BUCKET_TO_SLUG));
+
+/** Города с посуточным каталогом квартир (зеркало backend CatalogApartmentCitySlugs). */
+export const CATALOG_APARTMENT_CITY_SLUGS: readonly string[] = [
+  MINSK_CITY_SLUG,
+  ...REGION_SLUGS,
+  ...CITY_PREFIX_SLUG_LIST,
+] as const;
+
+export const CATALOG_APARTMENT_CITY_SLUG_SET: ReadonlySet<string> = new Set(CATALOG_APARTMENT_CITY_SLUGS);
+
+const ROOM_PAGE_TITLE: Record<RoomBucket, string> = {
+  1: 'Однокомнатные квартиры на сутки',
+  2: 'Двухкомнатные квартиры на сутки',
+  3: 'Трёхкомнатные квартиры на сутки',
+  4: 'Многокомнатные квартиры на сутки',
+};
+
+const ROOM_META_TITLE_ROOM: Record<RoomBucket, string> = {
+  1: 'однокомнатную квартиру',
+  2: 'двухкомнатную квартиру',
+  3: 'трёхкомнатную квартиру',
+  4: 'многокомнатную квартиру (4 и более)',
+};
+
+const ROOM_META_TITLE_ROOM_PLURAL: Record<RoomBucket, string> = {
+  1: '1-комнатных квартир',
+  2: '2-комнатных квартир',
+  3: '3-комнатных квартир',
+  4: 'многокомнатных квартир',
+};
+
+const ROOM_SEO_HEADING_ROOM: Record<RoomBucket, string> = {
+  1: 'однокомнатную квартиру',
+  2: 'двухкомнатную квартиру',
+  3: 'трёхкомнатную квартиру',
+  4: 'многокомнатную квартиру',
+};
+
+const ROOM_FAQ_HEADING_ROOM: Record<RoomBucket, string> = {
+  1: 'однокомнатных квартир',
+  2: 'двухкомнатных квартир',
+  3: 'трёхкомнатных квартир',
+  4: 'многокомнатных квартир',
+};
+
+const ROOM_BREADCRUMB_LABEL: Record<RoomBucket, string> = {
+  1: 'Однокомнатные',
+  2: 'Двухкомнатные',
+  3: 'Трёхкомнатные',
+  4: '4-комнатные и более',
+};
+
 /** H1 / meta: локация в предложном падеже (с предлогом «в»). */
 const CATALOG_APARTMENT_LOCATION: Record<string, string> = {
   minsk: 'в Минске',
@@ -158,6 +226,8 @@ export interface ParsedSegments {
   microdistrictSlug?: string;
   residentialComplexSlug?: string;
   landmarkSlug?: string;
+  /** Path-фасет комнатности: 1–3 точное число, 4 — «четыре и более». */
+  roomsBucket?: RoomBucket;
 }
 
 export function parseSegments(segments: string[] = []): ParsedSegments {
@@ -182,9 +252,14 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
   let microdistrictSlug: string | undefined;
   let residentialComplexSlug: string | undefined;
   let landmarkSlug: string | undefined;
+  let roomsBucket: RoomBucket | undefined;
 
   if (i < segments.length) {
-    if (segments[i] === 'vozle-metro') {
+    const roomSlug = segments[i];
+    if (roomSlug != null && ROOM_SLUG_TO_BUCKET[roomSlug] != null) {
+      roomsBucket = ROOM_SLUG_TO_BUCKET[roomSlug];
+      i++;
+    } else if (segments[i] === 'vozle-metro') {
       nearMetro = true;
       i++;
     } else if (segments[i] === 'metro') {
@@ -239,6 +314,7 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
     microdistrictSlug,
     residentialComplexSlug,
     landmarkSlug,
+    roomsBucket,
   };
 }
 
@@ -250,6 +326,9 @@ export function isCatalogRoute(parsed: ParsedSegments): boolean {
 export function isValidMetroCatalogSegments(parsed: ParsedSegments): boolean {
   if (!parsed.nearMetro && !parsed.metroStationSlug) {
     return true;
+  }
+  if (parsed.roomsBucket) {
+    return false;
   }
   if (parsed.cityDistrictSlug) {
     return false;
@@ -277,6 +356,9 @@ export function isValidDistrictCatalogSegments(parsed: ParsedSegments): boolean 
   if (!parsed.cityDistrictSlug) {
     return true;
   }
+  if (parsed.roomsBucket) {
+    return false;
+  }
   if (parsed.nearMetro || parsed.metroStationSlug || parsed.landmarkSlug) {
     return false;
   }
@@ -294,6 +376,9 @@ export function isValidDistrictCatalogSegments(parsed: ParsedSegments): boolean 
 export function isValidMicrodistrictCatalogSegments(parsed: ParsedSegments): boolean {
   if (!parsed.microdistrictSlug) {
     return true;
+  }
+  if (parsed.roomsBucket) {
+    return false;
   }
   if (
     parsed.nearMetro ||
@@ -316,6 +401,9 @@ export function isValidResidentialComplexCatalogSegments(parsed: ParsedSegments)
   if (!parsed.residentialComplexSlug) {
     return true;
   }
+  if (parsed.roomsBucket) {
+    return false;
+  }
   if (
     parsed.nearMetro ||
     parsed.metroStationSlug ||
@@ -332,6 +420,28 @@ export function isValidResidentialComplexCatalogSegments(parsed: ParsedSegments)
   return true;
 }
 
+/** Комнатность в URL — только квартиры, без других геофасетов. */
+export function isValidRoomsCatalogSegments(parsed: ParsedSegments): boolean {
+  if (!parsed.roomsBucket) {
+    return true;
+  }
+  if (
+    parsed.nearMetro ||
+    parsed.metroStationSlug ||
+    parsed.cityDistrictSlug ||
+    parsed.microdistrictSlug ||
+    parsed.residentialComplexSlug ||
+    parsed.landmarkSlug
+  ) {
+    return false;
+  }
+  if (parsed.propertyType !== 'apartment') {
+    return false;
+  }
+
+  return CATALOG_APARTMENT_CITY_SLUG_SET.has(resolveCatalogCitySlug(parsed));
+}
+
 /** Достопримечательность в URL — только квартиры, без метро и района. */
 export function isValidLandmarkCatalogSegments(parsed: ParsedSegments): boolean {
   if (!parsed.landmarkSlug) {
@@ -342,7 +452,8 @@ export function isValidLandmarkCatalogSegments(parsed: ParsedSegments): boolean 
     parsed.metroStationSlug ||
     parsed.cityDistrictSlug ||
     parsed.microdistrictSlug ||
-    parsed.residentialComplexSlug
+    parsed.residentialComplexSlug ||
+    parsed.roomsBucket
   ) {
     return false;
   }
@@ -366,8 +477,59 @@ export function isBaseCityApartmentCatalogPage(parsed: ParsedSegments): boolean 
     !parsed.cityDistrictSlug &&
     !parsed.microdistrictSlug &&
     !parsed.residentialComplexSlug &&
-    !parsed.landmarkSlug
+    !parsed.landmarkSlug &&
+    !parsed.roomsBucket
   );
+}
+
+/** Страница каталога квартир по числу комнат (path-лендинг). */
+export function isRoomCatalogPage(parsed: ParsedSegments): boolean {
+  return parsed.propertyType === 'apartment' && parsed.roomsBucket != null;
+}
+
+export function buildRoomCatalogUrl(citySlug: string, roomsBucket: RoomBucket): string {
+  if (citySlug === MINSK_CITY_SLUG) {
+    return buildCatalogUrl({ propertyType: 'apartment', rooms: roomsBucket });
+  }
+  if (REGION_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ region: citySlug, propertyType: 'apartment', rooms: roomsBucket });
+  }
+  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ city: citySlug, propertyType: 'apartment', rooms: roomsBucket });
+  }
+  return buildCatalogUrl({ propertyType: 'apartment', city: citySlug, rooms: roomsBucket });
+}
+
+export function buildCatalogRoomSeoHeading(citySlug: string, roomsBucket: RoomBucket): string {
+  const location =
+    CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+  return `Снять ${ROOM_SEO_HEADING_ROOM[roomsBucket]} ${location} посуточно`;
+}
+
+export function buildCatalogRoomFaqHeading(citySlug: string, roomsBucket: RoomBucket): string {
+  const location =
+    CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+  return `Частые вопросы о посуточной аренде ${ROOM_FAQ_HEADING_ROOM[roomsBucket]} ${location}`;
+}
+
+export function buildRoomBreadcrumbLabel(roomsBucket: RoomBucket): string {
+  return ROOM_BREADCRUMB_LABEL[roomsBucket];
+}
+
+export function resolveCatalogUrlParamsFromCitySlug(citySlug: string): Pick<
+  BuildCatalogUrlParams,
+  'region' | 'city'
+> {
+  if (citySlug === MINSK_CITY_SLUG) {
+    return {};
+  }
+  if (REGION_SLUGS.has(citySlug)) {
+    return { region: citySlug };
+  }
+  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+    return { city: citySlug };
+  }
+  return { city: citySlug };
 }
 
 /** Заголовок SEO-блока под каталогом квартир города. */
@@ -408,7 +570,10 @@ export function validateCatalogSegmentsStructure(segments: string[] = []): boole
   }
 
   if (i < segments.length) {
-    if (segments[i] === 'vozle-metro') {
+    const roomSlug = segments[i];
+    if (roomSlug != null && ROOM_SLUG_TO_BUCKET[roomSlug] != null) {
+      i++;
+    } else if (segments[i] === 'vozle-metro') {
       i++;
     } else if (segments[i] === 'metro') {
       i++;
@@ -457,7 +622,8 @@ export function validatePublicSegmentsStructure(segments: string[] = []): boolea
       isValidDistrictCatalogSegments(parsed) &&
       isValidMicrodistrictCatalogSegments(parsed) &&
       isValidResidentialComplexCatalogSegments(parsed) &&
-      isValidLandmarkCatalogSegments(parsed)
+      isValidLandmarkCatalogSegments(parsed) &&
+      isValidRoomsCatalogSegments(parsed)
     );
   }
 
@@ -470,7 +636,8 @@ export function validatePublicSegmentsStructure(segments: string[] = []): boolea
     isValidDistrictCatalogSegments(parsed) &&
     isValidMicrodistrictCatalogSegments(parsed) &&
     isValidResidentialComplexCatalogSegments(parsed) &&
-    isValidLandmarkCatalogSegments(parsed)
+    isValidLandmarkCatalogSegments(parsed) &&
+    isValidRoomsCatalogSegments(parsed)
   );
 }
 
@@ -567,6 +734,7 @@ export interface BuildCatalogUrlParams {
   microdistrict?: string;
   residentialComplex?: string;
   landmark?: string;
+  rooms?: RoomBucket;
 }
 
 /** Путь каталога без query (для canonical). */
@@ -581,6 +749,7 @@ export function buildCatalogCanonicalPath(parsed: ParsedSegments): string {
     microdistrict: parsed.microdistrictSlug,
     residentialComplex: parsed.residentialComplexSlug,
     landmark: parsed.landmarkSlug,
+    rooms: parsed.roomsBucket,
   });
 }
 
@@ -603,7 +772,9 @@ export function buildCatalogUrl(params: BuildCatalogUrlParams = {}): string {
     parts.push(PROPERTY_TYPE_VALUE_TO_SLUG[params.propertyType]);
   }
 
-  if (params.cityDistrict) {
+  if (params.rooms != null && params.rooms in ROOM_BUCKET_TO_SLUG) {
+    parts.push(ROOM_BUCKET_TO_SLUG[params.rooms]);
+  } else if (params.cityDistrict) {
     parts.push('raion');
     parts.push(params.cityDistrict);
   } else if (params.microdistrict) {
@@ -971,6 +1142,20 @@ export function buildPageTitle(
   microdistrictName?: string,
   residentialComplexNamePrepositional?: string,
 ): string {
+  if (parsed.roomsBucket && parsed.propertyType === 'apartment') {
+    const location = resolveCatalogLocation(
+      parsed,
+      cityName,
+      metroStationName,
+      cityDistrictName,
+      landmarkPhrase,
+      microdistrictName,
+      residentialComplexNamePrepositional,
+    );
+    const typePart = ROOM_PAGE_TITLE[parsed.roomsBucket];
+    return location ? `${typePart} ${location}` : typePart;
+  }
+
   const typePart =
     parsed.propertyType && parsed.propertyType in DAILY_DEAL_PAGE_TITLES
       ? DAILY_DEAL_PAGE_TITLES[parsed.propertyType]
@@ -1063,6 +1248,14 @@ export function buildCatalogMetaTitle(
     return 'Снять квартиру на сутки возле метро в Минске недорого. Посуточная аренда у метро в Минске на Посутки.by.';
   }
 
+  if (parsed.roomsBucket && parsed.propertyType === 'apartment') {
+    const location =
+      CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
+      CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+    const bucket = parsed.roomsBucket;
+    return `Снять ${ROOM_META_TITLE_ROOM[bucket]} на сутки ${location} недорого. Посуточная аренда ${ROOM_META_TITLE_ROOM_PLURAL[bucket]}.`;
+  }
+
   const apartmentLocation = resolveApartmentCatalogMetaLocation(
     parsed,
     metroStationName,
@@ -1103,6 +1296,14 @@ export function buildCatalogMetaDescription(
 ): string | null {
   if (isNearMetroLandingPage(parsed)) {
     return 'Квартиры на сутки возле метро в Минске. Посуточная аренда квартир у станций минского метро на Posutki.by без посредников.';
+  }
+
+  if (parsed.roomsBucket && parsed.propertyType === 'apartment') {
+    const location =
+      CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
+      CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+    const bucket = parsed.roomsBucket;
+    return `${ROOM_PAGE_TITLE[bucket]} ${location}. Посуточная аренда ${ROOM_META_TITLE_ROOM_PLURAL[bucket]} ${location} на Posutki.by без посредников.`;
   }
 
   const apartmentLocation = resolveApartmentCatalogMetaLocation(

@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import {
   parseSegments,
@@ -12,14 +12,18 @@ import {
   buildSegmentsCanonicalPath,
   isPropertyId,
   isBaseCityApartmentCatalogPage,
+  isRoomCatalogPage,
   buildCatalogCitySeoHeading,
   buildCatalogCityFaqHeading,
   buildCatalogApartmentFaqHeading,
+  buildCatalogRoomSeoHeading,
+  buildCatalogRoomFaqHeading,
   formatCityDistrictCatalogLocation,
   formatMicrodistrictCatalogLocation,
   formatResidentialComplexCatalogLocation,
   resolveCatalogCitySlug,
 } from "@/features/catalog/slugs";
+import { buildRoomLandingRedirectPath } from "@/features/catalog/catalog-rooms-filter";
 import {
   resolveMetroStationName,
   resolveCityDistrictName,
@@ -42,6 +46,7 @@ import {
   fetchMicrodistrictCatalogSeo,
   fetchResidentialComplexCatalogSeo,
 } from "@/lib/place-catalog-seo-server";
+import { fetchRoomCatalogSeo } from "@/lib/room-catalog-seo-server";
 import { fetchRegionHouseCountsForHome } from "@/lib/region-house-counts-server";
 import { fetchRecentArticlesForHome } from "@/lib/articles-server";
 import { HEADER_REGION_MINSK_SLUG } from "@/lib/region-header";
@@ -67,7 +72,7 @@ import {
 
 interface PageProps {
   params: Promise<{ segments?: string[] }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; rooms?: string; guests?: string; amenity?: string }>;
 }
 
 /** Anonymous GET first (avoids 401 from invalid cookie JWT on SSR); then auth for unpublished owner views. */
@@ -280,7 +285,23 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     residentialComplexNamePrepositional,
   );
 
-  const { page: pageParam } = await searchParams;
+  const resolvedSearchParams = await searchParams;
+  const redirectParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(resolvedSearchParams)) {
+    if (value != null && value !== "") {
+      redirectParams.set(key, value);
+    }
+  }
+  const roomRedirectPath = buildRoomLandingRedirectPath(
+    parsed,
+    resolvedSearchParams.rooms ?? null,
+    redirectParams,
+  );
+  if (roomRedirectPath) {
+    permanentRedirect(roomRedirectPath);
+  }
+
+  const { page: pageParam } = resolvedSearchParams;
   const pageFromQuery = Number(pageParam ?? "1");
   const validPage =
     Number.isFinite(pageFromQuery) && pageFromQuery > 0 ? Math.floor(pageFromQuery) : 1;
@@ -288,8 +309,10 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
 
   let citySeoFooter: { heading: string; html: string; faq?: FaqItem[]; faqTitle?: string } | null = null;
   let placeSeoFooter: { heading: string; html: string; faq?: FaqItem[]; faqTitle?: string } | null = null;
+  let roomSeoFooter: { heading: string; html: string; faq?: FaqItem[]; faqTitle?: string } | null = null;
   let cityFaqJsonLd: Record<string, unknown> | null = null;
   let placeFaqJsonLd: Record<string, unknown> | null = null;
+  let roomFaqJsonLd: Record<string, unknown> | null = null;
   const catalogCitySlug = resolveCatalogCitySlug(parsed);
 
   if (isFirstPage && isBaseCityApartmentCatalogPage(parsed)) {
@@ -313,6 +336,35 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
 
       if (faqItems.length > 0) {
         cityFaqJsonLd = buildFaqPageJsonLd(faqItems);
+      }
+    }
+  }
+
+  if (isFirstPage && isRoomCatalogPage(parsed) && parsed.roomsBucket) {
+    const roomDetail = await fetchRoomCatalogSeo(catalogCitySlug, parsed.roomsBucket);
+    if (roomDetail?.catalogSeoVisible) {
+      const sanitizedHtml = roomDetail.catalogSeoText
+        ? sanitizeArticleHtml(roomDetail.catalogSeoText)
+        : null;
+      const faqItems = (roomDetail.faq ?? []).filter(
+        (item): item is FaqItem =>
+          Boolean(item?.question?.trim()) && Boolean(item?.answer?.trim()),
+      );
+
+      if (sanitizedHtml || faqItems.length > 0) {
+        roomSeoFooter = {
+          heading: buildCatalogRoomSeoHeading(catalogCitySlug, parsed.roomsBucket),
+          html: sanitizedHtml ?? "",
+          faq: faqItems.length > 0 ? faqItems : undefined,
+          faqTitle:
+            faqItems.length > 0
+              ? buildCatalogRoomFaqHeading(catalogCitySlug, parsed.roomsBucket)
+              : undefined,
+        };
+      }
+
+      if (faqItems.length > 0) {
+        roomFaqJsonLd = buildFaqPageJsonLd(faqItems);
       }
     }
   }
@@ -397,6 +449,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
       ) : null}
       {isFirstPage && cityFaqJsonLd ? <JsonLdScript data={cityFaqJsonLd} /> : null}
       {isFirstPage && placeFaqJsonLd ? <JsonLdScript data={placeFaqJsonLd} /> : null}
+      {isFirstPage && roomFaqJsonLd ? <JsonLdScript data={roomFaqJsonLd} /> : null}
       <CatalogPage
         parsed={parsed}
         title={title}
@@ -404,6 +457,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
         landmarkFooter={landmarkFooter}
         citySeoFooter={citySeoFooter}
         placeSeoFooter={placeSeoFooter}
+        roomSeoFooter={roomSeoFooter}
       >
         <PageBreadcrumbs items={catalogBreadcrumbs} />
       </CatalogPage>

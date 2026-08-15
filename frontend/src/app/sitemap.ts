@@ -4,11 +4,15 @@ import { getSiteOrigin } from "@/lib/site-url";
 import {
   CITY_PREFIX_SLUG_LIST,
   CITIES_WITH_DISTRICTS_SLUGS,
+  CATALOG_APARTMENT_CITY_SLUGS,
   PROPERTY_TYPE_SLUG_TO_VALUE,
   MINSK_CITY_SLUG,
   REGION_SLUGS,
+  ROOM_BUCKET_VALUES,
   buildCatalogUrl,
   buildPropertyUrlFromRegionName,
+  buildRoomCatalogUrl,
+  type RoomBucket,
 } from "@/features/catalog/slugs";
 import type { CityDistrict } from "@/features/city-districts/types";
 import type { CityPlace } from "@/features/city-places/types";
@@ -107,6 +111,20 @@ function catalogEntries(now: Date): Entry[] {
     lastModified: now,
     changeFrequency: "daily" as const,
     priority: 0.7,
+  }));
+}
+
+/** Room-count landing pages: city × 1–4 rooms (apartments only). */
+function roomCatalogEntries(now: Date): Entry[] {
+  const urls = CATALOG_APARTMENT_CITY_SLUGS.flatMap((citySlug) =>
+    ROOM_BUCKET_VALUES.map((bucket) => buildRoomCatalogUrl(citySlug, bucket as RoomBucket)),
+  );
+
+  return urls.map((path) => ({
+    url: toAbsolute(path),
+    lastModified: now,
+    changeFrequency: "daily" as const,
+    priority: 0.65,
   }));
 }
 
@@ -325,6 +343,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...staticEntries(now),
     ...catalogEntries(now),
+    ...roomCatalogEntries(now),
     ...districts,
     ...landmarks,
     ...places,

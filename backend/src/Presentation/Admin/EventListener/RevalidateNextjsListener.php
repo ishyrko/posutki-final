@@ -9,7 +9,7 @@ use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\CityDistrict;
 use App\Domain\Property\Entity\CityMicrodistrict;
 use App\Domain\Property\Entity\Landmark;
-use App\Domain\Property\Entity\ResidentialComplex;
+use App\Domain\Property\Entity\CityRoomCatalogContent;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\StaticPage\Entity\StaticPage;
 use EasyCorp\Bundle\EasyAdminBundle\Contracts\Event\EntityLifecycleEventInterface;
@@ -90,6 +90,20 @@ final class RevalidateNextjsListener implements EventSubscriberInterface
 
         if ($entity instanceof ResidentialComplex) {
             $this->notifyCatalogPlaceRevalidation('residential-complex', $entity->getCityId(), $entity->getSlug());
+
+            return;
+        }
+
+        if ($entity instanceof CityRoomCatalogContent) {
+            $city = $this->cityRepository->findById($entity->getCityId());
+            if ($city !== null) {
+                $this->notifyNextJs(
+                    'city-rooms',
+                    (string) $entity->getRoomsBucket(),
+                    null,
+                    $city->getSlug(),
+                );
+            }
         }
     }
 

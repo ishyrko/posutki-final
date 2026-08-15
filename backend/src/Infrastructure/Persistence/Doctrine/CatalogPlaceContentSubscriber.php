@@ -8,7 +8,7 @@ use App\Application\Service\CatalogPlaceContentNormalizer;
 use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\CityDistrict;
 use App\Domain\Property\Entity\CityMicrodistrict;
-use App\Domain\Property\Entity\ResidentialComplex;
+use App\Domain\Property\Entity\CityRoomCatalogContent;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\OnFlushEventArgs;
@@ -64,6 +64,7 @@ final class CatalogPlaceContentSubscriber implements EventSubscriber
         return $entity instanceof City
             || $entity instanceof CityDistrict
             || $entity instanceof CityMicrodistrict
-            || $entity instanceof ResidentialComplex;
+            || $entity instanceof ResidentialComplex
+            || $entity instanceof CityRoomCatalogContent;
     }
 }

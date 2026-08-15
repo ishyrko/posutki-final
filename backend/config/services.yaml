@@ -86,6 +86,9 @@ services:
     App\Domain\Property\Repository\ResidentialComplexRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\ResidentialComplexRepository
 
+    App\Domain\Property\Repository\CityRoomCatalogContentRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\CityRoomCatalogContentRepository
+
     App\Domain\Property\Repository\PropertyGeocoderResultRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyGeocoderResultRepository
 

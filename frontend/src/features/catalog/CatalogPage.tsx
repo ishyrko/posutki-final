@@ -52,6 +52,7 @@ import {
 import CatalogLandmarkBanner from "@/features/catalog/CatalogLandmarkBanner";
 import CatalogLandmarkDetails from "@/features/catalog/CatalogLandmarkDetails";
 import CatalogCitySeoSection from "@/features/catalog/CatalogCitySeoSection";
+import CatalogRoomLinksSection from "@/features/catalog/CatalogRoomLinksSection";
 import { EmbeddedFaqSection } from "@/components/seo/EmbeddedFaqSection";
 import type { FaqItem } from "@/lib/json-ld/faq";
 import type { LandmarkListItem } from "@/features/landmarks/types";
@@ -66,19 +67,31 @@ import {
 import {
   buildCatalogUrl,
   buildPageTitle,
+  buildRoomCatalogUrl,
   CITY_PREFIX_SLUGS,
+  isBaseCityApartmentCatalogPage,
   isDistrictCatalogContext,
   isLandmarkCatalogContext,
   isMetroCatalogContext,
   isMicrodistrictCatalogContext,
   isResidentialComplexCatalogContext,
   isNearMetroLandingPage,
+  isRoomCatalogPage,
   NEAR_METRO_CATALOG_INTRO,
   propertyUrlRegionSlug,
   REGION_SLUGS,
   resolveCatalogCitySlug,
+  resolveCatalogUrlParamsFromCitySlug,
   type ParsedSegments,
+  type RoomBucket,
 } from "@/features/catalog/slugs";
+import {
+  canUseRoomPathNavigation,
+  parseRoomsFromQuery,
+  roomFilterBucketToApiValue,
+  serializeRoomsToQuery,
+  type RoomFilterBucket,
+} from "@/features/catalog/catalog-rooms-filter";
 import { GuestCountControl } from "@/features/catalog/GuestCountControl";
 import {
   AMENITY_QUERY_PARAM,
@@ -114,26 +127,8 @@ const roomCountOptions = [
   { value: "4", label: "4+" },
 ] as const;
 
-type RoomBucket = (typeof roomCountOptions)[number]["value"];
-
-function sortRoomBuckets(a: RoomBucket, b: RoomBucket): number {
+function sortRoomBuckets(a: RoomFilterBucket, b: RoomFilterBucket): number {
   return Number(a) - Number(b);
-}
-
-function parseRoomsFromQuery(raw: string | null): RoomBucket[] {
-  if (!raw) return [];
-  const set = new Set<RoomBucket>();
-  for (const part of raw.split(",")) {
-    const p = part.trim();
-    if (p === "3+") {
-      set.add("3");
-      set.add("4");
-      continue;
-    }
-    if (p === "1" || p === "2" || p === "3") set.add(p);
-    if (p === "4" || p === "4+") set.add("4");
-  }
-  return [...set].sort(sortRoomBuckets);
 }
 
 const sortOptions = [
@@ -305,6 +300,7 @@ interface CatalogPageProps {
   landmarkFooter?: CatalogLandmarkFooterProps | null;
   citySeoFooter?: CatalogCitySeoFooterProps | null;
   placeSeoFooter?: CatalogPlaceSeoFooterProps | null;
+  roomSeoFooter?: CatalogPlaceSeoFooterProps | null;
   children?: ReactNode;
 }
 
@@ -315,6 +311,7 @@ export default function CatalogPage({
   landmarkFooter = null,
   citySeoFooter = null,
   placeSeoFooter = null,
+  roomSeoFooter = null,
   children,
 }: CatalogPageProps) {
   const router = useRouter();
@@ -324,7 +321,7 @@ export default function CatalogPage({
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const { selectedCurrency } = useCurrency();
-  const [roomBuckets, setRoomBuckets] = useState<RoomBucket[]>([]);
+  const [roomBuckets, setRoomBuckets] = useState<RoomFilterBucket[]>([]);
   const [metroStationId, setMetroStationId] = useState("all");
   const [nearMetro, setNearMetro] = useState(false);
   const [landmarkMaxDistanceKm, setLandmarkMaxDistanceKm] = useState<LandmarkDistanceFilterValue>(
@@ -381,11 +378,18 @@ export default function CatalogPage({
   const roomsFromQuery = searchParams.get("rooms");
   const guestsFromQuery = parseGuestsFromQuery(searchParams.get(GUESTS_QUERY_PARAM));
   const amenitiesFromQuery = searchParams.get(AMENITY_QUERY_PARAM);
+  const roomPathNavigation = canUseRoomPathNavigation(parsed);
+  const showRoomLinksSection =
+    isBaseCityApartmentCatalogPage(parsed) || isRoomCatalogPage(parsed);
 
   useEffect(() => {
     if (!roomsFilterVisible) return;
+    if (parsed.roomsBucket) {
+      setRoomBuckets([String(parsed.roomsBucket) as RoomFilterBucket]);
+      return;
+    }
     setRoomBuckets(parseRoomsFromQuery(roomsFromQuery));
-  }, [roomsFromQuery, roomsFilterVisible]);
+  }, [roomsFromQuery, roomsFilterVisible, parsed.roomsBucket]);
 
   useEffect(() => {
     const ids = parseAmenitiesFromQuery(amenitiesFromQuery);
@@ -442,7 +446,7 @@ export default function CatalogPage({
   const activeFilterCount =
     (hasPriceFilter ? 1 : 0) +
     (guestsFromQuery !== null ? 1 : 0) +
-    (roomsFilterVisible && roomBuckets.length > 0 ? 1 : 0) +
+    (roomsFilterVisible && (roomBuckets.length > 0 || parsed.roomsBucket) ? 1 : 0) +
     (isLandmarkPage && landmarkMaxDistanceKm !== DEFAULT_LANDMARK_MAX_DISTANCE_KM ? 1 : 0) +
     (showMetroSidebarFilters && !nearMetroLanding && nearMetro && metroStationId !== "all" ? 1 : 0) +
     (showMetroSidebarFilters && !nearMetroLanding && nearMetro ? 1 : 0) +
@@ -517,8 +521,12 @@ export default function CatalogPage({
       f.regionSlug = "minsk";
     }
     if (parsed.propertyType) f.type = parsed.propertyType;
-    if (roomsFilterVisible && roomBuckets.length > 0) {
-      f.roomValues = roomBuckets.map((b) => (b === "4" ? 4 : Number(b)));
+    if (roomsFilterVisible) {
+      if (parsed.roomsBucket) {
+        f.roomValues = [parsed.roomsBucket];
+      } else if (roomBuckets.length > 0) {
+        f.roomValues = roomBuckets.map((b) => roomFilterBucketToApiValue(b));
+      }
     }
     if (metroFilterVisible) {
       if (routeMetroStation) {
@@ -547,7 +555,53 @@ export default function CatalogPage({
     else if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     return f;
-  }, [fetchAllForClientFilters, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.microdistrictSlug, parsed.residentialComplexSlug, parsed.landmarkSlug, parsed.nearMetro, parsed.metroStationSlug, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort, landmarkMaxDistanceKm]);
+  }, [fetchAllForClientFilters, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.microdistrictSlug, parsed.residentialComplexSlug, parsed.landmarkSlug, parsed.nearMetro, parsed.metroStationSlug, parsed.roomsBucket, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort, landmarkMaxDistanceKm]);
+
+  const navigateRoomSelection = (nextBuckets: RoomFilterBucket[]) => {
+    const sorted = [...nextBuckets].sort(sortRoomBuckets);
+    setRoomBuckets(sorted);
+
+    if (roomPathNavigation) {
+      const citySlug = resolveCatalogCitySlug(parsed);
+      const baseParams = {
+        propertyType: "apartment" as const,
+        ...resolveCatalogUrlParamsFromCitySlug(citySlug),
+      };
+
+      if (sorted.length === 1) {
+        router.push(buildRoomCatalogUrl(citySlug, roomFilterBucketToApiValue(sorted[0]!) as RoomBucket));
+        return;
+      }
+
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("page");
+      if (sorted.length === 0) {
+        params.delete("rooms");
+        const query = params.toString();
+        router.push(query ? `${buildCatalogUrl(baseParams)}?${query}` : buildCatalogUrl(baseParams));
+        return;
+      }
+
+      const roomsQuery = serializeRoomsToQuery(sorted);
+      if (roomsQuery) params.set("rooms", roomsQuery);
+      const query = params.toString();
+      router.push(query ? `${buildCatalogUrl(baseParams)}?${query}` : buildCatalogUrl(baseParams));
+      return;
+    }
+
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
+    if (sorted.length === 0) params.delete("rooms");
+    else {
+      const roomsQuery = serializeRoomsToQuery(sorted);
+      if (roomsQuery) params.set("rooms", roomsQuery);
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  };
 
   const { data, isLoading } = useProperties(filters);
   const { data: rates } = useExchangeRates();
@@ -661,11 +715,24 @@ export default function CatalogPage({
     setSelectedPaymentMethodIds([]);
     setShowAllAmenities(false);
     setLandmarkMaxDistanceKm(DEFAULT_LANDMARK_MAX_DISTANCE_KM);
+    setCurrentPage(1);
+
+    if (roomPathNavigation && parsed.roomsBucket) {
+      const citySlug = resolveCatalogCitySlug(parsed);
+      router.push(
+        buildCatalogUrl({
+          propertyType: "apartment",
+          ...resolveCatalogUrlParamsFromCitySlug(citySlug),
+        }),
+      );
+      return;
+    }
+
     const params = new URLSearchParams(searchParams.toString());
     params.delete(GUESTS_QUERY_PARAM);
     params.delete(AMENITY_QUERY_PARAM);
+    params.delete("rooms");
     params.delete("page");
-    setCurrentPage(1);
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname);
   };
@@ -753,13 +820,11 @@ export default function CatalogPage({
                 key={r.value}
                 type="button"
                 onClick={() => {
-                  setRoomBuckets((prev) => {
-                    if (prev.includes(r.value)) {
-                      return prev.filter((x) => x !== r.value).sort(sortRoomBuckets);
-                    }
-                    return [...prev, r.value].sort(sortRoomBuckets);
-                  });
-                  resetToFirstPage();
+                  const isSelected = roomBuckets.includes(r.value);
+                  const next = isSelected
+                    ? roomBuckets.filter((x) => x !== r.value).sort(sortRoomBuckets)
+                    : [...roomBuckets, r.value].sort(sortRoomBuckets);
+                  navigateRoomSelection(next);
                 }}
                 className={cn(
                   "min-w-0 cursor-pointer rounded-lg border px-2 py-2 text-center text-sm font-medium transition-all duration-150",
@@ -1527,6 +1592,26 @@ export default function CatalogPage({
                   />
                 ) : null}
               </>
+            ) : null}
+            {currentPage === 1 && roomSeoFooter ? (
+              <>
+                {roomSeoFooter.html ? (
+                  <CatalogCitySeoSection heading={roomSeoFooter.heading} html={roomSeoFooter.html} />
+                ) : null}
+                {roomSeoFooter.faq && roomSeoFooter.faq.length > 0 ? (
+                  <EmbeddedFaqSection
+                    items={roomSeoFooter.faq}
+                    title={roomSeoFooter.faqTitle}
+                    variant="catalog"
+                  />
+                ) : null}
+              </>
+            ) : null}
+            {currentPage === 1 && showRoomLinksSection ? (
+              <CatalogRoomLinksSection
+                parsed={parsed}
+                activeBucket={parsed.roomsBucket}
+              />
             ) : null}
           </div>
         </div>

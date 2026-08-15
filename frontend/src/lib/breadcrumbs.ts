@@ -2,11 +2,15 @@ import {
   buildCatalogUrl,
   buildCatalogUrlFromAddress,
   buildPageTitle,
+  buildRoomBreadcrumbLabel,
+  buildRoomCatalogUrl,
   CITY_PREFIX_SLUGS,
   IMPLICIT_DEAL_TYPE,
   propertyUrlRegionSlug,
   REGION_SLUGS,
+  resolveCatalogCitySlug,
   type ParsedSegments,
+  type RoomBucket,
 } from "@/features/catalog/slugs";
 import type { Article } from "@/features/articles/types";
 import type { Property } from "@/features/properties/types";
@@ -39,6 +43,7 @@ function stripCatalogFacets(parsed: ParsedSegments): ParsedSegments {
     microdistrictSlug: undefined,
     residentialComplexSlug: undefined,
     landmarkSlug: undefined,
+    roomsBucket: undefined,
   };
 }
 
@@ -49,7 +54,8 @@ function hasCatalogFacets(parsed: ParsedSegments): boolean {
       parsed.cityDistrictSlug ||
       parsed.microdistrictSlug ||
       parsed.residentialComplexSlug ||
-      parsed.landmarkSlug,
+      parsed.landmarkSlug ||
+      parsed.roomsBucket,
   );
 }
 
@@ -111,6 +117,13 @@ export function buildCatalogBreadcrumbTrail(
     return crumbs;
   }
 
+  if (parsed.roomsBucket) {
+    crumbs.push({
+      label: buildRoomBreadcrumbLabel(parsed.roomsBucket),
+    });
+    return crumbs;
+  }
+
   if (parsed.metroStationSlug) {
     crumbs.push({
       label: "Возле метро",
@@ -149,8 +162,7 @@ function buildParsedFromProperty(property: Property): ParsedSegments {
 export function buildPropertyBreadcrumbTrail(property: Property): Crumb[] {
   const parsed = buildParsedFromProperty(property);
   const baseCrumb = buildBaseCatalogCrumb(parsed);
-
-  return [
+  const crumbs: Crumb[] = [
     HOME_CRUMB,
     {
       label: baseCrumb.label,
@@ -160,8 +172,24 @@ export function buildPropertyBreadcrumbTrail(property: Property): Crumb[] {
         property.type,
       ),
     },
-    { label: property.title },
   ];
+
+  const rooms = property.specifications.rooms;
+  if (property.type === "apartment" && rooms != null && rooms > 0) {
+    const citySlug = resolveCatalogCitySlug({
+      ...parsed,
+      citySlug: property.address.citySlug ?? parsed.citySlug,
+      regionSlug: parsed.regionSlug,
+    });
+    const bucket = (rooms >= 4 ? 4 : rooms) as RoomBucket;
+    crumbs.push({
+      label: buildRoomBreadcrumbLabel(bucket),
+      href: buildRoomCatalogUrl(citySlug, bucket),
+    });
+  }
+
+  crumbs.push({ label: property.title });
+  return crumbs;
 }
 
 export function buildArticlesIndexBreadcrumbTrail(): Crumb[] {
