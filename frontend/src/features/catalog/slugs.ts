@@ -862,20 +862,33 @@ export function formatCityDistrictCatalogLocation(
   return `${prep} ${adjective} районе ${cityGenitive}`;
 }
 
-/** «в мкр-не Уручье» — name в именительном падеже из API. */
+/** «в мкр-не Уручье в Минске» — name в именительном падеже из API. */
 export function formatMicrodistrictCatalogLocation(
   name: string,
-  _citySlug?: string,
+  citySlug: string,
 ): string {
   const microdistrict = name.trim();
-  return microdistrict ? `в мкр-не ${microdistrict}` : microdistrict;
+  if (!microdistrict) {
+    return microdistrict;
+  }
+  const cityLocation =
+    CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+  return `в мкр-не ${microdistrict} ${cityLocation}`;
 }
 
-/** «в Минск-Мире» — namePrepositional из API без предлога. */
-export function formatResidentialComplexCatalogLocation(namePrepositional: string): string {
+/** «в Минск-Мире в Минске» — namePrepositional из API без предлога. */
+export function formatResidentialComplexCatalogLocation(
+  namePrepositional: string,
+  citySlug: string,
+): string {
   const place = namePrepositional.trim();
+  if (!place) {
+    return place;
+  }
   const prep = districtLocationPreposition(place);
-  return `${prep} ${place}`;
+  const cityLocation =
+    CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+  return `${prep} ${place} ${cityLocation}`;
 }
 
 function resolveCatalogLocation(
@@ -905,7 +918,7 @@ function resolveCatalogLocation(
   const key = catalogLocationKey(parsed);
 
   if (residentialComplexNamePrepositional) {
-    return formatResidentialComplexCatalogLocation(residentialComplexNamePrepositional);
+    return formatResidentialComplexCatalogLocation(residentialComplexNamePrepositional, key);
   }
   if (microdistrictName) {
     return formatMicrodistrictCatalogLocation(microdistrictName, key);
@@ -984,7 +997,7 @@ function resolveApartmentCatalogMetaLocation(
   const key = catalogLocationKey(parsed);
 
   if (residentialComplexNamePrepositional) {
-    return formatResidentialComplexCatalogLocation(residentialComplexNamePrepositional);
+    return formatResidentialComplexCatalogLocation(residentialComplexNamePrepositional, key);
   }
   if (microdistrictName) {
     return formatMicrodistrictCatalogLocation(microdistrictName, key);
@@ -1039,7 +1052,9 @@ export function buildCatalogMetaTitle(
       return `Снять квартиру на сутки ${apartmentLocation} ${cityLocation}. Посуточная аренда ${apartmentLocation}.`;
     }
 
-    return `Снять квартиру на сутки ${apartmentLocation} недорого. Посуточная аренда ${apartmentLocation}.`;
+    const priceHint =
+      parsed.microdistrictSlug || parsed.residentialComplexSlug ? '' : ' недорого';
+    return `Снять квартиру на сутки ${apartmentLocation}${priceHint}. Посуточная аренда ${apartmentLocation}.`;
   }
 
   const houseLocation = resolveHouseCatalogMetaLocation(parsed);

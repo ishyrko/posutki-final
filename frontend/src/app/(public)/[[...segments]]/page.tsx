@@ -326,7 +326,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     if (placeDetail?.catalogSeoVisible) {
       const namePrepositional = placeDetail.namePrepositional?.trim();
       const headingLocation = parsed.residentialComplexSlug && namePrepositional
-        ? formatResidentialComplexCatalogLocation(namePrepositional)
+        ? formatResidentialComplexCatalogLocation(namePrepositional, catalogCitySlug)
         : parsed.microdistrictSlug && placeDetail.name
           ? formatMicrodistrictCatalogLocation(placeDetail.name, catalogCitySlug)
           : parsed.cityDistrictSlug && namePrepositional
