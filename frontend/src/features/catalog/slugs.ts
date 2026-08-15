@@ -1268,7 +1268,7 @@ export function buildCatalogMetaTitle(
       CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
       CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
     const bucket = parsed.roomsBucket;
-    return `Снять ${ROOM_META_TITLE_ROOM[bucket]} на сутки ${location} недорого. Посуточная аренда ${ROOM_META_TITLE_ROOM_PLURAL[bucket]}.`;
+    return `Снять ${ROOM_META_TITLE_ROOM[bucket]} на сутки ${location} недорого. Посуточная аренда ${ROOM_META_TITLE_ROOM_PLURAL[bucket]} ${location}.`;
   }
 
   const apartmentLocation = resolveApartmentCatalogMetaLocation(
