@@ -6,7 +6,10 @@ namespace App\Presentation\Admin\EventListener;
 
 use App\Domain\Article\Entity\Article;
 use App\Domain\Property\Entity\City;
+use App\Domain\Property\Entity\CityDistrict;
+use App\Domain\Property\Entity\CityMicrodistrict;
 use App\Domain\Property\Entity\Landmark;
+use App\Domain\Property\Entity\ResidentialComplex;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\StaticPage\Entity\StaticPage;
 use EasyCorp\Bundle\EasyAdminBundle\Contracts\Event\EntityLifecycleEventInterface;
@@ -69,7 +72,39 @@ final class RevalidateNextjsListener implements EventSubscriberInterface
             if ($city !== null) {
                 $this->notifyNextJs('landmark', $entity->getSlug(), null, $city->getSlug());
             }
+
+            return;
         }
+
+        if ($entity instanceof CityDistrict) {
+            $this->notifyCatalogPlaceRevalidation('city-district', $entity->getCityId(), $entity->getSlug());
+
+            return;
+        }
+
+        if ($entity instanceof CityMicrodistrict) {
+            $this->notifyCatalogPlaceRevalidation('city-microdistrict', $entity->getCityId(), $entity->getSlug());
+
+            return;
+        }
+
+        if ($entity instanceof ResidentialComplex) {
+            $this->notifyCatalogPlaceRevalidation('residential-complex', $entity->getCityId(), $entity->getSlug());
+        }
+    }
+
+    private function notifyCatalogPlaceRevalidation(string $type, int $cityId, ?string $placeSlug): void
+    {
+        if ($placeSlug === null || $placeSlug === '') {
+            return;
+        }
+
+        $city = $this->cityRepository->findById($cityId);
+        if ($city === null) {
+            return;
+        }
+
+        $this->notifyNextJs($type, $placeSlug, null, $city->getSlug());
     }
 
     private function notifyNextJs(string $type, string $slug, ?string $categorySlug = null, ?string $citySlug = null): void

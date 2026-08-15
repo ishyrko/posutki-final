@@ -44,6 +44,60 @@ function catalogLandmarkPathForCitySlug(citySlug: string, landmarkSlug: string):
   return buildCatalogUrl({ propertyType: "apartment", landmark: landmarkSlug, city: citySlug });
 }
 
+function catalogCityDistrictPathForCitySlug(citySlug: string, districtSlug: string): string {
+  if (citySlug === MINSK_CITY_SLUG) {
+    return buildCatalogUrl({ propertyType: "apartment", cityDistrict: districtSlug });
+  }
+  if (REGION_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ region: citySlug, propertyType: "apartment", cityDistrict: districtSlug });
+  }
+  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ city: citySlug, propertyType: "apartment", cityDistrict: districtSlug });
+  }
+  return buildCatalogUrl({ propertyType: "apartment", cityDistrict: districtSlug, city: citySlug });
+}
+
+function catalogMicrodistrictPathForCitySlug(citySlug: string, microdistrictSlug: string): string {
+  if (citySlug === MINSK_CITY_SLUG) {
+    return buildCatalogUrl({ propertyType: "apartment", microdistrict: microdistrictSlug });
+  }
+  if (REGION_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ region: citySlug, propertyType: "apartment", microdistrict: microdistrictSlug });
+  }
+  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ city: citySlug, propertyType: "apartment", microdistrict: microdistrictSlug });
+  }
+  return buildCatalogUrl({ propertyType: "apartment", microdistrict: microdistrictSlug, city: citySlug });
+}
+
+function catalogResidentialComplexPathForCitySlug(citySlug: string, residentialComplexSlug: string): string {
+  if (citySlug === MINSK_CITY_SLUG) {
+    return buildCatalogUrl({ propertyType: "apartment", residentialComplex: residentialComplexSlug });
+  }
+  if (REGION_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ region: citySlug, propertyType: "apartment", residentialComplex: residentialComplexSlug });
+  }
+  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+    return buildCatalogUrl({ city: citySlug, propertyType: "apartment", residentialComplex: residentialComplexSlug });
+  }
+  return buildCatalogUrl({
+    propertyType: "apartment",
+    residentialComplex: residentialComplexSlug,
+    city: citySlug,
+  });
+}
+
+function revalidateCatalogPlaceSeo(
+  tagPrefix: "district-seo" | "microdistrict-seo" | "residential-complex-seo",
+  citySlug: string,
+  placeSlug: string,
+  catalogPath: string,
+) {
+  revalidateTag("place-seo", { expire: 0 });
+  revalidateTag(`${tagPrefix}-${citySlug}-${placeSlug}`, { expire: 0 });
+  revalidatePath(catalogPath, "page");
+}
+
 /** POST /revalidate — intentionally NOT under /api (Symfony nginx sends all /api/* to PHP). */
 export async function POST(request: Request) {
   const configuredSecret = process.env.REVALIDATION_SECRET;
@@ -113,6 +167,33 @@ export async function POST(request: Request) {
     const catalogPath = catalogLandmarkPathForCitySlug(citySlug, slug);
     revalidatePath(catalogPath, "page");
     return NextResponse.json({ revalidated: true, type: "landmark", slug, citySlug, path: catalogPath });
+  }
+
+  if (type === "city-district") {
+    if (!slug || !citySlug) {
+      return NextResponse.json({ error: "slug and citySlug are required for city-district" }, { status: 400 });
+    }
+    const catalogPath = catalogCityDistrictPathForCitySlug(citySlug, slug);
+    revalidateCatalogPlaceSeo("district-seo", citySlug, slug, catalogPath);
+    return NextResponse.json({ revalidated: true, type: "city-district", slug, citySlug, path: catalogPath });
+  }
+
+  if (type === "city-microdistrict") {
+    if (!slug || !citySlug) {
+      return NextResponse.json({ error: "slug and citySlug are required for city-microdistrict" }, { status: 400 });
+    }
+    const catalogPath = catalogMicrodistrictPathForCitySlug(citySlug, slug);
+    revalidateCatalogPlaceSeo("microdistrict-seo", citySlug, slug, catalogPath);
+    return NextResponse.json({ revalidated: true, type: "city-microdistrict", slug, citySlug, path: catalogPath });
+  }
+
+  if (type === "residential-complex") {
+    if (!slug || !citySlug) {
+      return NextResponse.json({ error: "slug and citySlug are required for residential-complex" }, { status: 400 });
+    }
+    const catalogPath = catalogResidentialComplexPathForCitySlug(citySlug, slug);
+    revalidateCatalogPlaceSeo("residential-complex-seo", citySlug, slug, catalogPath);
+    return NextResponse.json({ revalidated: true, type: "residential-complex", slug, citySlug, path: catalogPath });
   }
 
   return NextResponse.json({ error: "Invalid type" }, { status: 400 });
