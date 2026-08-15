@@ -71,6 +71,7 @@ class CityCrudController extends AbstractCrudController
     {
         if ($entityInstance instanceof City) {
             CatalogContentAdminFields::normalize($entityInstance, $this->catalogPlaceContentNormalizer);
+            CatalogContentAdminFields::refreshFaqReference($entityInstance);
         }
 
         parent::persistEntity($entityManager, $entityInstance);
@@ -80,6 +81,7 @@ class CityCrudController extends AbstractCrudController
     {
         if ($entityInstance instanceof City) {
             CatalogContentAdminFields::normalize($entityInstance, $this->catalogPlaceContentNormalizer);
+            CatalogContentAdminFields::refreshFaqReference($entityInstance);
         }
 
         parent::updateEntity($entityManager, $entityInstance);

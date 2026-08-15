@@ -18,6 +18,7 @@ final class CatalogContentAdminFields
         return $assets
             ->addJsFile('https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js')
             ->addJsFile('js/admin-article-tinymce.js')
+            ->addJsFile('js/admin-catalog-faq.js')
             ->addCssFile('css/admin-catalog-faq.css');
     }
 
@@ -67,5 +68,24 @@ final class CatalogContentAdminFields
     public static function normalize(object $entity, CatalogPlaceContentNormalizer $normalizer): void
     {
         $normalizer->normalizeEntity($entity);
+    }
+
+    public static function refreshFaqReference(object $entity): void
+    {
+        if (!method_exists($entity, 'getCatalogFaq') || !method_exists($entity, 'setCatalogFaq')) {
+            return;
+        }
+
+        /** @var callable $getFaq */
+        $getFaq = [$entity, 'getCatalogFaq'];
+        /** @var callable $setFaq */
+        $setFaq = [$entity, 'setCatalogFaq'];
+
+        $faq = $getFaq();
+        if (!is_array($faq)) {
+            return;
+        }
+
+        $setFaq(array_values($faq));
     }
 }

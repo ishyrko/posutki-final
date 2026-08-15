@@ -27,16 +27,18 @@ abstract class AbstractCatalogPlaceCrudController extends AbstractCrudController
         return CatalogContentAdminFields::configureAssets($assets);
     }
 
-    public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
-    {
-        $this->normalizeCatalogContent($entityInstance);
-        parent::persistEntity($entityManager, $entityInstance);
-    }
-
     public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
         $this->normalizeCatalogContent($entityInstance);
+        $this->refreshCatalogFaqReference($entityInstance);
         parent::updateEntity($entityManager, $entityInstance);
+    }
+
+    public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+        $this->normalizeCatalogContent($entityInstance);
+        $this->refreshCatalogFaqReference($entityInstance);
+        parent::persistEntity($entityManager, $entityInstance);
     }
 
     /**
@@ -62,5 +64,10 @@ abstract class AbstractCatalogPlaceCrudController extends AbstractCrudController
         }
 
         CatalogContentAdminFields::normalize($entity, $this->catalogPlaceContentNormalizer);
+    }
+
+    private function refreshCatalogFaqReference(object $entity): void
+    {
+        CatalogContentAdminFields::refreshFaqReference($entity);
     }
 }
