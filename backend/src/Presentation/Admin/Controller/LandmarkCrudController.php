@@ -8,6 +8,7 @@ use App\Application\Service\LandmarkContentPersistNormalizer;
 use App\Domain\Property\Entity\Landmark;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\LandmarkRepositoryInterface;
+use App\Domain\Property\Repository\PropertyLandmarkRepositoryInterface;
 use App\Infrastructure\Service\FileUploader;
 use App\Infrastructure\Service\SlugGenerator;
 use App\Infrastructure\Service\YandexForwardGeocoder;
@@ -36,6 +37,7 @@ final class LandmarkCrudController extends AbstractCrudController
         private readonly SlugGenerator $slugGenerator,
         private readonly LandmarkRepositoryInterface $landmarkRepository,
         private readonly CityRepositoryInterface $cityRepository,
+        private readonly PropertyLandmarkRepositoryInterface $propertyLandmarkRepository,
         private readonly FileUploader $fileUploader,
         private readonly YandexForwardGeocoder $forwardGeocoder,
     ) {
@@ -256,6 +258,11 @@ final class LandmarkCrudController extends AbstractCrudController
         }
 
         yield $guestTipsTextField;
+
+        yield IntegerField::new('nearbyApartmentCount', 'Квартир рядом')
+            ->onlyOnIndex()
+            ->setValue(0)
+            ->formatValue(fn ($value, Landmark $landmark): int => $this->propertyLandmarkRepository->countByLandmarkId($landmark->getId()));
 
         yield IntegerField::new('sortOrder', 'Порядок');
         yield BooleanField::new('isActive', 'Активна');

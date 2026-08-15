@@ -16,5 +16,7 @@ interface PropertyLandmarkRepositoryInterface
 
     public function deleteByPropertyId(int $propertyId): void;
 
+    public function countByLandmarkId(int $landmarkId): int;
+
     public function save(PropertyLandmark $propertyLandmark): void;
 }

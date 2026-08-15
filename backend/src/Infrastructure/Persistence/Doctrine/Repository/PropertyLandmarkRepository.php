@@ -50,6 +50,16 @@ class PropertyLandmarkRepository extends ServiceEntityRepository implements Prop
             ->execute();
     }
 
+    public function countByLandmarkId(int $landmarkId): int
+    {
+        return (int) $this->createQueryBuilder('pl')
+            ->select('COUNT(pl.propertyId)')
+            ->where('pl.landmarkId = :landmarkId')
+            ->setParameter('landmarkId', $landmarkId)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function save(PropertyLandmark $propertyLandmark): void
     {
         $this->getEntityManager()->persist($propertyLandmark);
