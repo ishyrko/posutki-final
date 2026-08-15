@@ -12,12 +12,12 @@ use App\Infrastructure\Migration\Data\CityRoomCatalogSeoSeedData;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
-/** Refresh room landing SEO copy: no self-links, city names in FAQ. */
-final class Version20260815130500 extends AbstractMigration
+/** FAQ in DB was stale: Version20260815130500 ran before FAQ refresh was added. */
+final class Version20260815130600 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Refresh room landing SEO text and FAQ (drop self-links, add city names to FAQ)';
+        return 'Refresh city room catalog FAQ with city names from seed data';
     }
 
     public function up(Schema $schema): void
@@ -32,7 +32,7 @@ final class Version20260815130500 extends AbstractMigration
             );
             if ($cityId === false) {
                 throw new \RuntimeException(sprintf(
-                    'Cannot update room catalog SEO: missing city %s.',
+                    'Cannot update room catalog FAQ: missing city %s.',
                     $citySlug,
                 ));
             }
@@ -46,18 +46,16 @@ final class Version20260815130500 extends AbstractMigration
                     ));
                 }
 
-                $entry = $content[$citySlug][$bucket];
-                $seo = $normalizer->normalizeSeoText($entry['seo']);
                 $faqJson = json_encode(
-                    $normalizer->normalizeFaq($entry['faq']),
+                    $normalizer->normalizeFaq($content[$citySlug][$bucket]['faq']),
                     JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
                 );
 
                 $this->addSql(
                     'UPDATE city_room_catalog_contents
-                     SET catalog_seo_text = ?, catalog_faq = ?
+                     SET catalog_faq = ?
                      WHERE city_id = ? AND rooms_bucket = ?',
-                    [$seo, $faqJson, (int) $cityId, $bucket],
+                    [$faqJson, (int) $cityId, $bucket],
                 );
             }
         }
@@ -66,7 +64,7 @@ final class Version20260815130500 extends AbstractMigration
     public function down(Schema $schema): void
     {
         $this->throwIrreversibleMigrationException(
-            'Refreshed room landing SEO text and FAQ cannot be restored safely.',
+            'Previous room catalog FAQ cannot be restored safely.',
         );
     }
 
