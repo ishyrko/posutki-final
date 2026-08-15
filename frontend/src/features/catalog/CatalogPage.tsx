@@ -52,7 +52,6 @@ import {
 import CatalogLandmarkBanner from "@/features/catalog/CatalogLandmarkBanner";
 import CatalogLandmarkDetails from "@/features/catalog/CatalogLandmarkDetails";
 import CatalogCitySeoSection from "@/features/catalog/CatalogCitySeoSection";
-import CatalogRoomLinksSection from "@/features/catalog/CatalogRoomLinksSection";
 import { EmbeddedFaqSection } from "@/components/seo/EmbeddedFaqSection";
 import type { FaqItem } from "@/lib/json-ld/faq";
 import type { LandmarkListItem } from "@/features/landmarks/types";
@@ -69,15 +68,12 @@ import {
   buildPageTitle,
   buildRoomCatalogUrl,
   CITY_PREFIX_SLUGS,
-  isBaseCityApartmentCatalogPage,
   isDistrictCatalogContext,
   isLandmarkCatalogContext,
   isMetroCatalogContext,
   isMicrodistrictCatalogContext,
   isResidentialComplexCatalogContext,
   isNearMetroLandingPage,
-  isRoomCatalogPage,
-  isRoomSeoBucket,
   NEAR_METRO_CATALOG_INTRO,
   propertyUrlRegionSlug,
   REGION_SLUGS,
@@ -380,8 +376,6 @@ export default function CatalogPage({
   const guestsFromQuery = parseGuestsFromQuery(searchParams.get(GUESTS_QUERY_PARAM));
   const amenitiesFromQuery = searchParams.get(AMENITY_QUERY_PARAM);
   const roomPathNavigation = canUseRoomPathNavigation(parsed);
-  const showRoomLinksSection =
-    isBaseCityApartmentCatalogPage(parsed) || isRoomCatalogPage(parsed);
 
   useEffect(() => {
     if (!roomsFilterVisible) return;
@@ -1617,12 +1611,6 @@ export default function CatalogPage({
                   />
                 ) : null}
               </>
-            ) : null}
-            {currentPage === 1 && showRoomLinksSection ? (
-              <CatalogRoomLinksSection
-                parsed={parsed}
-                activeBucket={isRoomSeoBucket(parsed.roomsBucket) ? parsed.roomsBucket : undefined}
-              />
             ) : null}
           </div>
         </div>

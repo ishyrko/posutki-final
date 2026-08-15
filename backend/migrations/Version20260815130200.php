@@ -13,37 +13,29 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
- * Seed hidden catalog SEO text and FAQ for city × room-count landing pages.
+ * Drop four-room SEO rows and refresh 1–3 room seed copy without 4+ landing links.
  */
-final class Version20260815130100 extends AbstractMigration
+final class Version20260815130200 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Fill hidden catalog SEO text and FAQ for city room-count catalog pages (60 entries)';
+        return 'Remove room-bucket 4 SEO rows and refresh buckets 1–3 seed content';
     }
 
     public function up(Schema $schema): void
     {
+        $this->addSql('DELETE FROM city_room_catalog_contents WHERE rooms_bucket = 4');
+
         $content = CityRoomCatalogSeoSeedData::content();
-        $citySlugs = CatalogApartmentCitySlugs::ORDERED;
-        $missingSlugs = array_values(array_diff($citySlugs, array_keys($content)));
-
-        if ($missingSlugs !== []) {
-            throw new \RuntimeException(sprintf(
-                'CityRoomCatalogSeoSeedData is missing slugs: %s.',
-                implode(', ', $missingSlugs),
-            ));
-        }
-
         $normalizer = $this->catalogContentNormalizer();
 
-        foreach ($citySlugs as $citySlug) {
+        foreach (CatalogApartmentCitySlugs::ORDERED as $citySlug) {
             $cityId = $this->connection->fetchOne(
                 'SELECT id FROM cities WHERE slug = ?',
                 [$citySlug],
             );
             if ($cityId === false) {
-                throw new \RuntimeException(sprintf('Cannot seed room catalog SEO: missing city %s.', $citySlug));
+                continue;
             }
 
             for ($bucket = 1; $bucket <= 3; ++$bucket) {
@@ -63,12 +55,21 @@ final class Version20260815130100 extends AbstractMigration
                     JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
                 );
 
-                $this->addSql(
-                    'INSERT INTO city_room_catalog_contents
-                        (city_id, rooms_bucket, catalog_seo_text, catalog_faq, catalog_seo_visible, created_at)
-                     VALUES (?, ?, ?, ?, 0, NOW())',
-                    [(int) $cityId, $bucket, $seo, $faqJson],
+                $updated = $this->connection->executeStatement(
+                    'UPDATE city_room_catalog_contents
+                     SET catalog_seo_text = ?, catalog_faq = ?
+                     WHERE city_id = ? AND rooms_bucket = ?',
+                    [$seo, $faqJson, (int) $cityId, $bucket],
                 );
+
+                if ($updated === 0) {
+                    $this->connection->executeStatement(
+                        'INSERT INTO city_room_catalog_contents
+                            (city_id, rooms_bucket, catalog_seo_text, catalog_faq, catalog_seo_visible, created_at)
+                         VALUES (?, ?, ?, ?, 0, NOW())',
+                        [(int) $cityId, $bucket, $seo, $faqJson],
+                    );
+                }
             }
         }
     }
@@ -76,7 +77,7 @@ final class Version20260815130100 extends AbstractMigration
     public function down(Schema $schema): void
     {
         $this->throwIrreversibleMigrationException(
-            'Seeded room catalog SEO rows cannot be restored safely after deletion.',
+            'Removed room-bucket 4 SEO rows and refreshed seed copy cannot be restored.',
         );
     }
 
