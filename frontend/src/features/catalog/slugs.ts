@@ -13,22 +13,22 @@ export const REGION_SLUGS: ReadonlySet<string> = new Set([
   'mogilev',
 ] as const);
 
-/** Города с префиксом в URL (только квартиры): /pinsk/kvartiry/, /pinsk/kvartiry/62/ */
+/** Города с префиксом в URL (только квартиры): /pinsk/kvartiry/, /pinsk/kvartiry/62/ — по алфавиту названий. */
 export const CITY_PREFIX_SLUG_LIST = [
+  'baranovichi',
+  'bobruysk',
+  'volkovysk',
+  'zhlobin',
+  'zhodino',
+  'krichev',
+  'logoysk',
+  'molodechno',
+  'novolukoml',
+  'novopolotsk',
   'orsha',
+  'pinsk',
   'svetlogorsk',
   'smorgon',
-  'molodechno',
-  'zhodino',
-  'logoysk',
-  'baranovichi',
-  'pinsk',
-  'novopolotsk',
-  'bobruysk',
-  'zhlobin',
-  'volkovysk',
-  'novolukoml',
-  'krichev',
 ] as const;
 
 export const CITY_PREFIX_SLUGS: ReadonlySet<string> = new Set(CITY_PREFIX_SLUG_LIST);

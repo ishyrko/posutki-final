@@ -22,23 +22,23 @@ final readonly class FrontendUrlBuilder
     /** @var list<string> */
     private const URL_REGION_PREFIXES = ['brest', 'vitebsk', 'gomel', 'grodno', 'mogilev'];
 
-    /** Города с префиксом в URL (только квартиры) — в синхроне с frontend CITY_PREFIX_SLUG_LIST. */
+    /** Города с префиксом в URL (только квартиры) — в синхроне с frontend CITY_PREFIX_SLUG_LIST (по алфавиту названий). */
     /** @var list<string> */
     private const CITY_PREFIX_SLUGS = [
+        'baranovichi',
+        'bobruysk',
+        'volkovysk',
+        'zhlobin',
+        'zhodino',
+        'krichev',
+        'logoysk',
+        'molodechno',
+        'novolukoml',
+        'novopolotsk',
         'orsha',
+        'pinsk',
         'svetlogorsk',
         'smorgon',
-        'molodechno',
-        'zhodino',
-        'logoysk',
-        'baranovichi',
-        'pinsk',
-        'novopolotsk',
-        'bobruysk',
-        'zhlobin',
-        'volkovysk',
-        'novolukoml',
-        'krichev',
     ];
 
     public function __construct(

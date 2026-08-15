@@ -77,54 +77,9 @@ const cities: CityItem[] = [
     href: buildCatalogUrl({ city: "baranovichi", propertyType: "apartment" }),
   },
   {
-    name: "Пинск",
-    slug: "pinsk",
-    href: buildCatalogUrl({ city: "pinsk", propertyType: "apartment" }),
-  },
-  {
     name: "Бобруйск",
     slug: "bobruysk",
     href: buildCatalogUrl({ city: "bobruysk", propertyType: "apartment" }),
-  },
-  {
-    name: "Молодечно",
-    slug: "molodechno",
-    href: buildCatalogUrl({ city: "molodechno", propertyType: "apartment" }),
-  },
-  {
-    name: "Жодино",
-    slug: "zhodino",
-    href: buildCatalogUrl({ city: "zhodino", propertyType: "apartment" }),
-  },
-  {
-    name: "Логойск",
-    slug: "logoysk",
-    href: buildCatalogUrl({ city: "logoysk", propertyType: "apartment" }),
-  },
-  {
-    name: "Орша",
-    slug: "orsha",
-    href: buildCatalogUrl({ city: "orsha", propertyType: "apartment" }),
-  },
-  {
-    name: "Новополоцк",
-    slug: "novopolotsk",
-    href: buildCatalogUrl({ city: "novopolotsk", propertyType: "apartment" }),
-  },
-  {
-    name: "Светлогорск",
-    slug: "svetlogorsk",
-    href: buildCatalogUrl({ city: "svetlogorsk", propertyType: "apartment" }),
-  },
-  {
-    name: "Жлобин",
-    slug: "zhlobin",
-    href: buildCatalogUrl({ city: "zhlobin", propertyType: "apartment" }),
-  },
-  {
-    name: "Сморгонь",
-    slug: "smorgon",
-    href: buildCatalogUrl({ city: "smorgon", propertyType: "apartment" }),
   },
   {
     name: "Волковыск",
@@ -132,14 +87,59 @@ const cities: CityItem[] = [
     href: buildCatalogUrl({ city: "volkovysk", propertyType: "apartment" }),
   },
   {
-    name: "Новолукомль",
-    slug: "novolukoml",
-    href: buildCatalogUrl({ city: "novolukoml", propertyType: "apartment" }),
+    name: "Жлобин",
+    slug: "zhlobin",
+    href: buildCatalogUrl({ city: "zhlobin", propertyType: "apartment" }),
+  },
+  {
+    name: "Жодино",
+    slug: "zhodino",
+    href: buildCatalogUrl({ city: "zhodino", propertyType: "apartment" }),
   },
   {
     name: "Кричев",
     slug: "krichev",
     href: buildCatalogUrl({ city: "krichev", propertyType: "apartment" }),
+  },
+  {
+    name: "Логойск",
+    slug: "logoysk",
+    href: buildCatalogUrl({ city: "logoysk", propertyType: "apartment" }),
+  },
+  {
+    name: "Молодечно",
+    slug: "molodechno",
+    href: buildCatalogUrl({ city: "molodechno", propertyType: "apartment" }),
+  },
+  {
+    name: "Новолукомль",
+    slug: "novolukoml",
+    href: buildCatalogUrl({ city: "novolukoml", propertyType: "apartment" }),
+  },
+  {
+    name: "Новополоцк",
+    slug: "novopolotsk",
+    href: buildCatalogUrl({ city: "novopolotsk", propertyType: "apartment" }),
+  },
+  {
+    name: "Орша",
+    slug: "orsha",
+    href: buildCatalogUrl({ city: "orsha", propertyType: "apartment" }),
+  },
+  {
+    name: "Пинск",
+    slug: "pinsk",
+    href: buildCatalogUrl({ city: "pinsk", propertyType: "apartment" }),
+  },
+  {
+    name: "Светлогорск",
+    slug: "svetlogorsk",
+    href: buildCatalogUrl({ city: "svetlogorsk", propertyType: "apartment" }),
+  },
+  {
+    name: "Сморгонь",
+    slug: "smorgon",
+    href: buildCatalogUrl({ city: "smorgon", propertyType: "apartment" }),
   },
 ];
 

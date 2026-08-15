@@ -6,7 +6,8 @@ namespace App\Domain\Property\Service;
 
 /**
  * Slugs городов с посуточным каталогом квартир — в синхроне с frontend
- * CATALOG_APARTMENT_LOCATION / HOME_CITY_FILTERS.
+ * CITY_PREFIX_SLUG_LIST / HOME_CITY_FILTERS.
+ * Областные центры — фиксированный порядок; мелкие города — по алфавиту названий.
  */
 final class CatalogApartmentCitySlugs
 {
@@ -19,19 +20,19 @@ final class CatalogApartmentCitySlugs
         'gomel',
         'mogilev',
         'baranovichi',
-        'pinsk',
         'bobruysk',
-        'molodechno',
+        'volkovysk',
+        'zhlobin',
         'zhodino',
+        'krichev',
         'logoysk',
-        'orsha',
+        'molodechno',
+        'novolukoml',
         'novopolotsk',
+        'orsha',
+        'pinsk',
         'svetlogorsk',
         'smorgon',
-        'zhlobin',
-        'volkovysk',
-        'novolukoml',
-        'krichev',
     ];
 
     public static function supportsSlug(string $slug): bool

@@ -11,22 +11,22 @@ final class GetHomeCityApartmentCountsHandler
 {
     private const MINSK_REGION_SLUG = 'minsk';
 
-    /** @var list<string> */
+    /** @var list<string> — по алфавиту названий, в синхроне с frontend CITY_PREFIX_SLUG_LIST. */
     private const APARTMENT_CITY_PREFIX_SLUGS = [
+        'baranovichi',
+        'bobruysk',
+        'volkovysk',
+        'zhlobin',
+        'zhodino',
+        'krichev',
+        'logoysk',
+        'molodechno',
+        'novolukoml',
+        'novopolotsk',
         'orsha',
+        'pinsk',
         'svetlogorsk',
         'smorgon',
-        'molodechno',
-        'zhodino',
-        'logoysk',
-        'baranovichi',
-        'pinsk',
-        'novopolotsk',
-        'bobruysk',
-        'zhlobin',
-        'volkovysk',
-        'novolukoml',
-        'krichev',
     ];
 
     /** @var list<array{slug: string, regionSlug?: string, citySlug?: string}> */
@@ -38,19 +38,19 @@ final class GetHomeCityApartmentCountsHandler
         ['slug' => 'gomel', 'regionSlug' => 'gomel'],
         ['slug' => 'mogilev', 'regionSlug' => 'mogilev'],
         ['slug' => 'baranovichi', 'citySlug' => 'baranovichi'],
-        ['slug' => 'pinsk', 'citySlug' => 'pinsk'],
         ['slug' => 'bobruysk', 'citySlug' => 'bobruysk'],
-        ['slug' => 'molodechno', 'citySlug' => 'molodechno'],
+        ['slug' => 'volkovysk', 'citySlug' => 'volkovysk'],
+        ['slug' => 'zhlobin', 'citySlug' => 'zhlobin'],
         ['slug' => 'zhodino', 'citySlug' => 'zhodino'],
+        ['slug' => 'krichev', 'citySlug' => 'krichev'],
         ['slug' => 'logoysk', 'citySlug' => 'logoysk'],
-        ['slug' => 'orsha', 'citySlug' => 'orsha'],
+        ['slug' => 'molodechno', 'citySlug' => 'molodechno'],
+        ['slug' => 'novolukoml', 'citySlug' => 'novolukoml'],
         ['slug' => 'novopolotsk', 'citySlug' => 'novopolotsk'],
+        ['slug' => 'orsha', 'citySlug' => 'orsha'],
+        ['slug' => 'pinsk', 'citySlug' => 'pinsk'],
         ['slug' => 'svetlogorsk', 'citySlug' => 'svetlogorsk'],
         ['slug' => 'smorgon', 'citySlug' => 'smorgon'],
-        ['slug' => 'zhlobin', 'citySlug' => 'zhlobin'],
-        ['slug' => 'volkovysk', 'citySlug' => 'volkovysk'],
-        ['slug' => 'novolukoml', 'citySlug' => 'novolukoml'],
-        ['slug' => 'krichev', 'citySlug' => 'krichev'],
     ];
 
     public function __construct(

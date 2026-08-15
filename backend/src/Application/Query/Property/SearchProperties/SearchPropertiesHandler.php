@@ -30,22 +30,22 @@ final class SearchPropertiesHandler
     private const METRO_EXCLUDED_REGION_SLUGS = ['brest', 'vitebsk', 'gomel', 'grodno', 'mogilev'];
 
     /** Города с отдельным URL-каталогом квартир — не показываются в региональном каталоге. */
-    /** @var list<string> */
+    /** @var list<string> — по алфавиту названий, в синхроне с frontend CITY_PREFIX_SLUG_LIST. */
     private const APARTMENT_CITY_PREFIX_SLUGS = [
+        'baranovichi',
+        'bobruysk',
+        'volkovysk',
+        'zhlobin',
+        'zhodino',
+        'krichev',
+        'logoysk',
+        'molodechno',
+        'novolukoml',
+        'novopolotsk',
         'orsha',
+        'pinsk',
         'svetlogorsk',
         'smorgon',
-        'molodechno',
-        'zhodino',
-        'logoysk',
-        'baranovichi',
-        'pinsk',
-        'novopolotsk',
-        'bobruysk',
-        'zhlobin',
-        'volkovysk',
-        'novolukoml',
-        'krichev',
     ];
 
     public function __construct(
