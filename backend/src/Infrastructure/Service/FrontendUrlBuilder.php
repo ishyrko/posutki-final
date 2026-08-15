@@ -29,6 +29,7 @@ final readonly class FrontendUrlBuilder
         'svetlogorsk',
         'smorgon',
         'molodechno',
+        'zhodino',
         'logoysk',
         'baranovichi',
         'pinsk',

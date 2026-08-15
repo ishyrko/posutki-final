@@ -92,6 +92,11 @@ const cities: CityItem[] = [
     href: buildCatalogUrl({ city: "molodechno", propertyType: "apartment" }),
   },
   {
+    name: "Жодино",
+    slug: "zhodino",
+    href: buildCatalogUrl({ city: "zhodino", propertyType: "apartment" }),
+  },
+  {
     name: "Логойск",
     slug: "logoysk",
     href: buildCatalogUrl({ city: "logoysk", propertyType: "apartment" }),

@@ -22,6 +22,7 @@ final class CatalogApartmentCitySlugs
         'pinsk',
         'bobruysk',
         'molodechno',
+        'zhodino',
         'logoysk',
         'orsha',
         'novopolotsk',

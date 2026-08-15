@@ -36,6 +36,7 @@ final class SearchPropertiesHandler
         'svetlogorsk',
         'smorgon',
         'molodechno',
+        'zhodino',
         'logoysk',
         'baranovichi',
         'pinsk',
