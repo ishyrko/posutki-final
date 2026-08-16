@@ -33,6 +33,7 @@ final readonly class FrontendUrlBuilder
         'krichev',
         'logoysk',
         'molodechno',
+        'nesvizh',
         'novolukoml',
         'novopolotsk',
         'orsha',

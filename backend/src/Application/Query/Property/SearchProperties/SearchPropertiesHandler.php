@@ -40,6 +40,7 @@ final class SearchPropertiesHandler
         'krichev',
         'logoysk',
         'molodechno',
+        'nesvizh',
         'novolukoml',
         'novopolotsk',
         'orsha',

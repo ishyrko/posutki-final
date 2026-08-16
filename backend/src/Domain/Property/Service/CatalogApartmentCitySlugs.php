@@ -27,6 +27,7 @@ final class CatalogApartmentCitySlugs
         'krichev',
         'logoysk',
         'molodechno',
+        'nesvizh',
         'novolukoml',
         'novopolotsk',
         'orsha',
