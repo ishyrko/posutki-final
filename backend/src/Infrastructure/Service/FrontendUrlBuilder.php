@@ -28,6 +28,7 @@ final readonly class FrontendUrlBuilder
         'baranovichi',
         'bobruysk',
         'volkovysk',
+        'glubokoe',
         'zhlobin',
         'zhodino',
         'krichev',

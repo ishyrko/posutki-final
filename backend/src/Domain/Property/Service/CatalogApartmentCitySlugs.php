@@ -22,6 +22,7 @@ final class CatalogApartmentCitySlugs
         'baranovichi',
         'bobruysk',
         'volkovysk',
+        'glubokoe',
         'zhlobin',
         'zhodino',
         'krichev',

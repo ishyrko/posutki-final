@@ -35,6 +35,7 @@ final class SearchPropertiesHandler
         'baranovichi',
         'bobruysk',
         'volkovysk',
+        'glubokoe',
         'zhlobin',
         'zhodino',
         'krichev',

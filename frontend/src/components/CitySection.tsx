@@ -87,6 +87,11 @@ const cities: CityItem[] = [
     href: buildCatalogUrl({ city: "volkovysk", propertyType: "apartment" }),
   },
   {
+    name: "Глубокое",
+    slug: "glubokoe",
+    href: buildCatalogUrl({ city: "glubokoe", propertyType: "apartment" }),
+  },
+  {
     name: "Жлобин",
     slug: "zhlobin",
     href: buildCatalogUrl({ city: "zhlobin", propertyType: "apartment" }),
