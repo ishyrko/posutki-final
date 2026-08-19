@@ -501,7 +501,6 @@ export default function CatalogPage({
       ? metroStations.find((station) => station.slug === parsed.metroStationSlug)
       : undefined;
 
-    if (parsed.dealType) f.dealType = parsed.dealType;
     if (parsed.cityDistrictSlug || parsed.microdistrictSlug || parsed.residentialComplexSlug) {
       f.citySlug = resolveCatalogCitySlug(parsed);
     } else if (parsed.landmarkSlug) {
@@ -550,7 +549,7 @@ export default function CatalogPage({
     else if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     return f;
-  }, [fetchAllForClientFilters, currentPage, parsed.dealType, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.microdistrictSlug, parsed.residentialComplexSlug, parsed.landmarkSlug, parsed.nearMetro, parsed.metroStationSlug, parsed.roomsBucket, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort, landmarkMaxDistanceKm]);
+  }, [fetchAllForClientFilters, currentPage, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.microdistrictSlug, parsed.residentialComplexSlug, parsed.landmarkSlug, parsed.nearMetro, parsed.metroStationSlug, parsed.roomsBucket, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort, landmarkMaxDistanceKm]);
 
   const navigateRoomSelection = (nextBuckets: RoomFilterBucket[]) => {
     const sorted = [...nextBuckets].sort(sortRoomBuckets);

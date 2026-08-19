@@ -46,7 +46,6 @@ export function PropertyFilters() {
     const applyFilters = () => {
         const params = new URLSearchParams(searchParams.toString());
         params.set('page', '1');
-        params.set('dealType', 'daily');
 
         if (type && type !== 'all') params.set('type', type);
         else params.delete('type');

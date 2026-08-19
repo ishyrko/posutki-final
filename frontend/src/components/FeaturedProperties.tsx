@@ -34,7 +34,6 @@ const FeaturedProperties = ({ regionSlug, featuredInitial }: FeaturedPropertiesP
   const featuredFilters = useMemo(
     () => ({
       regionSlug: effectiveRegionSlug,
-      dealType: "daily" as const,
       types: [...RESIDENTIAL_PROPERTY_TYPES],
       limit: 4,
       sortBy: "publishedAt" as const,

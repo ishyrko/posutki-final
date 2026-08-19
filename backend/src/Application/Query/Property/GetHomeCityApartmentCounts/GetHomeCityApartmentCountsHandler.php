@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Application\Query\Property\GetHomeCityApartmentCounts;
 
-use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 
 final class GetHomeCityApartmentCountsHandler
@@ -59,7 +58,6 @@ final class GetHomeCityApartmentCountsHandler
 
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
-        private readonly CityRepositoryInterface $cityRepository,
     ) {
     }
 
@@ -74,14 +72,9 @@ final class GetHomeCityApartmentCountsHandler
             $slug = $definition['slug'];
             $filters = [
                 'type' => 'apartment',
-                'dealType' => 'daily',
             ];
 
             if (isset($definition['citySlug'])) {
-                if ($this->cityRepository->findBySlug($definition['citySlug']) === null) {
-                    $counts[$slug] = 0;
-                    continue;
-                }
                 $filters['citySlug'] = $definition['citySlug'];
             } else {
                 $filters['regionSlug'] = $definition['regionSlug'];

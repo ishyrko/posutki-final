@@ -33,7 +33,6 @@ final class GetHomeRegionHouseCountsHandler
         foreach (self::HOME_REGION_FILTERS as $definition) {
             $counts[$definition['slug']] = $this->propertyRepository->count([
                 'type' => 'house',
-                'dealType' => 'daily',
                 'regionSlug' => $definition['regionSlug'],
             ]);
         }
