@@ -11,6 +11,8 @@ use Doctrine\Persistence\ManagerRegistry;
 
 class CityRepository extends ServiceEntityRepository implements CityRepositoryInterface
 {
+    private const LISTING_SUGGESTED_MINSK_SLUG = 'minsk';
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, City::class);
@@ -59,5 +61,51 @@ class CityRepository extends ServiceEntityRepository implements CityRepositoryIn
             ->orderBy('c.name', 'ASC')
             ->getQuery()
             ->getResult();
+    }
+
+    public function findListingSuggested(): array
+    {
+        /** @var list<City> $cities */
+        $cities = $this->createQueryBuilder('c')
+            ->leftJoin('c.regionDistrict', 'rd')->addSelect('rd')
+            ->leftJoin('rd.region', 'r')->addSelect('r')
+            ->where('c.isListingSuggested = :suggested')
+            ->setParameter('suggested', true)
+            ->getQuery()
+            ->getResult();
+
+        return self::sortListingSuggested($cities);
+    }
+
+    /**
+     * @param list<City> $cities
+     *
+     * @return list<City>
+     */
+    private static function sortListingSuggested(array $cities): array
+    {
+        usort($cities, static function (City $a, City $b): int {
+            $bucketCompare = self::listingSuggestedSortBucket($a) <=> self::listingSuggestedSortBucket($b);
+            if ($bucketCompare !== 0) {
+                return $bucketCompare;
+            }
+
+            return strcasecmp($a->getName(), $b->getName());
+        });
+
+        return $cities;
+    }
+
+    private static function listingSuggestedSortBucket(City $city): int
+    {
+        if ($city->getSlug() === self::LISTING_SUGGESTED_MINSK_SLUG) {
+            return 0;
+        }
+
+        if ($city->isMain()) {
+            return 1;
+        }
+
+        return 2;
     }
 }

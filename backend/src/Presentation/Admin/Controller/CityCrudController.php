@@ -18,6 +18,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
@@ -100,6 +101,9 @@ class CityCrudController extends AbstractCrudController
 
         yield AssociationField::new('regionDistrict', 'Район области');
 
+        yield BooleanField::new('isListingSuggested', 'Подсказка в форме квартиры')
+            ->setHelp('Город показывается в начале списка при добавлении квартиры (до результатов поиска).');
+
         yield NumberField::new('latitude', 'Широта')
             ->setNumDecimals(7)
             ->hideOnIndex();
@@ -120,6 +124,7 @@ class CityCrudController extends AbstractCrudController
     public function configureFilters(Filters $filters): Filters
     {
         return $filters
-            ->add('regionDistrict');
+            ->add('regionDistrict')
+            ->add('isListingSuggested');
     }
 }

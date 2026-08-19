@@ -63,6 +63,8 @@ abstract class ApiTestCase extends WebTestCase
         string $slug = 'minsk',
         string $shortName = 'г. Минск',
         ?RegionDistrict $regionDistrict = null,
+        bool $isListingSuggested = false,
+        bool $isMain = true,
     ): City {
         $city = new City();
         $this->setPrivate($city, 'name', $name);
@@ -72,7 +74,8 @@ abstract class ApiTestCase extends WebTestCase
         $this->setPrivate($city, 'latitude', '53.9000000');
         $this->setPrivate($city, 'longitude', '27.5667000');
         $this->setPrivate($city, 'externalId', null);
-        $this->setPrivate($city, 'isMain', true);
+        $this->setPrivate($city, 'isMain', $isMain);
+        $this->setPrivate($city, 'isListingSuggested', $isListingSuggested);
         $this->setPrivate($city, 'regionDistrict', $regionDistrict);
 
         $this->entityManager()->persist($city);

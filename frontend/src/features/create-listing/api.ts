@@ -1,8 +1,5 @@
 import api from '@/lib/api';
 import { isAxiosError } from 'axios';
-import { CITY_PREFIX_SLUG_LIST } from '@/features/catalog/slugs';
-import { HEADER_CITY_SLUGS } from '@/lib/region-header';
-import { sortListingFormCities } from './city-autocomplete';
 import {
     City,
     CitySearchResult,
@@ -71,26 +68,9 @@ export const getCityBySlug = async (slug: string): Promise<CitySearchResult | nu
 };
 
 /** Дополнительные города в подсказках при добавлении квартиры (не каталог). */
-const LISTING_FORM_EXTRA_CITY_SLUGS = [
-    'borisov',
-    'slonim',
-    'lida',
-    'mozyr',
-    'polotsk',
-    'rechitsa',
-    'soligorsk',
-    'ostrovets',
-] as const;
-
-const SUGGESTED_CITY_SLUGS = [
-    ...HEADER_CITY_SLUGS,
-    ...CITY_PREFIX_SLUG_LIST,
-    ...LISTING_FORM_EXTRA_CITY_SLUGS,
-];
-
 export const getHomePageCities = async (): Promise<CitySearchResult[]> => {
-    const results = await Promise.all(SUGGESTED_CITY_SLUGS.map((slug) => getCityBySlug(slug)));
-    return sortListingFormCities(results.filter((city): city is CitySearchResult => city !== null));
+    const response = await api.get<{ data: CitySearchResult[] }>('/address/cities/suggested');
+    return response.data?.data ?? [];
 };
 
 export const getRegions = async (): Promise<Region[]> => {

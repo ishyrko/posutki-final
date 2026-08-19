@@ -20,4 +20,7 @@ interface CityRepositoryInterface
 
     /** @return City[] */
     public function findAllOrderedByName(): array;
+
+    /** @return list<City> */
+    public function findListingSuggested(): array;
 }
