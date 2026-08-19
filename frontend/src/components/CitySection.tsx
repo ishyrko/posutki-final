@@ -8,170 +8,79 @@ import {
   Castle,
   Factory,
   Landmark,
+  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { buildCatalogUrl } from "@/features/catalog/slugs";
+import {
+  fetchApartmentCatalogCities,
+  type ApartmentCatalogCity,
+} from "@/features/home/apartment-catalog-cities";
 import {
   fetchHomeCityApartmentCounts,
   formatApartmentCount,
 } from "@/features/home/city-apartment-counts";
 
-type CityIcon = typeof Building2;
-
-type CityItem = {
-  name: string;
-  slug: string;
-  href: string;
-  /** Минск и областные центры — полная карточка с иконкой. */
-  featured?: boolean;
-  icon?: CityIcon;
+const FEATURED_CITY_ICONS: Record<string, LucideIcon> = {
+  minsk: Building2,
+  brest: Landmark,
+  vitebsk: Waves,
+  grodno: Castle,
+  gomel: Factory,
+  mogilev: TreePine,
 };
 
-const cities: CityItem[] = [
-  /** Минск — без префикса региона в URL, как в каталоге. */
-  {
-    name: "Минск",
-    slug: "minsk",
-    featured: true,
-    icon: Building2,
-    href: buildCatalogUrl({ propertyType: "apartment" }),
-  },
-  {
-    name: "Брест",
-    slug: "brest",
-    featured: true,
-    icon: Landmark,
-    href: buildCatalogUrl({ region: "brest", propertyType: "apartment" }),
-  },
-  {
-    name: "Витебск",
-    slug: "vitebsk",
-    featured: true,
-    icon: Waves,
-    href: buildCatalogUrl({ region: "vitebsk", propertyType: "apartment" }),
-  },
-  {
-    name: "Гродно",
-    slug: "grodno",
-    featured: true,
-    icon: Castle,
-    href: buildCatalogUrl({ region: "grodno", propertyType: "apartment" }),
-  },
-  {
-    name: "Гомель",
-    slug: "gomel",
-    featured: true,
-    icon: Factory,
-    href: buildCatalogUrl({ region: "gomel", propertyType: "apartment" }),
-  },
-  {
-    name: "Могилёв",
-    slug: "mogilev",
-    featured: true,
-    icon: TreePine,
-    href: buildCatalogUrl({ region: "mogilev", propertyType: "apartment" }),
-  },
-  {
-    name: "Барановичи",
-    slug: "baranovichi",
-    href: buildCatalogUrl({ city: "baranovichi", propertyType: "apartment" }),
-  },
-  {
-    name: "Бобруйск",
-    slug: "bobruysk",
-    href: buildCatalogUrl({ city: "bobruysk", propertyType: "apartment" }),
-  },
-  {
-    name: "Волковыск",
-    slug: "volkovysk",
-    href: buildCatalogUrl({ city: "volkovysk", propertyType: "apartment" }),
-  },
-  {
-    name: "Глубокое",
-    slug: "glubokoe",
-    href: buildCatalogUrl({ city: "glubokoe", propertyType: "apartment" }),
-  },
-  {
-    name: "Жлобин",
-    slug: "zhlobin",
-    href: buildCatalogUrl({ city: "zhlobin", propertyType: "apartment" }),
-  },
-  {
-    name: "Жодино",
-    slug: "zhodino",
-    href: buildCatalogUrl({ city: "zhodino", propertyType: "apartment" }),
-  },
-  {
-    name: "Кричев",
-    slug: "krichev",
-    href: buildCatalogUrl({ city: "krichev", propertyType: "apartment" }),
-  },
-  {
-    name: "Логойск",
-    slug: "logoysk",
-    href: buildCatalogUrl({ city: "logoysk", propertyType: "apartment" }),
-  },
-  {
-    name: "Молодечно",
-    slug: "molodechno",
-    href: buildCatalogUrl({ city: "molodechno", propertyType: "apartment" }),
-  },
-  {
-    name: "Несвиж",
-    slug: "nesvizh",
-    href: buildCatalogUrl({ city: "nesvizh", propertyType: "apartment" }),
-  },
-  {
-    name: "Новолукомль",
-    slug: "novolukoml",
-    href: buildCatalogUrl({ city: "novolukoml", propertyType: "apartment" }),
-  },
-  {
-    name: "Новополоцк",
-    slug: "novopolotsk",
-    href: buildCatalogUrl({ city: "novopolotsk", propertyType: "apartment" }),
-  },
-  {
-    name: "Орша",
-    slug: "orsha",
-    href: buildCatalogUrl({ city: "orsha", propertyType: "apartment" }),
-  },
-  {
-    name: "Пинск",
-    slug: "pinsk",
-    href: buildCatalogUrl({ city: "pinsk", propertyType: "apartment" }),
-  },
-  {
-    name: "Светлогорск",
-    slug: "svetlogorsk",
-    href: buildCatalogUrl({ city: "svetlogorsk", propertyType: "apartment" }),
-  },
-  {
-    name: "Сморгонь",
-    slug: "smorgon",
-    href: buildCatalogUrl({ city: "smorgon", propertyType: "apartment" }),
-  },
-];
+const buildCityHref = (city: ApartmentCatalogCity): string => {
+  if (city.slug === "minsk") {
+    return buildCatalogUrl({ propertyType: "apartment" });
+  }
+
+  if (city.isMain) {
+    return buildCatalogUrl({ region: city.slug, propertyType: "apartment" });
+  }
+
+  return buildCatalogUrl({ city: city.slug, propertyType: "apartment" });
+};
 
 interface CitySectionProps {
+  apartmentCatalogCities?: ApartmentCatalogCity[];
   apartmentCountsBySlug?: Record<string, number>;
 }
 
-const CitySection = ({ apartmentCountsBySlug }: CitySectionProps) => {
+const CitySection = ({ apartmentCatalogCities, apartmentCountsBySlug }: CitySectionProps) => {
+  const [clientCities, setClientCities] = useState<ApartmentCatalogCity[] | null>(null);
   const [clientCounts, setClientCounts] = useState<Record<string, number> | null>(null);
 
+  const cities = clientCities ?? apartmentCatalogCities ?? [];
   const counts = useMemo(
     () => ({ ...apartmentCountsBySlug, ...clientCounts }),
     [apartmentCountsBySlug, clientCounts],
   );
 
-  const needsClientFetch = useMemo(
+  const needsClientCities = cities.length === 0;
+  const needsClientCounts = useMemo(
     () => cities.some((city) => counts[city.slug] == null),
-    [counts],
+    [cities, counts],
   );
 
   useEffect(() => {
-    if (!needsClientFetch) return;
+    if (!needsClientCities) return;
+
+    let cancelled = false;
+
+    fetchApartmentCatalogCities().then((fetched) => {
+      if (!cancelled && fetched.length > 0) {
+        setClientCities(fetched);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [needsClientCities]);
+
+  useEffect(() => {
+    if (!needsClientCounts) return;
 
     let cancelled = false;
 
@@ -184,7 +93,11 @@ const CitySection = ({ apartmentCountsBySlug }: CitySectionProps) => {
     return () => {
       cancelled = true;
     };
-  }, [needsClientFetch]);
+  }, [needsClientCounts]);
+
+  if (cities.length === 0) {
+    return null;
+  }
 
   return (
     <section className="bg-surface pt-12 pb-6 md:pt-14 md:pb-5 lg:pt-16 lg:pb-6">
@@ -198,13 +111,13 @@ const CitySection = ({ apartmentCountsBySlug }: CitySectionProps) => {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {cities.map((city) => {
-            const Icon = city.icon;
-            const featured = Boolean(city.featured && Icon);
+            const Icon = city.isMain ? FEATURED_CITY_ICONS[city.slug] : undefined;
+            const featured = Boolean(city.isMain && Icon);
 
             return (
               <Link
                 key={city.slug}
-                href={city.href}
+                href={buildCityHref(city)}
                 className={
                   featured
                     ? "group flex flex-col items-center gap-3 p-6 rounded-xl bg-card shadow-card hover:shadow-card-hover transition-all duration-200 hover:-translate-y-1"

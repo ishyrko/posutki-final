@@ -6,7 +6,6 @@ namespace App\Presentation\Admin\Controller;
 
 use App\Application\Service\CatalogPlaceContentNormalizer;
 use App\Domain\Property\Entity\City;
-use App\Domain\Property\Service\CatalogApartmentCitySlugs;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
@@ -54,13 +53,10 @@ class CityCrudController extends AbstractCrudController
 
         $qb->resetDQLPart('orderBy');
 
-        $priorityExpr = CatalogApartmentCitySlugs::priorityOrderDql($rootAlias);
-        $qb->addSelect(sprintf('%s AS HIDDEN catalogCityPriority', $priorityExpr));
-        $qb->addSelect(sprintf('%s.name AS HIDDEN catalogCityName', $rootAlias));
-
         return $qb
-            ->addOrderBy('catalogCityPriority', 'ASC')
-            ->addOrderBy('catalogCityName', 'ASC');
+            ->addOrderBy(sprintf('%s.isApartmentCatalog', $rootAlias), 'DESC')
+            ->addOrderBy(sprintf('%s.isMain', $rootAlias), 'DESC')
+            ->addOrderBy(sprintf('%s.name', $rootAlias), 'ASC');
     }
 
     public function configureAssets(Assets $assets): Assets
@@ -104,6 +100,9 @@ class CityCrudController extends AbstractCrudController
         yield BooleanField::new('isListingSuggested', 'Подсказка в форме квартиры')
             ->setHelp('Город показывается в начале списка при добавлении квартиры (до результатов поиска).');
 
+        yield BooleanField::new('isApartmentCatalog', 'Каталог квартир / главная')
+            ->setHelp('Город в посуточном каталоге квартир и в блоке городов на главной.');
+
         yield NumberField::new('latitude', 'Широта')
             ->setNumDecimals(7)
             ->hideOnIndex();
@@ -125,6 +124,7 @@ class CityCrudController extends AbstractCrudController
     {
         return $filters
             ->add('regionDistrict')
-            ->add('isListingSuggested');
+            ->add('isListingSuggested')
+            ->add('isApartmentCatalog');
     }
 }

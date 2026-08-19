@@ -63,11 +63,11 @@ import {
   formatPropertyPrices,
   DEFAULT_EXCHANGE_RATES_FALLBACK,
 } from "@/features/properties/price-display";
+import { isCityPrefixSlug } from "@/features/catalog/apartment-catalog-slug-store";
 import {
   buildCatalogUrl,
   buildPageTitle,
   buildRoomCatalogUrl,
-  CITY_PREFIX_SLUGS,
   isDistrictCatalogContext,
   isLandmarkCatalogContext,
   isMetroCatalogContext,
@@ -913,7 +913,7 @@ export default function CatalogPage({
         <Select
           value="all"
           onValueChange={(value) => {
-            const isCityPrefix = CITY_PREFIX_SLUGS.has(catalogCitySlug);
+            const isCityPrefix = isCityPrefixSlug(catalogCitySlug);
             const url = buildCatalogUrl({
               region:
                 !isCityPrefix && (parsed.regionSlug || REGION_SLUGS.has(catalogCitySlug))
@@ -952,7 +952,7 @@ export default function CatalogPage({
         <Select
           value="all"
           onValueChange={(value) => {
-            const isCityPrefix = CITY_PREFIX_SLUGS.has(catalogCitySlug);
+            const isCityPrefix = isCityPrefixSlug(catalogCitySlug);
             const baseParams = {
               region:
                 !isCityPrefix && (parsed.regionSlug || REGION_SLUGS.has(catalogCitySlug))
@@ -1025,7 +1025,7 @@ export default function CatalogPage({
         <Select
           value="all"
           onValueChange={(value) => {
-            const isCityPrefix = CITY_PREFIX_SLUGS.has(catalogCitySlug);
+            const isCityPrefix = isCityPrefixSlug(catalogCitySlug);
             const url = buildCatalogUrl({
               region:
                 !isCityPrefix && (parsed.regionSlug || REGION_SLUGS.has(catalogCitySlug))

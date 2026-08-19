@@ -23,4 +23,7 @@ interface CityRepositoryInterface
 
     /** @return list<City> */
     public function findListingSuggested(): array;
+
+    /** @return list<City> */
+    public function findApartmentCatalog(): array;
 }

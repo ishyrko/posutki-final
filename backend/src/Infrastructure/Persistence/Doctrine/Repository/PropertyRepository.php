@@ -605,6 +605,72 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
+    public function countApartmentsGroupedByCitySlugs(array $citySlugs): array
+    {
+        if ($citySlugs === []) {
+            return [];
+        }
+
+        /** @var list<array{slug: string, cnt: string|int}> $rows */
+        $rows = $this->createQueryBuilder('p')
+            ->select('c.slug AS slug', 'COUNT(p.id) AS cnt')
+            ->innerJoin(City::class, 'c', 'WITH', 'c.id = p.cityId')
+            ->where('p.status = :status')
+            ->andWhere('p.type = :type')
+            ->andWhere('c.slug IN (:citySlugs)')
+            ->setParameter('status', 'published')
+            ->setParameter('type', PropertyType::Apartment->value)
+            ->setParameter('citySlugs', array_values($citySlugs), ArrayParameterType::STRING)
+            ->groupBy('c.slug')
+            ->getQuery()
+            ->getResult();
+
+        $counts = array_fill_keys($citySlugs, 0);
+        foreach ($rows as $row) {
+            $counts[$row['slug']] = (int) $row['cnt'];
+        }
+
+        return $counts;
+    }
+
+    public function countApartmentsGroupedByRegionSlugsExcludingCitySlugs(
+        array $regionSlugs,
+        array $excludeCitySlugs,
+    ): array {
+        if ($regionSlugs === []) {
+            return [];
+        }
+
+        $qb = $this->createQueryBuilder('p')
+            ->select('r.slug AS slug', 'COUNT(p.id) AS cnt')
+            ->innerJoin(City::class, 'c', 'WITH', 'c.id = p.cityId')
+            ->innerJoin('c.regionDistrict', 'rd')
+            ->innerJoin('rd.region', 'r')
+            ->where('p.status = :status')
+            ->andWhere('p.type = :type')
+            ->andWhere('r.slug IN (:regionSlugs)')
+            ->setParameter('status', 'published')
+            ->setParameter('type', PropertyType::Apartment->value)
+            ->setParameter('regionSlugs', array_values($regionSlugs), ArrayParameterType::STRING);
+
+        if ($excludeCitySlugs !== []) {
+            $qb->andWhere('c.slug NOT IN (:excludeCitySlugs)')
+                ->setParameter('excludeCitySlugs', array_values($excludeCitySlugs), ArrayParameterType::STRING);
+        }
+
+        /** @var list<array{slug: string, cnt: string|int}> $rows */
+        $rows = $qb->groupBy('r.slug')
+            ->getQuery()
+            ->getResult();
+
+        $counts = array_fill_keys($regionSlugs, 0);
+        foreach ($rows as $row) {
+            $counts[$row['slug']] = (int) $row['cnt'];
+        }
+
+        return $counts;
+    }
+
     public function delete(Property $property): void
     {
         $this->getEntityManager()->remove($property);

@@ -65,6 +65,7 @@ abstract class ApiTestCase extends WebTestCase
         ?RegionDistrict $regionDistrict = null,
         bool $isListingSuggested = false,
         bool $isMain = true,
+        bool $isApartmentCatalog = false,
     ): City {
         $city = new City();
         $this->setPrivate($city, 'name', $name);
@@ -76,6 +77,7 @@ abstract class ApiTestCase extends WebTestCase
         $this->setPrivate($city, 'externalId', null);
         $this->setPrivate($city, 'isMain', $isMain);
         $this->setPrivate($city, 'isListingSuggested', $isListingSuggested);
+        $this->setPrivate($city, 'isApartmentCatalog', $isApartmentCatalog);
         $this->setPrivate($city, 'regionDistrict', $regionDistrict);
 
         $this->entityManager()->persist($city);

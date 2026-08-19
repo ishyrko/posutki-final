@@ -77,6 +77,36 @@ class CityRepository extends ServiceEntityRepository implements CityRepositoryIn
         return self::sortListingSuggested($cities);
     }
 
+    public function findApartmentCatalog(): array
+    {
+        /** @var list<City> $cities */
+        $cities = $this->createQueryBuilder('c')
+            ->where('c.isApartmentCatalog = :catalog')
+            ->setParameter('catalog', true)
+            ->getQuery()
+            ->getResult();
+
+        return self::sortCatalogCities(self::dedupeBySlug($cities));
+    }
+
+    /**
+     * @param list<City> $cities
+     *
+     * @return list<City>
+     */
+    private static function dedupeBySlug(array $cities): array
+    {
+        $bySlug = [];
+        foreach ($cities as $city) {
+            $slug = $city->getSlug();
+            if (!isset($bySlug[$slug])) {
+                $bySlug[$slug] = $city;
+            }
+        }
+
+        return array_values($bySlug);
+    }
+
     /**
      * @param list<City> $cities
      *
@@ -84,8 +114,20 @@ class CityRepository extends ServiceEntityRepository implements CityRepositoryIn
      */
     private static function sortListingSuggested(array $cities): array
     {
+        return self::sortCatalogCities($cities);
+    }
+
+    /**
+     * Минск → областные центры (A–Z) → остальные (A–Z).
+     *
+     * @param list<City> $cities
+     *
+     * @return list<City>
+     */
+    private static function sortCatalogCities(array $cities): array
+    {
         usort($cities, static function (City $a, City $b): int {
-            $bucketCompare = self::listingSuggestedSortBucket($a) <=> self::listingSuggestedSortBucket($b);
+            $bucketCompare = self::catalogCitySortBucket($a) <=> self::catalogCitySortBucket($b);
             if ($bucketCompare !== 0) {
                 return $bucketCompare;
             }
@@ -96,7 +138,7 @@ class CityRepository extends ServiceEntityRepository implements CityRepositoryIn
         return $cities;
     }
 
-    private static function listingSuggestedSortBucket(City $city): int
+    private static function catalogCitySortBucket(City $city): int
     {
         if ($city->getSlug() === self::LISTING_SUGGESTED_MINSK_SLUG) {
             return 0;

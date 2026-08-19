@@ -6,6 +6,7 @@ namespace App\Infrastructure\Service;
 
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Domain\Property\Service\ApartmentCatalogCityRegistry;
 
 /**
  * Публичные маршруты Next.js — в синхроне с frontend/src/features/catalog/slugs.ts
@@ -22,30 +23,10 @@ final readonly class FrontendUrlBuilder
     /** @var list<string> */
     private const URL_REGION_PREFIXES = ['brest', 'vitebsk', 'gomel', 'grodno', 'mogilev'];
 
-    /** Города с префиксом в URL (только квартиры) — в синхроне с frontend CITY_PREFIX_SLUG_LIST (по алфавиту названий). */
-    /** @var list<string> */
-    private const CITY_PREFIX_SLUGS = [
-        'baranovichi',
-        'bobruysk',
-        'volkovysk',
-        'glubokoe',
-        'zhlobin',
-        'zhodino',
-        'krichev',
-        'logoysk',
-        'molodechno',
-        'nesvizh',
-        'novolukoml',
-        'novopolotsk',
-        'orsha',
-        'pinsk',
-        'svetlogorsk',
-        'smorgon',
-    ];
-
     public function __construct(
         private string $frontendBaseUrl,
         private CityRepositoryInterface $cityRepository,
+        private ApartmentCatalogCityRegistry $apartmentCatalogCityRegistry,
     ) {
     }
 
@@ -120,7 +101,7 @@ final readonly class FrontendUrlBuilder
     private function isCatalogUrlPrefix(string $slug): bool
     {
         return \in_array($slug, self::URL_REGION_PREFIXES, true)
-            || \in_array($slug, self::CITY_PREFIX_SLUGS, true);
+            || $this->apartmentCatalogCityRegistry->isPrefixSlug($slug);
     }
 
     /**
@@ -136,7 +117,7 @@ final readonly class FrontendUrlBuilder
 
         $citySlug = $city->getSlug();
 
-        if ($propertyType === 'apartment' && \in_array($citySlug, self::CITY_PREFIX_SLUGS, true)) {
+        if ($propertyType === 'apartment' && $this->apartmentCatalogCityRegistry->isPrefixSlug($citySlug)) {
             return $citySlug;
         }
 

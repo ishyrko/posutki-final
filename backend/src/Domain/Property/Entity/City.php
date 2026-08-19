@@ -46,6 +46,9 @@ class City
     #[ORM\Column(type: 'boolean', name: 'is_listing_suggested', options: ['default' => false])]
     private bool $isListingSuggested = false;
 
+    #[ORM\Column(type: 'boolean', name: 'is_apartment_catalog', options: ['default' => false])]
+    private bool $isApartmentCatalog = false;
+
     #[ORM\Column(type: 'text', nullable: true, name: 'catalog_seo_text')]
     private ?string $catalogSeoText = null;
 
@@ -114,6 +117,16 @@ class City
     public function setListingSuggested(bool $isListingSuggested): void
     {
         $this->isListingSuggested = $isListingSuggested;
+    }
+
+    public function isApartmentCatalog(): bool
+    {
+        return $this->isApartmentCatalog;
+    }
+
+    public function setApartmentCatalog(bool $isApartmentCatalog): void
+    {
+        $this->isApartmentCatalog = $isApartmentCatalog;
     }
 
     public function getCatalogSeoText(): ?string

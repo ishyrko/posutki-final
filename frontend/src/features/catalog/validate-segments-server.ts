@@ -1,10 +1,11 @@
 import { cache } from "react";
 import { fetchPublicApi, fetchPublicApiNullable } from "@/lib/server-api";
+import { ensureApartmentCatalogSlugsConfigured } from "@/lib/apartment-catalog-slugs-server";
+import { isCityPrefixSlug } from "@/features/catalog/apartment-catalog-slug-store";
 import {
   isPropertyId,
   parseSegments,
   validatePublicSegmentsStructure,
-  CITY_PREFIX_SLUGS,
   resolveCatalogCitySlug,
   type ParsedSegments,
 } from "@/features/catalog/slugs";
@@ -87,7 +88,7 @@ const getLandmarkBySlug = cache(async (citySlug: string, slug: string): Promise<
 });
 
 async function validateParsedCatalogLocation(parsed: ParsedSegments): Promise<boolean> {
-  if (parsed.citySlug && !CITY_PREFIX_SLUGS.has(parsed.citySlug)) {
+  if (parsed.citySlug && !isCityPrefixSlug(parsed.citySlug)) {
     const city = await getCityBySlug(parsed.citySlug);
     if (!city) return false;
   }
@@ -137,6 +138,8 @@ async function validateParsedCatalogLocation(parsed: ParsedSegments): Promise<bo
 
 /** Полная проверка сегментов для SSR: структура + город/метро/район в API. */
 export async function validatePublicSegments(segments: string[] = []): Promise<boolean> {
+  await ensureApartmentCatalogSlugsConfigured();
+
   if (!validatePublicSegmentsStructure(segments)) {
     return false;
   }

@@ -18,6 +18,7 @@ use App\Domain\Property\Repository\{
     LandmarkRepositoryInterface,
     PropertyLandmarkRepositoryInterface,
 };
+use App\Domain\Property\Service\ApartmentCatalogCityRegistry;
 use App\Domain\Property\Service\CitiesWithDistricts;
 use App\Domain\Shared\Exception\NotFoundException;
 use App\Infrastructure\Service\ExchangeRateService;
@@ -28,27 +29,6 @@ final class SearchPropertiesHandler
 
     /** @var list<string> */
     private const METRO_EXCLUDED_REGION_SLUGS = ['brest', 'vitebsk', 'gomel', 'grodno', 'mogilev'];
-
-    /** Города с отдельным URL-каталогом квартир — не показываются в региональном каталоге. */
-    /** @var list<string> — по алфавиту названий, в синхроне с frontend CITY_PREFIX_SLUG_LIST. */
-    private const APARTMENT_CITY_PREFIX_SLUGS = [
-        'baranovichi',
-        'bobruysk',
-        'volkovysk',
-        'glubokoe',
-        'zhlobin',
-        'zhodino',
-        'krichev',
-        'logoysk',
-        'molodechno',
-        'nesvizh',
-        'novolukoml',
-        'novopolotsk',
-        'orsha',
-        'pinsk',
-        'svetlogorsk',
-        'smorgon',
-    ];
 
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
@@ -63,6 +43,7 @@ final class SearchPropertiesHandler
         private readonly PropertyLandmarkRepositoryInterface $propertyLandmarkRepository,
         private readonly ExchangeRateService $exchangeRateService,
         private readonly PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
+        private readonly ApartmentCatalogCityRegistry $apartmentCatalogCityRegistry,
     ) {
     }
 
@@ -209,7 +190,7 @@ final class SearchPropertiesHandler
         }
 
         if ($this->shouldExcludeCityPrefixFromRegionSearch($query)) {
-            $filters['excludeCitySlugs'] = self::APARTMENT_CITY_PREFIX_SLUGS;
+            $filters['excludeCitySlugs'] = $this->apartmentCatalogCityRegistry->getPrefixSlugs();
         }
 
         $filters['sortBy'] = $query->sortBy;

@@ -69,6 +69,33 @@ class AddressController extends AbstractController
         ));
     }
 
+    #[Route('/cities/apartment-catalog', name: 'cities_apartment_catalog', methods: ['GET'])]
+    public function apartmentCatalogCities(): JsonResponse
+    {
+        $cities = $this->cityRepository->findApartmentCatalog();
+        $prefixSlugs = [];
+        $catalogSlugs = [];
+
+        foreach ($cities as $city) {
+            $catalogSlugs[] = $city->getSlug();
+            if (!$city->isMain()) {
+                $prefixSlugs[] = $city->getSlug();
+            }
+        }
+
+        return $this->json(ApiResponse::success([
+            'cities' => array_map(static fn($c) => [
+                'id' => $c->getId(),
+                'name' => $c->getName(),
+                'slug' => $c->getSlug(),
+                'shortName' => $c->getShortName(),
+                'isMain' => $c->isMain(),
+            ], $cities),
+            'prefixSlugs' => $prefixSlugs,
+            'catalogSlugs' => $catalogSlugs,
+        ]));
+    }
+
     #[Route('/cities/suggested', name: 'cities_suggested', methods: ['GET'])]
     public function suggestedCities(): JsonResponse
     {

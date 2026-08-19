@@ -45,6 +45,8 @@ import FeaturesSection from "@/components/FeaturesSection";
 import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { fetchFeaturedPropertiesForHome } from "@/lib/featured-properties-server";
 import { fetchCityApartmentCountsForHome } from "@/lib/city-apartment-counts-server";
+import { fetchApartmentCatalogCitiesForHome } from "@/lib/apartment-catalog-cities-server";
+import { ensureApartmentCatalogSlugsConfigured } from "@/lib/apartment-catalog-slugs-server";
 import { fetchCityCatalogContent } from "@/lib/city-catalog-seo-server";
 import {
   fetchDistrictCatalogSeo,
@@ -101,6 +103,8 @@ function redirectDeprecatedFourPlusRoomCatalog(segments: string[] | undefined): 
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  await ensureApartmentCatalogSlugsConfigured();
+
   const { segments } = await params;
 
   redirectDeprecatedFourPlusRoomCatalog(segments);
@@ -211,6 +215,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function SegmentsPage({ params, searchParams }: PageProps) {
+  await ensureApartmentCatalogSlugsConfigured();
+
   const { segments } = await params;
 
   redirectDeprecatedFourPlusRoomCatalog(segments);
@@ -258,9 +264,10 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
 
   if (!isCatalogRoute(parsed)) {
     const featuredRegionSlug = HEADER_REGION_MINSK_SLUG;
-    const [featuredInitial, articles, cityApartmentCounts, regionHouseCounts] = await Promise.all([
+    const [featuredInitial, articles, apartmentCatalogCities, cityApartmentCounts, regionHouseCounts] = await Promise.all([
       fetchFeaturedPropertiesForHome(featuredRegionSlug),
       fetchRecentArticlesForHome(),
+      fetchApartmentCatalogCitiesForHome(),
       fetchCityApartmentCountsForHome(),
       fetchRegionHouseCountsForHome(),
     ]);
@@ -277,6 +284,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
         <HomePage
           featuredInitial={featuredInitial ?? undefined}
           articles={articles}
+          apartmentCatalogCities={apartmentCatalogCities}
           cityApartmentCounts={cityApartmentCounts}
           regionHouseCounts={regionHouseCounts}
           features={<FeaturesSection />}

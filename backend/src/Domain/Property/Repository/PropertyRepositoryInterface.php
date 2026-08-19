@@ -102,4 +102,22 @@ interface PropertyRepositoryInterface
         ?\DateTimeImmutable $now = null,
         ?int $excludePropertyId = null,
     ): int;
+
+    /**
+     * @param list<string> $citySlugs
+     *
+     * @return array<string, int>
+     */
+    public function countApartmentsGroupedByCitySlugs(array $citySlugs): array;
+
+    /**
+     * @param list<string>         $regionSlugs
+     * @param list<string>         $excludeCitySlugs
+     *
+     * @return array<string, int>
+     */
+    public function countApartmentsGroupedByRegionSlugsExcludingCitySlugs(
+        array $regionSlugs,
+        array $excludeCitySlugs,
+    ): array;
 }

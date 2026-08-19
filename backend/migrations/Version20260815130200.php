@@ -7,13 +7,15 @@ namespace DoctrineMigrations;
 use App\Application\Service\ArticleHtmlNormalizer;
 use App\Application\Service\ArticleTextSanitizer;
 use App\Application\Service\CatalogPlaceContentNormalizer;
-use App\Domain\Property\Service\CatalogApartmentCitySlugs;
 use App\Infrastructure\Migration\Data\CityRoomCatalogSeoSeedData;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
  * Drop four-room SEO rows and refresh 1–3 room seed copy without 4+ landing links.
+ *
+ * @deprecated Историческая миграция — уже применена на всех окружениях, не изменять.
+ *             Список городов каталога теперь в cities.is_apartment_catalog (Version20260819120000).
  */
 final class Version20260815130200 extends AbstractMigration
 {
@@ -29,7 +31,7 @@ final class Version20260815130200 extends AbstractMigration
         $content = CityRoomCatalogSeoSeedData::content();
         $normalizer = $this->catalogContentNormalizer();
 
-        foreach (CatalogApartmentCitySlugs::ORDERED as $citySlug) {
+        foreach (array_keys($content) as $citySlug) {
             $cityId = $this->connection->fetchOne(
                 'SELECT id FROM cities WHERE slug = ?',
                 [$citySlug],

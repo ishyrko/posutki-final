@@ -1,8 +1,9 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
+import { ensureApartmentCatalogSlugsConfigured } from "@/lib/apartment-catalog-slugs-server";
+import { isCityPrefixSlug } from "@/features/catalog/apartment-catalog-slug-store";
 import {
   buildCatalogUrl,
-  CITY_PREFIX_SLUGS,
   MINSK_CITY_SLUG,
   REGION_SLUGS,
   type RoomBucket,
@@ -26,7 +27,7 @@ function catalogApartmentPathForCitySlug(citySlug: string): string {
   if (REGION_SLUGS.has(citySlug)) {
     return buildCatalogUrl({ region: citySlug, propertyType: "apartment" });
   }
-  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+  if (isCityPrefixSlug(citySlug)) {
     return buildCatalogUrl({ city: citySlug, propertyType: "apartment" });
   }
   return buildCatalogUrl({ propertyType: "apartment", city: citySlug });
@@ -39,7 +40,7 @@ function catalogLandmarkPathForCitySlug(citySlug: string, landmarkSlug: string):
   if (REGION_SLUGS.has(citySlug)) {
     return buildCatalogUrl({ region: citySlug, propertyType: "apartment", landmark: landmarkSlug });
   }
-  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+  if (isCityPrefixSlug(citySlug)) {
     return buildCatalogUrl({ city: citySlug, propertyType: "apartment", landmark: landmarkSlug });
   }
   return buildCatalogUrl({ propertyType: "apartment", landmark: landmarkSlug, city: citySlug });
@@ -52,7 +53,7 @@ function catalogCityDistrictPathForCitySlug(citySlug: string, districtSlug: stri
   if (REGION_SLUGS.has(citySlug)) {
     return buildCatalogUrl({ region: citySlug, propertyType: "apartment", cityDistrict: districtSlug });
   }
-  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+  if (isCityPrefixSlug(citySlug)) {
     return buildCatalogUrl({ city: citySlug, propertyType: "apartment", cityDistrict: districtSlug });
   }
   return buildCatalogUrl({ propertyType: "apartment", cityDistrict: districtSlug, city: citySlug });
@@ -65,7 +66,7 @@ function catalogMicrodistrictPathForCitySlug(citySlug: string, microdistrictSlug
   if (REGION_SLUGS.has(citySlug)) {
     return buildCatalogUrl({ region: citySlug, propertyType: "apartment", microdistrict: microdistrictSlug });
   }
-  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+  if (isCityPrefixSlug(citySlug)) {
     return buildCatalogUrl({ city: citySlug, propertyType: "apartment", microdistrict: microdistrictSlug });
   }
   return buildCatalogUrl({ propertyType: "apartment", microdistrict: microdistrictSlug, city: citySlug });
@@ -78,7 +79,7 @@ function catalogRoomPathForCitySlug(citySlug: string, roomsBucket: RoomBucket): 
   if (REGION_SLUGS.has(citySlug)) {
     return buildCatalogUrl({ region: citySlug, propertyType: "apartment", rooms: roomsBucket });
   }
-  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+  if (isCityPrefixSlug(citySlug)) {
     return buildCatalogUrl({ city: citySlug, propertyType: "apartment", rooms: roomsBucket });
   }
   return buildCatalogUrl({ propertyType: "apartment", city: citySlug, rooms: roomsBucket });
@@ -91,7 +92,7 @@ function catalogResidentialComplexPathForCitySlug(citySlug: string, residentialC
   if (REGION_SLUGS.has(citySlug)) {
     return buildCatalogUrl({ region: citySlug, propertyType: "apartment", residentialComplex: residentialComplexSlug });
   }
-  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+  if (isCityPrefixSlug(citySlug)) {
     return buildCatalogUrl({ city: citySlug, propertyType: "apartment", residentialComplex: residentialComplexSlug });
   }
   return buildCatalogUrl({
@@ -114,6 +115,8 @@ function revalidateCatalogPlaceSeo(
 
 /** POST /revalidate — intentionally NOT under /api (Symfony nginx sends all /api/* to PHP). */
 export async function POST(request: Request) {
+  await ensureApartmentCatalogSlugsConfigured();
+
   const configuredSecret = process.env.REVALIDATION_SECRET;
   if (!configuredSecret) {
     return NextResponse.json({ error: "REVALIDATION_SECRET is not configured" }, { status: 500 });

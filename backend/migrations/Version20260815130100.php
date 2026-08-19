@@ -7,13 +7,15 @@ namespace DoctrineMigrations;
 use App\Application\Service\ArticleHtmlNormalizer;
 use App\Application\Service\ArticleTextSanitizer;
 use App\Application\Service\CatalogPlaceContentNormalizer;
-use App\Domain\Property\Service\CatalogApartmentCitySlugs;
 use App\Infrastructure\Migration\Data\CityRoomCatalogSeoSeedData;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
  * Seed hidden catalog SEO text and FAQ for city × room-count landing pages.
+ *
+ * @deprecated Историческая миграция — уже применена на всех окружениях, не изменять.
+ *             Список городов каталога теперь в cities.is_apartment_catalog (Version20260819120000).
  */
 final class Version20260815130100 extends AbstractMigration
 {
@@ -25,15 +27,7 @@ final class Version20260815130100 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $content = CityRoomCatalogSeoSeedData::content();
-        $citySlugs = CatalogApartmentCitySlugs::ORDERED;
-        $missingSlugs = array_values(array_diff($citySlugs, array_keys($content)));
-
-        if ($missingSlugs !== []) {
-            throw new \RuntimeException(sprintf(
-                'CityRoomCatalogSeoSeedData is missing slugs: %s.',
-                implode(', ', $missingSlugs),
-            ));
-        }
+        $citySlugs = array_keys($content);
 
         $normalizer = $this->catalogContentNormalizer();
 

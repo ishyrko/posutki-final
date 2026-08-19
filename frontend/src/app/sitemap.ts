@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
 import { fetchPublicApi } from "@/lib/server-api";
 import { getSiteOrigin } from "@/lib/site-url";
+import { ensureApartmentCatalogSlugsConfigured } from "@/lib/apartment-catalog-slugs-server";
+import type { ApartmentCatalogSlugSets } from "@/features/catalog/apartment-catalog-slug-store";
 import {
-  CITY_PREFIX_SLUG_LIST,
   CITIES_WITH_DISTRICTS_SLUGS,
-  CATALOG_APARTMENT_CITY_SLUGS,
   PROPERTY_TYPE_SLUG_TO_VALUE,
   MINSK_CITY_SLUG,
   REGION_SLUGS,
@@ -86,7 +86,7 @@ function staticEntries(now: Date): Entry[] {
 }
 
 /** Landing URLs: property type × optional region. */
-function catalogEntries(now: Date): Entry[] {
+function catalogEntries(now: Date, slugSets: ApartmentCatalogSlugSets): Entry[] {
   const propertyTypes = Object.values(PROPERTY_TYPE_SLUG_TO_VALUE);
   const regions: Array<string | undefined> = [undefined, ...REGION_SLUGS];
 
@@ -98,7 +98,7 @@ function catalogEntries(now: Date): Entry[] {
     }
   }
 
-  for (const city of CITY_PREFIX_SLUG_LIST) {
+  for (const city of slugSets.prefixSlugs) {
     urls.add(buildCatalogUrl({ city, propertyType: "apartment" }));
   }
 
@@ -115,8 +115,8 @@ function catalogEntries(now: Date): Entry[] {
 }
 
 /** Room-count landing pages: city × 1–4 rooms (apartments only). */
-function roomCatalogEntries(now: Date): Entry[] {
-  const urls = CATALOG_APARTMENT_CITY_SLUGS.flatMap((citySlug) =>
+function roomCatalogEntries(now: Date, slugSets: ApartmentCatalogSlugSets): Entry[] {
+  const urls = getCatalogApartmentCitySlugListFromSets(slugSets).flatMap((citySlug) =>
     ROOM_BUCKET_VALUES.map((bucket) => buildRoomCatalogUrl(citySlug, bucket as RoomBucket)),
   );
 
@@ -128,7 +128,15 @@ function roomCatalogEntries(now: Date): Entry[] {
   }));
 }
 
-async function districtEntries(now: Date): Promise<Entry[]> {
+function getCatalogApartmentCitySlugListFromSets(slugSets: ApartmentCatalogSlugSets): readonly string[] {
+  return [...slugSets.catalogSlugs];
+}
+
+function catalogCitySlugsForPlaces(slugSets: ApartmentCatalogSlugSets): Set<string> {
+  return new Set<string>([MINSK_CITY_SLUG, ...REGION_SLUGS, ...slugSets.prefixSlugs]);
+}
+
+async function districtEntries(now: Date, slugSets: ApartmentCatalogSlugSets): Promise<Entry[]> {
   const entries: Entry[] = [];
 
   for (const citySlug of CITIES_WITH_DISTRICTS_SLUGS) {
@@ -138,9 +146,7 @@ async function districtEntries(now: Date): Promise<Entry[]> {
         { next: { revalidate: 3600, tags: [`city-districts-${citySlug}`] } },
       );
 
-      const isCityPrefix = CITY_PREFIX_SLUG_LIST.includes(
-        citySlug as (typeof CITY_PREFIX_SLUG_LIST)[number],
-      );
+      const isCityPrefix = slugSets.prefixSlugs.has(citySlug);
       const isRegion = REGION_SLUGS.has(citySlug);
 
       for (const district of districts) {
@@ -168,9 +174,9 @@ async function districtEntries(now: Date): Promise<Entry[]> {
   return entries;
 }
 
-async function landmarkEntries(now: Date): Promise<Entry[]> {
+async function landmarkEntries(now: Date, slugSets: ApartmentCatalogSlugSets): Promise<Entry[]> {
   const entries: Entry[] = [];
-  const citySlugs = new Set<string>([MINSK_CITY_SLUG, ...REGION_SLUGS, ...CITY_PREFIX_SLUG_LIST]);
+  const citySlugs = catalogCitySlugsForPlaces(slugSets);
 
   for (const citySlug of citySlugs) {
     try {
@@ -179,9 +185,7 @@ async function landmarkEntries(now: Date): Promise<Entry[]> {
         { next: { revalidate: 3600, tags: [`city-landmarks-${citySlug}`] } },
       );
 
-      const isCityPrefix = CITY_PREFIX_SLUG_LIST.includes(
-        citySlug as (typeof CITY_PREFIX_SLUG_LIST)[number],
-      );
+      const isCityPrefix = slugSets.prefixSlugs.has(citySlug);
       const isRegion = REGION_SLUGS.has(citySlug);
 
       for (const landmark of landmarks) {
@@ -209,9 +213,9 @@ async function landmarkEntries(now: Date): Promise<Entry[]> {
   return entries;
 }
 
-async function placeEntries(now: Date): Promise<Entry[]> {
+async function placeEntries(now: Date, slugSets: ApartmentCatalogSlugSets): Promise<Entry[]> {
   const entries: Entry[] = [];
-  const citySlugs = new Set<string>([MINSK_CITY_SLUG, ...REGION_SLUGS, ...CITY_PREFIX_SLUG_LIST]);
+  const citySlugs = catalogCitySlugsForPlaces(slugSets);
 
   for (const citySlug of citySlugs) {
     try {
@@ -220,9 +224,7 @@ async function placeEntries(now: Date): Promise<Entry[]> {
         { next: { revalidate: 3600, tags: [`city-places-${citySlug}`] } },
       );
 
-      const isCityPrefix = CITY_PREFIX_SLUG_LIST.includes(
-        citySlug as (typeof CITY_PREFIX_SLUG_LIST)[number],
-      );
+      const isCityPrefix = slugSets.prefixSlugs.has(citySlug);
       const isRegion = REGION_SLUGS.has(citySlug);
 
       for (const place of places) {
@@ -331,19 +333,20 @@ async function propertyEntries(now: Date): Promise<Entry[]> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const slugSets = await ensureApartmentCatalogSlugsConfigured();
 
   const [articles, properties, districts, landmarks, places] = await Promise.all([
     articleEntries(now),
     propertyEntries(now),
-    districtEntries(now),
-    landmarkEntries(now),
-    placeEntries(now),
+    districtEntries(now, slugSets),
+    landmarkEntries(now, slugSets),
+    placeEntries(now, slugSets),
   ]);
 
   return [
     ...staticEntries(now),
-    ...catalogEntries(now),
-    ...roomCatalogEntries(now),
+    ...catalogEntries(now, slugSets),
+    ...roomCatalogEntries(now, slugSets),
     ...districts,
     ...landmarks,
     ...places,

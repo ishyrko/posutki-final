@@ -3,6 +3,10 @@ import {
   regionNameToHeaderSlug,
   withRegionalCatalogHref,
 } from "@/lib/region-header";
+import {
+  isCatalogApartmentCitySlug,
+  isCityPrefixSlug,
+} from "@/features/catalog/apartment-catalog-slug-store";
 
 /** Regional path prefix (областные центры кроме Минска — в URL как первый сегмент). */
 export const REGION_SLUGS: ReadonlySet<string> = new Set([
@@ -12,28 +16,6 @@ export const REGION_SLUGS: ReadonlySet<string> = new Set([
   'grodno',
   'mogilev',
 ] as const);
-
-/** Города с префиксом в URL (только квартиры): /pinsk/kvartiry/, /pinsk/kvartiry/62/ — по алфавиту названий. */
-export const CITY_PREFIX_SLUG_LIST = [
-  'baranovichi',
-  'bobruysk',
-  'volkovysk',
-  'glubokoe',
-  'zhlobin',
-  'zhodino',
-  'krichev',
-  'logoysk',
-  'molodechno',
-  'nesvizh',
-  'novolukoml',
-  'novopolotsk',
-  'orsha',
-  'pinsk',
-  'svetlogorsk',
-  'smorgon',
-] as const;
-
-export const CITY_PREFIX_SLUGS: ReadonlySet<string> = new Set(CITY_PREFIX_SLUG_LIST);
 
 /** Города с внутригородскими районами (зеркало backend CitiesWithDistricts::SLUGS). */
 export const CITIES_WITH_DISTRICTS_SLUGS: ReadonlySet<string> = new Set([
@@ -92,15 +74,6 @@ export function isRoomSeoBucket(bucket: number | undefined): bucket is RoomBucke
 export function isDeprecatedFourPlusRoomCatalogPage(parsed: ParsedSegments): boolean {
   return parsed.roomsBucket === FOUR_PLUS_ROOM_BUCKET;
 }
-
-/** Города с посуточным каталогом квартир (зеркало backend CatalogApartmentCitySlugs). */
-export const CATALOG_APARTMENT_CITY_SLUGS: readonly string[] = [
-  MINSK_CITY_SLUG,
-  ...REGION_SLUGS,
-  ...CITY_PREFIX_SLUG_LIST,
-] as const;
-
-export const CATALOG_APARTMENT_CITY_SLUG_SET: ReadonlySet<string> = new Set(CATALOG_APARTMENT_CITY_SLUGS);
 
 const ROOM_PAGE_TITLE: Record<RoomBucket, string> = {
   1: 'Однокомнатные квартиры на сутки',
@@ -249,7 +222,7 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
   const regionSlug = REGION_SLUGS.has(segments[i] ?? '') ? segments[i++] : undefined;
 
   let prefixCitySlug: string | undefined;
-  if (!regionSlug && CITY_PREFIX_SLUGS.has(segments[i] ?? '')) {
+  if (!regionSlug && isCityPrefixSlug(segments[i] ?? '')) {
     prefixCitySlug = segments[i++];
   }
 
@@ -460,7 +433,7 @@ export function isValidRoomsCatalogSegments(parsed: ParsedSegments): boolean {
     return true;
   }
 
-  return CATALOG_APARTMENT_CITY_SLUG_SET.has(resolveCatalogCitySlug(parsed));
+  return isCatalogApartmentCitySlug(resolveCatalogCitySlug(parsed));
 }
 
 /** Достопримечательность в URL — только квартиры, без метро и района. */
@@ -515,7 +488,7 @@ export function buildRoomCatalogUrl(citySlug: string, roomsBucket: RoomBucket): 
   if (REGION_SLUGS.has(citySlug)) {
     return buildCatalogUrl({ region: citySlug, propertyType: 'apartment', rooms: roomsBucket });
   }
-  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+  if (isCityPrefixSlug(citySlug)) {
     return buildCatalogUrl({ city: citySlug, propertyType: 'apartment', rooms: roomsBucket });
   }
   return buildCatalogUrl({ propertyType: 'apartment', city: citySlug, rooms: roomsBucket });
@@ -547,7 +520,7 @@ export function resolveCatalogUrlParamsFromCitySlug(citySlug: string): Pick<
   if (REGION_SLUGS.has(citySlug)) {
     return { region: citySlug };
   }
-  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+  if (isCityPrefixSlug(citySlug)) {
     return { city: citySlug };
   }
   return { city: citySlug };
@@ -582,7 +555,7 @@ export function validateCatalogSegmentsStructure(segments: string[] = []): boole
 
   if (REGION_SLUGS.has(segments[i] ?? '')) {
     i++;
-  } else if (CITY_PREFIX_SLUGS.has(segments[i] ?? '')) {
+  } else if (isCityPrefixSlug(segments[i] ?? '')) {
     i++;
   }
 
@@ -781,7 +754,7 @@ export function buildSegmentsCanonicalPath(segments: string[]): string {
 export function buildCatalogUrl(params: BuildCatalogUrlParams = {}): string {
   const parts: string[] = [];
   const isCityPrefix =
-    params.city != null && CITY_PREFIX_SLUGS.has(params.city) && params.region == null;
+    params.city != null && isCityPrefixSlug(params.city) && params.region == null;
 
   if (isCityPrefix) {
     parts.push(params.city!);
@@ -823,7 +796,7 @@ export function buildCatalogUrl(params: BuildCatalogUrlParams = {}): string {
 
 /** Каталог квартир возле достопримечательности (как в sitemap). */
 export function buildLandmarkCatalogUrl(citySlug: string, landmarkSlug: string): string {
-  const isCityPrefix = CITY_PREFIX_SLUGS.has(citySlug);
+  const isCityPrefix = isCityPrefixSlug(citySlug);
   const isRegion = REGION_SLUGS.has(citySlug);
 
   return buildCatalogUrl({
@@ -845,7 +818,7 @@ export function propertyUrlRegionSlug(
   citySlug?: string,
   propertyType?: string,
 ): string | undefined {
-  if (propertyType === 'apartment' && citySlug && CITY_PREFIX_SLUGS.has(citySlug)) {
+  if (propertyType === 'apartment' && citySlug && isCityPrefixSlug(citySlug)) {
     return citySlug;
   }
 
@@ -869,7 +842,7 @@ export function buildCatalogUrlFromAddress(
   propertyType?: string,
 ): string {
   const slug = propertyUrlRegionSlug(regionName, citySlug, propertyType);
-  if (slug && CITY_PREFIX_SLUGS.has(slug)) {
+  if (slug && isCityPrefixSlug(slug)) {
     return buildCatalogUrl({ city: slug, propertyType });
   }
   if (slug && REGION_SLUGS.has(slug)) {
@@ -888,7 +861,7 @@ export function buildDistrictCatalogUrlFromAddress(
     return undefined;
   }
 
-  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+  if (isCityPrefixSlug(citySlug)) {
     return buildCatalogUrl({
       city: citySlug,
       propertyType: 'apartment',
@@ -930,7 +903,7 @@ function buildPlaceCatalogUrlFromAddress(
       ? { microdistrict: placeSlug }
       : { residentialComplex: placeSlug };
 
-  if (CITY_PREFIX_SLUGS.has(citySlug)) {
+  if (isCityPrefixSlug(citySlug)) {
     return buildCatalogUrl({
       city: citySlug,
       propertyType: 'apartment',

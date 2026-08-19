@@ -7,7 +7,6 @@ namespace App\Presentation\Admin\Controller;
 use App\Application\Service\CatalogPlaceContentNormalizer;
 use App\Domain\Property\Entity\CityRoomCatalogContent;
 use App\Domain\Property\Repository\CityRepositoryInterface;
-use App\Domain\Property\Service\CatalogApartmentCitySlugs;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
@@ -127,7 +126,7 @@ class CityRoomCatalogContentCrudController extends AbstractCrudController
             return (string) $cityId;
         }
 
-        $bucketHint = CatalogApartmentCitySlugs::supportsSlug($city->getSlug()) ? '' : ' (вне каталога)';
+        $bucketHint = $city->isApartmentCatalog() ? '' : ' (вне каталога)';
 
         return sprintf('%s (%s)%s', $city->getName(), $city->getSlug(), $bucketHint);
     }

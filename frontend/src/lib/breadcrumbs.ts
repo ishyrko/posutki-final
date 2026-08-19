@@ -1,9 +1,9 @@
+import { isCityPrefixSlug } from "@/features/catalog/apartment-catalog-slug-store";
 import {
   buildCatalogUrl,
   buildCatalogUrlFromAddress,
   buildPageTitle,
   buildRoomBreadcrumbLabel,
-  CITY_PREFIX_SLUGS,
   IMPLICIT_DEAL_TYPE,
   propertyUrlRegionSlug,
   REGION_SLUGS,
@@ -58,7 +58,7 @@ function hasCatalogFacets(parsed: ParsedSegments): boolean {
 
 function resolveBaseCatalogUrlParams(parsed: ParsedSegments) {
   const key = parsed.citySlug ?? parsed.regionSlug;
-  if (key && CITY_PREFIX_SLUGS.has(key)) {
+  if (key && isCityPrefixSlug(key)) {
     return { city: key, propertyType: parsed.propertyType };
   }
   if (parsed.regionSlug && REGION_SLUGS.has(parsed.regionSlug)) {
@@ -151,7 +151,7 @@ function buildParsedFromProperty(property: Property): ParsedSegments {
   return {
     dealType: IMPLICIT_DEAL_TYPE,
     propertyType: property.type,
-    citySlug: citySlug && CITY_PREFIX_SLUGS.has(citySlug) ? citySlug : undefined,
+    citySlug: citySlug && isCityPrefixSlug(citySlug) ? citySlug : undefined,
     regionSlug: regionSlug && REGION_SLUGS.has(regionSlug) ? regionSlug : undefined,
   };
 }

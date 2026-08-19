@@ -4,60 +4,14 @@ declare(strict_types=1);
 
 namespace App\Application\Query\Property\GetHomeCityApartmentCounts;
 
+use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 
 final class GetHomeCityApartmentCountsHandler
 {
-    private const MINSK_REGION_SLUG = 'minsk';
-
-    /** @var list<string> — по алфавиту названий, в синхроне с frontend CITY_PREFIX_SLUG_LIST. */
-    private const APARTMENT_CITY_PREFIX_SLUGS = [
-        'baranovichi',
-        'bobruysk',
-        'volkovysk',
-        'glubokoe',
-        'zhlobin',
-        'zhodino',
-        'krichev',
-        'logoysk',
-        'molodechno',
-        'nesvizh',
-        'novolukoml',
-        'novopolotsk',
-        'orsha',
-        'pinsk',
-        'svetlogorsk',
-        'smorgon',
-    ];
-
-    /** @var list<array{slug: string, regionSlug?: string, citySlug?: string}> */
-    private const HOME_CITY_FILTERS = [
-        ['slug' => self::MINSK_REGION_SLUG, 'regionSlug' => self::MINSK_REGION_SLUG],
-        ['slug' => 'brest', 'regionSlug' => 'brest'],
-        ['slug' => 'vitebsk', 'regionSlug' => 'vitebsk'],
-        ['slug' => 'grodno', 'regionSlug' => 'grodno'],
-        ['slug' => 'gomel', 'regionSlug' => 'gomel'],
-        ['slug' => 'mogilev', 'regionSlug' => 'mogilev'],
-        ['slug' => 'baranovichi', 'citySlug' => 'baranovichi'],
-        ['slug' => 'bobruysk', 'citySlug' => 'bobruysk'],
-        ['slug' => 'volkovysk', 'citySlug' => 'volkovysk'],
-        ['slug' => 'glubokoe', 'citySlug' => 'glubokoe'],
-        ['slug' => 'zhlobin', 'citySlug' => 'zhlobin'],
-        ['slug' => 'zhodino', 'citySlug' => 'zhodino'],
-        ['slug' => 'krichev', 'citySlug' => 'krichev'],
-        ['slug' => 'logoysk', 'citySlug' => 'logoysk'],
-        ['slug' => 'molodechno', 'citySlug' => 'molodechno'],
-        ['slug' => 'nesvizh', 'citySlug' => 'nesvizh'],
-        ['slug' => 'novolukoml', 'citySlug' => 'novolukoml'],
-        ['slug' => 'novopolotsk', 'citySlug' => 'novopolotsk'],
-        ['slug' => 'orsha', 'citySlug' => 'orsha'],
-        ['slug' => 'pinsk', 'citySlug' => 'pinsk'],
-        ['slug' => 'svetlogorsk', 'citySlug' => 'svetlogorsk'],
-        ['slug' => 'smorgon', 'citySlug' => 'smorgon'],
-    ];
-
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
+        private readonly CityRepositoryInterface $cityRepository,
     ) {
     }
 
@@ -66,22 +20,35 @@ final class GetHomeCityApartmentCountsHandler
      */
     public function __invoke(GetHomeCityApartmentCountsQuery $query): array
     {
-        $counts = [];
+        $catalogCities = $this->cityRepository->findApartmentCatalog();
+        if ($catalogCities === []) {
+            return [];
+        }
 
-        foreach (self::HOME_CITY_FILTERS as $definition) {
-            $slug = $definition['slug'];
-            $filters = [
-                'type' => 'apartment',
-            ];
+        $prefixSlugs = [];
+        $regionSlugs = [];
 
-            if (isset($definition['citySlug'])) {
-                $filters['citySlug'] = $definition['citySlug'];
-            } else {
-                $filters['regionSlug'] = $definition['regionSlug'];
-                $filters['excludeCitySlugs'] = self::APARTMENT_CITY_PREFIX_SLUGS;
+        foreach ($catalogCities as $city) {
+            if ($city->isMain()) {
+                $regionSlugs[] = $city->getSlug();
+                continue;
             }
 
-            $counts[$slug] = $this->propertyRepository->count($filters);
+            $prefixSlugs[] = $city->getSlug();
+        }
+
+        $regionalCounts = $this->propertyRepository->countApartmentsGroupedByRegionSlugsExcludingCitySlugs(
+            $regionSlugs,
+            $prefixSlugs,
+        );
+        $cityCounts = $this->propertyRepository->countApartmentsGroupedByCitySlugs($prefixSlugs);
+
+        $counts = [];
+        foreach ($catalogCities as $city) {
+            $slug = $city->getSlug();
+            $counts[$slug] = $city->isMain()
+                ? ($regionalCounts[$slug] ?? 0)
+                : ($cityCounts[$slug] ?? 0);
         }
 
         return $counts;
