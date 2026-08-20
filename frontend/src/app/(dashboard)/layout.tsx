@@ -1,3 +1,4 @@
+import { ApartmentCatalogSlugGate } from '@/components/ApartmentCatalogSlugGate';
 import { OwnerFeaturesProvider } from '@/features/properties/OwnerFeaturesProvider';
 import { fetchHasMyProperties } from '@/lib/my-properties-server';
 import DashboardLayoutClient from './DashboardLayoutClient';
@@ -13,8 +14,10 @@ export default async function DashboardLayout({
     const initialHasMyProperties = await fetchHasMyProperties();
 
     return (
-        <OwnerFeaturesProvider initialHasMyProperties={initialHasMyProperties}>
-            <DashboardLayoutClient>{children}</DashboardLayoutClient>
-        </OwnerFeaturesProvider>
+        <ApartmentCatalogSlugGate>
+            <OwnerFeaturesProvider initialHasMyProperties={initialHasMyProperties}>
+                <DashboardLayoutClient>{children}</DashboardLayoutClient>
+            </OwnerFeaturesProvider>
+        </ApartmentCatalogSlugGate>
     );
 }
