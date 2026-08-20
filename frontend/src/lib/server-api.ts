@@ -24,6 +24,21 @@ type FetchApiOptions = {
   };
 };
 
+/**
+ * Next 15+ SSG: explicit `cache: "no-store"` becomes a hanging promise until
+ * staticPageGenerationTimeout. Callers that pass `next.revalidate` / `tags`
+ * intend a cached fetch — do not default those to no-store.
+ */
+function resolveFetchCache(options: FetchApiOptions): RequestCache {
+  if (options.cache) {
+    return options.cache;
+  }
+  if (options.next?.revalidate != null || (options.next?.tags?.length ?? 0) > 0) {
+    return "force-cache";
+  }
+  return "no-store";
+}
+
 function resolveApiBaseUrl(): string {
   const internalBase = process.env.BACKEND_INTERNAL_URL;
   if (internalBase) {
@@ -46,7 +61,7 @@ async function fetchFromApi<T>(
   const baseUrl = resolveApiBaseUrl();
 
   const response = await fetch(`${baseUrl}${path}`, {
-    cache: options.cache ?? "no-store",
+    cache: resolveFetchCache(options),
     next: options.next,
     headers,
   });
@@ -75,7 +90,7 @@ export async function fetchPublicApiPaginated<T>(
   const baseUrl = resolveApiBaseUrl();
 
   const response = await fetch(`${baseUrl}${path}`, {
-    cache: options.cache ?? "no-store",
+    cache: resolveFetchCache(options),
     next: options.next,
   });
 
@@ -105,7 +120,7 @@ export async function fetchPublicApiNullable<T>(
   const baseUrl = resolveApiBaseUrl();
 
   const response = await fetch(`${baseUrl}${path}`, {
-    cache: options.cache ?? "no-store",
+    cache: resolveFetchCache(options),
     next: options.next,
   });
 

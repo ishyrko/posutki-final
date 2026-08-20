@@ -18,6 +18,13 @@ const nextConfig = {
   },
   trailingSlash: true,
   poweredByHeader: false,
+  /**
+   * Default 60s. Override: STATIC_PAGE_GENERATION_TIMEOUT=180
+   */
+  staticPageGenerationTimeout: Math.max(
+    60,
+    Number.parseInt(process.env.STATIC_PAGE_GENERATION_TIMEOUT ?? "60", 10) || 60,
+  ),
   /** Shared hosting (cPanel, ≤3 GB RAM): single worker, lower webpack peak RSS. */
   ...(lowMemoryBuild
     ? {

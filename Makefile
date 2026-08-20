@@ -8,11 +8,14 @@ test-unit:
 
 test-functional:
 	docker compose exec php sh -lc "cd /var/www/backend && composer test:functional"
-.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo backend-seed-demo-landmarks admin-user frontend-install frontend-dev frontend-build frontend-build-cpanel frontend-build-cpanel-prod frontend-build-cpanel-verify-3g frontend-export-cpanel frontend-cpanel-clean clean exchange-rates sync-metro-proximity sync-landmark-proximity backfill-city-districts sync-calendars reshuffle-placement notify-vip-expiring prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-sync-landmark-proximity prod-backfill-city-districts prod-sync-calendars prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
+.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo backend-seed-demo-landmarks admin-user frontend-install frontend-dev frontend-build frontend-build-cpanel frontend-build-cpanel-prod frontend-build-cpanel-prod-local frontend-build-cpanel-verify-3g frontend-export-cpanel frontend-cpanel-clean clean exchange-rates sync-metro-proximity sync-landmark-proximity backfill-city-districts sync-calendars reshuffle-placement notify-vip-expiring prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-sync-landmark-proximity prod-backfill-city-districts prod-sync-calendars prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
 
 PROD_ENV_FILE = .env.prod
 CPANEL_ENV_FILE = .env.cpanel
-CPANEL_COMPOSE  = docker compose -f docker-compose.yml -f docker-compose.cpanel-build.yml
+# .next на хосте (заливка на cPanel); без mem_limit.
+CPANEL_HOST_COMPOSE = docker compose -f docker-compose.yml -f docker-compose.cpanel-host-next.yml
+# То же + mem_limit=3g (smoke-тест low-memory / LVE).
+CPANEL_COMPOSE  = $(CPANEL_HOST_COMPOSE) -f docker-compose.cpanel-build.yml
 -include $(CPANEL_ENV_FILE)
 PROD_COMPOSE  = docker compose -f docker-compose.prod.yml --env-file $(PROD_ENV_FILE)
 PROD_EDGE_ARGS = $(shell set -a; . ./$(PROD_ENV_FILE) 2>/dev/null; set +a; [ "$${PROD_ENABLE_EDGE_PROXY:-0}" = "1" ] && echo --profile edge)
@@ -160,7 +163,7 @@ endef
 
 frontend-cpanel-clean: ## Remove .next before cPanel build (stops dev container if running)
 	docker-compose stop frontend 2>/dev/null || true
-	$(CPANEL_COMPOSE) run --rm --no-deps frontend sh -c 'mkdir -p /app/.next && find /app/.next -mindepth 1 -delete'
+	$(CPANEL_HOST_COMPOSE) run --rm --no-deps frontend sh -c 'mkdir -p /app/.next && find /app/.next -mindepth 1 -delete'
 
 # Если собирали через `docker-compose exec` (dev-контейнер), .next в volume — скопировать на хост.
 frontend-export-cpanel: ## Copy .next from Docker volume to frontend/.next-cpanel
@@ -176,19 +179,33 @@ frontend-build-cpanel: ## Build frontend with low-memory profile (run in Docker,
 	$(call verify_cpanel_next,.next)
 	@echo "${GREEN}Build output: frontend/.next ($(shell du -sh frontend/.next 2>/dev/null | cut -f1))${RESET}"
 
-frontend-build-cpanel-prod: ## Prod NEXT_PUBLIC_* for cPanel (vars in .env.cpanel or VAR=value on CLI)
+# Общие env для prod-сборки под cPanel (.env.cpanel или VAR=value на CLI).
+define cpanel_prod_build_env
+	-e NODE_ENV=production \
+	-e BACKEND_INTERNAL_URL="$(BACKEND_INTERNAL_URL)" \
+	-e NEXT_PUBLIC_API_URL="$(NEXT_PUBLIC_API_URL)" \
+	-e NEXT_PUBLIC_SITE_URL="$(NEXT_PUBLIC_SITE_URL)" \
+	-e NEXT_PUBLIC_GOOGLE_CLIENT_ID="$(NEXT_PUBLIC_GOOGLE_CLIENT_ID)" \
+	-e NEXT_PUBLIC_RECAPTCHA_SITE_KEY="$(NEXT_PUBLIC_RECAPTCHA_SITE_KEY)" \
+	-e NEXT_PUBLIC_YANDEX_MAPS_API_KEY="$(NEXT_PUBLIC_YANDEX_MAPS_API_KEY)" \
+	-e NEXT_PUBLIC_YANDEX_GEOCODER_API_KEY="$(NEXT_PUBLIC_YANDEX_GEOCODER_API_KEY)" \
+	-e REVALIDATION_SECRET="$(REVALIDATION_SECRET)"
+endef
+
+frontend-build-cpanel-prod-local: ## Prod build for cPanel upload (full RAM, npm run build; vars in .env.cpanel)
+	@test -n "$(NEXT_PUBLIC_API_URL)" || (echo "Set NEXT_PUBLIC_API_URL (e.g. in $(CPANEL_ENV_FILE))" && exit 1)
+	$(MAKE) frontend-cpanel-clean
+	$(CPANEL_HOST_COMPOSE) run --rm --no-deps \
+		$(cpanel_prod_build_env) \
+		frontend npm run build
+	$(call verify_cpanel_next,.next)
+	@echo "${GREEN}Build output: frontend/.next ($(shell du -sh frontend/.next 2>/dev/null | cut -f1))${RESET}"
+
+frontend-build-cpanel-prod: ## Prod build under mem_limit=3g + low-memory (LVE smoke; vars in .env.cpanel)
 	@test -n "$(NEXT_PUBLIC_API_URL)" || (echo "Set NEXT_PUBLIC_API_URL (e.g. in $(CPANEL_ENV_FILE))" && exit 1)
 	$(MAKE) frontend-cpanel-clean
 	$(CPANEL_COMPOSE) run --rm --no-deps \
-		-e NODE_ENV=production \
-		-e BACKEND_INTERNAL_URL="$(BACKEND_INTERNAL_URL)" \
-		-e NEXT_PUBLIC_API_URL="$(NEXT_PUBLIC_API_URL)" \
-		-e NEXT_PUBLIC_SITE_URL="$(NEXT_PUBLIC_SITE_URL)" \
-		-e NEXT_PUBLIC_GOOGLE_CLIENT_ID="$(NEXT_PUBLIC_GOOGLE_CLIENT_ID)" \
-		-e NEXT_PUBLIC_RECAPTCHA_SITE_KEY="$(NEXT_PUBLIC_RECAPTCHA_SITE_KEY)" \
-		-e NEXT_PUBLIC_YANDEX_MAPS_API_KEY="$(NEXT_PUBLIC_YANDEX_MAPS_API_KEY)" \
-		-e NEXT_PUBLIC_YANDEX_GEOCODER_API_KEY="$(NEXT_PUBLIC_YANDEX_GEOCODER_API_KEY)" \
-		-e REVALIDATION_SECRET="$(REVALIDATION_SECRET)" \
+		$(cpanel_prod_build_env) \
 		frontend npm run build:low-memory
 	$(call verify_cpanel_next,.next)
 	@echo "${GREEN}Build output: frontend/.next ($(shell du -sh frontend/.next 2>/dev/null | cut -f1))${RESET}"
