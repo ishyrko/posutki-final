@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Presentation\Admin\Controller;
 
+use App\Domain\Property\Entity\Property;
+use App\Domain\Property\Enum\PropertyType;
+use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Service\PhoneNumberNormalizer;
 use Doctrine\ORM\EntityManagerInterface;
@@ -17,9 +20,26 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ImageField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 
 class UserCrudController extends AbstractCrudController
 {
+    /** @var array<string, string> */
+    private const PROPERTY_STATUS_LABELS = [
+        'draft' => 'Черновик',
+        'moderation' => 'Ожидает модерации',
+        'rejected' => 'Отклонено',
+        'published' => 'Опубликовано',
+        'archived' => 'В архиве',
+        'deleted' => 'Удалено',
+    ];
+
+    public function __construct(
+        private readonly PropertyRepositoryInterface $propertyRepository,
+        private readonly AdminUrlGenerator $adminUrlGenerator,
+    ) {
+    }
+
     public static function getEntityFqcn(): string
     {
         return User::class;
@@ -31,13 +51,15 @@ class UserCrudController extends AbstractCrudController
             ->setEntityLabelInSingular('Пользователь')
             ->setEntityLabelInPlural('Пользователи')
             ->setDefaultSort(['createdAt' => 'DESC'])
-            ->setSearchFields(['email', 'firstName', 'lastName', 'phone']);
+            ->setSearchFields(['email', 'firstName', 'lastName', 'phone'])
+            ->setDefaultRowAction(Action::DETAIL);
     }
 
     public function configureActions(Actions $actions): Actions
     {
         return $actions
-            ->disable(Action::NEW, Action::DELETE);
+            ->disable(Action::NEW, Action::DELETE)
+            ->add(Crud::PAGE_INDEX, Action::DETAIL);
     }
 
     public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
@@ -91,6 +113,77 @@ class UserCrudController extends AbstractCrudController
         yield DateTimeField::new('updatedAt', 'Обновлен')
             ->hideOnForm()
             ->hideOnIndex();
+
+        yield TextField::new('adminPropertiesList', 'Объявления')
+            ->onlyOnDetail()
+            ->setValue('')
+            ->formatValue(fn ($value, User $user): string => $this->formatPropertiesList($user))
+            ->renderAsHtml();
+    }
+
+    private function formatPropertiesList(User $user): string
+    {
+        $ownerId = (string) $user->getId()->getValue();
+        $totalCount = $this->propertyRepository->countByOwner($ownerId);
+        if ($totalCount === 0) {
+            return '<p class="text-muted mb-0">У пользователя нет объявлений.</p>';
+        }
+
+        $properties = $this->propertyRepository->findByOwner($ownerId, 1, $totalCount);
+        $rows = array_map(
+            fn (Property $property): string => $this->formatPropertyRow($property),
+            $properties,
+        );
+
+        return sprintf(
+            '<div class="table-responsive"><table class="table table-striped table-sm align-middle mb-0"><thead><tr><th>ID</th><th>Заголовок</th><th>Тип</th><th>Статус</th><th>Цена</th><th>Создано</th></tr></thead><tbody>%s</tbody></table></div>',
+            implode('', $rows),
+        );
+    }
+
+    private function formatPropertyRow(Property $property): string
+    {
+        $propertyId = (string) $property->getId()->getValue();
+        $title = htmlspecialchars($property->getTitle(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $url = htmlspecialchars($this->buildPropertyEditUrl($propertyId), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $type = htmlspecialchars($this->formatPropertyType($property->getType()), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $status = htmlspecialchars(
+            self::PROPERTY_STATUS_LABELS[$property->getStatus()] ?? $property->getStatus(),
+            ENT_QUOTES | ENT_SUBSTITUTE,
+            'UTF-8',
+        );
+        $price = htmlspecialchars($property->getPrice()->getFormatted(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $createdAt = htmlspecialchars(
+            $property->getCreatedAt()->format('d.m.Y H:i'),
+            ENT_QUOTES | ENT_SUBSTITUTE,
+            'UTF-8',
+        );
+
+        return sprintf(
+            '<tr><td><a href="%s">#%s</a></td><td><a href="%s">%s</a></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>',
+            $url,
+            $propertyId,
+            $url,
+            $title,
+            $type,
+            $status,
+            $price,
+            $createdAt,
+        );
+    }
+
+    private function buildPropertyEditUrl(string $propertyId): string
+    {
+        return $this->adminUrlGenerator
+            ->setController(PropertyCrudController::class)
+            ->setAction(Action::EDIT)
+            ->setEntityId($propertyId)
+            ->generateUrl();
+    }
+
+    private function formatPropertyType(string $type): string
+    {
+        return PropertyType::tryFrom($type)?->label() ?? $type;
     }
 
     public function configureFilters(Filters $filters): Filters

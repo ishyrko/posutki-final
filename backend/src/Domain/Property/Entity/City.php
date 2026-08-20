@@ -114,7 +114,7 @@ class City
         return $this->isListingSuggested;
     }
 
-    public function setListingSuggested(bool $isListingSuggested): void
+    public function setIsListingSuggested(bool $isListingSuggested): void
     {
         $this->isListingSuggested = $isListingSuggested;
     }
@@ -124,7 +124,7 @@ class City
         return $this->isApartmentCatalog;
     }
 
-    public function setApartmentCatalog(bool $isApartmentCatalog): void
+    public function setIsApartmentCatalog(bool $isApartmentCatalog): void
     {
         $this->isApartmentCatalog = $isApartmentCatalog;
     }
