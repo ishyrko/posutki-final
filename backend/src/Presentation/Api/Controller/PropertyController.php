@@ -124,7 +124,11 @@ class PropertyController extends AbstractController
     {
         $counts = $this->queryBus->ask(new GetHomeCityApartmentCountsQuery());
 
-        return $this->json(ApiResponse::success($counts));
+        return $this->json(
+            ApiResponse::success($counts),
+            Response::HTTP_OK,
+            ['Cache-Control' => 'public, max-age=300'],
+        );
     }
 
     #[Route('/home-region-house-counts', name: 'home_region_house_counts', methods: ['GET'])]

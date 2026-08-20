@@ -138,14 +138,14 @@ async function validateParsedCatalogLocation(parsed: ParsedSegments): Promise<bo
 
 /** Полная проверка сегментов для SSR: структура + город/метро/район в API. */
 export async function validatePublicSegments(segments: string[] = []): Promise<boolean> {
+  if (segments.length === 0) {
+    return true;
+  }
+
   await ensureApartmentCatalogSlugsConfigured();
 
   if (!validatePublicSegmentsStructure(segments)) {
     return false;
-  }
-
-  if (segments.length === 0) {
-    return true;
   }
 
   const catalogSegments = isPropertyId(segments[segments.length - 1]!)

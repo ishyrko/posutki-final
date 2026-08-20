@@ -12,6 +12,7 @@ use App\Presentation\Api\Response\ApiResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/api/address', name: 'api_address_')]
@@ -83,17 +84,21 @@ class AddressController extends AbstractController
             }
         }
 
-        return $this->json(ApiResponse::success([
-            'cities' => array_map(static fn($c) => [
-                'id' => $c->getId(),
-                'name' => $c->getName(),
-                'slug' => $c->getSlug(),
-                'shortName' => $c->getShortName(),
-                'isMain' => $c->isMain(),
-            ], $cities),
-            'prefixSlugs' => $prefixSlugs,
-            'catalogSlugs' => $catalogSlugs,
-        ]));
+        return $this->json(
+            ApiResponse::success([
+                'cities' => array_map(static fn($c) => [
+                    'id' => $c->getId(),
+                    'name' => $c->getName(),
+                    'slug' => $c->getSlug(),
+                    'shortName' => $c->getShortName(),
+                    'isMain' => $c->isMain(),
+                ], $cities),
+                'prefixSlugs' => $prefixSlugs,
+                'catalogSlugs' => $catalogSlugs,
+            ]),
+            Response::HTTP_OK,
+            ['Cache-Control' => 'public, max-age=300'],
+        );
     }
 
     #[Route('/cities/suggested', name: 'cities_suggested', methods: ['GET'])]

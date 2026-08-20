@@ -1,5 +1,7 @@
-import { ApartmentCatalogSlugGate } from '@/components/ApartmentCatalogSlugGate';
+import { ApartmentCatalogSlugProvider } from '@/components/ApartmentCatalogSlugProvider';
 import { OwnerFeaturesProvider } from '@/features/properties/OwnerFeaturesProvider';
+import { configureApartmentCatalogSlugs } from '@/features/catalog/apartment-catalog-slug-store';
+import { fetchApartmentCatalogSlugSets } from '@/lib/apartment-catalog-slugs-server';
 import { fetchHasMyProperties } from '@/lib/my-properties-server';
 import DashboardLayoutClient from './DashboardLayoutClient';
 
@@ -11,13 +13,22 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const initialHasMyProperties = await fetchHasMyProperties();
+    const [initialHasMyProperties, slugSets] = await Promise.all([
+        fetchHasMyProperties(),
+        fetchApartmentCatalogSlugSets(),
+    ]);
+
+    configureApartmentCatalogSlugs(slugSets);
 
     return (
-        <ApartmentCatalogSlugGate>
+        <ApartmentCatalogSlugProvider
+            cities={slugSets.cities}
+            prefixSlugs={[...slugSets.prefixSlugs]}
+            catalogSlugs={[...slugSets.catalogSlugs]}
+        >
             <OwnerFeaturesProvider initialHasMyProperties={initialHasMyProperties}>
                 <DashboardLayoutClient>{children}</DashboardLayoutClient>
             </OwnerFeaturesProvider>
-        </ApartmentCatalogSlugGate>
+        </ApartmentCatalogSlugProvider>
     );
 }

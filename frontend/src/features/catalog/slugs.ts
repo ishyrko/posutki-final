@@ -222,7 +222,8 @@ export function parseSegments(segments: string[] = []): ParsedSegments {
   const regionSlug = REGION_SLUGS.has(segments[i] ?? '') ? segments[i++] : undefined;
 
   let prefixCitySlug: string | undefined;
-  if (!regionSlug && isCityPrefixSlug(segments[i] ?? '')) {
+  const segment = segments[i];
+  if (!regionSlug && segment && isCityPrefixSlug(segment)) {
     prefixCitySlug = segments[i++];
   }
 

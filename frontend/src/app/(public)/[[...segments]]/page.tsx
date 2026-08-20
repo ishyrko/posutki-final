@@ -45,8 +45,8 @@ import FeaturesSection from "@/components/FeaturesSection";
 import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { fetchFeaturedPropertiesForHome } from "@/lib/featured-properties-server";
 import { fetchCityApartmentCountsForHome } from "@/lib/city-apartment-counts-server";
-import { fetchApartmentCatalogCitiesForHome } from "@/lib/apartment-catalog-cities-server";
-import { ensureApartmentCatalogSlugsConfigured } from "@/lib/apartment-catalog-slugs-server";
+import { fetchApartmentCatalogSlugSets, ensureApartmentCatalogSlugsConfigured } from "@/lib/apartment-catalog-slugs-server";
+import { CatalogSlugProviderFromSets } from "@/components/CatalogSlugProviderFromSets";
 import { fetchCityCatalogContent } from "@/lib/city-catalog-seo-server";
 import {
   fetchDistrictCatalogSeo,
@@ -103,9 +103,11 @@ function redirectDeprecatedFourPlusRoomCatalog(segments: string[] | undefined): 
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  await ensureApartmentCatalogSlugsConfigured();
-
   const { segments } = await params;
+
+  if (segments?.length) {
+    await ensureApartmentCatalogSlugsConfigured();
+  }
 
   redirectDeprecatedFourPlusRoomCatalog(segments);
 
@@ -215,8 +217,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function SegmentsPage({ params, searchParams }: PageProps) {
-  await ensureApartmentCatalogSlugsConfigured();
-
   const { segments } = await params;
 
   redirectDeprecatedFourPlusRoomCatalog(segments);
@@ -248,15 +248,16 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     }
 
     const propertyBreadcrumbs = buildPropertyBreadcrumbTrail(property);
+    const slugSets = await fetchApartmentCatalogSlugSets();
 
     return (
-      <>
+      <CatalogSlugProviderFromSets sets={slugSets}>
         <JsonLdScript data={buildPropertyJsonLd(property)} />
         <JsonLdScript data={buildBreadcrumbJsonLd(propertyBreadcrumbs, canonicalPath)} />
         <PropertyDetailClient id={numericPropertyId} initialProperty={property}>
           <PageBreadcrumbs items={propertyBreadcrumbs} hideCurrentOnMobile />
         </PropertyDetailClient>
-      </>
+      </CatalogSlugProviderFromSets>
     );
   }
 
@@ -264,16 +265,16 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
 
   if (!isCatalogRoute(parsed)) {
     const featuredRegionSlug = HEADER_REGION_MINSK_SLUG;
-    const [featuredInitial, articles, apartmentCatalogCities, cityApartmentCounts, regionHouseCounts] = await Promise.all([
+    const [featuredInitial, articles, slugSets, cityApartmentCounts, regionHouseCounts] = await Promise.all([
       fetchFeaturedPropertiesForHome(featuredRegionSlug),
       fetchRecentArticlesForHome(),
-      fetchApartmentCatalogCitiesForHome(),
+      fetchApartmentCatalogSlugSets(),
       fetchCityApartmentCountsForHome(),
       fetchRegionHouseCountsForHome(),
     ]);
 
     return (
-      <>
+      <CatalogSlugProviderFromSets sets={slugSets}>
         <link
           rel="preload"
           href="/hero-apartment.webp"
@@ -284,12 +285,12 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
         <HomePage
           featuredInitial={featuredInitial ?? undefined}
           articles={articles}
-          apartmentCatalogCities={apartmentCatalogCities}
+          apartmentCatalogCities={slugSets.cities}
           cityApartmentCounts={cityApartmentCounts}
           regionHouseCounts={regionHouseCounts}
           features={<FeaturesSection />}
         />
-      </>
+      </CatalogSlugProviderFromSets>
     );
   }
 
@@ -468,9 +469,10 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     landmarkName: landmark?.name,
   };
   const catalogBreadcrumbs = buildCatalogBreadcrumbTrail(parsed, breadcrumbNames);
+  const slugSets = await fetchApartmentCatalogSlugSets();
 
   return (
-    <>
+    <CatalogSlugProviderFromSets sets={slugSets}>
       {isFirstPage ? (
         <JsonLdScript data={buildCatalogBreadcrumbJsonLd(parsed, breadcrumbNames)} />
       ) : null}
@@ -488,6 +490,6 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
       >
         <PageBreadcrumbs items={catalogBreadcrumbs} />
       </CatalogPage>
-    </>
+    </CatalogSlugProviderFromSets>
   );
 }
