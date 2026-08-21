@@ -5,7 +5,11 @@ import { ChevronDown, Loader2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { buttonVariants } from '@/components/ui/button';
 import { usePropertyCalendar } from '@/features/properties/hooks';
-import { bookedDayModifierClassNames, expandBlockedRanges } from '@/features/properties/property-calendar-utils';
+import {
+    bookedDayModifierClassNames,
+    expandBlockedRanges,
+    startOfToday,
+} from '@/features/properties/property-calendar-utils';
 import { cn } from '@/lib/utils';
 
 type PropertyAvailabilityCalendarProps = {
@@ -94,7 +98,7 @@ export function PropertyAvailabilityCalendar({ propertyId, className }: Property
                         <>
                             <Calendar
                                 mode="single"
-                                disabled={bookedDates}
+                                disabled={[{ before: startOfToday() }, ...bookedDates]}
                                 modifiers={{ booked: bookedDates }}
                                 modifiersClassNames={bookedDayModifierClassNames}
                                 className="w-full p-2 sm:w-fit sm:p-3 sm:mx-auto"
