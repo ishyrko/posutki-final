@@ -105,6 +105,7 @@ function redirectDeprecatedFourPlusRoomCatalog(segments: string[] | undefined): 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { segments } = await params;
 
+  // Before any parseSegments / propertyUrl* — metadata and page can run in parallel.
   if (segments?.length) {
     await ensureApartmentCatalogSlugsConfigured();
   }
@@ -218,6 +219,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SegmentsPage({ params, searchParams }: PageProps) {
   const { segments } = await params;
+
+  // Must run before redirectDeprecatedFourPlusRoomCatalog → parseSegments.
+  // Do not rely on generateMetadata: Next may render the page in parallel.
+  if (segments?.length) {
+    await ensureApartmentCatalogSlugsConfigured();
+  }
 
   redirectDeprecatedFourPlusRoomCatalog(segments);
 
