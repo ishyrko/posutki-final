@@ -69,9 +69,19 @@ class City
         return $this->name;
     }
 
+    public function setName(string $name): void
+    {
+        $this->name = $name;
+    }
+
     public function getSlug(): string
     {
         return $this->slug;
+    }
+
+    public function setSlug(string $slug): void
+    {
+        $this->slug = $slug;
     }
 
     public function getShortName(): string
@@ -79,9 +89,19 @@ class City
         return $this->shortName;
     }
 
+    public function setShortName(string $shortName): void
+    {
+        $this->shortName = $shortName;
+    }
+
     public function getRuralCouncil(): ?string
     {
         return $this->ruralCouncil;
+    }
+
+    public function setRuralCouncil(?string $ruralCouncil): void
+    {
+        $this->ruralCouncil = $ruralCouncil;
     }
 
     public function getLatitude(): ?string
@@ -89,9 +109,19 @@ class City
         return $this->latitude;
     }
 
+    public function setLatitude(?string $latitude): void
+    {
+        $this->latitude = $latitude;
+    }
+
     public function getLongitude(): ?string
     {
         return $this->longitude;
+    }
+
+    public function setLongitude(?string $longitude): void
+    {
+        $this->longitude = $longitude;
     }
 
     public function getRegionDistrict(): ?RegionDistrict
@@ -99,9 +129,19 @@ class City
         return $this->regionDistrict;
     }
 
+    public function setRegionDistrict(?RegionDistrict $regionDistrict): void
+    {
+        $this->regionDistrict = $regionDistrict;
+    }
+
     public function getExternalId(): ?string
     {
         return $this->externalId;
+    }
+
+    public function setExternalId(?string $externalId): void
+    {
+        $this->externalId = $externalId;
     }
 
     public function isMain(): bool

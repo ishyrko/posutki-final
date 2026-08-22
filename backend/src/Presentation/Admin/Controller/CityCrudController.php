@@ -123,6 +123,7 @@ class CityCrudController extends AbstractCrudController
     public function configureFilters(Filters $filters): Filters
     {
         return $filters
+            ->add('name')
             ->add('regionDistrict')
             ->add('isListingSuggested')
             ->add('isApartmentCatalog');
