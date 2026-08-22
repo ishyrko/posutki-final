@@ -40,6 +40,46 @@ ICS;
         self::assertSame('2026-05-22T18:30:00+00:00', $result['lastUpdatedAt']);
     }
 
+    public function testFetchCalendarDataTreatsTimedEventsWithExclusiveEndDate(): void
+    {
+        $ics = <<<ICS
+BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:test-event-timed
+DTSTAMP:20260520T120000Z
+DTSTART:20251220T000000Z
+DTEND:20251225T000000Z
+SUMMARY:Booked
+END:VEVENT
+BEGIN:VEVENT
+UID:test-event-checkin-out
+DTSTAMP:20260520T120000Z
+DTSTART:20251220T150000Z
+DTEND:20251225T110000Z
+SUMMARY:Booked
+END:VEVENT
+BEGIN:VEVENT
+UID:test-event-tzid
+DTSTAMP:20260520T120000Z
+DTSTART;TZID=Europe/Moscow:20251220T140000
+DTEND;TZID=Europe/Moscow:20251225T120000
+SUMMARY:Booked
+END:VEVENT
+END:VCALENDAR
+ICS;
+
+        $service = new IcsCalendarService(new MockHttpClient([
+            new MockResponse($ics, ['http_code' => 200]),
+        ]));
+
+        $result = $service->fetchCalendarData(['https://example.com/calendar.ics']);
+
+        self::assertSame([
+            ['start' => '2025-12-20', 'end' => '2025-12-24'],
+        ], $result['blockedRanges']);
+    }
+
     public function testFetchCalendarDataSkipsFailedUrls(): void
     {
         $ics = <<<ICS

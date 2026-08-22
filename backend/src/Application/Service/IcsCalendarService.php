@@ -132,38 +132,68 @@ final class IcsCalendarService
             return null;
         }
 
-        $start = $dtStart->getDateTime();
-        $isAllDay = !str_contains((string) $dtStart, 'T');
+        $startDate = $this->extractCalendarDate($dtStart);
+        if ($startDate === null) {
+            return null;
+        }
 
-        $end = null;
+        $exclusiveEndDate = null;
         if (isset($event->DTEND)) {
-            $end = $event->DTEND->getDateTime();
+            $exclusiveEndDate = $this->extractCalendarDate($event->DTEND);
         } elseif (isset($event->DURATION)) {
-            $end = (clone $start)->add($event->DURATION->getDateInterval());
+            $startDateTime = $dtStart->getDateTime();
+            $exclusiveEndDate = $this->extractCalendarDateFromDateTime(
+                $startDateTime->add($event->DURATION->getDateInterval()),
+            );
+        } elseif ($this->isAllDayDateProperty($dtStart)) {
+            $exclusiveEndDate = (new \DateTimeImmutable($startDate))->modify('+1 day')->format('Y-m-d');
         } else {
-            $end = clone $start;
-            if ($isAllDay) {
-                $end = $end->modify('+1 day');
-            }
+            // RFC 5545: DATE-TIME без DTEND заканчивается в момент DTSTART.
+            return ['start' => $startDate, 'end' => $startDate];
         }
 
-        if ($isAllDay) {
-            $startDate = $start->format('Y-m-d');
-            $endDate = $end->format('Y-m-d');
-
-            if ($startDate === $endDate) {
-                return ['start' => $startDate, 'end' => $startDate];
-            }
-
-            $inclusiveEnd = (new \DateTimeImmutable($endDate))->modify('-1 day')->format('Y-m-d');
-
-            return ['start' => $startDate, 'end' => $inclusiveEnd];
+        if ($exclusiveEndDate === null) {
+            return ['start' => $startDate, 'end' => $startDate];
         }
 
-        return [
-            'start' => $start->format('Y-m-d'),
-            'end' => $end->format('Y-m-d'),
-        ];
+        $inclusiveEndDate = (new \DateTimeImmutable($exclusiveEndDate))->modify('-1 day')->format('Y-m-d');
+        if ($inclusiveEndDate < $startDate) {
+            return ['start' => $startDate, 'end' => $startDate];
+        }
+
+        return ['start' => $startDate, 'end' => $inclusiveEndDate];
+    }
+
+    private function isAllDayDateProperty(mixed $property): bool
+    {
+        if (isset($property['VALUE']) && (string) $property['VALUE'] === 'DATE') {
+            return true;
+        }
+
+        return preg_match('/^\d{8}$/', (string) $property) === 1;
+    }
+
+    private function extractCalendarDate(mixed $property): ?string
+    {
+        $raw = (string) $property;
+        if (preg_match('/^\d{8}$/', $raw) === 1) {
+            return sprintf('%s-%s-%s', substr($raw, 0, 4), substr($raw, 4, 2), substr($raw, 6, 2));
+        }
+
+        try {
+            return $this->extractCalendarDateFromDateTime($property->getDateTime());
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function extractCalendarDateFromDateTime(\DateTimeInterface $dateTime): string
+    {
+        if ($dateTime instanceof \DateTimeImmutable) {
+            return $dateTime->format('Y-m-d');
+        }
+
+        return \DateTimeImmutable::createFromInterface($dateTime)->format('Y-m-d');
     }
 
     private function extractTimestamp(mixed $property): ?string
