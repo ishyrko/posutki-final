@@ -917,9 +917,14 @@ export function isPropertyDetailPath(pathname: string): boolean {
   if (segments.length < 2) return false;
   const last = segments[segments.length - 1];
   if (!isPropertyId(last)) return false;
-  const catalogSegments = segments.slice(0, -1);
-  const parsed = parseSegments(catalogSegments);
-  return parsed.propertyType !== undefined;
+
+  // Статические slug типа жилья — без apartment-catalog slug store (Header / 404 без провайдера).
+  for (const segment of segments.slice(0, -1)) {
+    if (segment in PROPERTY_TYPE_SLUG_TO_VALUE) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function buildPropertyUrl(
