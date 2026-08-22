@@ -92,6 +92,12 @@ class CityCrudController extends AbstractCrudController
         yield TextField::new('name', 'Название');
         yield TextField::new('slug', 'Slug');
         yield TextField::new('shortName', 'Короткое название');
+        yield TextField::new('namePrepositional', 'Предложный падеж')
+            ->setHelp('Без предлога: «Лиде», «Минске». Для заголовков каталога квартир.')
+            ->hideOnIndex();
+        yield TextField::new('nameGenitive', 'Родительный падеж')
+            ->setHelp('Для фраз «в … районе Минска». Можно оставить пустым.')
+            ->hideOnIndex();
         yield TextField::new('ruralCouncil', 'Сельсовет')
             ->hideOnIndex();
 

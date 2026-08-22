@@ -5,6 +5,8 @@ export interface ApartmentCatalogCity {
     name: string;
     slug: string;
     shortName: string;
+    namePrepositional?: string | null;
+    nameGenitive?: string | null;
     isMain: boolean;
 }
 

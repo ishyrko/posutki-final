@@ -171,6 +171,8 @@ class CityController extends AbstractController
             'name' => $city->getName(),
             'slug' => $city->getSlug(),
             'shortName' => $city->getShortName(),
+            'namePrepositional' => $city->getNamePrepositional(),
+            'nameGenitive' => $city->getNameGenitive(),
             'latitude' => $city->getLatitude(),
             'longitude' => $city->getLongitude(),
             'isMain' => $city->isMain(),

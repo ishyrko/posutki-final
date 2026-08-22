@@ -91,6 +91,8 @@ class AddressController extends AbstractController
                     'name' => $c->getName(),
                     'slug' => $c->getSlug(),
                     'shortName' => $c->getShortName(),
+                    'namePrepositional' => $c->getNamePrepositional(),
+                    'nameGenitive' => $c->getNameGenitive(),
                     'isMain' => $c->isMain(),
                 ], $cities),
                 'prefixSlugs' => $prefixSlugs,

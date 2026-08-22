@@ -24,6 +24,12 @@ class City
     #[ORM\Column(type: 'string', length: 255, name: 'short_name')]
     private string $shortName;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true, name: 'name_prepositional')]
+    private ?string $namePrepositional = null;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true, name: 'name_genitive')]
+    private ?string $nameGenitive = null;
+
     #[ORM\Column(type: 'string', length: 255, nullable: true, name: 'rural_council')]
     private ?string $ruralCouncil;
 
@@ -92,6 +98,30 @@ class City
     public function setShortName(string $shortName): void
     {
         $this->shortName = $shortName;
+    }
+
+    public function getNamePrepositional(): ?string
+    {
+        return $this->namePrepositional;
+    }
+
+    public function setNamePrepositional(?string $namePrepositional): void
+    {
+        $this->namePrepositional = $namePrepositional !== null && trim($namePrepositional) !== ''
+            ? trim($namePrepositional)
+            : null;
+    }
+
+    public function getNameGenitive(): ?string
+    {
+        return $this->nameGenitive;
+    }
+
+    public function setNameGenitive(?string $nameGenitive): void
+    {
+        $this->nameGenitive = $nameGenitive !== null && trim($nameGenitive) !== ''
+            ? trim($nameGenitive)
+            : null;
     }
 
     public function getRuralCouncil(): ?string

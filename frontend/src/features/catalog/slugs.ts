@@ -6,6 +6,9 @@ import {
 import {
   isCatalogApartmentCitySlug,
   isCityPrefixSlug,
+  resolveCatalogApartmentLocation,
+  resolveCatalogCityGenitiveFromStore,
+  resolveCatalogCityNominativeFromStore,
 } from "@/features/catalog/apartment-catalog-slug-store";
 
 /** Regional path prefix (областные центры кроме Минска — в URL как первый сегмент). */
@@ -111,72 +114,24 @@ const ROOM_BREADCRUMB_LABEL: Record<RoomBucket, string> = {
   3: 'Трёхкомнатные',
 };
 
-/** H1 / meta: локация в предложном падеже (с предлогом «в»). */
-const CATALOG_APARTMENT_LOCATION: Record<string, string> = {
-  minsk: 'в Минске',
-  brest: 'в Бресте',
-  vitebsk: 'в Витебске',
-  gomel: 'в Гомеле',
-  grodno: 'в Гродно',
-  mogilev: 'в Могилёве',
+/** Региональные slug без записи в cities (дома, устаревшие URL). */
+const LEGACY_REGION_APARTMENT_LOCATION: Record<string, string> = {
   'minsk-region': 'в Минской области',
-  orsha: 'в Орше',
-  svetlogorsk: 'в Светлогорске',
-  smorgon: 'в Сморгони',
-  molodechno: 'в Молодечно',
-  zhodino: 'в Жодино',
-  nesvizh: 'в Несвиже',
-  glubokoe: 'в Глубоком',
-  logoysk: 'в Логойске',
-  baranovichi: 'в Барановичах',
-  pinsk: 'в Пинске',
-  novopolotsk: 'в Новополоцке',
-  bobruysk: 'в Бобруйске',
-  zhlobin: 'в Жлобине',
-  volkovysk: 'в Волковыске',
-  novolukoml: 'в Новолукомле',
-  krichev: 'в Кричеве',
-  lida: 'в Лиде',
 };
 
-/** Именительный падеж города (баннер достопримечательности, карточки перелинковки). */
-const CATALOG_CITY_NOMINATIVE: Record<string, string> = {
-  minsk: 'Минск',
-  brest: 'Брест',
-  vitebsk: 'Витебск',
-  gomel: 'Гомел',
-  grodno: 'Гродно',
-  mogilev: 'Могилёв',
-  'minsk-region': 'Минская область',
-  orsha: 'Орша',
-  svetlogorsk: 'Светлогорск',
-  smorgon: 'Сморгонь',
-  molodechno: 'Молодечно',
-  zhodino: 'Жодино',
-  nesvizh: 'Несвиж',
-  glubokoe: 'Глубокое',
-  logoysk: 'Логойск',
-  baranovichi: 'Барановичи',
-  pinsk: 'Пинск',
-  novopolotsk: 'Новополоцк',
-  bobruysk: 'Бобруйск',
-  zhlobin: 'Жлобин',
-  volkovysk: 'Волковыск',
-  novolukoml: 'Новолукомль',
-  krichev: 'Кричев',
-  lida: 'Лида',
-};
+const FALLBACK_APARTMENT_LOCATION = 'в Минске';
+const FALLBACK_CITY_NOMINATIVE = 'Минск';
+const FALLBACK_CITY_GENITIVE = 'Минска';
 
-/** Родительный падеж города для фраз «в … районе Минска» (города с адм. районами). */
-const CATALOG_CITY_GENITIVE: Record<string, string> = {
-  minsk: 'Минска',
-  brest: 'Бреста',
-  vitebsk: 'Витебска',
-  gomel: 'Гомеля',
-  grodno: 'Гродно',
-  mogilev: 'Могилёва',
-  bobruysk: 'Бобруйска',
-};
+function catalogApartmentLocation(citySlug: string): string {
+  return resolveCatalogApartmentLocation(citySlug)
+    ?? LEGACY_REGION_APARTMENT_LOCATION[citySlug]
+    ?? FALLBACK_APARTMENT_LOCATION;
+}
+
+function catalogCityGenitive(citySlug: string): string {
+  return resolveCatalogCityGenitiveFromStore(citySlug) ?? FALLBACK_CITY_GENITIVE;
+}
 
 const CATALOG_HOUSE_LOCATION: Record<string, string> = {
   minsk: 'в Минской области',
@@ -200,7 +155,7 @@ export const PROPERTY_TYPE_LABELS: Record<string, string> = {
 
 /** Именительный падеж города для подписи в баннере достопримечательности. */
 export function resolveCatalogCityNominative(citySlug: string): string {
-  return CATALOG_CITY_NOMINATIVE[citySlug] ?? CATALOG_CITY_NOMINATIVE[MINSK_CITY_SLUG];
+  return resolveCatalogCityNominativeFromStore(citySlug) ?? FALLBACK_CITY_NOMINATIVE;
 }
 
 export interface ParsedSegments {
@@ -498,14 +453,12 @@ export function buildRoomCatalogUrl(citySlug: string, roomsBucket: RoomBucket): 
 }
 
 export function buildCatalogRoomSeoHeading(citySlug: string, roomsBucket: RoomBucket): string {
-  const location =
-    CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+  const location = catalogApartmentLocation(citySlug);
   return `Снять ${ROOM_SEO_HEADING_ROOM[roomsBucket]} ${location} посуточно`;
 }
 
 export function buildCatalogRoomFaqHeading(citySlug: string, roomsBucket: RoomBucket): string {
-  const location =
-    CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+  const location = catalogApartmentLocation(citySlug);
   return `Частые вопросы о посуточной аренде ${ROOM_FAQ_HEADING_ROOM[roomsBucket]} ${location}`;
 }
 
@@ -531,8 +484,7 @@ export function resolveCatalogUrlParamsFromCitySlug(citySlug: string): Pick<
 
 /** Заголовок SEO-блока под каталогом квартир города. */
 export function buildCatalogCitySeoHeading(citySlug: string): string {
-  const location =
-    CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+  const location = catalogApartmentLocation(citySlug);
   return `Снять квартиру ${location} посуточно`;
 }
 
@@ -543,8 +495,7 @@ export function buildCatalogApartmentFaqHeading(location: string): string {
 
 /** Заголовок FAQ под базовым каталогом квартир города. */
 export function buildCatalogCityFaqHeading(citySlug: string): string {
-  const location =
-    CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+  const location = catalogApartmentLocation(citySlug);
   return buildCatalogApartmentFaqHeading(location);
 }
 
@@ -1037,8 +988,7 @@ export function formatCityDistrictCatalogLocation(
   const stem = stripDistrictSuffix(cityDistrictName) || cityDistrictName.trim();
   const adjective = toPrepositionalMasculineAdjective(stem);
   const prep = districtLocationPreposition(adjective);
-  const cityGenitive =
-    CATALOG_CITY_GENITIVE[citySlug] ?? CATALOG_CITY_GENITIVE[MINSK_CITY_SLUG];
+  const cityGenitive = catalogCityGenitive(citySlug);
   return `${prep} ${adjective} районе ${cityGenitive}`;
 }
 
@@ -1057,8 +1007,7 @@ export function formatMicrodistrictCatalogLocation(
   if (!place) {
     return place;
   }
-  const cityLocation =
-    CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+  const cityLocation = catalogApartmentLocation(citySlug);
   return `${place} ${cityLocation}`;
 }
 
@@ -1081,8 +1030,7 @@ export function formatResidentialComplexCatalogLocation(
   if (!place) {
     return place;
   }
-  const cityLocation =
-    CATALOG_APARTMENT_LOCATION[citySlug] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+  const cityLocation = catalogApartmentLocation(citySlug);
   return `${place} ${cityLocation}`;
 }
 
@@ -1123,11 +1071,13 @@ function resolveCatalogLocation(
     return formatCityDistrictCatalogLocation(cityDistrictName, key);
   }
 
-  const map =
-    parsed.propertyType === 'house' ? CATALOG_HOUSE_LOCATION : CATALOG_APARTMENT_LOCATION;
+  if (parsed.propertyType === 'house') {
+    return CATALOG_HOUSE_LOCATION[key] ?? CATALOG_HOUSE_LOCATION[MINSK_CITY_SLUG];
+  }
+
   return cityName
     ? (cityName.startsWith('в ') ? cityName : `в ${cityName}`)
-    : (map[key] ?? map[MINSK_CITY_SLUG]);
+    : catalogApartmentLocation(key);
 }
 
 export function buildPageTitle(
@@ -1216,9 +1166,7 @@ function resolveApartmentCatalogMetaLocation(
     return formatCityDistrictCatalogLocation(cityDistrictName, key);
   }
 
-  return (
-    CATALOG_APARTMENT_LOCATION[key] ?? CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG]
-  );
+  return catalogApartmentLocation(key);
 }
 
 function resolveHouseCatalogMetaLocation(parsed: ParsedSegments): string | null {
@@ -1246,9 +1194,7 @@ export function buildCatalogMetaTitle(
   }
 
   if (isRoomSeoBucket(parsed.roomsBucket) && parsed.propertyType === 'apartment') {
-    const location =
-      CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
-      CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+    const location = catalogApartmentLocation(catalogLocationKey(parsed));
     const bucket = parsed.roomsBucket;
     return `Снять ${ROOM_META_TITLE_ROOM[bucket]} на сутки ${location} недорого. Посуточная аренда ${ROOM_META_TITLE_ROOM_PLURAL[bucket]} ${location}.`;
   }
@@ -1263,9 +1209,7 @@ export function buildCatalogMetaTitle(
   );
   if (apartmentLocation) {
     if (landmarkPhrase) {
-      const cityLocation =
-        CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
-        CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+      const cityLocation = catalogApartmentLocation(catalogLocationKey(parsed));
       return `Снять квартиру на сутки ${apartmentLocation} ${cityLocation}. Посуточная аренда ${apartmentLocation}.`;
     }
 
@@ -1296,9 +1240,7 @@ export function buildCatalogMetaDescription(
   }
 
   if (isRoomSeoBucket(parsed.roomsBucket) && parsed.propertyType === 'apartment') {
-    const location =
-      CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
-      CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+    const location = catalogApartmentLocation(catalogLocationKey(parsed));
     const bucket = parsed.roomsBucket;
     return `${ROOM_PAGE_TITLE[bucket]} ${location}. Посуточная аренда ${ROOM_META_TITLE_ROOM_PLURAL[bucket]} ${location} на Posutki.by без посредников.`;
   }
@@ -1312,9 +1254,7 @@ export function buildCatalogMetaDescription(
     residentialComplexNamePrepositional,
   );
   if (apartmentLocation) {
-    const cityLocation =
-      CATALOG_APARTMENT_LOCATION[catalogLocationKey(parsed)] ??
-      CATALOG_APARTMENT_LOCATION[MINSK_CITY_SLUG];
+    const cityLocation = catalogApartmentLocation(catalogLocationKey(parsed));
 
     if (landmarkPhrase) {
       return `Квартиры на сутки ${apartmentLocation} ${cityLocation}. Посуточная аренда квартир ${apartmentLocation} на Posutki.by без посредников.`;
