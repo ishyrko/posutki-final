@@ -136,6 +136,7 @@ const CATALOG_APARTMENT_LOCATION: Record<string, string> = {
   volkovysk: 'в Волковыске',
   novolukoml: 'в Новолукомле',
   krichev: 'в Кричеве',
+  lida: 'в Лиде',
 };
 
 /** Именительный падеж города (баннер достопримечательности, карточки перелинковки). */
@@ -163,6 +164,7 @@ const CATALOG_CITY_NOMINATIVE: Record<string, string> = {
   volkovysk: 'Волковыск',
   novolukoml: 'Новолукомль',
   krichev: 'Кричев',
+  lida: 'Лида',
 };
 
 /** Родительный падеж города для фраз «в … районе Минска» (города с адм. районами). */
