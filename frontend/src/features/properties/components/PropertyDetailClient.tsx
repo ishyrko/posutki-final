@@ -59,7 +59,6 @@ import {
   GalleryPortraitFrame,
   galleryFullSrc,
   galleryThumbSrc,
-  useImageClearlyLandscape,
   type GalleryImageSource,
 } from "@/features/properties/components/property-gallery-frames";
 import { buildCatalogUrl } from "@/features/catalog/slugs";
@@ -162,7 +161,6 @@ export default function PropertyDetailClient({
 
   const mainImageThumbSrc = galleryThumbSrc(galleryImages[0]);
   const mainImageFullSrc = galleryFullSrc(galleryImages[0]);
-  const mainImageClearlyLandscape = useImageClearlyLandscape(mainImageThumbSrc);
 
   const handleContactOpenChange = (nextOpen: boolean) => {
     setContactOpen(nextOpen);
@@ -497,16 +495,6 @@ export default function PropertyDetailClient({
                   currentIndex={currentImage}
                   onIndexChange={setCurrentImage}
                   onOpenLightbox={() => setLightboxOpen(true)}
-                />
-              ) : mainImageClearlyLandscape === true ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={mainImageFullSrc}
-                  alt="Главное фото"
-                  fetchPriority="high"
-                  loading="eager"
-                  decoding="async"
-                  className="absolute inset-0 h-full w-full object-cover"
                 />
               ) : (
                 <GalleryPortraitFrame

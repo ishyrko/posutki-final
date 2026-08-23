@@ -21,11 +21,15 @@ type GalleryImgProps = {
   decoding?: 'async' | 'sync' | 'auto';
 };
 
-/** Side-column letterbox with blurred edges. Parent must be `relative` with explicit size. */
+/**
+ * Letterbox any aspect ratio into the parent: full image via object-contain,
+ * blurred cover fill behind (sides for portrait, top/bottom for landscape).
+ * Parent must be `relative` with explicit size.
+ */
 export function GalleryPortraitFrame({
   src,
   alt,
-  className = 'absolute inset-0 flex min-h-0 min-w-0',
+  className = 'absolute inset-0',
   loading,
   fetchPriority,
   decoding = 'async',
@@ -38,31 +42,20 @@ export function GalleryPortraitFrame({
 
   return (
     <div className={`${className} overflow-hidden`}>
-      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 scale-110 bg-cover bg-left blur-md"
-          style={blurStyle}
-        />
-      </div>
-      <div className="relative z-[1] flex h-full min-w-0 max-w-full shrink items-center justify-center overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={alt}
-          loading={loading}
-          fetchPriority={fetchPriority}
-          decoding={decoding}
-          className="max-h-full w-auto max-w-full object-contain"
-        />
-      </div>
-      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 scale-110 bg-cover bg-right blur-md"
-          style={blurStyle}
-        />
-      </div>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 scale-110 bg-cover bg-center blur-md"
+        style={blurStyle}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        loading={loading}
+        fetchPriority={fetchPriority}
+        decoding={decoding}
+        className="relative z-[1] h-full w-full object-contain"
+      />
     </div>
   );
 }
