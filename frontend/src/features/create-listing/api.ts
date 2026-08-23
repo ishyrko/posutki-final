@@ -112,3 +112,8 @@ export const uploadFile = async (file: File): Promise<string> => {
         throw error;
     }
 };
+
+export const rotateUploadedFile = async (url: string): Promise<UploadResponse> => {
+    const response = await api.post<{ data: UploadResponse }>('/upload/rotate', { url });
+    return response.data.data;
+};

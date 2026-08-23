@@ -29,6 +29,7 @@ parameters:
     app.bepaid.public_key: '%env(resolve:BEPAID_PUBLIC_KEY)%'
     app.bepaid.test_mode: '%env(bool:BEPAID_TEST_MODE)%'
     upload_directory: '%kernel.project_dir%/public/uploads'
+    property_watermark_path: '%kernel.project_dir%/resources/watermark/posutki-by.png'
     app.jwt_refresh_ttl: 2592000
 
 services:
@@ -504,9 +505,14 @@ services:
         tags:
             - { name: doctrine.event_subscriber }
     
+    App\Infrastructure\Service\PropertyImageWatermark:
+        arguments:
+            $watermarkImagePath: '%property_watermark_path%'
+
     App\Infrastructure\Service\FileUploader:
         arguments:
             $targetDirectory: '%upload_directory%'
+            $projectDirectory: '%kernel.project_dir%'
 
     # Request DTO Resolver
     App\Infrastructure\Symfony\ArgumentResolver\RequestDTOResolver:

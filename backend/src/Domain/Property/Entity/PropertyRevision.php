@@ -101,6 +101,21 @@ class PropertyRevision
         return $this->reviewedAt;
     }
 
+    /**
+     * @param array<string, string> $replacements
+     */
+    public function replaceImageUrls(array $replacements): void
+    {
+        if ($replacements === [] || !isset($this->data['images']) || !is_array($this->data['images'])) {
+            return;
+        }
+
+        $this->data['images'] = array_values(array_map(
+            static fn (mixed $url): mixed => is_string($url) ? ($replacements[$url] ?? $url) : $url,
+            $this->data['images'],
+        ));
+    }
+
     public function approve(): void
     {
         if ($this->status !== self::STATUS_PENDING) {

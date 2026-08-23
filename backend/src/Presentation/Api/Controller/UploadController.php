@@ -91,4 +91,42 @@ class UploadController extends AbstractController
         }
     }
 
+    #[Route('/upload/rotate', name: 'upload_rotate', methods: ['POST'])]
+    public function rotate(
+        Request $request,
+        #[CurrentUser] ?User $user,
+    ): JsonResponse {
+        if (!$user) {
+            return $this->json(
+                ApiResponse::error('Требуется авторизация', 401),
+                401
+            );
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        $url = is_array($payload) && isset($payload['url']) ? trim((string) $payload['url']) : '';
+        if ($url === '' || !$this->fileUploader->isLocalPropertyImageUrl($url)) {
+            return $this->json(
+                ApiResponse::error('Недопустимый URL изображения', 400),
+                400
+            );
+        }
+
+        try {
+            $result = $this->fileUploader->rotatePropertyImage($url);
+
+            return $this->json(ApiResponse::success($result));
+        } catch (\InvalidArgumentException $e) {
+            return $this->json(
+                ApiResponse::error($e->getMessage(), 400),
+                400
+            );
+        } catch (\Exception $e) {
+            return $this->json(
+                ApiResponse::error('Ошибка поворота изображения: ' . $e->getMessage(), 500),
+                500
+            );
+        }
+    }
+
 }

@@ -22,7 +22,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Loader2, RotateCw, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { uploadFile, FileTooLargeError } from '../api';
+import { uploadFile, rotateUploadedFile, FileTooLargeError } from '../api';
 import {
     createUploadedPhoto,
     normalizeImageFile,
@@ -250,6 +250,20 @@ export function PropertyPhotoGrid({
             updatePhotoById(photo.id, (current) => ({ ...current, uploading: true }));
 
             try {
+                if (photo.url.startsWith('/uploads/properties/')) {
+                    const rotated = await rotateUploadedFile(photo.url);
+                    updatePhotoById(photo.id, (current) => {
+                        revokePhotoPreviewUrl(current);
+                        return {
+                            ...current,
+                            url: rotated.url,
+                            file: undefined,
+                            uploading: false,
+                        };
+                    });
+                    return;
+                }
+
                 const sourceFile = await resolvePhotoFile(photo);
                 const rotatedFile = await rotateImageFile(sourceFile, 90);
                 const previewUrl = URL.createObjectURL(rotatedFile);
