@@ -1,0 +1,63 @@
+{% block property_images_preview_widget %}
+    {% set property = form.parent.vars.data %}
+    {% if property is not null and property.id is defined %}
+        <style>
+            .property-images-preview__grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 12px;
+            }
+            .property-images-preview__item {
+                position: relative;
+                aspect-ratio: 4 / 3;
+                overflow: hidden;
+                border-radius: 8px;
+                border: 1px solid #e5e7eb;
+                background: #f9fafb;
+            }
+            .property-images-preview__item img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+            .property-images-preview__rotate {
+                position: absolute;
+                right: 6px;
+                bottom: 6px;
+                line-height: 1;
+                padding: 4px 8px;
+            }
+        </style>
+        <div
+            class="property-images-preview"
+            data-property-images-preview
+            data-property-id="{{ property.id }}"
+            data-csrf-token="{{ csrf_token('admin_property_image_rotate') }}"
+        >
+            {% set images = property.images ?? [] %}
+            {% if images is empty %}
+                <p class="text-muted mb-0">Нет фото. Добавьте URL в поле «Фото (URL)» выше.</p>
+            {% else %}
+                <div class="property-images-preview__grid">
+                    {% for url in images %}
+                        {% if url is not empty %}
+                            {% set thumb = '/uploads/properties/' in url ? url|replace({'/uploads/properties/': '/uploads/properties/thumbs/'}) : url %}
+                            <div class="property-images-preview__item" data-image-url="{{ url }}">
+                                <img src="{{ thumb }}" alt="Фото {{ loop.index }}" loading="lazy">
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-dark property-images-preview__rotate"
+                                    data-rotate-url="{{ url }}"
+                                    title="Повернуть на 90°"
+                                >
+                                    ↻
+                                </button>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

@@ -18,10 +18,12 @@ use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\MetroProximityCalculator;
+use App\Presentation\Admin\Form\PropertyImagesPreviewType;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
@@ -86,6 +88,11 @@ class PropertyCrudController extends AbstractCrudController
             ->setEntityLabelInPlural('Объявления')
             ->setDefaultSort(['createdAt' => 'DESC'])
             ->setSearchFields(['title', 'description', 'contactPhone', 'contactName']);
+    }
+
+    public function configureAssets(Assets $assets): Assets
+    {
+        return $assets->addJsFile('js/admin-property-images.js');
     }
 
     public function configureActions(Actions $actions): Actions
@@ -432,14 +439,15 @@ class PropertyCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('Список URL изображений.');
 
+        yield TextField::new('adminPropertyImagesPreview', 'Фото (просмотр)')
+            ->onlyOnForms()
+            ->setFormType(PropertyImagesPreviewType::class)
+            ->setFormTypeOption('mapped', false)
+            ->addFormTheme('admin/form/property_images_preview.html.twig')
+            ->setHelp('Поверните фото кнопкой ↻. URL в поле выше обновятся автоматически после поворота.');
+
         yield ArrayField::new('amenities', 'Удобства')
             ->hideOnIndex();
-
-        yield TextareaField::new('imagesDisplay', 'Фото (просмотр)')
-            ->onlyOnForms()
-            ->setFormTypeOption('disabled', true)
-            ->setNumOfRows(6)
-            ->setHelp('Только для просмотра. Редактируйте поле «Фото (URL)» выше.');
 
         yield FormField::addTab('Служебное');
 
