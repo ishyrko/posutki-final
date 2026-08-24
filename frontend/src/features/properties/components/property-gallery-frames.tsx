@@ -28,6 +28,7 @@ type GalleryImgProps = {
  */
 export function GalleryPortraitFrame({
   src,
+  blurSrc,
   alt,
   className = 'absolute inset-0',
   loading,
@@ -35,10 +36,11 @@ export function GalleryPortraitFrame({
   decoding = 'async',
 }: {
   src: string;
+  blurSrc?: string;
   alt: string;
   className?: string;
 } & GalleryImgProps) {
-  const blurStyle = { backgroundImage: `url("${src}")` };
+  const blurStyle = { backgroundImage: `url("${blurSrc ?? src}")` };
 
   return (
     <div className={`${className} overflow-hidden`}>

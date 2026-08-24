@@ -104,6 +104,22 @@ final class FileUploaderTest extends TestCase
         self::assertGreaterThan($originalWidth, $originalHeight);
     }
 
+    public function testRotatePropertyImageFailsWhenOriginalIsMissing(): void
+    {
+        if (!function_exists('imagecreatefromjpeg')) {
+            self::markTestSkipped('GD is required.');
+        }
+
+        $uploader = $this->createUploader();
+        $legacyPath = $this->uploadDir . '/properties/orphan-photo.webp';
+        $this->createFixtureImage(640, 480, 'jpeg', $legacyPath);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Оригинал изображения не найден');
+
+        $uploader->rotatePropertyImage('/uploads/properties/orphan-photo.webp');
+    }
+
     public function testProcessExistingPropertyImageConvertsLegacyImageWhenWebpAvailable(): void
     {
         if (!function_exists('imagecreatefromjpeg') || !function_exists('imagewebp')) {

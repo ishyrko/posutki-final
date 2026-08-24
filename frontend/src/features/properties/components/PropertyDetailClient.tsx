@@ -499,6 +499,7 @@ export default function PropertyDetailClient({
               ) : (
                 <GalleryPortraitFrame
                   src={mainImageFullSrc}
+                  blurSrc={mainImageThumbSrc}
                   alt="Главное фото"
                   fetchPriority="high"
                   loading="eager"

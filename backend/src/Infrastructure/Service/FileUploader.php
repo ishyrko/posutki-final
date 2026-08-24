@@ -57,12 +57,12 @@ class FileUploader
         }
 
         $currentBaseName = pathinfo($publicPath, PATHINFO_FILENAME);
-        $outputFormat = $this->determineOutputFormat(self::SCOPE_PROPERTIES, 'image/webp');
-        $originalPath = $this->resolvePropertyOriginalPath($currentBaseName, $outputFormat);
-
-        if (!is_file($originalPath)) {
-            $originalPath = $this->bootstrapPropertyOriginalFromPublic($publicPath, $currentBaseName, $outputFormat);
+        $originalPath = $this->findExistingPropertyOriginalPath($currentBaseName);
+        if ($originalPath === null) {
+            throw new \InvalidArgumentException('Оригинал изображения не найден. Загрузите фото заново.');
         }
+
+        $outputFormat = strtolower(pathinfo($originalPath, PATHINFO_EXTENSION) ?: 'webp');
 
         $rotatedOriginal = $this->rotateImageFile($originalPath);
         if ($rotatedOriginal === false) {
@@ -371,6 +371,18 @@ class FileUploader
     private function resolvePropertyOriginalPath(string $baseName, string $outputFormat): string
     {
         return $this->getPropertyOriginalsDirectory() . '/' . $baseName . '.' . $outputFormat;
+    }
+
+    private function findExistingPropertyOriginalPath(string $baseName): ?string
+    {
+        foreach (['webp', 'jpg', 'jpeg', 'png'] as $extension) {
+            $path = $this->getPropertyOriginalsDirectory() . '/' . $baseName . '.' . $extension;
+            if (is_file($path)) {
+                return $path;
+            }
+        }
+
+        return null;
     }
 
     private function ensurePropertyOriginalsDirectoryIsReady(): void
