@@ -808,15 +808,16 @@ class Property
 
     private function formatDiffValue(mixed $value): string
     {
+        // Empty lists are stored as null on the entity but often arrive as [] from the API.
+        if ($value === null || $value === '' || $value === []) {
+            return 'null';
+        }
+
         if (is_array($value)) {
             return json_encode(
                 $value,
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
             ) ?: '[]';
-        }
-
-        if ($value === null || $value === '') {
-            return 'null';
         }
 
         if (is_bool($value)) {

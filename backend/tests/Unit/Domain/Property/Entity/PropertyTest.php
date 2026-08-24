@@ -135,6 +135,26 @@ final class PropertyTest extends TestCase
         $property->approve();
     }
 
+    public function testPendingRevisionDiffIgnoresEmptyCalendarListVersusNull(): void
+    {
+        $property = $this->createProperty();
+        self::assertNull($property->getExternalCalendarUrls());
+
+        $revision = new \App\Domain\Property\Entity\PropertyRevision($property, [
+            'title' => 'Updated title for moderation review',
+            'externalCalendarUrls' => [],
+            'additionalServices' => [],
+        ]);
+        $property->getRevisions()->add($revision);
+
+        $changes = $property->getPendingRevisionChanges();
+        $changedFields = array_column($changes, 'field');
+
+        self::assertContains('title', $changedFields);
+        self::assertNotContains('externalCalendarUrls', $changedFields);
+        self::assertNotContains('additionalServices', $changedFields);
+    }
+
     private function createProperty(int $ownerId = 1): Property
     {
         return new Property(
