@@ -119,6 +119,8 @@ readonly class UpdatePropertyHandler
         $address = null;
         if ($command->building !== null) {
             $address = Address::create($command->building, $command->block);
+        } elseif ($command->block !== null) {
+            $address = Address::create($property->getAddress()->getBuilding(), $command->block);
         }
 
         $coordinates = null;
@@ -315,9 +317,13 @@ readonly class UpdatePropertyHandler
             'longitude' => $property->getCoordinates()->getLongitude(),
             'images' => $property->getImages(),
             'amenities' => $property->getAmenities(),
+            'sellerType' => $property->getSellerType(),
+            'weekendPriceNegotiable' => $property->isWeekendPriceNegotiable(),
+            'additionalServices' => $property->getAdditionalServices(),
             'instagramUrl' => $property->getInstagramUrl(),
             'websiteUrl' => $property->getWebsiteUrl(),
             'videoUrl' => $property->getVideoUrl(),
+            'externalCalendarUrls' => $property->getExternalCalendarUrls(),
         ];
     }
 
@@ -363,9 +369,13 @@ readonly class UpdatePropertyHandler
             'longitude' => $command->longitude ?? $property->getCoordinates()->getLongitude(),
             'images' => $command->images ?? $property->getImages(),
             'amenities' => $command->amenities ?? $property->getAmenities(),
+            'sellerType' => $command->sellerType ?? $property->getSellerType(),
+            'weekendPriceNegotiable' => $command->weekendPriceNegotiable ?? $property->isWeekendPriceNegotiable(),
+            'additionalServices' => $command->additionalServices ?? $property->getAdditionalServices(),
             'instagramUrl' => $command->instagramUrl ?? $property->getInstagramUrl(),
             'websiteUrl' => $command->websiteUrl ?? $property->getWebsiteUrl(),
             'videoUrl' => $command->videoUrl ?? $property->getVideoUrl(),
+            'externalCalendarUrls' => $command->externalCalendarUrls ?? $property->getExternalCalendarUrls(),
         ];
     }
 

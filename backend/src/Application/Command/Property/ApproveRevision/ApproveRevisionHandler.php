@@ -64,12 +64,18 @@ readonly class ApproveRevisionHandler
         $priceCurrency = isset($data['priceCurrency']) ? (string) $data['priceCurrency'] : null;
         $price = $priceAmount !== null ? Price::fromAmount($priceAmount, $priceCurrency ?? 'BYN') : null;
 
-        $address = isset($data['building'])
-            ? Address::create(
+        $address = null;
+        if (isset($data['building'])) {
+            $address = Address::create(
                 (string) $data['building'],
-                isset($data['block']) ? (string) $data['block'] : null
-            )
-            : null;
+                isset($data['block']) && $data['block'] !== '' ? (string) $data['block'] : null,
+            );
+        } elseif (array_key_exists('block', $data)) {
+            $address = Address::create(
+                $property->getAddress()->getBuilding(),
+                $data['block'] !== null && $data['block'] !== '' ? (string) $data['block'] : null,
+            );
+        }
 
         $coordinates = isset($data['latitude'], $data['longitude'])
             ? Coordinates::create((float) $data['latitude'], (float) $data['longitude'])
@@ -148,9 +154,18 @@ readonly class ApproveRevisionHandler
             images: isset($data['images']) && is_array($data['images']) ? $data['images'] : null,
             amenities: isset($data['amenities']) && is_array($data['amenities']) ? $data['amenities'] : null,
             sellerType: isset($data['sellerType']) ? (string) $data['sellerType'] : null,
+            weekendPriceNegotiable: array_key_exists('weekendPriceNegotiable', $data)
+                ? (bool) $data['weekendPriceNegotiable']
+                : null,
+            additionalServices: array_key_exists('additionalServices', $data) && is_array($data['additionalServices'])
+                ? $data['additionalServices']
+                : null,
             instagramUrl: array_key_exists('instagramUrl', $data) ? ($data['instagramUrl'] !== null ? (string) $data['instagramUrl'] : null) : null,
             websiteUrl: array_key_exists('websiteUrl', $data) ? ($data['websiteUrl'] !== null ? (string) $data['websiteUrl'] : null) : null,
             videoUrl: array_key_exists('videoUrl', $data) ? ($data['videoUrl'] !== null ? (string) $data['videoUrl'] : null) : null,
+            externalCalendarUrls: array_key_exists('externalCalendarUrls', $data) && is_array($data['externalCalendarUrls'])
+                ? $data['externalCalendarUrls']
+                : null,
         );
 
         if ($coordinates !== null) {

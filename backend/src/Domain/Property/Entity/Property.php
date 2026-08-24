@@ -720,9 +720,13 @@ class Property
             'longitude' => 'Долгота',
             'images' => 'Фото',
             'amenities' => 'Удобства',
+            'sellerType' => 'Тип продавца',
+            'weekendPriceNegotiable' => 'Цена на выходные договорная',
+            'additionalServices' => 'Доп. услуги',
             'instagramUrl' => 'Instagram',
             'websiteUrl' => 'Сайт',
             'videoUrl' => 'Видео',
+            'externalCalendarUrls' => 'Внешние календари',
         ];
 
         $currentSnapshot = $this->getCurrentSnapshot();
@@ -792,9 +796,13 @@ class Property
             'longitude' => $this->coordinates->getLongitude(),
             'images' => $this->images,
             'amenities' => $this->amenities,
+            'sellerType' => $this->sellerType,
+            'weekendPriceNegotiable' => $this->weekendPriceNegotiable,
+            'additionalServices' => $this->additionalServices,
             'instagramUrl' => $this->instagramUrl,
             'websiteUrl' => $this->websiteUrl,
             'videoUrl' => $this->videoUrl,
+            'externalCalendarUrls' => $this->externalCalendarUrls,
         ];
     }
 

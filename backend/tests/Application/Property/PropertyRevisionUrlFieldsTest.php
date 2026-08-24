@@ -267,6 +267,159 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
         self::assertSame('https://www.youtube.com/watch?v=old123', $property->getVideoUrl());
     }
 
+    public function testApproveRevisionAppliesWeekendServicesAndCalendars(): void
+    {
+        $property = $this->createProperty(ownerId: 1, propertyId: 304);
+        $property->setStatus('published');
+        $property->setWeekendPriceNegotiable(false);
+        $property->setAdditionalServices([['name' => 'Old', 'price' => 10.0]]);
+        $property->setExternalCalendarUrls(['https://calendar.example/old.ics']);
+
+        $revision = new PropertyRevision($property, [
+            'weekendPriceNegotiable' => true,
+            'additionalServices' => [
+                ['name' => 'Баня', 'price' => 50.0],
+                ['name' => 'Мангал', 'price' => 20.0],
+            ],
+            'externalCalendarUrls' => [
+                'https://calendar.example/new.ics',
+                'https://airbnb.example/cal.ics',
+            ],
+            'block' => '2',
+        ]);
+        $revisionIdReflection = new \ReflectionProperty($revision, 'id');
+        $revisionIdReflection->setValue($revision, Id::fromInt(9002));
+
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository->method('findById')->willReturn($property);
+        $propertyRepository->expects(self::exactly(2))->method('save')->with($property);
+
+        $revisionRepository = $this->createMock(PropertyRevisionRepositoryInterface::class);
+        $revisionRepository->method('findById')->willReturn($revision);
+        $revisionRepository->expects(self::once())->method('save')->with($revision);
+
+        $handler = new ApproveRevisionHandler(
+            $propertyRepository,
+            $revisionRepository,
+            $this->createExchangeRateService(['USD' => 3.2]),
+            $this->createMetroCalculator(),
+            $this->createLandmarkCalculator(),
+            $this->createCityDistrictResolver(),
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
+            new class implements MessageBusInterface {
+                public function dispatch(object $message, array $stamps = []): Envelope
+                {
+                    return new Envelope($message);
+                }
+            },
+            $this->createPlacementService($propertyRepository),
+        );
+
+        $handler(new ApproveRevisionCommand(
+            propertyId: '304',
+            revisionId: '9002',
+        ));
+
+        self::assertTrue($property->isWeekendPriceNegotiable());
+        self::assertSame(
+            [
+                ['name' => 'Баня', 'price' => 50.0],
+                ['name' => 'Мангал', 'price' => 20.0],
+            ],
+            $property->getAdditionalServices(),
+        );
+        self::assertSame(
+            [
+                'https://calendar.example/new.ics',
+                'https://airbnb.example/cal.ics',
+            ],
+            $property->getExternalCalendarUrls(),
+        );
+        self::assertSame('15', $property->getAddress()->getBuilding());
+        self::assertSame('2', $property->getAddress()->getBlock());
+    }
+
+    public function testPublishedUpdateWithWeekendFlagRequiresModerationEvenWithPriceChange(): void
+    {
+        $property = $this->createProperty(ownerId: 1, propertyId: 305);
+        $property->setStatus('published');
+        $property->setWeekendPriceNegotiable(false);
+        $property->setImages([
+            '/uploads/properties/a.jpg',
+            '/uploads/properties/b.jpg',
+            '/uploads/properties/c.jpg',
+        ]);
+
+        $savedRevision = null;
+        $revisionRepository = $this->createMock(PropertyRevisionRepositoryInterface::class);
+        $revisionRepository->method('findLatestByPropertyAndStatus')->willReturn(null);
+        $revisionRepository
+            ->expects(self::once())
+            ->method('save')
+            ->willReturnCallback(static function (PropertyRevision $revision) use (&$savedRevision): void {
+                $savedRevision = $revision;
+            });
+
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository->method('findById')->willReturn($property);
+        $propertyRepository->expects(self::never())->method('save');
+
+        $handler = new UpdatePropertyHandler(
+            $propertyRepository,
+            $revisionRepository,
+            $this->createExchangeRateService(['USD' => 3.2]),
+            $this->createMetroCalculator(),
+            $this->createLandmarkCalculator(),
+            $this->createCityDistrictResolver(),
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
+        );
+
+        $requiresModeration = $handler(new UpdatePropertyCommand(
+            propertyId: '305',
+            userId: '1',
+            title: $property->getTitle(),
+            description: $property->getDescription(),
+            type: $property->getType(),
+            dealType: $property->getDealType(),
+            priceAmount: 10_000_000,
+            priceCurrency: 'BYN',
+            area: $property->getArea(),
+            rooms: $property->getRooms(),
+            floor: $property->getFloor(),
+            totalFloors: $property->getTotalFloors(),
+            bathrooms: $property->getBathrooms(),
+            yearBuilt: $property->getYearBuilt(),
+            building: $property->getAddress()->getBuilding(),
+            cityId: $property->getCityId(),
+            latitude: $property->getCoordinates()->getLatitude(),
+            longitude: $property->getCoordinates()->getLongitude(),
+            images: $property->getImages(),
+            amenities: $property->getAmenities(),
+            maxDailyGuests: $property->getMaxDailyGuests(),
+            dailySingleBeds: $property->getDailySingleBeds(),
+            dailyDoubleBeds: $property->getDailyDoubleBeds(),
+            weekendPriceNegotiable: true,
+            additionalServices: [['name' => 'Баня', 'price' => 40.0]],
+            externalCalendarUrls: ['https://calendar.example/x.ics'],
+        ));
+
+        self::assertTrue($requiresModeration);
+        self::assertNotNull($savedRevision);
+        self::assertTrue($savedRevision->getData()['weekendPriceNegotiable'] ?? false);
+        self::assertSame(
+            [['name' => 'Баня', 'price' => 40.0]],
+            $savedRevision->getData()['additionalServices'] ?? null,
+        );
+        self::assertSame(
+            ['https://calendar.example/x.ics'],
+            $savedRevision->getData()['externalCalendarUrls'] ?? null,
+        );
+        self::assertFalse($property->isWeekendPriceNegotiable());
+        self::assertSame(9_000_000, $property->getPrice()->getAmount());
+    }
+
     private function createProperty(int $ownerId, int $propertyId): Property
     {
         $property = new Property(
