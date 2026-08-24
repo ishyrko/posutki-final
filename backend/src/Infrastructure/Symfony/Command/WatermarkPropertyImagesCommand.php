@@ -32,28 +32,16 @@ final class WatermarkPropertyImagesCommand extends Command
 
     protected function configure(): void
     {
-        $this
-            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Показать изменения без записи в БД и файлов')
-            ->addOption(
-                'rebuild-originals',
-                null,
-                InputOption::VALUE_NONE,
-                'Пересобрать originals из текущих public-файлов (после восстановления чистых фото)',
-            );
+        $this->addOption('dry-run', null, InputOption::VALUE_NONE, 'Показать изменения без записи в БД и файлов');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
         $dryRun = (bool) $input->getOption('dry-run');
-        $rebuildOriginals = (bool) $input->getOption('rebuild-originals');
 
         if ($dryRun) {
             $io->note('Режим dry-run: файлы и БД не будут изменены.');
-        }
-
-        if ($rebuildOriginals && !$dryRun) {
-            $io->note('Originals будут пересобраны из текущих public-файлов.');
         }
 
         /** @var Property[] $properties */
@@ -76,17 +64,16 @@ final class WatermarkPropertyImagesCommand extends Command
 
                 if ($dryRun) {
                     $io->writeln(sprintf(
-                        'Property #%d: обработать %s%s',
+                        'Property #%d: обработать %s',
                         $property->getId()->getValue(),
                         $imageUrl,
-                        $rebuildOriginals ? ' (rebuild-originals)' : '',
                     ));
                     ++$processedImages;
                     continue;
                 }
 
                 try {
-                    $result = $this->fileUploader->processExistingPropertyImage($imageUrl, $rebuildOriginals);
+                    $result = $this->fileUploader->processExistingPropertyImage($imageUrl);
                     ++$processedImages;
 
                     if ($result === null) {

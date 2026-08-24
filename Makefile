@@ -8,7 +8,7 @@ test-unit:
 
 test-functional:
 	docker compose exec php sh -lc "cd /var/www/backend && composer test:functional"
-.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo backend-seed-demo-landmarks backend-watermark-property-images backend-watermark-property-images-rebuild backend-watermark-property-images-dry-run admin-user frontend-install frontend-dev frontend-build frontend-build-cpanel frontend-build-cpanel-prod frontend-build-cpanel-prod-local frontend-build-cpanel-verify-3g frontend-export-cpanel frontend-cpanel-clean clean exchange-rates sync-metro-proximity sync-landmark-proximity backfill-city-districts sync-calendars reshuffle-placement notify-vip-expiring prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-sync-landmark-proximity prod-backfill-city-districts prod-sync-calendars prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
+.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo backend-seed-demo-landmarks backend-watermark-property-images backend-watermark-property-images-dry-run admin-user frontend-install frontend-dev frontend-build frontend-build-cpanel frontend-build-cpanel-prod frontend-build-cpanel-prod-local frontend-build-cpanel-verify-3g frontend-export-cpanel frontend-cpanel-clean clean exchange-rates sync-metro-proximity sync-landmark-proximity backfill-city-districts sync-calendars reshuffle-placement notify-vip-expiring prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-sync-landmark-proximity prod-backfill-city-districts prod-sync-calendars prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
 
 PROD_ENV_FILE = .env.prod
 CPANEL_ENV_FILE = .env.cpanel
@@ -88,11 +88,6 @@ backend-seed-demo-landmarks: ## Upsert demo landmarks for catalog apartment citi
 backend-watermark-property-images: ## Watermark local property photos and convert legacy JPEG/PNG to WebP
 	@echo "${GREEN}Watermarking property images (app:watermark-property-images)...${RESET}"
 	docker-compose exec php sh -lc "cd /var/www/backend && php bin/console app:watermark-property-images --no-interaction"
-
-# После восстановления чистых uploads: пересобрать originals из public и заново наложить лого.
-backend-watermark-property-images-rebuild: ## Same as watermark, but rebuild originals from current public files
-	@echo "${GREEN}Watermarking property images with --rebuild-originals...${RESET}"
-	docker-compose exec php sh -lc "cd /var/www/backend && php bin/console app:watermark-property-images --rebuild-originals --no-interaction"
 
 backend-watermark-property-images-dry-run: ## Preview property image watermark backfill
 	@echo "${GREEN}Dry-run property image watermark (app:watermark-property-images --dry-run)...${RESET}"

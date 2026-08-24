@@ -95,7 +95,7 @@ class FileUploader
     /**
      * @return array{oldUrl: string, newUrl: string}|null null = URL не менялся (файл уже нужного формата), но штамп мог быть обновлён
      */
-    public function processExistingPropertyImage(string $publicUrl, bool $rebuildOriginal = false): ?array
+    public function processExistingPropertyImage(string $publicUrl): ?array
     {
         if (!$this->isLocalPropertyImageUrl($publicUrl)) {
             return null;
@@ -116,16 +116,7 @@ class FileUploader
 
         $originalPath = $this->resolvePropertyOriginalPath($baseName, $outputFormat);
 
-        if ($rebuildOriginal) {
-            foreach (['jpg', 'jpeg', 'png', 'webp'] as $legacyExt) {
-                $legacyOriginal = $this->resolvePropertyOriginalPath($baseName, $legacyExt);
-                if (is_file($legacyOriginal)) {
-                    @unlink($legacyOriginal);
-                }
-            }
-        }
-
-        if ($rebuildOriginal || !is_file($originalPath)) {
+        if (!is_file($originalPath)) {
             $originalPath = $this->bootstrapPropertyOriginalFromPublic($publicPath, $baseName, $outputFormat, $sourceMimeType);
         } elseif ($outputFormat === 'webp' && !str_ends_with(strtolower($originalPath), '.webp')) {
             $convertedOriginalPath = $this->resolvePropertyOriginalPath($baseName, 'webp');
