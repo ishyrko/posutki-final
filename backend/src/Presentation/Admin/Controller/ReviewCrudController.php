@@ -9,6 +9,7 @@ use App\Domain\Review\Event\ReviewApprovedEvent;
 use App\Domain\Review\Repository\ReviewRepositoryInterface;
 use App\Domain\Review\ValueObject\ReviewStatus;
 use App\Domain\Shared\ValueObject\Id;
+use App\Infrastructure\Service\FrontendUrlBuilder;
 use LogicException;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -36,6 +37,7 @@ final class ReviewCrudController extends AbstractCrudController
         private readonly ReviewRepositoryInterface $reviewRepository,
         private readonly AdminUrlGenerator $adminUrlGenerator,
         private readonly MessageBusInterface $notificationBus,
+        private readonly FrontendUrlBuilder $frontendUrls,
     ) {
     }
 
@@ -89,7 +91,8 @@ final class ReviewCrudController extends AbstractCrudController
             ->formatValue(static fn ($value, Review $r): string => (string) ($r->getId()?->getValue() ?? ''));
 
         yield AssociationField::new('property', 'Объявление')
-            ->formatValue(static fn ($value, Review $r): string => $r->getProperty()->getTitle() . ' (#' . $r->getProperty()->getId()->getValue() . ')')
+            ->formatValue(fn ($value, Review $r): string => $this->formatPropertyPublicLink($r))
+            ->renderAsHtml()
             ->setFormTypeOption('disabled', true);
 
         yield AssociationField::new('author', 'Автор')
@@ -166,6 +169,19 @@ final class ReviewCrudController extends AbstractCrudController
             'review' => $entity,
             'cancelUrl' => $this->adminUrlGenerator->setController(self::class)->setAction(Action::INDEX)->generateUrl(),
         ]);
+    }
+
+    private function formatPropertyPublicLink(Review $review): string
+    {
+        $property = $review->getProperty();
+        $url = $this->frontendUrls->publicPropertyForListing($property);
+        $label = $property->getTitle() . ' (#' . $property->getId()->getValue() . ')';
+
+        return sprintf(
+            '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
+            htmlspecialchars($url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+        );
     }
 
     private function redirectToIndex(): RedirectResponse

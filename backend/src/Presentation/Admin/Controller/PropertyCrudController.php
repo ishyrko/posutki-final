@@ -209,11 +209,11 @@ class PropertyCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
+        yield FormField::addTab('Основное');
+
         yield TextField::new('id', 'ID')
             ->formatValue(fn ($value, $entity) => (string) $entity->getId()->getValue())
             ->hideOnForm();
-
-        yield FormField::addTab('Основное');
 
         yield TextField::new('title', 'Заголовок');
 

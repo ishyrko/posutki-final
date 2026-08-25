@@ -36,7 +36,7 @@
     </div>
 
     <div class="details">
-      <div><strong>Оценка:</strong> <span class="stars">{% for i in 1..review.rating %}★{% endfor %}{% for i in review.rating+1..5 %}☆{% endfor %}</span></div>
+      <div><strong>Оценка:</strong> <span class="stars">{% for i in 1..5 %}{% if i <= review.rating %}★{% else %}☆{% endif %}{% endfor %}</span></div>
       <div><strong>Комментарий:</strong> {{ review.text }}</div>
     </div>
 
