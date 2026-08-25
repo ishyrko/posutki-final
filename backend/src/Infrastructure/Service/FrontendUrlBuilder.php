@@ -56,6 +56,16 @@ final readonly class FrontendUrlBuilder
         return $this->base() . '/kabinet/soobshcheniya/';
     }
 
+    public function ownerReviews(): string
+    {
+        return $this->base() . '/kabinet/otzyvy/';
+    }
+
+    public function propertyReviews(int $propertyId): string
+    {
+        return $this->base() . '/kabinet/otzyvy/' . $propertyId . '/';
+    }
+
     public function editProperty(int $propertyId): string
     {
         return $this->base() . '/kabinet/redaktirovat/' . $propertyId . '/';

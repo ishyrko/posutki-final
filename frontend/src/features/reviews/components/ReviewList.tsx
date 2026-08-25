@@ -63,6 +63,21 @@ export function ReviewList({ items }: ReviewListProps) {
                             ) : (
                                 <p className="text-sm text-muted-foreground italic">Без комментария</p>
                             )}
+                            {r.ownerReply ? (
+                                <div className="mt-3 rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
+                                    <p className="text-xs font-medium text-foreground mb-1">Ответ владельца</p>
+                                    <p className="text-sm text-muted-foreground whitespace-pre-line">{r.ownerReply}</p>
+                                    {r.ownerRepliedAt ? (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {new Date(r.ownerRepliedAt).toLocaleDateString('ru-RU', {
+                                                day: 'numeric',
+                                                month: 'long',
+                                                year: 'numeric',
+                                            })}
+                                        </p>
+                                    ) : null}
+                                </div>
+                            ) : null}
                         </div>
                     </div>
                 </li>

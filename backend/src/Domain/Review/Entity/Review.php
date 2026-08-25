@@ -12,8 +12,8 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'reviews')]
-#[ORM\UniqueConstraint(name: 'uniq_review_property_author', columns: ['property_id', 'author_id'])]
 #[ORM\Index(name: 'idx_reviews_property_status', columns: ['property_id', 'status'])]
+#[ORM\Index(name: 'idx_reviews_author_property_status', columns: ['author_id', 'property_id', 'status'])]
 class Review
 {
     #[ORM\Id]
@@ -38,6 +38,18 @@ class Review
     #[ORM\Column(type: 'string', length: 20, enumType: ReviewStatus::class)]
     private ReviewStatus $status;
 
+    #[ORM\Column(type: 'boolean', name: 'share_data_with_owner', options: ['default' => true])]
+    private bool $shareDataWithOwner = true;
+
+    #[ORM\Column(type: 'text', nullable: true, name: 'owner_reply')]
+    private ?string $ownerReply = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'owner_replied_at')]
+    private ?\DateTimeImmutable $ownerRepliedAt = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'owner_seen_at')]
+    private ?\DateTimeImmutable $ownerSeenAt = null;
+
     #[ORM\Column(type: 'string', length: 500, nullable: true, name: 'moderation_comment')]
     private ?string $moderationComment = null;
 
@@ -47,8 +59,13 @@ class Review
     #[ORM\Column(type: 'datetime_immutable', name: 'updated_at')]
     private \DateTimeImmutable $updatedAt;
 
-    public function __construct(Property $property, User $author, int $rating, string $text)
-    {
+    public function __construct(
+        Property $property,
+        User $author,
+        int $rating,
+        string $text,
+        bool $shareDataWithOwner = true,
+    ) {
         if ($rating < 1 || $rating > 5) {
             throw new \InvalidArgumentException('Оценка должна быть от 1 до 5');
         }
@@ -62,6 +79,7 @@ class Review
         $this->author = $author;
         $this->rating = $rating;
         $this->text = $normalizedText;
+        $this->shareDataWithOwner = $shareDataWithOwner;
         $this->status = ReviewStatus::Pending;
         $now = new \DateTimeImmutable();
         $this->createdAt = $now;
@@ -98,6 +116,26 @@ class Review
         return $this->status;
     }
 
+    public function isShareDataWithOwner(): bool
+    {
+        return $this->shareDataWithOwner;
+    }
+
+    public function getOwnerReply(): ?string
+    {
+        return $this->ownerReply;
+    }
+
+    public function getOwnerRepliedAt(): ?\DateTimeImmutable
+    {
+        return $this->ownerRepliedAt;
+    }
+
+    public function getOwnerSeenAt(): ?\DateTimeImmutable
+    {
+        return $this->ownerSeenAt;
+    }
+
     public function getModerationComment(): ?string
     {
         return $this->moderationComment;
@@ -116,6 +154,7 @@ class Review
     public function approve(): void
     {
         $this->status = ReviewStatus::Approved;
+        $this->ownerSeenAt = null;
         $this->updatedAt = new \DateTimeImmutable();
     }
 
@@ -127,7 +166,7 @@ class Review
     }
 
     /** Повторная отправка после отклонения модератором. */
-    public function resubmitToPending(int $rating, string $text): void
+    public function resubmitToPending(int $rating, string $text, bool $shareDataWithOwner = true): void
     {
         if ($rating < 1 || $rating > 5) {
             throw new \InvalidArgumentException('Оценка должна быть от 1 до 5');
@@ -140,8 +179,38 @@ class Review
 
         $this->rating = $rating;
         $this->text = $normalizedText;
+        $this->shareDataWithOwner = $shareDataWithOwner;
         $this->status = ReviewStatus::Pending;
         $this->moderationComment = null;
+        $this->ownerSeenAt = null;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function softDelete(): void
+    {
+        $this->status = ReviewStatus::Deleted;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function reply(string $text): void
+    {
+        $normalizedText = trim($text);
+        if ($normalizedText === '') {
+            throw new \InvalidArgumentException('Текст ответа обязателен');
+        }
+
+        $this->ownerReply = $normalizedText;
+        $this->ownerRepliedAt = new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function markSeenByOwner(): void
+    {
+        if ($this->ownerSeenAt !== null) {
+            return;
+        }
+
+        $this->ownerSeenAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }
 

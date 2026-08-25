@@ -6,7 +6,7 @@ import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from '@/feature
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ListingSubmitLink } from '@/components/ListingSubmitLink';
-import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, CalendarDays, Rocket, Star, User, Phone } from 'lucide-react';
+import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, CalendarDays, Rocket, Star, User, Phone, MessagesSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -375,6 +375,17 @@ function ListingCard({
                     <Button variant="ghost" size="sm" asChild className="justify-start">
                         <Link href={`/kabinet/statistika/${property.id}/`}>
                             <BarChart3 className="w-3.5 h-3.5 mr-1" />Статистика
+                        </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild className="justify-start">
+                        <Link href={`/kabinet/otzyvy/${property.id}/`} className="inline-flex items-center">
+                            <MessagesSquare className="w-3.5 h-3.5 mr-1" />
+                            Отзывы
+                            {(property.unviewedReviewsCount ?? 0) > 0 ? (
+                                <span className="ml-1.5 inline-flex min-w-[1rem] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] items-center justify-center leading-none">
+                                    {(property.unviewedReviewsCount ?? 0) > 99 ? '99+' : property.unviewedReviewsCount}
+                                </span>
+                            ) : null}
                         </Link>
                     </Button>
                     {property.dealType === 'daily' && (

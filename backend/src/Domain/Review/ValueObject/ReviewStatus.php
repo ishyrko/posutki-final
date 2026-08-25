@@ -9,6 +9,7 @@ enum ReviewStatus: string
     case Pending = 'pending';
     case Approved = 'approved';
     case Rejected = 'rejected';
+    case Deleted = 'deleted';
 
     public function label(): string
     {
@@ -16,7 +17,13 @@ enum ReviewStatus: string
             self::Pending => 'На модерации',
             self::Approved => 'Одобрен',
             self::Rejected => 'Отклонён',
+            self::Deleted => 'Удалён',
         };
+    }
+
+    public function isActive(): bool
+    {
+        return $this !== self::Deleted;
     }
 
     /** @return array<string, self> */

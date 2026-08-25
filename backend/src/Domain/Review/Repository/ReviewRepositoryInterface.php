@@ -15,12 +15,30 @@ interface ReviewRepositoryInterface
 
     public function findById(Id $id): ?Review;
 
-    public function findByAuthorAndProperty(Id $authorId, Id $propertyId): ?Review;
+    /** Активный (не deleted) отзыв автора по объявлению. */
+    public function findActiveByAuthorAndProperty(Id $authorId, Id $propertyId): ?Review;
 
     /**
      * @return Review[]
      */
     public function findApprovedByPropertyId(Id $propertyId): array;
+
+    /**
+     * @return Review[]
+     */
+    public function findApprovedByOwnerId(Id $ownerId): array;
+
+    /**
+     * @return Review[]
+     */
+    public function findApprovedByPropertyIdForOwner(Id $propertyId, Id $ownerId): array;
+
+    /**
+     * @return array<int, int> propertyId => unviewed count
+     */
+    public function countUnviewedGroupedByPropertyForOwner(Id $ownerId): array;
+
+    public function markSeenForPropertyOwner(Id $propertyId, Id $ownerId): void;
 
     /**
      * @return array{avg: float|null, count: int}

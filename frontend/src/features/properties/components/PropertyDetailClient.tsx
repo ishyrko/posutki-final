@@ -87,7 +87,7 @@ import { isCalendarRecentlyActive } from "@/features/properties/property-calenda
 import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { ReviewList } from "@/features/reviews/components/ReviewList";
 import { ReviewSummary } from "@/features/reviews/components/ReviewSummary";
-import { useDeletePendingReview, usePropertyReviews } from "@/features/reviews/hooks";
+import { useDeleteReview, usePropertyReviews } from "@/features/reviews/hooks";
 type PropertyDetailClientProps = {
   id: number;
   initialProperty: Property;
@@ -130,7 +130,7 @@ export default function PropertyDetailClient({
   const isFavorited = favoriteIds.includes(id);
 
   const { data: reviewsData, isLoading: reviewsLoading } = usePropertyReviews(id);
-  const deleteReviewMutation = useDeletePendingReview(id);
+  const deleteReviewMutation = useDeleteReview(id);
 
   const [currentImage, setCurrentImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -262,6 +262,7 @@ export default function PropertyDetailClient({
     property.status === "published" && !isOwner && loggedIn && (!viewerReview || viewerReview.status === "rejected");
   const hasPendingOwnReview = viewerReview?.status === "pending";
   const hasApprovedOwnReview = viewerReview?.status === "approved";
+  const hasRejectedOwnReview = viewerReview?.status === "rejected";
 
   const sellerName = getPropertySellerName(property);
   const canBookInquiry = property.contact?.hasEmail === true;
@@ -951,17 +952,52 @@ export default function PropertyDetailClient({
                             disabled={deleteReviewMutation.isPending}
                             onClick={() => {
                               deleteReviewMutation.mutate(viewerReview.id, {
-                                onSuccess: () => toast.success("Черновик отзыва удалён"),
+                                onSuccess: () => toast.success("Отзыв удалён"),
                                 onError: () => toast.error("Не удалось удалить отзыв"),
                               });
                             }}
                           >
-                            Удалить черновик
+                            Удалить отзыв
                           </Button>
                         </div>
                       )}
-                      {hasApprovedOwnReview && (
-                        <p className="mt-4 text-sm text-muted-foreground">Спасибо, вы уже оставили отзыв об этом объекте.</p>
+                      {hasApprovedOwnReview && viewerReview && (
+                        <div className="mt-4 rounded-lg border border-border/60 bg-muted/30 px-4 py-3 text-sm text-foreground space-y-2">
+                          <p>Спасибо, вы уже оставили отзыв об этом объекте.</p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={deleteReviewMutation.isPending}
+                            onClick={() => {
+                              deleteReviewMutation.mutate(viewerReview.id, {
+                                onSuccess: () => toast.success("Отзыв удалён"),
+                                onError: () => toast.error("Не удалось удалить отзыв"),
+                              });
+                            }}
+                          >
+                            Удалить отзыв
+                          </Button>
+                        </div>
+                      )}
+                      {hasRejectedOwnReview && viewerReview && (
+                        <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-foreground space-y-2">
+                          <p>Отзыв отклонён модератором. Можете отправить его снова.</p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={deleteReviewMutation.isPending}
+                            onClick={() => {
+                              deleteReviewMutation.mutate(viewerReview.id, {
+                                onSuccess: () => toast.success("Отзыв удалён"),
+                                onError: () => toast.error("Не удалось удалить отзыв"),
+                              });
+                            }}
+                          >
+                            Удалить отзыв
+                          </Button>
+                        </div>
                       )}
                       {canLeaveReview && <ReviewForm propertyId={property.id} />}
                       {!loggedIn && property.status === "published" && !isOwner && (

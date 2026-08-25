@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Admin\Controller;
 
 use App\Domain\Review\Entity\Review;
+use App\Domain\Review\Event\ReviewApprovedEvent;
 use App\Domain\Review\Repository\ReviewRepositoryInterface;
 use App\Domain\Review\ValueObject\ReviewStatus;
 use App\Domain\Shared\ValueObject\Id;
@@ -16,6 +17,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
@@ -26,12 +28,14 @@ use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 final class ReviewCrudController extends AbstractCrudController
 {
     public function __construct(
         private readonly ReviewRepositoryInterface $reviewRepository,
         private readonly AdminUrlGenerator $adminUrlGenerator,
+        private readonly MessageBusInterface $notificationBus,
     ) {
     }
 
@@ -95,6 +99,10 @@ final class ReviewCrudController extends AbstractCrudController
 
         yield TextareaField::new('text', 'Текст');
 
+        yield BooleanField::new('shareDataWithOwner', 'Согласие на передачу контактов')->hideOnForm();
+
+        yield TextareaField::new('ownerReply', 'Ответ владельца')->hideOnForm();
+
         yield ChoiceField::new('status', 'Статус')
             ->setChoices(ReviewStatus::choices());
 
@@ -122,6 +130,9 @@ final class ReviewCrudController extends AbstractCrudController
 
         $entity->approve();
         $this->reviewRepository->save($entity);
+        if ($entity->getId() !== null) {
+            $this->notificationBus->dispatch(new ReviewApprovedEvent((string) $entity->getId()->getValue()));
+        }
         $this->addFlash('success', 'Отзыв одобрен');
 
         return $this->redirectToIndex();

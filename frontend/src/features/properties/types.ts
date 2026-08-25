@@ -157,6 +157,7 @@ export interface Property {
     /** Средняя оценка по одобренным отзывам (с бэка). */
     ratingAvg?: number | null;
     reviewCount?: number;
+    unviewedReviewsCount?: number;
     /** Отзыв текущего пользователя (если авторизован). */
     viewerReview?: { id: number; status: 'pending' | 'approved' | 'rejected' } | null;
     createdAt: string;

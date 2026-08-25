@@ -195,7 +195,7 @@ final class GetPropertyHandler
         if ($query->viewerUserId !== null) {
             try {
                 $viewerId = Id::fromString($query->viewerUserId);
-                $existingReview = $this->reviewRepository->findByAuthorAndProperty($viewerId, $property->getId());
+                $existingReview = $this->reviewRepository->findActiveByAuthorAndProperty($viewerId, $property->getId());
                 if ($existingReview !== null && $existingReview->getId() !== null) {
                     $viewerReview = [
                         'id' => $existingReview->getId()->getValue(),

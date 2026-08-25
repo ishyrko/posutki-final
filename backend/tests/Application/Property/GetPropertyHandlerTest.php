@@ -168,7 +168,7 @@ final class GetPropertyHandlerTest extends TestCase
 
         $reviewRepository = $this->createStub(ReviewRepositoryInterface::class);
         $reviewRepository->method('getAggregateByPropertyId')->willReturn(['avg' => null, 'count' => 0]);
-        $reviewRepository->method('findByAuthorAndProperty')->willReturn(null);
+        $reviewRepository->method('findActiveByAuthorAndProperty')->willReturn(null);
 
         $availabilityBlockRepository = $this->createStub(PropertyAvailabilityBlockRepositoryInterface::class);
         $availabilityBlockRepository->method('findLatestCreatedAtByPropertyId')->willReturn(null);

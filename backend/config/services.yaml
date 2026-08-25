@@ -560,6 +560,12 @@ services:
     App\Application\Notification\BookingInquiry\BookingInquiryRepliedHandler:
         tags: [ { name: messenger.message_handler, bus: notification.bus } ]
 
+    App\Application\Notification\Review\ReviewApprovedHandler:
+        tags: [ { name: messenger.message_handler, bus: notification.bus } ]
+
+    App\Application\Notification\Review\ReviewRepliedHandler:
+        tags: [ { name: messenger.message_handler, bus: notification.bus } ]
+
     App\Application\Notification\Placement\PlacementPaymentSucceededHandler:
         tags: [ { name: messenger.message_handler, bus: notification.bus } ]
 
@@ -582,9 +588,21 @@ services:
         arguments:
             $mailerFrom: '%app.mailer_from%'
 
+    App\Infrastructure\Mail\ReviewMailer:
+        arguments:
+            $mailerFrom: '%app.mailer_from%'
+
     App\Infrastructure\Mail\PlacementMailer:
         arguments:
             $mailerFrom: '%app.mailer_from%'
+
+    App\Presentation\Api\Controller\ReviewController:
+        arguments:
+            $notificationBus: '@notification.bus'
+
+    App\Presentation\Admin\Controller\ReviewCrudController:
+        arguments:
+            $notificationBus: '@notification.bus'
 
     App\Application\Service\PlacementPaymentCompletionService:
         arguments:

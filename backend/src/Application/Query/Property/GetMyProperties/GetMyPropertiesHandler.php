@@ -8,6 +8,8 @@ use App\Application\DTO\PropertyDTO;
 use App\Application\Service\PropertyOwnerPublicContactResolver;
 use App\Domain\Favorite\Repository\FavoriteRepositoryInterface;
 use App\Domain\Property\Repository\{PropertyRepositoryInterface, CityRepositoryInterface, CityDistrictRepositoryInterface, StreetRepositoryInterface};
+use App\Domain\Review\Repository\ReviewRepositoryInterface;
+use App\Domain\Shared\ValueObject\Id;
 
 final class GetMyPropertiesHandler
 {
@@ -18,6 +20,7 @@ final class GetMyPropertiesHandler
         private StreetRepositoryInterface $streetRepository,
         private FavoriteRepositoryInterface $favoriteRepository,
         private PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
+        private ReviewRepositoryInterface $reviewRepository,
     ) {
     }
 
@@ -28,6 +31,9 @@ final class GetMyPropertiesHandler
             $query->page,
             $query->limit
         );
+
+        $ownerId = Id::fromString($query->userId);
+        $unviewedByProperty = $this->reviewRepository->countUnviewedGroupedByPropertyForOwner($ownerId);
 
         $cityIds = array_unique(array_map(
             fn($p) => $p->getCityId(),
@@ -75,9 +81,10 @@ final class GetMyPropertiesHandler
         $ownerContacts = $this->ownerPublicContactResolver->resolveForOwnerIds($ownerIds);
 
         return array_map(
-            function ($property) use ($cities, $streets, $cityDistricts, $ownerContacts) {
+            function ($property) use ($cities, $streets, $cityDistricts, $ownerContacts, $unviewedByProperty) {
                 $ownerId = $property->getOwnerId()->getValue();
                 $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
+                $propertyId = $property->getId()->getValue();
 
                 return PropertyDTO::fromEntity(
                     $property,
@@ -91,6 +98,7 @@ final class GetMyPropertiesHandler
                     null,
                     $contact,
                     includeAllImages: true,
+                    unviewedReviewsCount: $unviewedByProperty[$propertyId] ?? 0,
                 );
             },
             $properties
