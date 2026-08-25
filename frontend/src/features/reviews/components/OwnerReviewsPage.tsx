@@ -1,13 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Star, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { useHasMyProperties } from '@/features/properties/hooks';
 import { useOwnerPropertyReviews, useOwnerReviews, useReplyToReview } from '../hooks';
 import type { OwnerReviewItem } from '../types';
+import { ReviewsSubnav } from './ReviewsSubnav';
 import { toast } from 'sonner';
 
 type OwnerReviewsPageProps = {
@@ -19,9 +22,15 @@ function authorLabel(author: OwnerReviewItem['author']): string {
     return full || 'Пользователь';
 }
 
-function ReviewReplyCard({ review, propertyId }: { review: OwnerReviewItem; propertyId?: number }) {
+type ReviewReplyCardProps = {
+    review: OwnerReviewItem;
+    propertyId?: number;
+    onReply: (reviewId: number, text: string) => void;
+    isReplyPending: boolean;
+};
+
+function ReviewReplyCard({ review, propertyId, onReply, isReplyPending }: ReviewReplyCardProps) {
     const [text, setText] = useState(review.ownerReply ?? '');
-    const reply = useReplyToReview(propertyId);
 
     const handleSubmit = () => {
         const trimmed = text.trim();
@@ -29,13 +38,7 @@ function ReviewReplyCard({ review, propertyId }: { review: OwnerReviewItem; prop
             toast.error('Напишите текст ответа');
             return;
         }
-        reply.mutate(
-            { reviewId: review.id, text: trimmed },
-            {
-                onSuccess: () => toast.success('Ответ сохранён'),
-                onError: () => toast.error('Не удалось сохранить ответ'),
-            },
-        );
+        onReply(review.id, trimmed);
     };
 
     return (
@@ -89,7 +92,7 @@ function ReviewReplyCard({ review, propertyId }: { review: OwnerReviewItem; prop
                     rows={3}
                     placeholder="Ответ гостю…"
                 />
-                <Button type="button" size="sm" disabled={reply.isPending} onClick={handleSubmit}>
+                <Button type="button" size="sm" disabled={isReplyPending} onClick={handleSubmit}>
                     {review.ownerReply ? 'Изменить ответ' : 'Ответить'}
                 </Button>
             </div>
@@ -98,30 +101,61 @@ function ReviewReplyCard({ review, propertyId }: { review: OwnerReviewItem; prop
 }
 
 export function OwnerReviewsPage({ propertyId }: OwnerReviewsPageProps) {
-    const allQuery = useOwnerReviews();
-    const propertyQuery = useOwnerPropertyReviews(propertyId ?? 0);
-    const query = propertyId ? propertyQuery : allQuery;
+    const router = useRouter();
+    const { hasMyProperties, isLoading: isOwnerLoading } = useHasMyProperties();
+    const ownerQuery = useOwnerReviews();
+    const propertyQuery = useOwnerPropertyReviews(propertyId);
+    const query = propertyId != null ? propertyQuery : ownerQuery;
+    const reply = useReplyToReview(propertyId);
+
+    useEffect(() => {
+        if (propertyId != null || isOwnerLoading || hasMyProperties) {
+            return;
+        }
+        router.replace('/kabinet/otzyvy/moi/');
+    }, [propertyId, isOwnerLoading, hasMyProperties, router]);
 
     const items = useMemo(() => query.data?.items ?? [], [query.data?.items]);
-    const propertyTitle = propertyId ? propertyQuery.data?.property?.title : null;
+    const propertyTitle = propertyId != null ? propertyQuery.data?.property?.title : null;
+
+    const handleReply = (reviewId: number, text: string) => {
+        reply.mutate(
+            { reviewId, text },
+            {
+                onSuccess: () => toast.success('Ответ сохранён'),
+                onError: () => toast.error('Не удалось сохранить ответ'),
+            },
+        );
+    };
+
+    if (propertyId == null && !isOwnerLoading && !hasMyProperties) {
+        return (
+            <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Перенаправление…
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
             <div>
                 <h1 className="text-2xl font-bold text-foreground">
-                    {propertyId ? 'Отзывы по объявлению' : 'Отзывы'}
+                    {propertyId != null ? 'Отзывы по объявлению' : 'Отзывы'}
                 </h1>
                 {propertyTitle ? (
                     <p className="text-sm text-muted-foreground mt-1">{propertyTitle}</p>
                 ) : (
                     <p className="text-sm text-muted-foreground mt-1">Ответы на отзывы по вашим объявлениям</p>
                 )}
-                {propertyId ? (
+                {propertyId != null ? (
                     <Button variant="link" className="px-0 h-auto mt-2" asChild>
                         <Link href="/kabinet/otzyvy/">Все отзывы</Link>
                     </Button>
                 ) : null}
             </div>
+
+            {propertyId == null ? <ReviewsSubnav active="incoming" hasMyProperties={hasMyProperties} /> : null}
 
             {query.isLoading ? (
                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -133,7 +167,13 @@ export function OwnerReviewsPage({ propertyId }: OwnerReviewsPageProps) {
             ) : (
                 <div className="space-y-4">
                     {items.map((review) => (
-                        <ReviewReplyCard key={review.id} review={review} propertyId={propertyId} />
+                        <ReviewReplyCard
+                            key={review.id}
+                            review={review}
+                            propertyId={propertyId}
+                            onReply={handleReply}
+                            isReplyPending={reply.isPending}
+                        />
                     ))}
                 </div>
             )}

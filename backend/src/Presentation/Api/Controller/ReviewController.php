@@ -151,6 +151,16 @@ class ReviewController extends AbstractController
         return $this->json(ApiResponse::success(['message' => 'Отзыв удалён']));
     }
 
+    #[Route('/me/reviews', name: 'api_me_reviews_list', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function listForAuthor(#[CurrentUser] User $user): JsonResponse
+    {
+        $reviews = $this->reviewRepository->findActiveByAuthorId($user->getId());
+        $items = array_map(fn (Review $r): array => $this->serializeAuthorReview($r), $reviews);
+
+        return $this->json(ApiResponse::success(['items' => $items]));
+    }
+
     #[Route('/owner/reviews', name: 'api_owner_reviews_list', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
     public function listForOwner(#[CurrentUser] User $user): JsonResponse
@@ -264,6 +274,28 @@ class ReviewController extends AbstractController
             'createdAt' => $r->getCreatedAt()->format('c'),
             'ownerReply' => $r->getOwnerReply(),
             'ownerRepliedAt' => $r->getOwnerRepliedAt()?->format('c'),
+        ];
+    }
+
+    private function serializeAuthorReview(Review $r): array
+    {
+        $property = $r->getProperty();
+        $isApproved = $r->getStatus() === ReviewStatus::Approved;
+
+        return [
+            'id' => $r->getId()?->getValue(),
+            'rating' => $r->getRating(),
+            'text' => $r->getText(),
+            'status' => $r->getStatus()->value,
+            'moderationComment' => $r->getModerationComment(),
+            'createdAt' => $r->getCreatedAt()->format('c'),
+            'ownerReply' => $isApproved ? $r->getOwnerReply() : null,
+            'ownerRepliedAt' => $isApproved ? $r->getOwnerRepliedAt()?->format('c') : null,
+            'property' => [
+                'id' => $property->getId()->getValue(),
+                'title' => $property->getTitle(),
+                'type' => $property->getType(),
+            ],
         ];
     }
 

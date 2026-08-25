@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Home, Heart, MessageSquare, User, LogOut, ChevronRight, CreditCard, Star } from 'lucide-react';
@@ -8,9 +9,9 @@ import type { LucideIcon } from 'lucide-react';
 import { useUser, useLogout } from '@/features/auth/hooks';
 import { useUnreadCount } from '@/features/messages/hooks';
 import { useUnreadBookingInquiryCount } from '@/features/properties/booking-inquiry';
-import { useHasMyProperties } from '@/features/properties/hooks';
+import { useMyProperties } from '@/features/properties/hooks';
+import { useOwnerFeaturesContext } from '@/features/properties/OwnerFeaturesProvider';
 import { usePendingPlacementPaymentCount } from '@/features/placement/hooks';
-import { useUnviewedReviewsCount } from '@/features/reviews/hooks';
 import { UserAvatar } from '@/components/UserAvatar';
 import { formatUserDisplayName } from '@/features/profile/displayName';
 
@@ -48,11 +49,10 @@ const navigation: NavItem[] = [
     { name: 'Сообщения', href: '/kabinet/soobshcheniya', icon: MessageSquare, badgeKey: 'unread' },
     {
         name: 'Отзывы',
-        href: '/kabinet/otzyvy',
+        href: '/kabinet/otzyvy/',
         activePrefix: '/kabinet/otzyvy',
         icon: Star,
         badgeKey: 'reviews',
-        ownerOnly: true,
     },
 ];
 
@@ -169,14 +169,40 @@ export function Sidebar() {
     const pathname = usePathname();
     const { data: user } = useUser();
     const logout = useLogout();
-    const { hasMyProperties } = useHasMyProperties();
+    const ownerFeatures = useOwnerFeaturesContext();
+    const myPropertiesQuery = useMyProperties(1, 50);
+    const hasMyProperties = myPropertiesQuery.isSuccess
+        ? (myPropertiesQuery.data?.data.length ?? 0) > 0
+        : (ownerFeatures?.initialHasMyProperties ?? false);
+    const unviewedReviewsCount = useMemo(
+        () =>
+            (myPropertiesQuery.data?.data ?? []).reduce(
+                (sum, property) => sum + (property.unviewedReviewsCount ?? 0),
+                0,
+            ),
+        [myPropertiesQuery.data?.data],
+    );
     const { data: unreadCount } = useUnreadCount();
     const { data: unreadBookingInquiryCount } = useUnreadBookingInquiryCount();
     const { data: pendingPaymentCount } = usePendingPlacementPaymentCount();
-    const unviewedReviewsCount = useUnviewedReviewsCount();
     const totalUnreadCount = (unreadCount ?? 0) + (hasMyProperties ? (unreadBookingInquiryCount ?? 0) : 0);
-    const desktopNavigation = filterNavigation(navigation, hasMyProperties, false);
-    const mobileNavigation = filterNavigation(navigation, hasMyProperties, true);
+    const navigationWithReviewsHref = useMemo(
+        () =>
+            navigation.map((item) =>
+                item.name === 'Отзывы'
+                    ? { ...item, href: hasMyProperties ? '/kabinet/otzyvy/' : '/kabinet/otzyvy/moi/' }
+                    : item,
+            ),
+        [hasMyProperties],
+    );
+    const desktopNavigation = useMemo(
+        () => filterNavigation(navigationWithReviewsHref, hasMyProperties, false),
+        [navigationWithReviewsHref, hasMyProperties],
+    );
+    const mobileNavigation = useMemo(
+        () => filterNavigation(navigationWithReviewsHref, hasMyProperties, true),
+        [navigationWithReviewsHref, hasMyProperties],
+    );
 
     return (
         <>

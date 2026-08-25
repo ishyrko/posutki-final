@@ -158,6 +158,36 @@ final class ReviewControllerTest extends ApiTestCase
         self::assertNotNull($fresh->getOwnerSeenAt());
     }
 
+    public function testAuthorListsOwnReviewsExcludingDeleted(): void
+    {
+        [$property, $author, $token] = $this->createReviewScenario();
+        if ($token === '') {
+            self::markTestSkipped('Could not obtain JWT token.');
+        }
+
+        $pending = new Review($property, $author, 5, 'Жду модерации', true);
+        $this->entityManager()->persist($pending);
+        $this->entityManager()->flush();
+
+        $approved = new Review($property, $author, 4, 'Уже был', true);
+        $approved->softDelete();
+        $this->entityManager()->persist($approved);
+        $this->entityManager()->flush();
+
+        $this->client->request(
+            'GET',
+            '/api/me/reviews',
+            server: ['HTTP_AUTHORIZATION' => 'Bearer ' . $token],
+        );
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+
+        $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertCount(1, $payload['data']['items']);
+        self::assertSame('pending', $payload['data']['items'][0]['status']);
+        self::assertSame('Жду модерации', $payload['data']['items'][0]['text']);
+        self::assertSame($property->getId()->getValue(), $payload['data']['items'][0]['property']['id']);
+    }
+
     /** @return array{0: \App\Domain\Property\Entity\Property, 1: User, 2: string} */
     private function createReviewScenario(bool $verifyAuthorPhone = true): array
     {

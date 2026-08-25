@@ -19,6 +19,13 @@ interface ReviewRepositoryInterface
     public function findActiveByAuthorAndProperty(Id $authorId, Id $propertyId): ?Review;
 
     /**
+     * Все активные (не deleted) отзывы автора.
+     *
+     * @return Review[]
+     */
+    public function findActiveByAuthorId(Id $authorId): array;
+
+    /**
      * @return Review[]
      */
     public function findApprovedByPropertyId(Id $propertyId): array;

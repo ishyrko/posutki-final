@@ -3,13 +3,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     deleteReview,
+    getMyReviews,
     getOwnerPropertyReviews,
     getOwnerReviews,
     getPropertyReviews,
     replyToReview,
     submitReview,
 } from './api';
-import { useMyProperties } from '@/features/properties/hooks';
 
 export function usePropertyReviews(propertyId: number) {
     return useQuery({
@@ -27,17 +27,21 @@ export function useSubmitReview(propertyId: number) {
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: ['property-reviews', propertyId] });
             void queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+            void queryClient.invalidateQueries({ queryKey: ['my-reviews'] });
         },
     });
 }
 
-export function useDeleteReview(propertyId: number) {
+export function useDeleteReview(propertyId?: number) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (reviewId: number) => deleteReview(reviewId),
         onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: ['property-reviews', propertyId] });
-            void queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+            void queryClient.invalidateQueries({ queryKey: ['my-reviews'] });
+            if (propertyId) {
+                void queryClient.invalidateQueries({ queryKey: ['property-reviews', propertyId] });
+                void queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+            }
         },
     });
 }
@@ -49,11 +53,18 @@ export function useOwnerReviews() {
     });
 }
 
-export function useOwnerPropertyReviews(propertyId: number) {
+export function useMyReviews() {
+    return useQuery({
+        queryKey: ['my-reviews'],
+        queryFn: getMyReviews,
+    });
+}
+
+export function useOwnerPropertyReviews(propertyId?: number) {
     return useQuery({
         queryKey: ['owner-property-reviews', propertyId],
-        queryFn: () => getOwnerPropertyReviews(propertyId),
-        enabled: propertyId > 0,
+        queryFn: () => getOwnerPropertyReviews(propertyId!),
+        enabled: propertyId != null && propertyId > 0,
     });
 }
 
@@ -67,13 +78,6 @@ export function useReplyToReview(propertyId?: number) {
                 void queryClient.invalidateQueries({ queryKey: ['owner-property-reviews', propertyId] });
                 void queryClient.invalidateQueries({ queryKey: ['property-reviews', propertyId] });
             }
-            void queryClient.invalidateQueries({ queryKey: ['my-properties'] });
         },
     });
-}
-
-export function useUnviewedReviewsCount() {
-    const { data } = useMyProperties(1, 50);
-    const total = (data?.data ?? []).reduce((sum, property) => sum + (property.unviewedReviewsCount ?? 0), 0);
-    return total;
 }

@@ -1,5 +1,6 @@
 import api from '@/lib/api';
 import type {
+    MyReviewsResponse,
     OwnerPropertyReviewsResponse,
     OwnerReviewsResponse,
     PropertyReviewsResponse,
@@ -27,6 +28,11 @@ export async function deleteReview(reviewId: number): Promise<void> {
 
 export async function getOwnerReviews(): Promise<OwnerReviewsResponse> {
     const response = await api.get<{ data: OwnerReviewsResponse }>('/owner/reviews');
+    return response.data.data;
+}
+
+export async function getMyReviews(): Promise<MyReviewsResponse> {
+    const response = await api.get<{ data: MyReviewsResponse }>('/me/reviews');
     return response.data.data;
 }
 

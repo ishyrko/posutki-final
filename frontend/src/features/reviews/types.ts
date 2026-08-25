@@ -60,3 +60,25 @@ export interface OwnerPropertyReviewsResponse {
 export interface OwnerReviewsResponse {
     items: OwnerReviewItem[];
 }
+
+export interface MyReviewProperty {
+    id: number;
+    title: string;
+    type: string;
+}
+
+export interface MyReviewItem {
+    id: number;
+    rating: number;
+    text: string | null;
+    status: Exclude<ReviewStatus, 'deleted'>;
+    moderationComment?: string | null;
+    createdAt: string;
+    ownerReply?: string | null;
+    ownerRepliedAt?: string | null;
+    property: MyReviewProperty;
+}
+
+export interface MyReviewsResponse {
+    items: MyReviewItem[];
+}

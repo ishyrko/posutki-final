@@ -55,6 +55,19 @@ class ReviewRepository extends ServiceEntityRepository implements ReviewReposito
             ->getOneOrNullResult();
     }
 
+    public function findActiveByAuthorId(Id $authorId): array
+    {
+        return $this->createQueryBuilder('r')
+            ->innerJoin('r.property', 'property')->addSelect('property')
+            ->where('r.author = :author')
+            ->andWhere('r.status != :deleted')
+            ->setParameter('author', $this->getEntityManager()->getReference(User::class, $authorId->getValue()))
+            ->setParameter('deleted', ReviewStatus::Deleted)
+            ->orderBy('r.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findApprovedByPropertyId(Id $propertyId): array
     {
         $property = $this->getEntityManager()->getReference(Property::class, $propertyId->getValue());

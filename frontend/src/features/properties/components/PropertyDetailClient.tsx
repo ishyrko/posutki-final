@@ -136,8 +136,13 @@ export default function PropertyDetailClient({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [reviewFormOpen, setReviewFormOpen] = useState(false);
   const openBookingAfterContactCloseRef = useRef(false);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    setReviewFormOpen(false);
+  }, [id]);
 
   const galleryImages: GalleryImageSource[] = useMemo(() => {
     const fromProperty = property?.images?.map((img) => ({
@@ -258,11 +263,16 @@ export default function PropertyDetailClient({
     Number(currentUser.id) === Number(property.ownerId);
 
   const viewerReview = property.viewerReview;
-  const canLeaveReview =
-    property.status === "published" && !isOwner && loggedIn && (!viewerReview || viewerReview.status === "rejected");
   const hasPendingOwnReview = viewerReview?.status === "pending";
   const hasApprovedOwnReview = viewerReview?.status === "approved";
   const hasRejectedOwnReview = viewerReview?.status === "rejected";
+  const canLeaveReview =
+    property.status === "published" &&
+    !isOwner &&
+    loggedIn &&
+    !hasPendingOwnReview &&
+    !hasApprovedOwnReview &&
+    (!viewerReview || hasRejectedOwnReview);
 
   const sellerName = getPropertySellerName(property);
   const canBookInquiry = property.contact?.hasEmail === true;
@@ -983,23 +993,47 @@ export default function PropertyDetailClient({
                       {hasRejectedOwnReview && viewerReview && (
                         <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-foreground space-y-2">
                           <p>Отзыв отклонён модератором. Можете отправить его снова.</p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={deleteReviewMutation.isPending}
-                            onClick={() => {
-                              deleteReviewMutation.mutate(viewerReview.id, {
-                                onSuccess: () => toast.success("Отзыв удалён"),
-                                onError: () => toast.error("Не удалось удалить отзыв"),
-                              });
-                            }}
-                          >
-                            Удалить отзыв
+                          <div className="flex flex-wrap gap-2">
+                            {!reviewFormOpen ? (
+                              <Button type="button" size="sm" onClick={() => setReviewFormOpen(true)}>
+                                Отправить снова
+                              </Button>
+                            ) : null}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={deleteReviewMutation.isPending}
+                              onClick={() => {
+                                deleteReviewMutation.mutate(viewerReview.id, {
+                                  onSuccess: () => {
+                                    setReviewFormOpen(false);
+                                    toast.success("Отзыв удалён");
+                                  },
+                                  onError: () => toast.error("Не удалось удалить отзыв"),
+                                });
+                              }}
+                            >
+                              Удалить отзыв
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      {canLeaveReview && reviewFormOpen && (
+                        <div className="mt-4 space-y-2">
+                          <ReviewForm propertyId={property.id} />
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setReviewFormOpen(false)}>
+                            Скрыть форму
                           </Button>
                         </div>
                       )}
-                      {canLeaveReview && <ReviewForm propertyId={property.id} />}
+                      {canLeaveReview && !reviewFormOpen && !hasRejectedOwnReview && (
+                        <div className="mt-4">
+                          <Button type="button" variant="outline" onClick={() => setReviewFormOpen(true)}>
+                            Оставить отзыв
+                          </Button>
+                        </div>
+                      )}
                       {!loggedIn && property.status === "published" && !isOwner && (
                         <p className="mt-4 text-sm text-muted-foreground">
                           <Link href={loginWithReturnHref} className="text-primary font-medium underline-offset-4 hover:underline">
