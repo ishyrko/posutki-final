@@ -32,7 +32,7 @@ class ReviewController extends AbstractController
     }
 
     #[Route('/properties/{propertyId}/reviews', name: 'api_property_reviews_list', methods: ['GET'], requirements: ['propertyId' => '\d+'])]
-    public function listByProperty(string $propertyId): JsonResponse
+    public function listByProperty(string $propertyId, #[CurrentUser] ?User $user = null): JsonResponse
     {
         $pid = Id::fromString($propertyId);
         $property = $this->propertyRepository->findById($pid);
@@ -45,10 +45,22 @@ class ReviewController extends AbstractController
 
         $items = array_map(static fn (Review $r): array => self::serializePublicReview($r), $reviews);
 
+        $viewerReview = null;
+        if ($user !== null) {
+            $existing = $this->reviewRepository->findActiveByAuthorAndProperty($user->getId(), $pid);
+            if ($existing !== null && $existing->getId() !== null) {
+                $viewerReview = [
+                    'id' => $existing->getId()->getValue(),
+                    'status' => $existing->getStatus()->value,
+                ];
+            }
+        }
+
         return $this->json(ApiResponse::success([
             'items' => $items,
             'ratingAvg' => $aggregate['avg'],
             'reviewCount' => $aggregate['count'],
+            'viewerReview' => $viewerReview,
         ]));
     }
 

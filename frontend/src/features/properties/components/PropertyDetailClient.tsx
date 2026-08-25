@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Heart, Share2, MapPin, BedDouble, Bath, Maximize,
@@ -87,7 +88,7 @@ import { isCalendarRecentlyActive } from "@/features/properties/property-calenda
 import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { ReviewList } from "@/features/reviews/components/ReviewList";
 import { ReviewSummary } from "@/features/reviews/components/ReviewSummary";
-import { useDeleteReview, usePropertyReviews } from "@/features/reviews/hooks";
+import { usePropertyReviews } from "@/features/reviews/hooks";
 type PropertyDetailClientProps = {
   id: number;
   initialProperty: Property;
@@ -130,7 +131,13 @@ export default function PropertyDetailClient({
   const isFavorited = favoriteIds.includes(id);
 
   const { data: reviewsData, isLoading: reviewsLoading } = usePropertyReviews(id);
-  const deleteReviewMutation = useDeleteReview(id);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (loggedIn) {
+      void queryClient.invalidateQueries({ queryKey: ["property", id] });
+    }
+  }, [loggedIn, id, queryClient]);
 
   const [currentImage, setCurrentImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -262,14 +269,16 @@ export default function PropertyDetailClient({
     property.ownerId != null &&
     Number(currentUser.id) === Number(property.ownerId);
 
-  const viewerReview = property.viewerReview;
+  const viewerReview = reviewsData?.viewerReview ?? property?.viewerReview;
   const hasPendingOwnReview = viewerReview?.status === "pending";
   const hasApprovedOwnReview = viewerReview?.status === "approved";
   const hasRejectedOwnReview = viewerReview?.status === "rejected";
+  const reviewStatusKnown = !loggedIn || !reviewsLoading;
   const canLeaveReview =
     property.status === "published" &&
     !isOwner &&
     loggedIn &&
+    reviewStatusKnown &&
     !hasPendingOwnReview &&
     !hasApprovedOwnReview &&
     (!viewerReview || hasRejectedOwnReview);
@@ -955,38 +964,16 @@ export default function PropertyDetailClient({
                       {hasPendingOwnReview && viewerReview && (
                         <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-foreground">
                           <p className="mb-2">Ваш отзыв отправлен на модерацию.</p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={deleteReviewMutation.isPending}
-                            onClick={() => {
-                              deleteReviewMutation.mutate(viewerReview.id, {
-                                onSuccess: () => toast.success("Отзыв удалён"),
-                                onError: () => toast.error("Не удалось удалить отзыв"),
-                              });
-                            }}
-                          >
-                            Удалить отзыв
+                          <Button type="button" variant="outline" size="sm" asChild>
+                            <Link href="/kabinet/otzyvy/moi/">Мои отзывы</Link>
                           </Button>
                         </div>
                       )}
                       {hasApprovedOwnReview && viewerReview && (
                         <div className="mt-4 rounded-lg border border-border/60 bg-muted/30 px-4 py-3 text-sm text-foreground space-y-2">
                           <p>Спасибо, вы уже оставили отзыв об этом объекте.</p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={deleteReviewMutation.isPending}
-                            onClick={() => {
-                              deleteReviewMutation.mutate(viewerReview.id, {
-                                onSuccess: () => toast.success("Отзыв удалён"),
-                                onError: () => toast.error("Не удалось удалить отзыв"),
-                              });
-                            }}
-                          >
-                            Удалить отзыв
+                          <Button type="button" variant="outline" size="sm" asChild>
+                            <Link href="/kabinet/otzyvy/moi/">Мои отзывы</Link>
                           </Button>
                         </div>
                       )}
@@ -999,29 +986,18 @@ export default function PropertyDetailClient({
                                 Отправить снова
                               </Button>
                             ) : null}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disabled={deleteReviewMutation.isPending}
-                              onClick={() => {
-                                deleteReviewMutation.mutate(viewerReview.id, {
-                                  onSuccess: () => {
-                                    setReviewFormOpen(false);
-                                    toast.success("Отзыв удалён");
-                                  },
-                                  onError: () => toast.error("Не удалось удалить отзыв"),
-                                });
-                              }}
-                            >
-                              Удалить отзыв
+                            <Button type="button" variant="outline" size="sm" asChild>
+                              <Link href="/kabinet/otzyvy/moi/">Мои отзывы</Link>
                             </Button>
                           </div>
                         </div>
                       )}
                       {canLeaveReview && reviewFormOpen && (
                         <div className="mt-4 space-y-2">
-                          <ReviewForm propertyId={property.id} />
+                          <ReviewForm
+                            propertyId={property.id}
+                            onSubmitted={() => setReviewFormOpen(false)}
+                          />
                           <Button type="button" variant="ghost" size="sm" onClick={() => setReviewFormOpen(false)}>
                             Скрыть форму
                           </Button>

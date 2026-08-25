@@ -95,7 +95,9 @@ final class ReviewControllerTest extends ApiTestCase
         $ownerEmail = 'owner-reply@example.com';
         $ownerPassword = 'Password123!';
         $owner = $this->createUser($ownerEmail, $ownerPassword);
-        $author = $this->createUser('author-reply@example.com', 'Password123!');
+        $authorEmail = 'author-reply@example.com';
+        $authorPassword = 'Password123!';
+        $author = $this->createUser($authorEmail, $authorPassword);
         $this->markPhoneVerified($author);
         $city = $this->createCity('Minsk Reply', 'minsk-reply', 'г. Минск');
         $property = $this->createProperty($owner, $city, 'published');
@@ -124,6 +126,29 @@ final class ReviewControllerTest extends ApiTestCase
         self::assertSame(200, $this->client->getResponse()->getStatusCode());
         $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
         self::assertSame('Спасибо за отзыв!', $payload['data']['items'][0]['ownerReply']);
+    }
+
+    public function testPublicListIncludesViewerReviewForAuthor(): void
+    {
+        [$property, $author, $token] = $this->createReviewScenario();
+        if ($token === '') {
+            self::markTestSkipped('Could not obtain JWT token.');
+        }
+
+        $review = new Review($property, $author, 5, 'Жду модерации', true);
+        $this->entityManager()->persist($review);
+        $this->entityManager()->flush();
+
+        $this->client->request(
+            'GET',
+            '/api/properties/' . $property->getId()->getValue() . '/reviews',
+            server: ['HTTP_AUTHORIZATION' => 'Bearer ' . $token],
+        );
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+
+        $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('pending', $payload['data']['viewerReview']['status']);
+        self::assertSame($review->getId()?->getValue(), $payload['data']['viewerReview']['id']);
     }
 
     public function testOwnerListMarksReviewsSeen(): void

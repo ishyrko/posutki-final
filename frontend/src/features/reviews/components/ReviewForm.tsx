@@ -14,9 +14,10 @@ import { toast } from 'sonner';
 
 type ReviewFormProps = {
     propertyId: number;
+    onSubmitted?: () => void;
 };
 
-export function ReviewForm({ propertyId }: ReviewFormProps) {
+export function ReviewForm({ propertyId, onSubmitted }: ReviewFormProps) {
     const { data: user } = useUser();
     const [rating, setRating] = useState(0);
     const [hover, setHover] = useState(0);
@@ -52,6 +53,7 @@ export function ReviewForm({ propertyId }: ReviewFormProps) {
                     setRating(0);
                     setHover(0);
                     setShareDataWithOwner(true);
+                    onSubmitted?.();
                 },
                 onError: (err: unknown) => {
                     const msg =

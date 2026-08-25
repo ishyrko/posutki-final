@@ -10,6 +10,7 @@ import {
     replyToReview,
     submitReview,
 } from './api';
+import type { PropertyReviewsResponse, ViewerReview } from './types';
 
 export function usePropertyReviews(propertyId: number) {
     return useQuery({
@@ -24,7 +25,14 @@ export function useSubmitReview(propertyId: number) {
     return useMutation({
         mutationFn: (payload: { rating: number; text: string; shareDataWithOwner?: boolean }) =>
             submitReview(propertyId, payload),
-        onSuccess: () => {
+        onSuccess: (data) => {
+            const viewerReview = { id: data.id, status: data.status as ViewerReview['status'] };
+            queryClient.setQueryData<PropertyReviewsResponse>(['property-reviews', propertyId], (old) =>
+                old ? { ...old, viewerReview } : old,
+            );
+            queryClient.setQueryData(['property', propertyId], (old: { viewerReview?: ViewerReview | null } | undefined) =>
+                old ? { ...old, viewerReview } : old,
+            );
             void queryClient.invalidateQueries({ queryKey: ['property-reviews', propertyId] });
             void queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
             void queryClient.invalidateQueries({ queryKey: ['my-reviews'] });
@@ -37,6 +45,14 @@ export function useDeleteReview(propertyId?: number) {
     return useMutation({
         mutationFn: (reviewId: number) => deleteReview(reviewId),
         onSuccess: () => {
+            if (propertyId) {
+                queryClient.setQueryData<PropertyReviewsResponse>(['property-reviews', propertyId], (old) =>
+                    old ? { ...old, viewerReview: null } : old,
+                );
+                queryClient.setQueryData(['property', propertyId], (old: { viewerReview?: ViewerReview | null } | undefined) =>
+                    old ? { ...old, viewerReview: null } : old,
+                );
+            }
             void queryClient.invalidateQueries({ queryKey: ['my-reviews'] });
             if (propertyId) {
                 void queryClient.invalidateQueries({ queryKey: ['property-reviews', propertyId] });

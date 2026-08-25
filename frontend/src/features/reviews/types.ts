@@ -20,6 +20,7 @@ export interface PropertyReviewsResponse {
     items: PropertyReview[];
     ratingAvg: number | null;
     reviewCount: number;
+    viewerReview?: ViewerReview | null;
 }
 
 export interface ViewerReview {

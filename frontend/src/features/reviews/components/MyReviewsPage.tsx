@@ -1,8 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { Loader2, Star, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { useHasMyProperties } from '@/features/properties/hooks';
 import { useDeleteReview, useMyReviews } from '../hooks';
@@ -18,12 +29,16 @@ const STATUS_LABELS: Record<Exclude<ReviewStatus, 'deleted'>, { label: string; c
 
 function MyReviewCard({ review }: { review: MyReviewItem }) {
     const deleteReview = useDeleteReview(review.property.id);
+    const [deleteOpen, setDeleteOpen] = useState(false);
     const statusConfig = STATUS_LABELS[review.status as Exclude<ReviewStatus, 'deleted'>];
     const propertyHref = buildPropertyUrlFromRegionName(review.property.type, review.property.id);
 
     const handleDelete = () => {
         deleteReview.mutate(review.id, {
-            onSuccess: () => toast.success('Отзыв удалён'),
+            onSuccess: () => {
+                setDeleteOpen(false);
+                toast.success('Отзыв удалён');
+            },
             onError: () => toast.error('Не удалось удалить отзыв'),
         });
     };
@@ -92,12 +107,33 @@ function MyReviewCard({ review }: { review: MyReviewItem }) {
                     variant="outline"
                     size="sm"
                     disabled={deleteReview.isPending}
-                    onClick={handleDelete}
+                    onClick={() => setDeleteOpen(true)}
                 >
                     <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                     Удалить отзыв
                 </Button>
             </div>
+
+            <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Удалить отзыв?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Отзыв будет удалён. После этого вы сможете оставить новый отзыв об этом объявлении.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={deleteReview.isPending}
+                            onClick={handleDelete}
+                        >
+                            {deleteReview.isPending ? 'Удаление…' : 'Удалить'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </article>
     );
 }
