@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Heart, Share2, MapPin, BedDouble, Bath, Maximize,
@@ -131,13 +130,6 @@ export default function PropertyDetailClient({
   const isFavorited = favoriteIds.includes(id);
 
   const { data: reviewsData, isLoading: reviewsLoading } = usePropertyReviews(id);
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (loggedIn) {
-      void queryClient.invalidateQueries({ queryKey: ["property", id] });
-    }
-  }, [loggedIn, id, queryClient]);
 
   const [currentImage, setCurrentImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);

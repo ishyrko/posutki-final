@@ -62,10 +62,11 @@ export function useDeleteReview(propertyId?: number) {
     });
 }
 
-export function useOwnerReviews() {
+export function useOwnerReviews(enabled = true) {
     return useQuery({
         queryKey: ['owner-reviews'],
         queryFn: getOwnerReviews,
+        enabled,
     });
 }
 
@@ -77,9 +78,15 @@ export function useMyReviews() {
 }
 
 export function useOwnerPropertyReviews(propertyId?: number) {
+    const queryClient = useQueryClient();
     return useQuery({
         queryKey: ['owner-property-reviews', propertyId],
-        queryFn: () => getOwnerPropertyReviews(propertyId!),
+        queryFn: async () => {
+            const data = await getOwnerPropertyReviews(propertyId!);
+            // GET marks reviews as seen — refresh cabinet badges.
+            void queryClient.invalidateQueries({ queryKey: ['my-properties'] });
+            return data;
+        },
         enabled: propertyId != null && propertyId > 0,
     });
 }
@@ -94,6 +101,7 @@ export function useReplyToReview(propertyId?: number) {
                 void queryClient.invalidateQueries({ queryKey: ['owner-property-reviews', propertyId] });
                 void queryClient.invalidateQueries({ queryKey: ['property-reviews', propertyId] });
             }
+            void queryClient.invalidateQueries({ queryKey: ['my-properties'] });
         },
     });
 }

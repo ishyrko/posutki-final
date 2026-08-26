@@ -31,7 +31,12 @@ function MyReviewCard({ review }: { review: MyReviewItem }) {
     const deleteReview = useDeleteReview(review.property.id);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const statusConfig = STATUS_LABELS[review.status as Exclude<ReviewStatus, 'deleted'>];
-    const propertyHref = buildPropertyUrlFromRegionName(review.property.type, review.property.id);
+    const propertyHref = buildPropertyUrlFromRegionName(
+        review.property.type,
+        review.property.id,
+        review.property.regionName ?? undefined,
+        review.property.citySlug ?? undefined,
+    );
 
     const handleDelete = () => {
         deleteReview.mutate(review.id, {
@@ -127,7 +132,10 @@ function MyReviewCard({ review }: { review: MyReviewItem }) {
                         <AlertDialogAction
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             disabled={deleteReview.isPending}
-                            onClick={handleDelete}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleDelete();
+                            }}
                         >
                             {deleteReview.isPending ? 'Удаление…' : 'Удалить'}
                         </AlertDialogAction>

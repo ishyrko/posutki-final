@@ -211,6 +211,7 @@ final class ReviewControllerTest extends ApiTestCase
         self::assertSame('pending', $payload['data']['items'][0]['status']);
         self::assertSame('Жду модерации', $payload['data']['items'][0]['text']);
         self::assertSame($property->getId()->getValue(), $payload['data']['items'][0]['property']['id']);
+        self::assertArrayHasKey('citySlug', $payload['data']['items'][0]['property']);
     }
 
     /** @return array{0: \App\Domain\Property\Entity\Property, 1: User, 2: string} */

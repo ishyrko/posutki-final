@@ -66,6 +66,8 @@ export interface MyReviewProperty {
     id: number;
     title: string;
     type: string;
+    regionName?: string | null;
+    citySlug?: string | null;
 }
 
 export interface MyReviewItem {

@@ -103,7 +103,7 @@ function ReviewReplyCard({ review, propertyId, onReply, isReplyPending }: Review
 export function OwnerReviewsPage({ propertyId }: OwnerReviewsPageProps) {
     const router = useRouter();
     const { hasMyProperties, isLoading: isOwnerLoading } = useHasMyProperties();
-    const ownerQuery = useOwnerReviews();
+    const ownerQuery = useOwnerReviews(propertyId == null);
     const propertyQuery = useOwnerPropertyReviews(propertyId);
     const query = propertyId != null ? propertyQuery : ownerQuery;
     const reply = useReplyToReview(propertyId);

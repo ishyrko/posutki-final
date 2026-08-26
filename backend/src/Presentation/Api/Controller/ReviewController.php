@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Api\Controller;
 
+use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Review\Entity\Review;
 use App\Domain\Review\Event\ReviewRepliedEvent;
@@ -27,6 +28,7 @@ class ReviewController extends AbstractController
     public function __construct(
         private readonly ReviewRepositoryInterface $reviewRepository,
         private readonly PropertyRepositoryInterface $propertyRepository,
+        private readonly CityRepositoryInterface $cityRepository,
         private readonly MessageBusInterface $notificationBus,
     ) {
     }
@@ -293,6 +295,8 @@ class ReviewController extends AbstractController
     {
         $property = $r->getProperty();
         $isApproved = $r->getStatus() === ReviewStatus::Approved;
+        $city = $this->cityRepository->findById($property->getCityId());
+        $region = $city?->getRegionDistrict()?->getRegion();
 
         return [
             'id' => $r->getId()?->getValue(),
@@ -307,6 +311,8 @@ class ReviewController extends AbstractController
                 'id' => $property->getId()->getValue(),
                 'title' => $property->getTitle(),
                 'type' => $property->getType(),
+                'regionName' => $region?->getName(),
+                'citySlug' => $city?->getSlug(),
             ],
         ];
     }
