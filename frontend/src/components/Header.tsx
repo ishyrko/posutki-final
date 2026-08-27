@@ -403,26 +403,51 @@ const Header = () => {
 
                 {mobileExpanded === key && (
                   <div className="pb-2 pl-2 space-y-4 animate-fade-in">
-                    {sections.map((section, sectionIndex) => (
-                      <div key={section.title ?? `section-${sectionIndex}`}>
-                        {section.title ? (
+                    {key === "Города" ? (
+                      <div>
+                        {sections[0]?.title ? (
                           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 mb-2">
-                            {section.title}
+                            {sections[0].title}
                           </p>
                         ) : null}
-                        {section.items.map((item) => (
-                          <Link
-                            key={item.label}
-                            href={item.href}
-                            onClick={() => setMobileOpen(false)}
-                            className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted/50 transition-colors"
-                          >
-                            <span className="text-primary">{item.icon}</span>
-                            <span className="text-sm font-medium text-foreground">{item.label}</span>
-                          </Link>
-                        ))}
+                        <div className="grid grid-cols-2 gap-x-2">
+                          {sections.flatMap((section) =>
+                            section.items.map((item) => (
+                              <Link
+                                key={item.label}
+                                href={item.href}
+                                onClick={() => setMobileOpen(false)}
+                                className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted/50 transition-colors"
+                              >
+                                <span className="text-primary">{item.icon}</span>
+                                <span className="text-sm font-medium text-foreground">{item.label}</span>
+                              </Link>
+                            )),
+                          )}
+                        </div>
                       </div>
-                    ))}
+                    ) : (
+                      sections.map((section, sectionIndex) => (
+                        <div key={section.title ?? `section-${sectionIndex}`}>
+                          {section.title ? (
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 mb-2">
+                              {section.title}
+                            </p>
+                          ) : null}
+                          {section.items.map((item) => (
+                            <Link
+                              key={item.label}
+                              href={item.href}
+                              onClick={() => setMobileOpen(false)}
+                              className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted/50 transition-colors"
+                            >
+                              <span className="text-primary">{item.icon}</span>
+                              <span className="text-sm font-medium text-foreground">{item.label}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
