@@ -163,6 +163,32 @@ final class FileUploaderTest extends TestCase
         );
     }
 
+    public function testProcessStoredLandmarkImageCreatesThumbForExistingWebp(): void
+    {
+        if (!function_exists('imagecreatefromjpeg') || !function_exists('imagewebp')) {
+            self::markTestSkipped('GD with WebP support is required.');
+        }
+
+        mkdir($this->uploadDir . '/landmarks/thumbs', 0775, true);
+        $uploader = $this->createUploader();
+        $jpegPath = $this->createFixtureImage(1200, 800, 'jpeg');
+        $landmarkPath = $this->uploadDir . '/landmarks/existing-landmark.webp';
+        $jpeg = imagecreatefromjpeg($jpegPath);
+        imagewebp($jpeg, $landmarkPath, 90);
+        imagedestroy($jpeg);
+        @unlink($jpegPath);
+
+        $result = $uploader->processStoredLandmarkImage('landmarks/existing-landmark.webp');
+
+        self::assertSame('landmarks/existing-landmark.webp', $result);
+        self::assertFileExists($this->uploadDir . '/landmarks/existing-landmark.webp');
+        self::assertFileExists($this->uploadDir . '/landmarks/thumbs/existing-landmark.webp');
+        self::assertLessThan(
+            filesize($this->uploadDir . '/landmarks/existing-landmark.webp'),
+            filesize($this->uploadDir . '/landmarks/thumbs/existing-landmark.webp'),
+        );
+    }
+
     private function createUploader(): FileUploader
     {
         return new FileUploader(

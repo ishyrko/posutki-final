@@ -299,8 +299,12 @@ class FileUploader
         $canonicalPath = $dir . '/' . $baseName . '.' . $outputFormat;
 
         $thumbPath = $this->buildThumbnailStoragePath($canonicalPath);
-        if ($fullPath === $canonicalPath && $thumbPath !== null && is_file($thumbPath)) {
-            return $relativePathUnderUploads;
+        if ($fullPath === $canonicalPath) {
+            if ($thumbPath !== null && !is_file($thumbPath)) {
+                $this->createThumbnail($canonicalPath, $outputFormat);
+            }
+
+            return $scope . '/' . basename($canonicalPath);
         }
 
         if ($fullPath !== $canonicalPath) {
@@ -312,11 +316,8 @@ class FileUploader
                 return null;
             }
             @unlink($fullPath);
-        } elseif (!$this->transformImage($fullPath, $mimeType, $canonicalPath, $outputFormat, self::CONTENT_MAX_DIMENSION, $scope)) {
-            return null;
+            $this->createThumbnail($canonicalPath, $outputFormat);
         }
-
-        $this->createThumbnail($canonicalPath, $outputFormat);
 
         return $scope . '/' . basename($canonicalPath);
     }
@@ -745,7 +746,7 @@ class FileUploader
             return null;
         }
 
-        $directory = $thumbDirectory ?? dirname($originalPath);
+        $directory = $thumbDirectory ?? dirname($originalPath) . '/' . self::THUMB_SUBDIRECTORY;
 
         return rtrim($directory, '/') . '/' . $baseName;
     }
