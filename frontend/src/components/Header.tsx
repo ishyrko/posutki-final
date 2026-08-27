@@ -282,7 +282,7 @@ const Header = () => {
           {loggedIn ? (
             <Button variant="ghost" size="sm" className="gap-2 font-medium text-muted-foreground hover:text-foreground" asChild>
               <Link href="/kabinet/">
-                <LayoutDashboard className="h-4 w-4" />
+                <User className="h-4 w-4" />
                 Кабинет
               </Link>
             </Button>
@@ -306,16 +306,28 @@ const Header = () => {
           <Button size="sm" className="font-semibold" asChild>
             <ListingSubmitLink>Сдать жилье</ListingSubmitLink>
           </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-foreground"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label={mobileOpen ? "Закрыть меню" : "Открыть меню"}
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          <div className="flex items-center -space-x-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={loggedIn ? "Кабинет" : "Войти"}
+              className="h-10 w-10 text-muted-foreground hover:text-foreground"
+              asChild
+            >
+              <Link href={loggedIn ? "/kabinet/" : "/login/"}>
+                <User className="h-5 w-5" />
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-foreground"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={mobileOpen ? "Закрыть меню" : "Открыть меню"}
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
         </div>
       </div>
 
