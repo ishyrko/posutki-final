@@ -80,7 +80,10 @@ interface PropertyRepositoryInterface
 
     /**
      * Published listings grouped by placement_effective_level for a tariff scope.
-     * Apartments: filter by cityId. Houses: filter by regionId (via city → district → region).
+     * Apartments: filter by cityId, or by regionId with optional excludeCitySlugs.
+     * Houses: filter by regionId (via city → district → region).
+     *
+     * @param list<string> $excludeCitySlugs
      *
      * @return array<int, int> effectiveLevel => count
      */
@@ -88,11 +91,14 @@ interface PropertyRepositoryInterface
         string $propertyType,
         ?int $cityId = null,
         ?int $regionId = null,
+        array $excludeCitySlugs = [],
     ): array;
 
     /**
      * How many listings currently hold the given base VIP level in a tariff scope.
      * Counts published + moderation with a non-expired placement. Used for capacity.
+     *
+     * @param list<string> $excludeCitySlugs
      */
     public function countOccupiedAtBaseLevel(
         string $propertyType,
@@ -101,6 +107,7 @@ interface PropertyRepositoryInterface
         ?int $regionId = null,
         ?\DateTimeImmutable $now = null,
         ?int $excludePropertyId = null,
+        array $excludeCitySlugs = [],
     ): int;
 
     /**

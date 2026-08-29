@@ -268,6 +268,7 @@ final class CreatePlacementPurchaseHandlerTest extends TestCase
             $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
             $this->createStub(CityRepositoryInterface::class),
             $this->createStub(UserRepositoryInterface::class),
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
         );
 
         return new CreatePlacementPurchaseHandler(

@@ -25,7 +25,7 @@ import { Property, formatAddress, isPropertyEditable } from '@/features/properti
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
 import { BuyPlacementDialog } from '@/features/placement/components/BuyPlacementDialog';
-import { usePlacementLevels } from '@/features/placement/hooks';
+import { usePropertyPlacementLevels } from '@/features/placement/hooks';
 import {
     FREE_PLACEMENT_LIMITS_HREF,
     formatCatalogPositionRange,
@@ -34,7 +34,6 @@ import {
     isPlacementBoostActive,
     placementBadgeLabel,
     type FreeVsVip1CatalogHint,
-    type PlacementTariffScope,
 } from '@/features/placement/types';
 import {
     Tooltip,
@@ -134,30 +133,13 @@ function ListingCard({
     const { daysUntilDelete, canDelete, showDeleteButton } = getDeleteEligibility(property);
 
     const isHouse = property.type === 'house';
-    const tariffScope = useMemo((): PlacementTariffScope | null => {
-        if (property.status !== 'published') {
-            return null;
-        }
-        if (isHouse) {
-            const regionId = property.address?.regionId;
-            return regionId && regionId > 0
-                ? { propertyType: 'house', regionId }
-                : null;
-        }
-        const cityId = property.address?.cityId;
-        return cityId && cityId > 0 ? { propertyType: 'apartment', cityId } : null;
-    }, [
-        property.status,
-        isHouse,
-        property.address?.cityId,
-        property.address?.regionId,
-    ]);
-    const locationLabel = isHouse
-        ? property.address?.regionName ?? 'области'
-        : property.address?.cityName ?? 'города';
-    const { data: placementLevelsData } = usePlacementLevels(tariffScope);
+    const { data: placementLevelsData } = usePropertyPlacementLevels(
+        property.status === 'published' ? property.id : null,
+    );
     const placementLevels = placementLevelsData?.levels ?? [];
     const freeTierBand = placementLevelsData?.freeTier;
+    const locationLabel = placementLevelsData?.scope.locationLabel
+        ?? (isHouse ? property.address?.regionName ?? 'области' : property.address?.cityName ?? 'города');
     const effectiveVipLevel = property.placementEffectiveLevel ?? property.placementBaseLevel ?? 0;
     const catalogPositionHint = useMemo((): string | FreeVsVip1CatalogHint | null => {
         if (effectiveVipLevel <= 0) {

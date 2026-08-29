@@ -77,6 +77,7 @@ final class PropertyPlacementServiceTest extends TestCase
             $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
             $this->createStub(CityRepositoryInterface::class),
             $this->createStub(UserRepositoryInterface::class),
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
         );
 
         $service->activatePurchase($upgradePurchase, $property, null, $now);
@@ -141,6 +142,7 @@ final class PropertyPlacementServiceTest extends TestCase
             $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
             $this->createStub(CityRepositoryInterface::class),
             $this->createStub(UserRepositoryInterface::class),
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
         );
 
         $service->activatePurchase($renewalPurchase, $property, null, $now);
@@ -178,6 +180,7 @@ final class PropertyPlacementServiceTest extends TestCase
             $scopeSettingsRepository,
             $this->createStub(CityRepositoryInterface::class),
             $this->createStub(UserRepositoryInterface::class),
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
         );
 
         // (159 - 119) / 30 * 3 = 4 → ceil 4
@@ -208,6 +211,7 @@ final class PropertyPlacementServiceTest extends TestCase
             $scopeSettingsRepository,
             $this->createStub(CityRepositoryInterface::class),
             $this->createStub(UserRepositoryInterface::class),
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
         );
 
         // (49 - 0) / 30 * 3 = 4.9 → ceil 5
@@ -238,6 +242,7 @@ final class PropertyPlacementServiceTest extends TestCase
             $scopeSettingsRepository,
             $this->createStub(CityRepositoryInterface::class),
             $this->createStub(UserRepositoryInterface::class),
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
         );
 
         // (69 - 49) / 30 * 3 = 2 → ceil 2, but minimum is 3 BYN
@@ -270,6 +275,7 @@ final class PropertyPlacementServiceTest extends TestCase
             $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
             $this->createStub(CityRepositoryInterface::class),
             $this->createStub(UserRepositoryInterface::class),
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
         );
 
         $this->expectException(\App\Domain\Shared\Exception\DomainException::class);
@@ -305,6 +311,7 @@ final class PropertyPlacementServiceTest extends TestCase
             $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
             $this->createStub(CityRepositoryInterface::class),
             $this->createStub(UserRepositoryInterface::class),
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
         );
 
         $quote = $service->quoteLevelPurchase($property, $targetLevelPrice, 1, $now);
@@ -339,6 +346,7 @@ final class PropertyPlacementServiceTest extends TestCase
             $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
             $this->createStub(CityRepositoryInterface::class),
             $this->createStub(UserRepositoryInterface::class),
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
         );
 
         $quote = $service->quoteLevelPurchase($property, $levelPrice, 12, $now);
@@ -402,6 +410,7 @@ final class PropertyPlacementServiceTest extends TestCase
             $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
             $this->createStub(CityRepositoryInterface::class),
             $this->createStub(UserRepositoryInterface::class),
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
         );
 
         $service->activatePurchase($renewalPurchase, $property, null, $now);
@@ -443,6 +452,7 @@ final class PropertyPlacementServiceTest extends TestCase
             $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
             $this->createStub(CityRepositoryInterface::class),
             $this->createStub(UserRepositoryInterface::class),
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
         );
 
         $service->activatePurchase($boostPurchase, $property, null, $now);

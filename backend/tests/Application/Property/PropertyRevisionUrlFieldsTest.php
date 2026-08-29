@@ -517,6 +517,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
             $this->createStub(CityRepositoryInterface::class),
             $userRepository,
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
         );
     }
 }

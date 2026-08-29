@@ -532,6 +532,7 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         string $propertyType,
         ?int $cityId = null,
         ?int $regionId = null,
+        array $excludeCitySlugs = [],
     ): array {
         $qb = $this->createQueryBuilder('p')
             ->select('p.placementEffectiveLevel AS level, COUNT(p.id) AS cnt')
@@ -550,6 +551,7 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
                 ->innerJoin('rd.region', 'r')
                 ->andWhere('r.id = :regionId')
                 ->setParameter('regionId', $regionId);
+            $this->applyExcludeCitySlugs($qb, $excludeCitySlugs);
         } else {
             return [];
         }
@@ -569,6 +571,7 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         ?int $regionId = null,
         ?\DateTimeImmutable $now = null,
         ?int $excludePropertyId = null,
+        array $excludeCitySlugs = [],
     ): int {
         $now ??= new \DateTimeImmutable();
 
@@ -593,6 +596,7 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
                 ->innerJoin('rd.region', 'r')
                 ->andWhere('r.id = :regionId')
                 ->setParameter('regionId', $regionId);
+            $this->applyExcludeCitySlugs($qb, $excludeCitySlugs);
         } else {
             return 0;
         }
@@ -603,6 +607,19 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         }
 
         return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * @param list<string> $excludeCitySlugs
+     */
+    private function applyExcludeCitySlugs(\Doctrine\ORM\QueryBuilder $qb, array $excludeCitySlugs): void
+    {
+        if ($excludeCitySlugs === []) {
+            return;
+        }
+
+        $qb->andWhere('c.slug NOT IN (:excludeCitySlugs)')
+            ->setParameter('excludeCitySlugs', array_values($excludeCitySlugs), ArrayParameterType::STRING);
     }
 
     public function countApartmentsGroupedByCitySlugs(array $citySlugs): array

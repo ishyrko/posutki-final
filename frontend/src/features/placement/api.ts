@@ -5,6 +5,7 @@ import type {
     PlacementPurchaseQuote,
     PlacementScopeSettings,
     PlacementTariffScope,
+    PropertyPlacementLevelsResponse,
 } from './types';
 
 export const getPlacementLevels = async (
@@ -30,6 +31,15 @@ export const getPlacementScope = async (
             : { propertyType: 'apartment', cityId: scope.cityId };
 
     const response = await api.get<{ data: PlacementScopeSettings }>('/placement/scope', { params });
+    return response.data.data;
+};
+
+export const getPropertyPlacementLevels = async (
+    propertyId: number,
+): Promise<PropertyPlacementLevelsResponse> => {
+    const response = await api.get<{ data: PropertyPlacementLevelsResponse }>(
+        `/properties/${propertyId}/placement-levels`,
+    );
     return response.data.data;
 };
 

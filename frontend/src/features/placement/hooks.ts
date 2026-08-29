@@ -11,6 +11,7 @@ import {
     getPlacementPurchaseQuote,
     getPlacementLevels,
     getPlacementScope,
+    getPropertyPlacementLevels,
     getPropertyPlacementPurchases,
 } from './api';
 import type { PlacementTariffScope } from './types';
@@ -20,6 +21,14 @@ export function usePlacementLevels(scope: PlacementTariffScope | null | undefine
         queryKey: ['placement-levels', scope],
         queryFn: () => getPlacementLevels(scope!),
         enabled: !!scope,
+    });
+}
+
+export function usePropertyPlacementLevels(propertyId: number | null | undefined) {
+    return useQuery({
+        queryKey: ['property-placement-levels', propertyId],
+        queryFn: () => getPropertyPlacementLevels(propertyId!),
+        enabled: !!propertyId && propertyId > 0,
     });
 }
 
@@ -95,6 +104,7 @@ export function useCreatePlacementPurchase() {
         mutationFn: createPlacementPurchase,
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['placement-levels'] });
+            queryClient.invalidateQueries({ queryKey: ['property-placement-levels'] });
             queryClient.invalidateQueries({ queryKey: ['placement-scope'] });
             queryClient.invalidateQueries({ queryKey: ['my-properties'] });
             queryClient.invalidateQueries({ queryKey: ['my-placement-purchases'] });

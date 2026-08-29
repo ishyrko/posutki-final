@@ -26,4 +26,6 @@ interface CityRepositoryInterface
 
     /** @return list<City> */
     public function findApartmentCatalog(): array;
+
+    public function findMainCityByRegionId(int $regionId): ?City;
 }

@@ -23,9 +23,8 @@ import { BynCurrencyMark } from '@/components/BynCurrency';
 import { Property } from '@/features/properties/types';
 import {
     useCreatePlacementPurchase,
-    usePlacementLevels,
     usePlacementPurchaseQuote,
-    usePlacementScope,
+    usePropertyPlacementLevels,
 } from '@/features/placement/hooks';
 import {
     calcBoostPriceByn,
@@ -40,7 +39,6 @@ import {
     PLACEMENT_UPGRADE_MIN_REMAINING_DAYS,
     renewalMonthsAvailable,
     withListingInCatalogBand,
-    type PlacementTariffScope,
 } from '@/features/placement/types';
 import { cn } from '@/lib/utils';
 
@@ -85,22 +83,13 @@ export function BuyPlacementDialog({
 }: BuyPlacementDialogProps) {
     const router = useRouter();
     const isHouse = property.type === 'house';
-    const tariffScope = useMemo((): PlacementTariffScope | null => {
-        if (isHouse) {
-            const regionId = property.address?.regionId;
-            return regionId && regionId > 0
-                ? { propertyType: 'house', regionId }
-                : null;
-        }
-        const cityId = property.address?.cityId;
-        return cityId && cityId > 0 ? { propertyType: 'apartment', cityId } : null;
-    }, [isHouse, property.address?.cityId, property.address?.regionId]);
-    const locationLabel = isHouse
-        ? property.address?.regionName ?? 'области'
-        : property.address?.cityName ?? 'города';
-    const { data: levelsData, isLoading: levelsLoading } = usePlacementLevels(tariffScope);
+    const { data: levelsData, isLoading: levelsLoading } = usePropertyPlacementLevels(
+        open ? property.id : null,
+    );
     const levels = levelsData?.levels ?? [];
-    const { data: scopeSettings } = usePlacementScope(tariffScope);
+    const maxLevel = levelsData?.scope.maxLevel ?? 5;
+    const locationLabel = levelsData?.scope.locationLabel
+        ?? (isHouse ? property.address?.regionName ?? 'области' : property.address?.cityName ?? 'города');
     const create = useCreatePlacementPurchase();
 
     const [level, setLevel] = useState<number | null>(null);
@@ -160,7 +149,6 @@ export function BuyPlacementDialog({
         quoteEnabled,
     );
 
-    const maxLevel = scopeSettings?.maxLevel ?? 5;
     const baseLevel = property.placementBaseLevel ?? 0;
     const boostActive = isPlacementBoostActive(property.placementBoostExpiresAt);
     const boostPriceByn = useMemo(

@@ -78,6 +78,7 @@ final class ConfirmPlacementPaymentHandlerTest extends TestCase
             $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
             $this->createStub(CityRepositoryInterface::class),
             $this->createStub(UserRepositoryInterface::class),
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
         );
         $purchaseRepository->method('findActiveLevelByPropertyId')->willReturnCallback(
             static fn (int $propertyId, ?\DateTimeImmutable $now = null): ?PropertyPlacementPurchase => $purchase->isActive() ? $purchase : null,

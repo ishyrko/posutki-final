@@ -14,6 +14,8 @@ use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementLevelPriceRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementScopeSettingsRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
+use App\Domain\Property\Service\ApartmentPlacementScopeResolver;
+use App\Domain\Property\ValueObject\ApartmentPlacementScope;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Repository\UserRepositoryInterface;
@@ -27,6 +29,7 @@ final class PropertyPlacementService
         private readonly PropertyPlacementScopeSettingsRepositoryInterface $scopeSettingsRepository,
         private readonly CityRepositoryInterface $cityRepository,
         private readonly UserRepositoryInterface $userRepository,
+        private readonly ApartmentPlacementScopeResolver $apartmentPlacementScopeResolver,
     ) {
     }
 
@@ -305,14 +308,32 @@ final class PropertyPlacementService
         PropertyPlacementLevelPrice $levelPrice,
         ?\DateTimeImmutable $now = null,
         ?int $excludePropertyId = null,
+        ?ApartmentPlacementScope $apartmentScope = null,
     ): int {
+        if ($levelPrice->getPropertyType() === PropertyType::House->value) {
+            return $this->propertyRepository->countOccupiedAtBaseLevel(
+                propertyType: $levelPrice->getPropertyType(),
+                level: $levelPrice->getLevel(),
+                cityId: null,
+                regionId: $levelPrice->getRegionId(),
+                now: $now,
+                excludePropertyId: $excludePropertyId,
+            );
+        }
+
+        $scope = $apartmentScope;
+        if ($scope === null && $levelPrice->getCityId() !== null) {
+            $scope = $this->apartmentPlacementScopeResolver->resolveForCityId($levelPrice->getCityId());
+        }
+
         return $this->propertyRepository->countOccupiedAtBaseLevel(
             propertyType: $levelPrice->getPropertyType(),
             level: $levelPrice->getLevel(),
-            cityId: $levelPrice->getCityId(),
-            regionId: $levelPrice->getRegionId(),
+            cityId: $scope?->catalogCityId ?? $levelPrice->getCityId(),
+            regionId: $scope?->catalogRegionId ?? $levelPrice->getRegionId(),
             now: $now,
             excludePropertyId: $excludePropertyId,
+            excludeCitySlugs: $scope?->excludeCitySlugs ?? [],
         );
     }
 
@@ -331,7 +352,9 @@ final class PropertyPlacementService
             return $this->scopeSettingsRepository->findActiveByRegionId($regionId);
         }
 
-        return $this->scopeSettingsRepository->findActiveByCityId($property->getCityId());
+        return $this->scopeSettingsRepository->findActiveByCityId(
+            $this->resolveApartmentTariffCityId($property),
+        );
     }
 
     /**
@@ -361,7 +384,173 @@ final class PropertyPlacementService
             return $regionId !== null ? $this->levelPriceRepository->findActiveByRegionId($regionId) : [];
         }
 
-        return $this->levelPriceRepository->findActiveByCityId($property->getCityId());
+        return $this->levelPriceRepository->findActiveByCityId(
+            $this->resolveApartmentTariffCityId($property),
+        );
+    }
+
+    /**
+     * @return array{
+     *     scope: array{tariffCityId: int, tariffCityName: string, locationLabel: string},
+     *     levels: list<array<string, mixed>>,
+     *     freeTier: array{catalogPositionFrom: ?int, catalogPositionTo: ?int, catalogListingsAtLevel: ?int}
+     * }
+     */
+    public function buildPlacementLevelsPayloadForProperty(Property $property): array
+    {
+        if ($property->getType() === PropertyType::House->value) {
+            $regionId = $this->resolveRegionId($property);
+            if ($regionId === null) {
+                return $this->emptyPlacementLevelsPayload('области');
+            }
+
+            $levelPrices = $this->levelPriceRepository->findActiveByRegionId($regionId);
+            $countsByLevel = $this->propertyRepository->countPublishedByEffectiveLevel(
+                PropertyType::House->value,
+                null,
+                $regionId,
+            );
+            $city = $this->cityRepository->findById($property->getCityId());
+            $locationLabel = $city?->getRegionDistrict()?->getRegion()?->getName() ?? 'области';
+
+            return $this->serializePlacementLevelsPayload(
+                tariffCityId: null,
+                tariffCityName: null,
+                locationLabel: $locationLabel,
+                levelPrices: $levelPrices,
+                countsByLevel: $countsByLevel,
+                apartmentScope: null,
+                maxLevel: $this->resolveMaxLevelForProperty($property),
+            );
+        }
+
+        $scope = $this->apartmentPlacementScopeResolver->resolveForCityId($property->getCityId());
+        if ($scope === null) {
+            $city = $this->cityRepository->findById($property->getCityId());
+
+            return $this->emptyPlacementLevelsPayload($city?->getName() ?? 'города');
+        }
+
+        $tariffCity = $this->cityRepository->findById($scope->tariffCityId);
+        $levelPrices = $this->levelPriceRepository->findActiveByCityId($scope->tariffCityId);
+        $countsByLevel = $this->propertyRepository->countPublishedByEffectiveLevel(
+            PropertyType::Apartment->value,
+            $scope->catalogCityId,
+            $scope->catalogRegionId,
+            $scope->excludeCitySlugs,
+        );
+
+        return $this->serializePlacementLevelsPayload(
+            tariffCityId: $scope->tariffCityId,
+            tariffCityName: $tariffCity?->getName() ?? '',
+            locationLabel: $scope->locationLabel,
+            levelPrices: $levelPrices,
+            countsByLevel: $countsByLevel,
+            apartmentScope: $scope,
+            maxLevel: $this->resolveMaxLevelForProperty($property),
+        );
+    }
+
+    private function resolveApartmentTariffCityId(Property $property): int
+    {
+        $scope = $this->apartmentPlacementScopeResolver->resolveForCityId($property->getCityId());
+
+        return $scope?->tariffCityId ?? $property->getCityId();
+    }
+
+    /**
+     * @param PropertyPlacementLevelPrice[] $levelPrices
+     * @param array<int, int>               $countsByLevel
+     *
+     * @return array{
+     *     scope: array{tariffCityId: ?int, tariffCityName: ?string, locationLabel: string},
+     *     levels: list<array<string, mixed>>,
+     *     freeTier: array{catalogPositionFrom: ?int, catalogPositionTo: ?int, catalogListingsAtLevel: ?int}
+     * }
+     */
+    private function serializePlacementLevelsPayload(
+        ?int $tariffCityId,
+        ?string $tariffCityName,
+        string $locationLabel,
+        array $levelPrices,
+        array $countsByLevel,
+        ?ApartmentPlacementScope $apartmentScope,
+        int $maxLevel,
+    ): array {
+        $levels = array_map(
+            static fn (PropertyPlacementLevelPrice $levelPrice) => $levelPrice->getLevel(),
+            $levelPrices,
+        );
+        $bands = $this->catalogPositionBands(
+            $countsByLevel,
+            array_values(array_unique([...$levels, 0])),
+        );
+        $freeBand = $bands[0] ?? null;
+
+        $serializedLevels = [];
+        foreach ($levelPrices as $levelPrice) {
+            $band = $bands[$levelPrice->getLevel()] ?? null;
+            $occupied = $this->getLevelPriceOccupancy(
+                $levelPrice,
+                apartmentScope: $apartmentScope,
+            );
+            $capacity = $levelPrice->getCapacity();
+            $serializedLevels[] = [
+                'id' => $levelPrice->getId(),
+                'propertyType' => $levelPrice->getPropertyType(),
+                'cityId' => $levelPrice->getCityId(),
+                'regionId' => $levelPrice->getRegionId(),
+                'level' => $levelPrice->getLevel(),
+                'label' => $levelPrice->getLabel(),
+                'capacity' => $capacity,
+                'occupied' => $occupied,
+                'available' => $capacity !== null ? max(0, $capacity - $occupied) : null,
+                'priceBynPerMonth' => $levelPrice->getPriceBynPerMonth(),
+                'catalogPositionFrom' => $band['from'] ?? null,
+                'catalogPositionTo' => $band['to'] ?? null,
+                'catalogListingsAtLevel' => $band['count'] ?? null,
+            ];
+        }
+
+        return [
+            'scope' => [
+                'tariffCityId' => $tariffCityId,
+                'tariffCityName' => $tariffCityName,
+                'locationLabel' => $locationLabel,
+                'maxLevel' => $maxLevel,
+            ],
+            'levels' => $serializedLevels,
+            'freeTier' => [
+                'catalogPositionFrom' => $freeBand['from'] ?? null,
+                'catalogPositionTo' => $freeBand['to'] ?? null,
+                'catalogListingsAtLevel' => $freeBand['count'] ?? null,
+            ],
+        ];
+    }
+
+    /**
+     * @return array{
+     *     scope: array{tariffCityId: ?int, tariffCityName: ?string, locationLabel: string},
+     *     levels: list<array<string, mixed>>,
+     *     freeTier: array{catalogPositionFrom: ?int, catalogPositionTo: ?int, catalogListingsAtLevel: ?int}
+     * }
+     */
+    private function emptyPlacementLevelsPayload(string $locationLabel): array
+    {
+        return [
+            'scope' => [
+                'tariffCityId' => null,
+                'tariffCityName' => null,
+                'locationLabel' => $locationLabel,
+                'maxLevel' => PropertyPlacementScopeSettings::DEFAULT_MAX_LEVEL,
+            ],
+            'levels' => [],
+            'freeTier' => [
+                'catalogPositionFrom' => null,
+                'catalogPositionTo' => null,
+                'catalogListingsAtLevel' => null,
+            ],
+        ];
     }
 
     /**

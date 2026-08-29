@@ -89,6 +89,19 @@ class CityRepository extends ServiceEntityRepository implements CityRepositoryIn
         return self::sortCatalogCities(self::dedupeBySlug($cities));
     }
 
+    public function findMainCityByRegionId(int $regionId): ?City
+    {
+        return $this->createQueryBuilder('c')
+            ->innerJoin('c.regionDistrict', 'rd')
+            ->where('rd.region = :regionId')
+            ->andWhere('c.isMain = :isMain')
+            ->setParameter('regionId', $regionId)
+            ->setParameter('isMain', true)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     /**
      * @param list<City> $cities
      *

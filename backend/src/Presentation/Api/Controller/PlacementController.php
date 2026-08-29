@@ -15,6 +15,8 @@ use App\Domain\Property\Repository\PropertyPlacementLevelPriceRepositoryInterfac
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementScopeSettingsRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
+use App\Domain\Property\Service\ApartmentPlacementScopeResolver;
+use App\Domain\Property\ValueObject\ApartmentPlacementScope;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Entity\User;
@@ -33,6 +35,7 @@ final class PlacementController extends AbstractController
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyPlacementService $placementService,
+        private readonly ApartmentPlacementScopeResolver $apartmentPlacementScopeResolver,
         private readonly CommandBusInterface $commandBus,
     ) {
     }
@@ -63,12 +66,26 @@ final class PlacementController extends AbstractController
                 return $this->json(ApiResponse::error('Укажите cityId', 400), 400);
             }
 
-            $levelPrices = $this->levelPriceRepository->findActiveByCityId($cityId);
+            $scope = $this->apartmentPlacementScopeResolver->resolveForCityId($cityId);
+            if ($scope === null) {
+                return $this->json(ApiResponse::success([
+                    'levels' => [],
+                    'freeTier' => [
+                        'catalogPositionFrom' => null,
+                        'catalogPositionTo' => null,
+                        'catalogListingsAtLevel' => null,
+                    ],
+                ]));
+            }
+
+            $levelPrices = $this->levelPriceRepository->findActiveByCityId($scope->tariffCityId);
             $countsByLevel = $this->propertyRepository->countPublishedByEffectiveLevel(
                 $propertyType,
-                $cityId,
-                null,
+                $scope->catalogCityId,
+                $scope->catalogRegionId,
+                $scope->excludeCitySlugs,
             );
+            $apartmentScope = $scope;
         }
 
         $levels = array_map(
@@ -81,13 +98,14 @@ final class PlacementController extends AbstractController
         );
 
         $freeBand = $bands[0] ?? null;
+        $apartmentScope ??= null;
 
         return $this->json(ApiResponse::success([
             'levels' => array_map(
-                function (PropertyPlacementLevelPrice $levelPrice) use ($bands) {
+                function (PropertyPlacementLevelPrice $levelPrice) use ($bands, $apartmentScope) {
                     $band = $bands[$levelPrice->getLevel()] ?? null;
 
-                    return $this->levelPriceToArray($levelPrice, $band);
+                    return $this->levelPriceToArray($levelPrice, $band, $apartmentScope);
                 },
                 $levelPrices,
             ),
@@ -121,6 +139,10 @@ final class PlacementController extends AbstractController
             }
 
             $settings = $this->scopeSettingsRepository->findActiveByCityId($cityId);
+            $scope = $this->apartmentPlacementScopeResolver->resolveForCityId($cityId);
+            if ($scope !== null) {
+                $settings = $this->scopeSettingsRepository->findActiveByCityId($scope->tariffCityId) ?? $settings;
+            }
         }
 
         if ($settings === null) {
@@ -136,6 +158,26 @@ final class PlacementController extends AbstractController
             'regionId' => $settings->getRegionId(),
             'maxLevel' => $settings->getMaxLevel(),
         ]));
+    }
+
+    #[Route('/api/properties/{id}/placement-levels', name: 'api_property_placement_levels', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function levelsForProperty(string $id, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $property = $this->propertyRepository->findById(Id::fromString($id));
+        if ($property === null) {
+            throw new DomainException('Объявление не найдено');
+        }
+        if (!$property->getOwnerId()->equals($user->getId())) {
+            throw new DomainException('Нет прав на это объявление');
+        }
+
+        return $this->json(ApiResponse::success(
+            $this->placementService->buildPlacementLevelsPayloadForProperty($property),
+        ));
     }
 
     #[Route('/api/properties/{id}/placement-purchases/quote', name: 'api_property_placement_purchases_quote', methods: ['GET'], requirements: ['id' => '\d+'])]
@@ -323,9 +365,15 @@ final class PlacementController extends AbstractController
      *
      * @return array<string, mixed>
      */
-    private function levelPriceToArray(PropertyPlacementLevelPrice $levelPrice, ?array $catalogBand = null): array
-    {
-        $occupied = $this->placementService->getLevelPriceOccupancy($levelPrice);
+    private function levelPriceToArray(
+        PropertyPlacementLevelPrice $levelPrice,
+        ?array $catalogBand = null,
+        ?ApartmentPlacementScope $apartmentScope = null,
+    ): array {
+        $occupied = $this->placementService->getLevelPriceOccupancy(
+            $levelPrice,
+            apartmentScope: $apartmentScope,
+        );
         $capacity = $levelPrice->getCapacity();
 
         return [

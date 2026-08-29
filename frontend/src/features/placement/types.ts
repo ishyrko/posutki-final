@@ -44,6 +44,17 @@ export interface PlacementLevelsResponse {
     freeTier: PlacementFreeTierCatalogBand;
 }
 
+export interface PropertyPlacementScope {
+    tariffCityId: number | null;
+    tariffCityName: string | null;
+    locationLabel: string;
+    maxLevel: number;
+}
+
+export interface PropertyPlacementLevelsResponse extends PlacementLevelsResponse {
+    scope: PropertyPlacementScope;
+}
+
 export interface PlacementScopeSettings {
     propertyType: PlacementPropertyType;
     cityId?: number | null;
