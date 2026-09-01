@@ -282,13 +282,6 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
 
     return (
       <CatalogSlugProviderFromSets sets={slugSets}>
-        <link
-          rel="preload"
-          href="/hero-apartment.webp"
-          as="image"
-          type="image/webp"
-          fetchPriority="high"
-        />
         <HomePage
           featuredInitial={featuredInitial ?? undefined}
           articles={articles}
