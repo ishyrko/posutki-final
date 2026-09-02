@@ -62,6 +62,7 @@ import {
   buildApartmentPropertyMetaDescription,
   buildApartmentPropertyMetaTitle,
 } from "@/features/properties/property-meta-title";
+import { buildOpenGraphMeta } from "@/lib/seo/open-graph";
 import { sanitizeArticleHtml } from "@/features/articles/sanitizeArticleHtml";
 import { fetchCityLandmarks } from "@/lib/landmark-server";
 import PropertyDetailClient from "../../../features/properties/components/PropertyDetailClient";
@@ -133,8 +134,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       buildApartmentPropertyMetaTitle(property) ?? `${property.title} | Посутки.by`;
     const metaDescription =
       buildApartmentPropertyMetaDescription(property) ?? `${address} — ${bynPrice}`;
-    const firstImage =
-      property.images?.[0]?.thumbnailUrl || property.images?.[0]?.url;
+    const firstImage = property.images?.[0]?.url;
     const canonicalPath = buildPropertyUrlFromRegionName(
       property.type,
       Number(propertyId),
@@ -152,23 +152,35 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       alternates: {
         canonical: canonicalPath,
       },
-      openGraph: {
+      ...buildOpenGraphMeta({
         title: metaTitle,
         description: metaDescription,
+        path: canonicalPath,
         images: firstImage ? [{ url: firstImage }] : undefined,
         type: "website",
-      },
+      }),
     };
   }
 
   const parsed = parseSegments(segments);
 
   if (!isCatalogRoute(parsed)) {
+    const homeTitle =
+      "Квартиры и дома на сутки в Беларуси - посуточная аренда в Минске и других городах";
+    const homeDescription =
+      "Снимайте квартиры и дома на сутки в Беларуси напрямую от владельцев на Posutki.by. Минск, Гродно, Брест, Витебск, Гомель, Могилёв — актуальные объявления, удобный поиск по городу, типу жилья и количеству гостей.";
+
     return {
-      title:
-        "Квартиры и дома на сутки в Беларуси - посуточная аренда в Минске и других городах",
-      description:
-        "Снимайте квартиры и дома на сутки в Беларуси напрямую от владельцев на Posutki.by. Минск, Гродно, Брест, Витебск, Гомель, Могилёв — актуальные объявления, удобный поиск по городу, типу жилья и количеству гостей.",
+      title: homeTitle,
+      description: homeDescription,
+      alternates: {
+        canonical: "/",
+      },
+      ...buildOpenGraphMeta({
+        title: homeTitle,
+        description: homeDescription,
+        path: "/",
+      }),
     };
   }
 
@@ -206,14 +218,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     residentialComplexNamePrepositional,
   );
 
+  const catalogPath = buildCatalogCanonicalPath(parsed);
+  const catalogTitle = metaTitle ?? `${h1Title} | Посутки.by`;
+  const catalogDescription =
+    metaDescription ??
+    `Каталог посуточной аренды: ${h1Title.toLowerCase()}. Актуальные объявления с ценами и фото.`;
+
   return {
-    title: metaTitle ?? `${h1Title} | Посутки.by`,
-    description:
-      metaDescription ??
-      `Каталог посуточной аренды: ${h1Title.toLowerCase()}. Актуальные объявления с ценами и фото.`,
+    title: catalogTitle,
+    description: catalogDescription,
     alternates: {
-      canonical: buildCatalogCanonicalPath(parsed),
+      canonical: catalogPath,
     },
+    ...buildOpenGraphMeta({
+      title: catalogTitle,
+      description: catalogDescription,
+      path: catalogPath,
+    }),
   };
 }
 

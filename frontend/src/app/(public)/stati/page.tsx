@@ -6,6 +6,7 @@ import ArticlesPageClient from "./ArticlesPageClient";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { buildArticlesIndexBreadcrumbTrail, buildBreadcrumbJsonLd } from "@/lib/breadcrumbs";
 import { JsonLdScript } from "@/lib/json-ld/json-ld-script";
+import { buildPageMetadata } from "@/lib/seo/open-graph";
 
 export const revalidate = false;
 
@@ -21,11 +22,12 @@ function ArticlesPageFallback() {
   );
 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "Статьи и аналитика | Посутки.by",
   description:
     "Экспертные материалы о рынке недвижимости, советы покупателям и продавцам на Posutki.by.",
-};
+  path: "/stati/",
+});
 
 export default async function ArticlesPage() {
   const [categoriesResult, articlesResult] = await Promise.allSettled([

@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPANY } from "@/lib/company";
+import { buildPageMetadata } from "@/lib/seo/open-graph";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "Публичная оферта — Posutki.by",
   description:
     "Договор публичной оферты на предоставление услуг по размещению объявлений на Posutki.by.",
-};
+  path: "/publichnaya-oferta/",
+});
 
 export default function PublicOfferPage() {
   return (

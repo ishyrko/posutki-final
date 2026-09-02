@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { Article } from "@/features/articles/types";
 import { ARTICLE_FALLBACK_IMAGE } from "@/features/articles/articleCardDisplay";
-import { resolveArticleThumbnailUrl } from "@/features/articles/image";
+import { resolveArticleImageUrl } from "@/features/articles/image";
+import { buildOpenGraphMeta } from "@/lib/seo/open-graph";
 import { fetchPublicApi, fetchPublicApiNullable } from "@/lib/server-api";
 import { sanitizeArticleHtml } from "@/features/articles/sanitizeArticleHtml";
 import { JsonLdScript } from "@/lib/json-ld/json-ld-script";
@@ -79,15 +80,24 @@ export async function generateMetadata({
     notFound();
   }
 
+  const articleTitle = `${article.title} | Посутки.by`;
+  const articleDescription = article.excerpt || `Статья о недвижимости: ${article.title}`;
+  const articlePath = `/stati/${article.categorySlug}/${article.slug}/`;
+  const coverImage = resolveArticleImageUrl(article.coverImage) || ARTICLE_FALLBACK_IMAGE;
+
   return {
-    title: `${article.title} | Посутки.by`,
-    description: article.excerpt || `Статья о недвижимости: ${article.title}`,
-    openGraph: {
-      title: article.title,
-      description: article.excerpt || `Статья о недвижимости: ${article.title}`,
-      images: [{ url: resolveArticleThumbnailUrl(article.coverImage) || ARTICLE_FALLBACK_IMAGE }],
-      type: "article",
+    title: articleTitle,
+    description: articleDescription,
+    alternates: {
+      canonical: articlePath,
     },
+    ...buildOpenGraphMeta({
+      title: article.title,
+      description: articleDescription,
+      path: articlePath,
+      images: [{ url: coverImage }],
+      type: "article",
+    }),
   };
 }
 

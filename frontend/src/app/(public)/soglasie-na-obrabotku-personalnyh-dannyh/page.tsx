@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { sanitizeArticleHtml } from "@/features/articles/sanitizeArticleHtml";
 import { fetchStaticPage } from "@/features/staticPages/api";
 import StaticPageLayoutClient from "@/features/staticPages/StaticPageLayoutClient";
+import { buildPageMetadata } from "@/lib/seo/open-graph";
 
 export const revalidate = false;
 
@@ -11,16 +12,20 @@ const SLUG = "soglasie-na-obrabotku-personalnyh-dannyh";
 export async function generateMetadata(): Promise<Metadata> {
   const page = await fetchStaticPage(SLUG);
   if (!page) {
-    return {
+    return buildPageMetadata({
       title: "Согласие на обработку персональных данных | Посутки.by",
       description:
         "Согласие субъекта персональных данных на обработку данных при использовании Posutki.by.",
-    };
+      path: `/${SLUG}/`,
+    });
   }
-  return {
+  return buildPageMetadata({
     title: page.metaTitle ?? `${page.title} | Посутки.by`,
-    description: page.metaDescription ?? undefined,
-  };
+    description:
+      page.metaDescription ??
+      "Согласие субъекта персональных данных на обработку данных при использовании Posutki.by.",
+    path: `/${SLUG}/`,
+  });
 }
 
 export default async function PersonalDataConsentPage() {

@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { TariffsPageContent } from '@/features/placement/components/TariffsPageContent';
+import { buildPageMetadata } from '@/lib/seo/open-graph';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
     title: 'Тарифы и стоимость размещения — Posutki.by',
     description:
         'VIP-тарифы размещения объявлений на Posutki.by. Бесплатный VIP 1 на 2 недели для одного объявления на аккаунт.',
-};
+    path: '/tarify/',
+});
 
 export default function TariffsPage() {
     return (

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Button } from '@/components/ui/button';
 import { getSiteOrigin } from '@/lib/site-url';
+import { buildOpenGraphMeta } from '@/lib/seo/open-graph';
 import { OwnerHero } from '@/features/owner-landing/components/OwnerHero';
 import { OwnerReach } from '@/features/owner-landing/components/OwnerReach';
 import { OwnerBenefits } from '@/features/owner-landing/components/OwnerBenefits';
@@ -15,14 +16,21 @@ import { JsonLdScript } from '@/lib/json-ld/json-ld-script';
 import { buildFaqPageJsonLd } from '@/lib/json-ld/faq';
 
 const PAGE_PATH = '/sdat-kvartiru-na-sutki/';
+const pageTitle = 'Сдать квартиру на сутки - разместить объявление бесплатно | Posutki.by';
+const pageDescription =
+    'Разместите объявление о посуточной аренде квартиры, дома или усадьбы на Posutki.by бесплатно. Без комиссии с бронирования, календарь занятости и статистика в личном кабинете.';
 
 export const metadata: Metadata = {
-    title: 'Сдать квартиру на сутки - разместить объявление бесплатно | Posutki.by',
-    description:
-        'Разместите объявление о посуточной аренде квартиры, дома или усадьбы на Posutki.by бесплатно. Без комиссии с бронирования, календарь занятости и статистика в личном кабинете.',
+    title: pageTitle,
+    description: pageDescription,
     alternates: {
         canonical: `${getSiteOrigin()}${PAGE_PATH}`,
     },
+    ...buildOpenGraphMeta({
+        title: pageTitle,
+        description: pageDescription,
+        path: PAGE_PATH,
+    }),
 };
 
 function OwnerFaqJsonLd() {

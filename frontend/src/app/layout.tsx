@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { getSiteOrigin } from "@/lib/site-url";
+import { buildOpenGraphMeta } from "@/lib/seo/open-graph";
 import { inter } from "@/lib/fonts";
 import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
@@ -16,12 +17,20 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+const defaultTitle =
+  "Квартиры и дома на сутки в Беларуси - посуточная аренда в Минске и других городах";
+const defaultDescription =
+  "Снимайте квартиры и дома на сутки в Беларуси напрямую от владельцев на Posutki.by. Минск, Гродно, Брест, Витебск, Гомель, Могилёв — актуальные объявления, удобный поиск по городу, типу жилья и количеству гостей.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteOrigin()),
-  title:
-    "Квартиры и дома на сутки в Беларуси - посуточная аренда в Минске и других городах",
-  description:
-  "Снимайте квартиры и дома на сутки в Беларуси напрямую от владельцев на Posutki.by. Минск, Гродно, Брест, Витебск, Гомель, Могилёв — актуальные объявления, удобный поиск по городу, типу жилья и количеству гостей.",
+  title: defaultTitle,
+  description: defaultDescription,
+  ...buildOpenGraphMeta({
+    title: defaultTitle,
+    description: defaultDescription,
+    path: "/",
+  }),
   icons: {
     icon: [
       { url: "/favicon.ico" },

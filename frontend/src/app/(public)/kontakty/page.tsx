@@ -5,11 +5,13 @@ import { ContactInfo } from '@/features/contact/components/ContactInfo';
 import { CONTACT_FAQ } from '@/features/contact/faq-data';
 import { JsonLdScript } from '@/lib/json-ld/json-ld-script';
 import { buildFaqPageJsonLd } from '@/lib/json-ld/faq';
+import { buildPageMetadata } from '@/lib/seo/open-graph';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
     title: 'Контакты — Posutki.by',
     description: 'Контакты и режим работы поддержки Posutki.by: телефон, email и форма обратной связи.',
-};
+    path: '/kontakty/',
+});
 
 export default function ContactPage() {
     return (

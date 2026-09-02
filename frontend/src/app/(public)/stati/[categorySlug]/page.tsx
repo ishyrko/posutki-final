@@ -11,6 +11,7 @@ import {
   buildBreadcrumbJsonLd,
 } from "@/lib/breadcrumbs";
 import { JsonLdScript } from "@/lib/json-ld/json-ld-script";
+import { buildPageMetadata } from "@/lib/seo/open-graph";
 
 export const revalidate = false;
 
@@ -41,15 +42,20 @@ export async function generateMetadata({
       cache: "force-cache",
       next: { tags: ["articles"] },
     });
-    return {
-      title: `${category.name} - Статьи | Посутки.by`,
-      description: `Статьи по теме "${category.name}" на Posutki.by.`,
-    };
+    const categoryTitle = `${category.name} - Статьи | Посутки.by`;
+    const categoryDescription = `Статьи по теме "${category.name}" на Posutki.by.`;
+
+    return buildPageMetadata({
+      title: categoryTitle,
+      description: categoryDescription,
+      path: `/stati/${categorySlug}/`,
+    });
   } catch {
-    return {
+    return buildPageMetadata({
       title: "Категория статей | Посутки.by",
       description: "Категория статей на Posutki.by.",
-    };
+      path: "/stati/",
+    });
   }
 }
 

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { sanitizeArticleHtml } from "@/features/articles/sanitizeArticleHtml";
 import { fetchStaticPage } from "@/features/staticPages/api";
 import StaticPageLayoutClient from "@/features/staticPages/StaticPageLayoutClient";
+import { buildPageMetadata } from "@/lib/seo/open-graph";
 
 export const revalidate = false;
 
@@ -11,16 +12,20 @@ const SLUG = "usloviya-ispolzovaniya";
 export async function generateMetadata(): Promise<Metadata> {
   const page = await fetchStaticPage(SLUG);
   if (!page) {
-    return {
+    return buildPageMetadata({
       title: "Условия использования | Посутки.by",
       description:
         "Правила использования сайта Posutki.by: учётная запись, размещение объявлений и ответственность сторон.",
-    };
+      path: `/${SLUG}/`,
+    });
   }
-  return {
+  return buildPageMetadata({
     title: page.metaTitle ?? `${page.title} | Посутки.by`,
-    description: page.metaDescription ?? undefined,
-  };
+    description:
+      page.metaDescription ??
+      "Правила использования сайта Posutki.by: учётная запись, размещение объявлений и ответственность сторон.",
+    path: `/${SLUG}/`,
+  });
 }
 
 export default async function TermsOfUsePage() {
