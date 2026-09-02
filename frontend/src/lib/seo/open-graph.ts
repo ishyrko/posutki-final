@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getSiteOrigin } from "@/lib/site-url";
 
 export const SITE_NAME = "Posutki.by";
-export const DEFAULT_OG_IMAGE = "/og/default.jpg";
+export const DEFAULT_OG_IMAGE = "/og/default.webp";
 export const DEFAULT_OG_IMAGE_WIDTH = 1200;
 export const DEFAULT_OG_IMAGE_HEIGHT = 630;
 export const OG_LOCALE = "ru_RU";

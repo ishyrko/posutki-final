@@ -2,7 +2,7 @@ import type { Article } from "./types";
 import { estimateArticleReadMinutes } from "./articleHtmlUtils";
 import { resolveArticleThumbnailUrl } from "./image";
 
-export const ARTICLE_FALLBACK_IMAGE = "/og/default.jpg";
+export const ARTICLE_FALLBACK_IMAGE = "/og/default.webp";
 
 export function formatArticleDate(dateStr: string): string {
   const date = new Date(dateStr);

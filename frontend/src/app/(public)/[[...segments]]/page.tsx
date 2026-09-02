@@ -38,6 +38,7 @@ import {
   resolveLandmarkPhrase,
   validatePublicSegments,
 } from "@/features/catalog/validate-segments-server";
+import { resolveLandmarkImageUrl } from "@/features/landmarks/image";
 import { formatAddress, Property } from "@/features/properties/types";
 import CatalogPage from "@/features/catalog/CatalogPage";
 import HomePage from "@/features/home/HomePage";
@@ -223,6 +224,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const catalogDescription =
     metaDescription ??
     `Каталог посуточной аренды: ${h1Title.toLowerCase()}. Актуальные объявления с ценами и фото.`;
+  const landmarkImageUrl = landmark ? resolveLandmarkImageUrl(landmark.imageUrl) : null;
 
   return {
     title: catalogTitle,
@@ -234,6 +236,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: catalogTitle,
       description: catalogDescription,
       path: catalogPath,
+      images: landmarkImageUrl
+        ? [{ url: landmarkImageUrl, alt: landmark?.name }]
+        : undefined,
     }),
   };
 }
