@@ -35,6 +35,9 @@ final readonly class PlacementMailer
         }
 
         $expiresAt = $purchase->getExpiresAt();
+        $expiresAtFormatted = $expiresAt === null
+            ? null
+            : ($purchase->isBoost() ? $expiresAt->format('d.m.Y H:i') : $expiresAt->format('d.m.Y'));
         $html = $this->twig->render('email/placement/payment_succeeded.html.twig', [
             'owner' => $owner,
             'property' => $property,
@@ -43,7 +46,7 @@ final readonly class PlacementMailer
             'propertyUrl' => $propertyUrl,
             'paymentUrl' => $paymentUrl,
             'dashboardUrl' => $dashboardUrl,
-            'expiresAtFormatted' => $expiresAt?->format('d.m.Y'),
+            'expiresAtFormatted' => $expiresAtFormatted,
         ]);
 
         $email = (new Email())

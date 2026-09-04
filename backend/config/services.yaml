@@ -613,6 +613,10 @@ services:
         arguments:
             $notificationBus: '@notification.bus'
 
+    App\Presentation\Admin\Controller\PropertyPlacementPurchaseCrudController:
+        arguments:
+            $notificationBus: '@notification.bus'
+
     App\Application\Service\PlacementPaymentCompletionService:
         arguments:
             $notificationBus: '@notification.bus'

@@ -9,6 +9,7 @@ use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
 use App\Domain\Property\Entity\PropertyPlacementPurchase;
 use App\Domain\Property\Enum\PlacementPurchaseKind;
 use App\Domain\Property\Enum\PlacementPurchaseStatus;
+use App\Domain\Property\Event\PlacementPaymentSucceededEvent;
 use App\Domain\Property\Repository\PropertyPlacementLevelPriceRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
@@ -29,7 +30,10 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
+use LogicException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class PropertyPlacementPurchaseCrudController extends AbstractCrudController
 {
@@ -39,6 +43,7 @@ class PropertyPlacementPurchaseCrudController extends AbstractCrudController
         private readonly PropertyPlacementLevelPriceRepositoryInterface $levelPriceRepository,
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
         private readonly AdminUrlGenerator $adminUrlGenerator,
+        private readonly MessageBusInterface $notificationBus,
     ) {
     }
 
@@ -168,10 +173,15 @@ class PropertyPlacementPurchaseCrudController extends AbstractCrudController
             ->add('createdAt');
     }
 
-    public function activatePurchase(AdminContext $context): RedirectResponse
+    public function activatePurchase(AdminContext $context, Request $request): RedirectResponse
     {
-        /** @var PropertyPlacementPurchase $purchase */
-        $purchase = $context->getEntity()->getInstance();
+        $purchase = $this->resolvePurchaseFromContext($context, $request);
+        if ($purchase === null) {
+            $this->addFlash('warning', 'Не удалось определить заявку');
+
+            return $this->redirectToIndex();
+        }
+
         $property = $this->propertyRepository->findById(Id::fromInt($purchase->getPropertyId()));
         if ($property === null) {
             $this->addFlash('danger', 'Объявление не найдено');
@@ -184,6 +194,10 @@ class PropertyPlacementPurchaseCrudController extends AbstractCrudController
 
         try {
             $this->placementService->activatePurchase($purchase, $property, $adminId);
+            $purchaseId = $purchase->getId();
+            if ($purchaseId !== null) {
+                $this->notificationBus->dispatch(new PlacementPaymentSucceededEvent($purchaseId));
+            }
             $this->addFlash('success', 'Заявка активирована');
         } catch (\Throwable $e) {
             $this->addFlash('danger', $e->getMessage());
@@ -192,10 +206,15 @@ class PropertyPlacementPurchaseCrudController extends AbstractCrudController
         return $this->redirectToIndex();
     }
 
-    public function rejectPurchase(AdminContext $context): RedirectResponse
+    public function rejectPurchase(AdminContext $context, Request $request): RedirectResponse
     {
-        /** @var PropertyPlacementPurchase $purchase */
-        $purchase = $context->getEntity()->getInstance();
+        $purchase = $this->resolvePurchaseFromContext($context, $request);
+        if ($purchase === null) {
+            $this->addFlash('warning', 'Не удалось определить заявку');
+
+            return $this->redirectToIndex();
+        }
+
         try {
             $purchase->reject('Отклонено администратором');
             $this->purchaseRepository->save($purchase);
@@ -215,5 +234,38 @@ class PropertyPlacementPurchaseCrudController extends AbstractCrudController
                 ->setAction(Action::INDEX)
                 ->generateUrl()
         );
+    }
+
+    private function resolvePurchaseFromContext(AdminContext $context, Request $request): ?PropertyPlacementPurchase
+    {
+        try {
+            if ($context->getCrud() === null) {
+                return $this->resolvePurchaseFromRequest($request);
+            }
+
+            $entityDto = $context->getEntity();
+            $entity = $entityDto->getInstance();
+            if ($entity instanceof PropertyPlacementPurchase) {
+                return $entity;
+            }
+
+            return $this->resolvePurchaseFromRequest($request);
+        } catch (LogicException) {
+            return $this->resolvePurchaseFromRequest($request);
+        }
+    }
+
+    private function resolvePurchaseFromRequest(Request $request): ?PropertyPlacementPurchase
+    {
+        $entityId = $request->query->getString('entityId');
+        if ($entityId === '') {
+            $entityId = $request->query->getString('id');
+        }
+
+        if ($entityId === '' || !ctype_digit($entityId)) {
+            return null;
+        }
+
+        return $this->purchaseRepository->findById((int) $entityId);
     }
 }
