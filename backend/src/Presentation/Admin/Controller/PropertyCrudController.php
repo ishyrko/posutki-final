@@ -9,6 +9,7 @@ use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\SellerType;
 use App\Application\Service\PropertyEngagementStatsCache;
+use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\CityDistrictRepositoryInterface;
 use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
@@ -73,6 +74,7 @@ class PropertyCrudController extends AbstractCrudController
         protected readonly StreetRepositoryInterface $streetRepository,
         protected readonly UserRepositoryInterface $userRepository,
         protected readonly PropertyEngagementStatsCache $propertyEngagementStatsCache,
+        protected readonly PropertyPlacementService $placementService,
     ) {
     }
 
@@ -204,7 +206,32 @@ class PropertyCrudController extends AbstractCrudController
             $entityInstance->setPriceByn($entityInstance->getPriceAmount());
         }
 
+        if ($entityInstance instanceof Property) {
+            $this->maybeGrantFreeTrialOnAdminPublish($entityInstance);
+        }
+
         parent::updateEntity($entityManager, $entityInstance);
+    }
+
+    /**
+     * EasyAdmin status field calls setStatus() with grantFreeTrial=false by default.
+     * If this is the account's first publish and the trial is still available, grant it here
+     * (same rules as moderation approve) so the one-time VIP 1 is not skipped or doubled.
+     */
+    private function maybeGrantFreeTrialOnAdminPublish(Property $property): void
+    {
+        if ($property->getStatus() !== 'published' || $property->getPublishedAt() === null) {
+            return;
+        }
+        if ($property->getFreeTrialEndsAt() !== null) {
+            return;
+        }
+        if (!$this->placementService->shouldGrantFreeTrial($property)) {
+            return;
+        }
+
+        $property->applyInitialPlacement($property->getPublishedAt(), grantFreeTrial: true);
+        $this->placementService->markFreePlacementTrialUsed($property);
     }
 
     public function configureFields(string $pageName): iterable
@@ -252,6 +279,7 @@ class PropertyCrudController extends AbstractCrudController
                 'В архиве' => 'archived',
                 'Удалено' => 'deleted',
             ])
+            ->setHelp('Первую публикацию лучше делать кнопкой «Одобрить» на модерации: там учитываются лимит бесплатных и разовый бесплатный VIP 1.')
             ->renderAsBadges([
                 'draft' => 'warning',
                 'moderation' => 'info',

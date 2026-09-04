@@ -129,6 +129,9 @@ interface PropertyRepositoryInterface
 
     public function countFreePublishedApartmentsByOwnerInCity(Id $ownerId, int $cityId, ?Id $excludeId = null): int;
 
+    /** True if the owner already has any listing that received free VIP 1 (free_trial_ends_at set). */
+    public function ownerHasFreeTrialHistory(Id $ownerId, ?Id $excludeId = null): bool;
+
     /**
      * @return array<int, int> cityId => published apartment count
      */

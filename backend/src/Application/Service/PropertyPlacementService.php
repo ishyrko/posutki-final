@@ -555,6 +555,7 @@ final class PropertyPlacementService
 
     /**
      * One free VIP 1 (2 weeks) per account: true if the owner has not used it yet.
+     * Also checks property history so a stale/cleared user flag cannot grant a second trial.
      */
     public function shouldGrantFreeTrial(Property $property): bool
     {
@@ -563,7 +564,19 @@ final class PropertyPlacementService
             return false;
         }
 
-        return !$user->hasUsedFreePlacementTrial();
+        if ($user->hasUsedFreePlacementTrial()) {
+            return false;
+        }
+
+        if ($this->propertyRepository->ownerHasFreeTrialHistory($property->getOwnerId(), $property->getId())) {
+            // Heal desynced flag (e.g. admin reset) when a listing already consumed the trial.
+            $user->markFreePlacementTrialUsed();
+            $this->userRepository->save($user);
+
+            return false;
+        }
+
+        return true;
     }
 
     /**

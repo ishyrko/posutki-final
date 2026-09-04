@@ -52,9 +52,9 @@ final class PropertyModerationCrudController extends PropertyCrudController
         StreetRepositoryInterface $streetRepository,
         UserRepositoryInterface $userRepository,
         PropertyEngagementStatsCache $propertyEngagementStatsCache,
+        PropertyPlacementService $placementService,
         private readonly CommandBusInterface $commandBus,
         private readonly MessageBusInterface $notificationBus,
-        private readonly PropertyPlacementService $placementService,
         private readonly FreeListingLimitService $freeListingLimitService,
     ) {
         parent::__construct(
@@ -67,6 +67,7 @@ final class PropertyModerationCrudController extends PropertyCrudController
             $streetRepository,
             $userRepository,
             $propertyEngagementStatsCache,
+            $placementService,
         );
     }
 

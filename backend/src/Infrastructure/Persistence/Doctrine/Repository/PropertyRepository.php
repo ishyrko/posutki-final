@@ -520,6 +520,23 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
+    public function ownerHasFreeTrialHistory(Id $ownerId, ?Id $excludeId = null): bool
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select('1')
+            ->where('p.ownerId = :ownerId')
+            ->andWhere('p.freeTrialEndsAt IS NOT NULL')
+            ->setParameter('ownerId', $ownerId->getValue())
+            ->setMaxResults(1);
+
+        if ($excludeId !== null) {
+            $qb->andWhere('p.id != :excludeId')
+                ->setParameter('excludeId', $excludeId->getValue());
+        }
+
+        return $qb->getQuery()->getOneOrNullResult() !== null;
+    }
+
     public function countPublishedApartmentsGroupedByCity(): array
     {
         /** @var list<array{cityId: int|string, cnt: string|int}> $rows */

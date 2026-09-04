@@ -366,7 +366,12 @@ class Property
         return $this->status;
     }
 
-    public function setStatus(string $status, bool $grantFreeTrial = true): void
+    /**
+     * @param bool $grantFreeTrial Only for first publish. Defaults to false so EasyAdmin / raw
+     *                             status edits cannot silently grant another free VIP 1; callers
+     *                             that may grant must pass shouldGrantFreeTrial() explicitly.
+     */
+    public function setStatus(string $status, bool $grantFreeTrial = false): void
     {
         $this->status = $status;
         if ($status !== 'rejected') {

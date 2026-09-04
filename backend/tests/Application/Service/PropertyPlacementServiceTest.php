@@ -461,6 +461,60 @@ final class PropertyPlacementServiceTest extends TestCase
         self::assertSame(2, $property->getPlacementEffectiveLevel());
     }
 
+    public function testShouldGrantFreeTrialFalseWhenOwnerAlreadyHasTrialHistory(): void
+    {
+        $ownerId = Id::fromInt(7);
+        $property = $this->createProperty($ownerId);
+        $user = \App\Domain\User\Entity\User::registerViaPhone('+375291111111', 'Test', 'Owner');
+        $this->setEntityId($user, $ownerId);
+
+        $userRepository = $this->createMock(UserRepositoryInterface::class);
+        $userRepository->method('findById')->with($ownerId)->willReturn($user);
+        $userRepository->expects(self::once())->method('save')->with($user);
+
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository->method('ownerHasFreeTrialHistory')->with($ownerId, $property->getId())->willReturn(true);
+
+        $service = new PropertyPlacementService(
+            $propertyRepository,
+            $this->createStub(PropertyPlacementPurchaseRepositoryInterface::class),
+            $this->createStub(PropertyPlacementLevelPriceRepositoryInterface::class),
+            $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
+            $this->createStub(CityRepositoryInterface::class),
+            $userRepository,
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
+        );
+
+        self::assertFalse($service->shouldGrantFreeTrial($property));
+        self::assertTrue($user->hasUsedFreePlacementTrial());
+    }
+
+    public function testShouldGrantFreeTrialTrueWhenUnused(): void
+    {
+        $ownerId = Id::fromInt(7);
+        $property = $this->createProperty($ownerId);
+        $user = \App\Domain\User\Entity\User::registerViaPhone('+375291111112', 'Test', 'Owner');
+        $this->setEntityId($user, $ownerId);
+
+        $userRepository = $this->createMock(UserRepositoryInterface::class);
+        $userRepository->method('findById')->with($ownerId)->willReturn($user);
+
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository->method('ownerHasFreeTrialHistory')->willReturn(false);
+
+        $service = new PropertyPlacementService(
+            $propertyRepository,
+            $this->createStub(PropertyPlacementPurchaseRepositoryInterface::class),
+            $this->createStub(PropertyPlacementLevelPriceRepositoryInterface::class),
+            $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
+            $this->createStub(CityRepositoryInterface::class),
+            $userRepository,
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
+        );
+
+        self::assertTrue($service->shouldGrantFreeTrial($property));
+    }
+
     private function setPlacementBaseLevel(Property $property, int $level): void
     {
         $reflection = new \ReflectionProperty($property, 'placementBaseLevel');

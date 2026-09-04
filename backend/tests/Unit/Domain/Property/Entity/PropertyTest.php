@@ -125,6 +125,31 @@ final class PropertyTest extends TestCase
         self::assertFalse($property->isOwnedBy('321'));
     }
 
+    public function testSetStatusPublishedDoesNotGrantFreeTrialByDefault(): void
+    {
+        $property = $this->createProperty();
+        $property->publish();
+
+        $property->setStatus('published');
+
+        self::assertSame('published', $property->getStatus());
+        self::assertNull($property->getFreeTrialEndsAt());
+        self::assertFalse($property->isPlacementIsTrial());
+        self::assertSame(0, $property->getPlacementBaseLevel());
+    }
+
+    public function testSetStatusPublishedCanGrantFreeTrialExplicitly(): void
+    {
+        $property = $this->createProperty();
+        $property->publish();
+
+        $property->setStatus('published', grantFreeTrial: true);
+
+        self::assertNotNull($property->getFreeTrialEndsAt());
+        self::assertTrue($property->isPlacementIsTrial());
+        self::assertSame(1, $property->getPlacementBaseLevel());
+    }
+
     public function testApproveFromDraftThrowsDomainException(): void
     {
         $property = $this->createProperty();
