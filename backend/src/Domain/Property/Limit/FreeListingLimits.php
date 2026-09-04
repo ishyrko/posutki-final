@@ -16,4 +16,10 @@ final class FreeListingLimits
     {
         return max(self::CITY_APARTMENT_MIN, self::CITY_APARTMENT_BASE - $publishedApartmentsInCity);
     }
+
+    /** Лимит бесплатных объявлений на одного пользователя с учётом потолка аккаунта. */
+    public static function perUserDisplayLimit(int $cityApartmentLimit): int
+    {
+        return min(self::MAX_PUBLISHED_PER_ACCOUNT, max(self::CITY_APARTMENT_MIN, $cityApartmentLimit));
+    }
 }

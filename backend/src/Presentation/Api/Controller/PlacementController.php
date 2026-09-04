@@ -11,6 +11,8 @@ use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
 use App\Domain\Property\Entity\PropertyPlacementScopeSettings;
 use App\Domain\Property\Enum\PropertyType;
+use App\Domain\Property\Limit\FreeListingLimits;
+use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementLevelPriceRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementScopeSettingsRepositoryInterface;
@@ -36,6 +38,7 @@ final class PlacementController extends AbstractController
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyPlacementService $placementService,
         private readonly ApartmentPlacementScopeResolver $apartmentPlacementScopeResolver,
+        private readonly CityRepositoryInterface $cityRepository,
         private readonly CommandBusInterface $commandBus,
     ) {
     }
@@ -60,6 +63,8 @@ final class PlacementController extends AbstractController
                 null,
                 $regionId,
             );
+            $perUserLimit = FreeListingLimits::MAX_PUBLISHED_PER_ACCOUNT;
+            $apartmentScope = null;
         } else {
             $cityId = $request->query->getInt('cityId');
             if ($cityId <= 0) {
@@ -74,9 +79,15 @@ final class PlacementController extends AbstractController
                         'catalogPositionFrom' => null,
                         'catalogPositionTo' => null,
                         'catalogListingsAtLevel' => null,
+                        'perUserLimit' => FreeListingLimits::perUserDisplayLimit(FreeListingLimits::CITY_APARTMENT_MIN),
                     ],
                 ]));
             }
+
+            $tariffCity = $this->cityRepository->findById($scope->tariffCityId);
+            $perUserLimit = FreeListingLimits::perUserDisplayLimit(
+                $tariffCity?->getFreeApartmentsPerAccount() ?? FreeListingLimits::CITY_APARTMENT_MIN,
+            );
 
             $levelPrices = $this->levelPriceRepository->findActiveByCityId($scope->tariffCityId);
             $countsByLevel = $this->propertyRepository->countPublishedByEffectiveLevel(
@@ -98,7 +109,6 @@ final class PlacementController extends AbstractController
         );
 
         $freeBand = $bands[0] ?? null;
-        $apartmentScope ??= null;
 
         return $this->json(ApiResponse::success([
             'levels' => array_map(
@@ -113,6 +123,7 @@ final class PlacementController extends AbstractController
                 'catalogPositionFrom' => $freeBand['from'] ?? null,
                 'catalogPositionTo' => $freeBand['to'] ?? null,
                 'catalogListingsAtLevel' => $freeBand['count'] ?? null,
+                'perUserLimit' => $perUserLimit,
             ],
         ]));
     }

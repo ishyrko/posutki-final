@@ -116,6 +116,7 @@ final readonly class PlacementMailer
         string $dashboardUrl,
         ?array $recentEngagement,
         bool $hiddenDueToFreeLimit = false,
+        ?string $limitIntro = null,
     ): void {
         $ownerEmail = $owner->getEmail()?->getValue();
         if ($ownerEmail === null) {
@@ -133,6 +134,7 @@ final readonly class PlacementMailer
             'expiresAtFormatted' => $expiresAt?->format('d.m.Y H:i'),
             'recentEngagement' => $recentEngagement,
             'hiddenDueToFreeLimit' => $hiddenDueToFreeLimit,
+            'limitIntro' => $limitIntro,
         ]);
 
         $subject = $hiddenDueToFreeLimit

@@ -33,10 +33,13 @@ export interface PlacementLevelPrice {
 }
 
 /** Catalog band for free (effective level 0) listings in the same scope. */
+export const ACCOUNT_FREE_LISTING_LIMIT = 5;
+
 export interface PlacementFreeTierCatalogBand {
     catalogPositionFrom: number | null;
     catalogPositionTo: number | null;
     catalogListingsAtLevel: number | null;
+    perUserLimit?: number | null;
 }
 
 export interface PlacementLevelsResponse {

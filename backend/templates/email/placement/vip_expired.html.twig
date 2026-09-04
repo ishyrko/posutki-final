@@ -33,13 +33,17 @@
     <span class="status-badge">{% if hiddenDueToFreeLimit %}Объявление скрыто{% else %}VIP истёк{% endif %}</span>
     <p class="text">
       {% if hiddenDueToFreeLimit %}
-        VIP-размещение объявления <strong>«{{ property.title }}»</strong> (VIP {{ level }}) истекло, а свободного бесплатного слота на аккаунте нет.
+        VIP-размещение объявления <strong>«{{ property.title }}»</strong> (VIP {{ level }}) истекло. {{ limitIntro }}.
         Объявление скрыто из каталога. Продлите VIP или освободите бесплатный слот, чтобы снова опубликовать его.
       {% else %}
         Премиум размещение объявления <strong>«{{ property.title }}»</strong>
         {% if isTrial %}(бесплатный VIP 1){% else %}(VIP {{ level }}){% endif %}
         {% if expiresAtFormatted %}закончилось {{ expiresAtFormatted }}.{% else %}закончилось.{% endif %}
+        {% if isTrial %}
         Размещение объявления в каталоге продолжится на бесплатном уровне на более низкой позиции.
+        {% else %}
+        Размещение объявления в каталоге продолжится на бесплатном уровне на более низкой позиции — только если не исчерпан лимит бесплатных объявлений на аккаунте или в городе (для квартир).
+        {% endif %}
       {% endif %}
     </p>
 
