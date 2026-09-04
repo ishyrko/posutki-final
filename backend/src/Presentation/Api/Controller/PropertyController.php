@@ -443,13 +443,16 @@ class PropertyController extends AbstractController
         $result = $this->commandBus->dispatch($command);
 
         $requiresPayment = is_array($result) && ($result['requiresPayment'] ?? false);
+        $message = is_array($result) && is_string($result['message'] ?? null)
+            ? $result['message']
+            : ($requiresPayment
+                ? 'Ваш лимит бесплатных объявлений исчерпан, объявление ожидает оплаты'
+                : 'Объявление снова опубликовано');
 
         return $this->json(
             ApiResponse::success([
                 'requiresPayment' => $requiresPayment,
-                'message' => $requiresPayment
-                    ? 'Лимит бесплатных исчерпан, объявление ожидает оплаты'
-                    : 'Объявление снова опубликовано',
+                'message' => $message,
             ])
         );
     }

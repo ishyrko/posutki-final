@@ -22,6 +22,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useArchiveProperty, useDeleteProperty, useExchangeRates, useFreeListingLimits, useMyProperties, usePublishFreeProperty, useUnarchiveProperty } from '@/features/properties/hooks';
 import { Property, formatAddress, isPropertyEditable } from '@/features/properties/types';
+import { formatFreeLimitExceededMessage } from '@/features/properties/free-listing-limits';
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
 import { BuyPlacementDialog } from '@/features/placement/components/BuyPlacementDialog';
@@ -107,10 +108,12 @@ function getDeleteEligibility(property: Property) {
 function ListingCard({
     property,
     showPublicLinks,
+    accountLimits,
     onRequestDelete,
 }: {
     property: Property;
     showPublicLinks: boolean;
+    accountLimits?: { used: number; limit: number };
     onRequestDelete?: (propertyId: number) => void;
 }) {
     const archive = useArchiveProperty();
@@ -316,7 +319,7 @@ function ListingCard({
                     </div>
                     {property.status === 'awaiting_payment' && (
                         <p className="text-sm text-muted-foreground mt-2">
-                            Лимит бесплатных объявлений исчерпан. Оплатите VIP или освободите слот: скройте другое объявление или купите для него VIP.
+                            {formatFreeLimitExceededMessage(property, accountLimits)}
                         </p>
                     )}
                     {property.status === 'rejected' && property.moderationComment && (
@@ -491,11 +494,7 @@ function ListingCard({
                             onClick={() =>
                                 unarchive.mutate(property.id, {
                                     onSuccess: (result) =>
-                                        toast.success(
-                                            result.requiresPayment
-                                                ? 'Лимит бесплатных исчерпан, объявление ожидает оплаты'
-                                                : 'Объявление снова опубликовано',
-                                        ),
+                                        toast.success(result.message),
                                     onError: (e) =>
                                         toast.error(getApiErrorMessage(e, 'Не удалось активировать объявление')),
                                 })
@@ -619,21 +618,6 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
                 </Button>
             </div>
 
-            {freeLimits && (
-                <div className="mb-6 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-                    Использовано <strong className="text-foreground">{freeLimits.account.used}</strong> из{' '}
-                    <strong className="text-foreground">{freeLimits.account.limit}</strong> бесплатных объявлений на аккаунте.
-                    {freeLimits.city ? (
-                        <>
-                            {' '}
-                            В выбранном городе для квартир:{' '}
-                            <strong className="text-foreground">{freeLimits.city.used}</strong> из{' '}
-                            <strong className="text-foreground">{freeLimits.city.limit}</strong>.
-                        </>
-                    ) : null}
-                </div>
-            )}
-
             <div className="flex flex-wrap gap-2 mb-6">
                 {STATUS_TABS.map((tab) => (
                     <Link
@@ -682,6 +666,7 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
                             key={property.id}
                             property={property}
                             showPublicLinks={activeStatus !== 'inactive'}
+                            accountLimits={freeLimits?.account}
                             onRequestDelete={setDeleteTargetId}
                         />
                     ))}

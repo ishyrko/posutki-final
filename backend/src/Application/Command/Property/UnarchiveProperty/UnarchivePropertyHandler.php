@@ -18,7 +18,7 @@ final class UnarchivePropertyHandler
     }
 
     /**
-     * @return array{requiresPayment: bool}
+     * @return array{requiresPayment: bool, message: string}
      */
     public function __invoke(UnarchivePropertyCommand $command): array
     {
@@ -43,6 +43,9 @@ final class UnarchivePropertyHandler
 
         return [
             'requiresPayment' => !$withinFreeLimit,
+            'message' => $withinFreeLimit
+                ? 'Объявление снова опубликовано'
+                : $this->freeListingLimitService->buildAwaitingPaymentNotice($property),
         ];
     }
 }

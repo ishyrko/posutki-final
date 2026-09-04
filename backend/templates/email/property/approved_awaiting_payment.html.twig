@@ -32,7 +32,7 @@
   <div class="body">
     <p class="greeting">Здравствуйте, {{ owner.firstName }}!</p>
     <span class="status-badge">Ожидает оплаты</span>
-    <p class="text">Ваше объявление <strong>«{{ property.title }}»</strong> прошло модерацию, но <strong>не опубликовано в каталоге</strong>: на аккаунте исчерпан лимит бесплатных размещений.</p>
+    <p class="text">Ваше объявление <strong>«{{ property.title }}»</strong> прошло модерацию, но <strong>не опубликовано в каталоге</strong>. {{ limitIntro }}.</p>
 
     <div class="property-card">
       <p class="property-title">{{ property.title }}</p>

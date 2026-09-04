@@ -41,7 +41,7 @@ final class PublishFreeSlotHandler
         }
 
         if (!$this->freeListingLimitService->canPublishFree($property)) {
-            throw new DomainException('Лимит бесплатных объявлений исчерпан. Скройте другое объявление или купите для него VIP.');
+            throw new DomainException($this->freeListingLimitService->buildLimitExceededMessage($property));
         }
 
         $grantFreeTrial = $this->placementService->shouldGrantFreeTrial($property);

@@ -6,6 +6,7 @@ namespace App\Tests\Application\Property;
 
 use App\Application\Command\Property\UnarchiveProperty\UnarchivePropertyCommand;
 use App\Application\Command\Property\UnarchiveProperty\UnarchivePropertyHandler;
+use App\Application\Service\FreeListingLimitService;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\ValueObject\Address;
@@ -27,7 +28,10 @@ final class UnarchivePropertyHandlerTest extends TestCase
         $repository->method('findById')->willReturn($property);
         $repository->expects(self::once())->method('save')->with($property);
 
-        $handler = new UnarchivePropertyHandler($repository);
+        $freeListingLimitService = $this->createStub(FreeListingLimitService::class);
+        $freeListingLimitService->method('canPublishFree')->willReturn(true);
+
+        $handler = new UnarchivePropertyHandler($repository, $freeListingLimitService);
         $handler(new UnarchivePropertyCommand('11', '7'));
 
         self::assertSame('published', $property->getStatus());
@@ -43,7 +47,10 @@ final class UnarchivePropertyHandlerTest extends TestCase
         $repository = $this->createStub(PropertyRepositoryInterface::class);
         $repository->method('findById')->willReturn($property);
 
-        $handler = new UnarchivePropertyHandler($repository);
+        $freeListingLimitService = $this->createStub(FreeListingLimitService::class);
+        $freeListingLimitService->method('canPublishFree')->willReturn(true);
+
+        $handler = new UnarchivePropertyHandler($repository, $freeListingLimitService);
 
         $this->expectException(DomainException::class);
         $this->expectExceptionMessage('Нет прав на активацию этого объявления');
@@ -59,7 +66,10 @@ final class UnarchivePropertyHandlerTest extends TestCase
         $repository = $this->createStub(PropertyRepositoryInterface::class);
         $repository->method('findById')->willReturn($property);
 
-        $handler = new UnarchivePropertyHandler($repository);
+        $freeListingLimitService = $this->createStub(FreeListingLimitService::class);
+        $freeListingLimitService->method('canPublishFree')->willReturn(true);
+
+        $handler = new UnarchivePropertyHandler($repository, $freeListingLimitService);
 
         $this->expectException(DomainException::class);
         $this->expectExceptionMessage('Активировать можно только скрытое объявление');

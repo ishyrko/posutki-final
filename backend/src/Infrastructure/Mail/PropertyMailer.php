@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Mail;
 
+use App\Application\Service\FreeListingLimitService;
 use App\Domain\Property\Entity\Property;
 use App\Domain\User\Entity\User;
 use App\Infrastructure\Service\FrontendUrlBuilder;
@@ -18,6 +19,7 @@ final readonly class PropertyMailer
         private Environment $twig,
         private string $mailerFrom,
         private FrontendUrlBuilder $frontendUrls,
+        private FreeListingLimitService $freeListingLimitService,
         private array $adminEmails,
     ) {
     }
@@ -89,6 +91,7 @@ final readonly class PropertyMailer
             context: [
                 'owner' => $owner,
                 'property' => $property,
+                'limitIntro' => $this->freeListingLimitService->buildLimitExceededIntro($property),
                 'dashboardUrl' => $this->frontendUrls->cabinet(),
                 'awaitingPaymentUrl' => $this->frontendUrls->awaitingPaymentListings(),
                 'tariffsUrl' => $this->frontendUrls->tariffs(),

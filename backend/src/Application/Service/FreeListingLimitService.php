@@ -61,6 +61,51 @@ final class FreeListingLimitService
         return $cityUsed < $city->getFreeApartmentsPerAccount();
     }
 
+    public function isAccountLimitExceeded(Property $property): bool
+    {
+        if ($this->hasActivePaidLevel($property)) {
+            return false;
+        }
+
+        $accountUsed = $this->propertyRepository->countFreePublishedByOwner(
+            $property->getOwnerId(),
+            $property->getId(),
+        );
+
+        return $accountUsed >= FreeListingLimits::MAX_PUBLISHED_PER_ACCOUNT;
+    }
+
+    public function buildLimitExceededIntro(Property $property): string
+    {
+        if ($this->isAccountLimitExceeded($property)) {
+            return 'Ваш лимит бесплатных объявлений на аккаунте исчерпан';
+        }
+
+        if ($property->getType() === PropertyType::Apartment->value) {
+            $city = $this->cityRepository->findById($property->getCityId());
+            $cityName = $city?->getName() ?? 'этого города';
+
+            return sprintf('Ваш лимит бесплатных объявлений для города %s исчерпан', $cityName);
+        }
+
+        return 'Ваш лимит бесплатных объявлений исчерпан';
+    }
+
+    public function buildLimitExceededMessage(Property $property, bool $includeAction = true): string
+    {
+        $message = $this->buildLimitExceededIntro($property) . '.';
+        if ($includeAction) {
+            $message .= ' Оплатите VIP или освободите слот: скройте другое объявление или купите для него VIP.';
+        }
+
+        return $message;
+    }
+
+    public function buildAwaitingPaymentNotice(Property $property): string
+    {
+        return $this->buildLimitExceededIntro($property) . ', объявление ожидает оплаты';
+    }
+
     /**
      * @return array{
      *     account: array{used: int, limit: int},
