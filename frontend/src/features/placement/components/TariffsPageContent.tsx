@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { useHomePageCities, useRegions } from '@/features/create-listing/hooks';
 import { usePlacementLevels } from '@/features/placement/hooks';
 import {
+    ACCOUNT_FREE_LISTING_LIMIT,
     calcBoostPriceByn,
     MAX_VISIBLE_PHOTOS_FREE_PLACEMENT,
     placementLevelLabel,
@@ -53,6 +54,10 @@ export function TariffsPageContent() {
 
     const { data: levelsData, isLoading: levelsLoading } = usePlacementLevels(tariffScope);
     const levels = levelsData?.levels ?? [];
+    const freeTierPerUserLimit = Math.min(
+        ACCOUNT_FREE_LISTING_LIMIT,
+        levelsData?.freeTier?.perUserLimit ?? ACCOUNT_FREE_LISTING_LIMIT,
+    );
     const freeTierBoostPrice =
         levels.length > 0 ? calcBoostPriceByn(0, levels) : null;
 
@@ -199,7 +204,9 @@ export function TariffsPageContent() {
                                         {placementLevelLabel(0)}
                                     </td>
                                     <td className="py-3 px-4 text-right text-foreground">
-                                        <span className="text-muted-foreground">Без лимита</span>
+                                        <span className="text-muted-foreground">
+                                            Без лимита ({freeTierPerUserLimit} на пользователя)
+                                        </span>
                                     </td>
                                     <td className="py-3 px-4 text-right font-semibold text-foreground">
                                         <span className="inline-flex items-baseline gap-1 justify-end">
