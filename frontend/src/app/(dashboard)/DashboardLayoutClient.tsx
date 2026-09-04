@@ -7,45 +7,27 @@ import { Sidebar } from '@/components/dashboard/Sidebar';
 import Header from '@/components/Header';
 import { isAuthenticated, removeToken } from '@/lib/auth';
 
-export default function DashboardLayoutClient({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
-    const router = useRouter();
-    const isMounted = useSyncExternalStore(
-        () => () => {},
-        () => true,
-        () => false,
+function DashboardLoadingScreen() {
+    return (
+        <div className="flex h-screen items-center justify-center bg-background">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
     );
-    const isAuth = isMounted ? isAuthenticated() : false;
+}
+
+function DashboardAuthenticatedShell({ children }: { children: React.ReactNode }) {
+    const router = useRouter();
     const { isLoading, isError } = useUser();
 
     useEffect(() => {
-        if (!isMounted) return;
-        if (!isAuth) {
-            // Prevent redirect loops when auth cookie/token get out of sync.
-            removeToken();
-            router.replace('/login/');
-        }
-    }, [isMounted, isAuth, router]);
-
-    useEffect(() => {
-        if (!isMounted || !isAuth) return;
         if (isError) {
             removeToken();
             router.replace('/login/');
         }
-    }, [isMounted, isAuth, isError, router]);
+    }, [isError, router]);
 
-    // Keep first server/client render identical to avoid hydration mismatches.
-    // Never return null while redirecting — blank screen was mistaken for a failed navigation.
-    if (!isMounted || isLoading || !isAuth || isError) {
-        return (
-            <div className="flex h-screen items-center justify-center bg-background">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-            </div>
-        );
+    if (isLoading || isError) {
+        return <DashboardLoadingScreen />;
     }
 
     return (
@@ -59,4 +41,35 @@ export default function DashboardLayoutClient({
             </div>
         </div>
     );
+}
+
+export default function DashboardLayoutClient({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    const router = useRouter();
+    const isMounted = useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false,
+    );
+    const isAuth = isMounted ? isAuthenticated() : false;
+
+    useEffect(() => {
+        if (!isMounted) return;
+        if (!isAuth) {
+            // Prevent redirect loops when auth cookie/token get out of sync.
+            removeToken();
+            router.replace('/login/');
+        }
+    }, [isMounted, isAuth, router]);
+
+    // Keep first server/client render identical to avoid hydration mismatches.
+    // useUser() runs only after mount and auth check, when QueryClient is available.
+    if (!isMounted || !isAuth) {
+        return <DashboardLoadingScreen />;
+    }
+
+    return <DashboardAuthenticatedShell>{children}</DashboardAuthenticatedShell>;
 }

@@ -3,6 +3,7 @@ import { OwnerFeaturesProvider } from '@/features/properties/OwnerFeaturesProvid
 import { configureApartmentCatalogSlugs } from '@/features/catalog/apartment-catalog-slug-store';
 import { fetchApartmentCatalogSlugSets } from '@/lib/apartment-catalog-slugs-server';
 import { fetchHasMyProperties } from '@/lib/my-properties-server';
+import QueryProvider from '@/providers/QueryProvider';
 import DashboardLayoutClient from './DashboardLayoutClient';
 
 /** Кабинет всегда динамический — данные пользователя и объявлений с сервера. */
@@ -21,14 +22,16 @@ export default async function DashboardLayout({
     configureApartmentCatalogSlugs(slugSets);
 
     return (
-        <ApartmentCatalogSlugProvider
-            cities={slugSets.cities}
-            prefixSlugs={[...slugSets.prefixSlugs]}
-            catalogSlugs={[...slugSets.catalogSlugs]}
-        >
-            <OwnerFeaturesProvider initialHasMyProperties={initialHasMyProperties}>
-                <DashboardLayoutClient>{children}</DashboardLayoutClient>
-            </OwnerFeaturesProvider>
-        </ApartmentCatalogSlugProvider>
+        <QueryProvider>
+            <ApartmentCatalogSlugProvider
+                cities={slugSets.cities}
+                prefixSlugs={[...slugSets.prefixSlugs]}
+                catalogSlugs={[...slugSets.catalogSlugs]}
+            >
+                <OwnerFeaturesProvider initialHasMyProperties={initialHasMyProperties}>
+                    <DashboardLayoutClient>{children}</DashboardLayoutClient>
+                </OwnerFeaturesProvider>
+            </ApartmentCatalogSlugProvider>
+        </QueryProvider>
     );
 }
