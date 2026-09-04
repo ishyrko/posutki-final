@@ -35,6 +35,17 @@ final class FreeListingLimitService
             return true;
         }
 
+        return $this->hasFreePublishSlot($property);
+    }
+
+    /** Проверка слота, как после истечения платного VIP (без учёта текущего paid level). */
+    public function canPublishFreeAfterPaidVipExpires(Property $property): bool
+    {
+        return $this->hasFreePublishSlot($property);
+    }
+
+    private function hasFreePublishSlot(Property $property): bool
+    {
         $ownerId = $property->getOwnerId();
         $excludeId = $property->getId();
 
@@ -61,9 +72,9 @@ final class FreeListingLimitService
         return $cityUsed < $city->getFreeApartmentsPerAccount();
     }
 
-    public function isAccountLimitExceeded(Property $property): bool
+    public function isAccountLimitExceeded(Property $property, bool $afterPaidVipExpires = false): bool
     {
-        if ($this->hasActivePaidLevel($property)) {
+        if (!$afterPaidVipExpires && $this->hasActivePaidLevel($property)) {
             return false;
         }
 
@@ -75,9 +86,9 @@ final class FreeListingLimitService
         return $accountUsed >= FreeListingLimits::MAX_PUBLISHED_PER_ACCOUNT;
     }
 
-    public function buildLimitExceededIntro(Property $property): string
+    public function buildLimitExceededIntro(Property $property, bool $afterPaidVipExpires = false): string
     {
-        if ($this->isAccountLimitExceeded($property)) {
+        if ($this->isAccountLimitExceeded($property, $afterPaidVipExpires)) {
             return 'Ваш лимит бесплатных объявлений на аккаунте исчерпан';
         }
 
@@ -91,9 +102,9 @@ final class FreeListingLimitService
         return 'Ваш лимит бесплатных объявлений исчерпан';
     }
 
-    public function buildLimitExceededMessage(Property $property, bool $includeAction = true): string
+    public function buildLimitExceededMessage(Property $property, bool $includeAction = true, bool $afterPaidVipExpires = false): string
     {
-        $message = $this->buildLimitExceededIntro($property) . '.';
+        $message = $this->buildLimitExceededIntro($property, $afterPaidVipExpires) . '.';
         if ($includeAction) {
             $message .= ' Оплатите VIP или освободите слот: скройте другое объявление или купите для него VIP.';
         }

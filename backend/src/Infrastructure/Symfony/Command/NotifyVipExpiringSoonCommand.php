@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Symfony\Command;
 
 use App\Application\Service\FreeListingLimitService;
+use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\User\Repository\UserRepositoryInterface;
@@ -87,7 +88,10 @@ class NotifyVipExpiringSoonCommand extends Command
                 $recentEngagement = $this->engagementResolver->resolveIfAboveThreshold(
                     $property->getId()->getValue(),
                 );
-                $freeSlotUnavailable = !$this->freeListingLimitService->canPublishFree($property);
+                $freeSlotUnavailable = !$this->freeListingLimitService->canPublishFreeAfterPaidVipExpires($property);
+                $limitIntro = $freeSlotUnavailable
+                    ? $this->freeListingLimitService->buildLimitExceededIntro($property, afterPaidVipExpires: true)
+                    : null;
 
                 $this->mailer->sendVipExpiringSoon(
                     property: $property,
@@ -97,6 +101,7 @@ class NotifyVipExpiringSoonCommand extends Command
                     dashboardUrl: $this->frontendUrls->cabinet(),
                     recentEngagement: $recentEngagement,
                     freeSlotUnavailable: $freeSlotUnavailable,
+                    limitIntro: $limitIntro,
                 );
             }
 

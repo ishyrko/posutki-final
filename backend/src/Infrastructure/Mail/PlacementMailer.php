@@ -66,6 +66,7 @@ final readonly class PlacementMailer
         string $dashboardUrl,
         ?array $recentEngagement,
         bool $freeSlotUnavailable = false,
+        ?string $limitIntro = null,
     ): void {
         $ownerEmail = $owner->getEmail()?->getValue();
         if ($ownerEmail === null) {
@@ -85,6 +86,7 @@ final readonly class PlacementMailer
             'expiresAtFormatted' => $expiresAt?->format('d.m.Y H:i'),
             'recentEngagement' => $recentEngagement,
             'freeSlotUnavailable' => $freeSlotUnavailable,
+            'limitIntro' => $limitIntro,
         ]);
 
         $subject = $freeSlotUnavailable
