@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useHomePageCities, useRegions } from '@/features/create-listing/hooks';
 import { usePlacementLevels } from '@/features/placement/hooks';
@@ -282,6 +283,18 @@ export function TariffsPageContent() {
                     * Лимит бесплатных объявлений от одного пользователя зависит от города.
                 </p>
             ) : null}
+
+            <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+                <h2 className="font-semibold text-foreground mb-2">Индивидуальные условия и импорт</h2>
+                <p className="text-sm text-muted-foreground">
+                    При большом количестве объявлений возможны очень выгодные индивидуальные условия
+                    размещения. Также доступен импорт объявлений —{' '}
+                    <Link href="/kontakty/" className="font-medium text-primary hover:underline">
+                        свяжитесь с нами
+                    </Link>
+                    , обсудим детали.
+                </p>
+            </div>
 
         </div>
     );
