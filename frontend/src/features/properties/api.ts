@@ -221,8 +221,31 @@ export const archiveProperty = async (id: number): Promise<{ archivedAt: string 
     return response.data.data;
 };
 
-export const unarchiveProperty = async (id: number): Promise<void> => {
-    await api.post(`/properties/${id}/unarchive`);
+export const unarchiveProperty = async (
+    id: number,
+): Promise<{ requiresPayment: boolean; message: string }> => {
+    const response = await api.post<{ data: { requiresPayment: boolean; message: string } }>(
+        `/properties/${id}/unarchive`,
+    );
+    return response.data.data;
+};
+
+export const publishFreeProperty = async (id: number): Promise<void> => {
+    await api.post(`/properties/${id}/publish-free`);
+};
+
+export const getFreeListingLimits = async (
+    cityId?: number | null,
+    type?: string | null,
+): Promise<import('./types').FreeListingLimitsInfo> => {
+    const params = new URLSearchParams();
+    if (cityId) params.set('cityId', String(cityId));
+    if (type) params.set('type', type);
+    const query = params.toString();
+    const response = await api.get<{ data: import('./types').FreeListingLimitsInfo }>(
+        `/properties/free-limit${query ? `?${query}` : ''}`,
+    );
+    return response.data.data;
 };
 
 export const deleteProperty = async (id: number): Promise<void> => {

@@ -36,7 +36,7 @@ export interface Price {
     currency: string;
 }
 
-export type PropertyStatus = 'draft' | 'moderation' | 'rejected' | 'published' | 'archived' | 'deleted';
+export type PropertyStatus = 'draft' | 'moderation' | 'rejected' | 'published' | 'awaiting_payment' | 'archived' | 'deleted';
 
 export const isPropertyEditable = (status: PropertyStatus): boolean =>
     status !== 'archived' && status !== 'deleted';
@@ -169,6 +169,12 @@ export interface Property {
     placementBoostExpiresAt?: string | null;
     placementIsTrial?: boolean;
     freeTrialEndsAt?: string | null;
+    canPublishFree?: boolean;
+}
+
+export interface FreeListingLimitsInfo {
+    account: { used: number; limit: number };
+    city: { used: number; limit: number } | null;
 }
 
 export interface PropertyStatsPoint {

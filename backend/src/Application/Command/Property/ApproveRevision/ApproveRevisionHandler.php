@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Command\Property\ApproveRevision;
 
+use App\Application\Service\FreeListingLimitService;
 use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Entity\PropertyRevision;
 use App\Domain\Property\Event\PropertyApprovedEvent;
@@ -40,6 +41,7 @@ readonly class ApproveRevisionHandler
         private ResidentialComplexResolverInterface $residentialComplexResolver,
         private MessageBusInterface $notificationBus,
         private PropertyPlacementService $placementService,
+        private FreeListingLimitService $freeListingLimitService,
     ) {
     }
 
@@ -206,10 +208,15 @@ readonly class ApproveRevisionHandler
 
         // Rejected listings become published after approved correction.
         if ($property->getStatus() === 'rejected') {
-            $grantFreeTrial = $this->placementService->shouldGrantFreeTrial($property);
-            $property->setStatus('published', $grantFreeTrial);
-            if ($grantFreeTrial) {
-                $this->placementService->markFreePlacementTrialUsed($property);
+            $withinFreeLimit = $this->freeListingLimitService->canPublishFree($property);
+            if ($withinFreeLimit) {
+                $grantFreeTrial = $this->placementService->shouldGrantFreeTrial($property);
+                $property->setStatus('published', $grantFreeTrial);
+                if ($grantFreeTrial) {
+                    $this->placementService->markFreePlacementTrialUsed($property);
+                }
+            } else {
+                $property->setStatus('awaiting_payment');
             }
         }
 
@@ -220,8 +227,11 @@ readonly class ApproveRevisionHandler
         $this->metroProximityCalculator->syncForProperty($property);
         $this->landmarkProximityCalculator->syncForProperty($property);
         $this->propertyRepository->save($property);
+        $this->freeListingLimitService->maybeRefreshCityLimitAfterStatusChange($property);
 
-        $this->notificationBus->dispatch(new PropertyApprovedEvent($command->propertyId));
+        if ($property->getStatus() === 'published') {
+            $this->notificationBus->dispatch(new PropertyApprovedEvent($command->propertyId));
+        }
     }
 
     private function assertAreaConstraints(string $propertyType, ?float $landArea): void

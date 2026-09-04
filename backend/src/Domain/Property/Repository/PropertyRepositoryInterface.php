@@ -57,15 +57,12 @@ interface PropertyRepositoryInterface
 
     /**
      * Published listings whose VIP level expires within the given window and have not been reminded yet.
-     * Only listings of the given property type in cities with at least minPublishedInCity published listings.
      *
      * @return Property[]
      */
     public function findWithPlacementLevelExpiringSoon(
         \DateTimeImmutable $now,
         \DateTimeImmutable $until,
-        string $propertyType,
-        int $minPublishedInCity,
     ): array;
 
     /**
@@ -127,4 +124,13 @@ interface PropertyRepositoryInterface
         array $regionSlugs,
         array $excludeCitySlugs,
     ): array;
+
+    public function countFreePublishedByOwner(Id $ownerId, ?Id $excludeId = null): int;
+
+    public function countFreePublishedApartmentsByOwnerInCity(Id $ownerId, int $cityId, ?Id $excludeId = null): int;
+
+    /**
+     * @return array<int, int> cityId => published apartment count
+     */
+    public function countPublishedApartmentsGroupedByCity(): array;
 }

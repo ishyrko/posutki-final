@@ -28,4 +28,9 @@ interface CityRepositoryInterface
     public function findApartmentCatalog(): array;
 
     public function findMainCityByRegionId(int $regionId): ?City;
+
+    public function save(City $city): void;
+
+    /** @return City[] */
+    public function findAll(): array;
 }

@@ -56,7 +56,7 @@ final readonly class PlacementMailer
     }
 
     /**
-     * @param array{phoneViews: int, messages: int, bookingInquiries: int, favorites: int, total: int} $recentEngagement
+     * @param array{phoneViews: int, messages: int, bookingInquiries: int, favorites: int, total: int}|null $recentEngagement
      */
     public function sendVipExpiringSoon(
         Property $property,
@@ -64,7 +64,8 @@ final readonly class PlacementMailer
         string $propertyUrl,
         string $listingsUrl,
         string $dashboardUrl,
-        array $recentEngagement,
+        ?array $recentEngagement,
+        bool $freeSlotUnavailable = false,
     ): void {
         $ownerEmail = $owner->getEmail()?->getValue();
         if ($ownerEmail === null) {
@@ -83,19 +84,24 @@ final readonly class PlacementMailer
             'dashboardUrl' => $dashboardUrl,
             'expiresAtFormatted' => $expiresAt?->format('d.m.Y H:i'),
             'recentEngagement' => $recentEngagement,
+            'freeSlotUnavailable' => $freeSlotUnavailable,
         ]);
+
+        $subject = $freeSlotUnavailable
+            ? 'VIP скоро истекает — нет свободного бесплатного слота — ' . $property->getTitle()
+            : 'VIP истекает ' . ($expiresAt?->format('d.m.Y H:i') ?? '') . ' — ' . $property->getTitle();
 
         $email = (new Email())
             ->from($this->mailerFrom)
             ->to($ownerEmail)
-            ->subject('VIP истекает завтра — ' . $property->getTitle())
+            ->subject($subject)
             ->html($html);
 
         $this->mailer->send($email);
     }
 
     /**
-     * @param array{phoneViews: int, messages: int, bookingInquiries: int, favorites: int, total: int} $recentEngagement
+     * @param array{phoneViews: int, messages: int, bookingInquiries: int, favorites: int, total: int}|null $recentEngagement
      */
     public function sendVipExpired(
         Property $property,
@@ -106,7 +112,8 @@ final readonly class PlacementMailer
         string $propertyUrl,
         string $listingsUrl,
         string $dashboardUrl,
-        array $recentEngagement,
+        ?array $recentEngagement,
+        bool $hiddenDueToFreeLimit = false,
     ): void {
         $ownerEmail = $owner->getEmail()?->getValue();
         if ($ownerEmail === null) {
@@ -123,12 +130,17 @@ final readonly class PlacementMailer
             'dashboardUrl' => $dashboardUrl,
             'expiresAtFormatted' => $expiresAt?->format('d.m.Y H:i'),
             'recentEngagement' => $recentEngagement,
+            'hiddenDueToFreeLimit' => $hiddenDueToFreeLimit,
         ]);
+
+        $subject = $hiddenDueToFreeLimit
+            ? 'Объявление скрыто — нет свободного бесплатного слота — ' . $property->getTitle()
+            : 'VIP истёк — ' . $property->getTitle();
 
         $email = (new Email())
             ->from($this->mailerFrom)
             ->to($ownerEmail)
-            ->subject('VIP истёк — ' . $property->getTitle())
+            ->subject($subject)
             ->html($html);
 
         $this->mailer->send($email);

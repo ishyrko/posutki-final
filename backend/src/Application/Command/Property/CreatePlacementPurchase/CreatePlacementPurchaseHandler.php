@@ -36,13 +36,17 @@ final class CreatePlacementPurchaseHandler
         if (!$property->getOwnerId()->equals($userId)) {
             throw new DomainException('Нет прав на это объявление');
         }
-        if ($property->getStatus() !== 'published') {
-            throw new DomainException('Размещение можно купить только для опубликованного объявления');
+        if (!in_array($property->getStatus(), ['published', 'awaiting_payment'], true)) {
+            throw new DomainException('Размещение можно купить только для опубликованного объявления или объявления, ожидающего оплаты');
         }
 
         $kind = $command->kind;
         if (!in_array($kind, PlacementPurchaseKind::values(), true)) {
             throw new DomainException('Неизвестный тип покупки размещения');
+        }
+
+        if ($property->getStatus() === 'awaiting_payment' && $kind === PlacementPurchaseKind::Boost->value) {
+            throw new DomainException('Для публикации объявления купите VIP-уровень, а не буст');
         }
 
         $purchase = $kind === PlacementPurchaseKind::Boost->value

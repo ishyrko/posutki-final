@@ -463,30 +463,96 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
     public function findWithPlacementLevelExpiringSoon(
         \DateTimeImmutable $now,
         \DateTimeImmutable $until,
-        string $propertyType,
-        int $minPublishedInCity,
     ): array {
         return $this->createQueryBuilder('p')
             ->where('p.status = :status')
-            ->andWhere('p.type = :propertyType')
             ->andWhere('p.placementBaseLevel > 0')
             ->andWhere('p.placementLevelExpiresAt IS NOT NULL')
             ->andWhere('p.placementLevelExpiresAt > :now')
             ->andWhere('p.placementLevelExpiresAt <= :until')
             ->andWhere('p.placementLevelExpiryRemindedAt IS NULL')
-            ->andWhere(
-                '(SELECT COUNT(p2.id) FROM ' . Property::class . ' p2
-                 WHERE p2.cityId = p.cityId
-                 AND p2.type = :propertyType
-                 AND p2.status = :status) >= :minPublishedInCity'
-            )
             ->setParameter('status', 'published')
-            ->setParameter('propertyType', $propertyType)
-            ->setParameter('minPublishedInCity', $minPublishedInCity)
             ->setParameter('now', $now)
             ->setParameter('until', $until)
             ->getQuery()
             ->getResult();
+    }
+
+    public function countFreePublishedByOwner(Id $ownerId, ?Id $excludeId = null): int
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->where('p.ownerId = :ownerId')
+            ->andWhere('p.status = :status')
+            ->andWhere($this->freePublishedDqlCondition('p'))
+            ->setParameter('ownerId', $ownerId->getValue())
+            ->setParameter('status', 'published')
+            ->setParameter('now', new \DateTimeImmutable());
+
+        if ($excludeId !== null) {
+            $qb->andWhere('p.id != :excludeId')
+                ->setParameter('excludeId', $excludeId->getValue());
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    public function countFreePublishedApartmentsByOwnerInCity(Id $ownerId, int $cityId, ?Id $excludeId = null): int
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->where('p.ownerId = :ownerId')
+            ->andWhere('p.cityId = :cityId')
+            ->andWhere('p.type = :type')
+            ->andWhere('p.status = :status')
+            ->andWhere($this->freePublishedDqlCondition('p'))
+            ->setParameter('ownerId', $ownerId->getValue())
+            ->setParameter('cityId', $cityId)
+            ->setParameter('type', PropertyType::Apartment->value)
+            ->setParameter('status', 'published')
+            ->setParameter('now', new \DateTimeImmutable());
+
+        if ($excludeId !== null) {
+            $qb->andWhere('p.id != :excludeId')
+                ->setParameter('excludeId', $excludeId->getValue());
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    public function countPublishedApartmentsGroupedByCity(): array
+    {
+        /** @var list<array{cityId: int|string, cnt: string|int}> $rows */
+        $rows = $this->createQueryBuilder('p')
+            ->select('p.cityId AS cityId', 'COUNT(p.id) AS cnt')
+            ->where('p.status = :status')
+            ->andWhere('p.type = :type')
+            ->setParameter('status', 'published')
+            ->setParameter('type', PropertyType::Apartment->value)
+            ->groupBy('p.cityId')
+            ->getQuery()
+            ->getArrayResult();
+
+        $out = [];
+        foreach ($rows as $row) {
+            $out[(int) $row['cityId']] = (int) $row['cnt'];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Free published listing: no active paid VIP level (trial and boost still count as free).
+     */
+    private function freePublishedDqlCondition(string $alias): string
+    {
+        return sprintf(
+            'NOT (%s.placementBaseLevel > 0 AND %s.placementIsTrial = false AND %s.placementLevelExpiresAt IS NOT NULL AND %s.placementLevelExpiresAt > :now)',
+            $alias,
+            $alias,
+            $alias,
+            $alias,
+        );
     }
 
     public function countByOwner(string $ownerId): int

@@ -30,12 +30,16 @@
   </div>
   <div class="body">
     <p class="greeting">Здравствуйте, {{ owner.firstName }}!</p>
-    <span class="status-badge">⏰ VIP истекает через сутки</span>
+    <span class="status-badge">⏰ VIP истекает {{ expiresAtFormatted }}</span>
     <p class="text">
       Премиум размещение объявления <strong>«{{ property.title }}»</strong>
       {% if isTrial %}(бесплатный VIP 1){% else %}(VIP {{ level }}){% endif %}
       действует до <strong>{{ expiresAtFormatted }}</strong>.
-      После окончания объявление останется в каталоге на бесплатном уровне с более низкой позицией.
+      {% if freeSlotUnavailable %}
+        Свободного бесплатного слота на аккаунте нет: после окончания VIP объявление будет скрыто из каталога, пока вы не продлите VIP или не освободите слот.
+      {% else %}
+        После окончания объявление останется в каталоге на бесплатном уровне с более низкой позицией.
+      {% endif %}
     </p>
 
     <div class="details-card">
@@ -46,6 +50,7 @@
       {% endif %}
     </div>
 
+    {% if recentEngagement %}
     <p class="text">
       Количество взаимодействий за последние 2 недели по этому объявлению: <strong>{{ recentEngagement.total }}</strong>.
       Из них:
@@ -56,8 +61,9 @@
       <li>заявки — {{ recentEngagement.bookingInquiries }}</li>
       <li>добавления в избранное — {{ recentEngagement.favorites }}</li>
     </ul>
+    {% endif %}
 
-    <p class="text">Продлите VIP заранее, чтобы сохранить высокую позицию в каталоге.</p>
+    <p class="text">{% if freeSlotUnavailable %}Продлите VIP или освободите бесплатный слот в кабинете.{% else %}Продлите VIP заранее, чтобы сохранить высокую позицию в каталоге.{% endif %}</p>
 
     <a href="{{ listingsUrl }}" class="btn">Продлить в кабинете</a>
     <a href="{{ propertyUrl }}" class="btn-outline">Посмотреть объявление</a>

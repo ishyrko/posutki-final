@@ -6,6 +6,7 @@ namespace App\Presentation\Admin\Controller;
 
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Enum\PropertyType;
+use App\Domain\Property\Limit\FreeListingLimits;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Service\PhoneNumberNormalizer;
@@ -30,6 +31,7 @@ class UserCrudController extends AbstractCrudController
         'moderation' => 'Ожидает модерации',
         'rejected' => 'Отклонено',
         'published' => 'Опубликовано',
+        'awaiting_payment' => 'Ожидает оплаты',
         'archived' => 'В архиве',
         'deleted' => 'Удалено',
     ];
@@ -125,8 +127,14 @@ class UserCrudController extends AbstractCrudController
     {
         $ownerId = (string) $user->getId()->getValue();
         $totalCount = $this->propertyRepository->countByOwner($ownerId);
+        $freePublished = $this->propertyRepository->countFreePublishedByOwner($user->getId());
+        $limitSummary = sprintf(
+            '<p class="text-muted mb-2">Бесплатных опубликованных: <strong>%d</strong> из %d</p>',
+            $freePublished,
+            FreeListingLimits::MAX_PUBLISHED_PER_ACCOUNT,
+        );
         if ($totalCount === 0) {
-            return '<p class="text-muted mb-0">У пользователя нет объявлений.</p>';
+            return $limitSummary . '<p class="text-muted mb-0">У пользователя нет объявлений.</p>';
         }
 
         $properties = $this->propertyRepository->findByOwner($ownerId, 1, $totalCount);
@@ -135,7 +143,7 @@ class UserCrudController extends AbstractCrudController
             $properties,
         );
 
-        return sprintf(
+        return $limitSummary . sprintf(
             '<div class="table-responsive"><table class="table table-striped table-sm align-middle mb-0"><thead><tr><th>ID</th><th>Заголовок</th><th>Тип</th><th>Статус</th><th>Цена</th><th>Создано</th></tr></thead><tbody>%s</tbody></table></div>',
             implode('', $rows),
         );

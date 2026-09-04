@@ -2,7 +2,7 @@
 
 import { useMemo, useSyncExternalStore } from 'react';
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, trackAnonymousFavorite, removeAnonymousFavorite, getFavorites, getExchangeRates, getPropertyStats, archiveProperty, unarchiveProperty, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock } from './api';
+import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, trackAnonymousFavorite, removeAnonymousFavorite, getFavorites, getExchangeRates, getPropertyStats, archiveProperty, unarchiveProperty, publishFreeProperty, getFreeListingLimits, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock } from './api';
 import { Property, PropertyFilters, PropertyListResponse } from './types';
 import { isAuthenticated } from '@/lib/auth';
 import { useIsHydrated } from '@/hooks/useIsHydrated';
@@ -358,7 +358,28 @@ export const useUnarchiveProperty = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['my-properties'] });
             queryClient.invalidateQueries({ queryKey: ['properties'] });
+            queryClient.invalidateQueries({ queryKey: ['free-listing-limits'] });
         },
+    });
+};
+
+export const usePublishFreeProperty = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: number) => publishFreeProperty(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['my-properties'] });
+            queryClient.invalidateQueries({ queryKey: ['properties'] });
+            queryClient.invalidateQueries({ queryKey: ['free-listing-limits'] });
+        },
+    });
+};
+
+export const useFreeListingLimits = (cityId?: number | null, type?: string | null) => {
+    return useQuery({
+        queryKey: ['free-listing-limits', cityId ?? null, type ?? null],
+        queryFn: () => getFreeListingLimits(cityId, type),
+        enabled: isAuthenticated(),
     });
 };
 

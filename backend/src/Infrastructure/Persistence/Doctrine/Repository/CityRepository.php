@@ -102,6 +102,23 @@ class CityRepository extends ServiceEntityRepository implements CityRepositoryIn
             ->getOneOrNullResult();
     }
 
+    public function save(City $city): void
+    {
+        $this->getEntityManager()->persist($city);
+        $this->getEntityManager()->flush();
+    }
+
+    /**
+     * @return City[]
+     */
+    public function findAll(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->orderBy('c.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     /**
      * @param list<City> $cities
      *

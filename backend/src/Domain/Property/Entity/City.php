@@ -65,6 +65,9 @@ class City
     #[ORM\Column(type: 'boolean', name: 'catalog_seo_visible', options: ['default' => false])]
     private bool $catalogSeoVisible = false;
 
+    #[ORM\Column(type: 'integer', name: 'free_apartments_per_account', options: ['default' => 1])]
+    private int $freeApartmentsPerAccount = 1;
+
     public function getId(): int
     {
         return $this->id;
@@ -233,6 +236,16 @@ class City
     public function setCatalogSeoVisible(bool $catalogSeoVisible): void
     {
         $this->catalogSeoVisible = $catalogSeoVisible;
+    }
+
+    public function getFreeApartmentsPerAccount(): int
+    {
+        return $this->freeApartmentsPerAccount;
+    }
+
+    public function setFreeApartmentsPerAccount(int $freeApartmentsPerAccount): void
+    {
+        $this->freeApartmentsPerAccount = max(1, $freeApartmentsPerAccount);
     }
 
     public function __toString(): string

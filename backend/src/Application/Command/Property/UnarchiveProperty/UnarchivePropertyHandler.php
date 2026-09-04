@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Command\Property\UnarchiveProperty;
 
+use App\Application\Service\FreeListingLimitService;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
@@ -12,10 +13,14 @@ final class UnarchivePropertyHandler
 {
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
+        private readonly FreeListingLimitService $freeListingLimitService,
     ) {
     }
 
-    public function __invoke(UnarchivePropertyCommand $command): void
+    /**
+     * @return array{requiresPayment: bool}
+     */
+    public function __invoke(UnarchivePropertyCommand $command): array
     {
         $propertyId = Id::fromString($command->propertyId);
         $userId = Id::fromString($command->userId);
@@ -30,7 +35,14 @@ final class UnarchivePropertyHandler
             throw new DomainException('Нет прав на активацию этого объявления');
         }
 
-        $property->unarchive();
+        $previousStatus = $property->getStatus();
+        $withinFreeLimit = $this->freeListingLimitService->canPublishFree($property);
+        $property->unarchive($withinFreeLimit);
         $this->propertyRepository->save($property);
+        $this->freeListingLimitService->maybeRefreshCityLimitAfterStatusChange($property, $previousStatus);
+
+        return [
+            'requiresPayment' => !$withinFreeLimit,
+        ];
     }
 }

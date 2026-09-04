@@ -15,7 +15,7 @@ import { usePendingPlacementPaymentCount } from '@/features/placement/hooks';
 import { UserAvatar } from '@/components/UserAvatar';
 import { formatUserDisplayName } from '@/features/profile/displayName';
 
-type NavBadgeKey = 'unread' | 'pendingPayments' | 'reviews';
+type NavBadgeKey = 'unread' | 'pendingPayments' | 'reviews' | 'awaitingPayment';
 
 type NavItem = {
     name: string;
@@ -36,6 +36,7 @@ const navigation: NavItem[] = [
         href: '/kabinet/moi-obyavleniya/aktivnye',
         activePrefix: '/kabinet/moi-obyavleniya',
         icon: Home,
+        badgeKey: 'awaitingPayment',
     },
     { name: 'Избранное', href: '/izbrannoe', icon: Heart, hideOnMobileWhenOwner: true },
     {
@@ -61,6 +62,7 @@ function getNavBadgeCount(
     totalUnreadCount: number,
     pendingPaymentCount: number,
     unviewedReviewsCount: number,
+    awaitingPaymentCount: number,
 ): number {
     if (badgeKey === 'unread') {
         return totalUnreadCount;
@@ -70,6 +72,9 @@ function getNavBadgeCount(
     }
     if (badgeKey === 'reviews') {
         return unviewedReviewsCount;
+    }
+    if (badgeKey === 'awaitingPayment') {
+        return awaitingPaymentCount;
     }
     return 0;
 }
@@ -185,6 +190,12 @@ export function Sidebar() {
     const { data: unreadCount } = useUnreadCount();
     const { data: unreadBookingInquiryCount } = useUnreadBookingInquiryCount();
     const { data: pendingPaymentCount } = usePendingPlacementPaymentCount();
+    const awaitingPaymentCount = useMemo(
+        () =>
+            (myPropertiesQuery.data?.data ?? []).filter((property) => property.status === 'awaiting_payment')
+                .length,
+        [myPropertiesQuery.data?.data],
+    );
     const totalUnreadCount = (unreadCount ?? 0) + (hasMyProperties ? (unreadBookingInquiryCount ?? 0) : 0);
     const navigationWithReviewsHref = useMemo(
         () =>
@@ -228,6 +239,7 @@ export function Sidebar() {
                                 totalUnreadCount,
                                 pendingPaymentCount ?? 0,
                                 unviewedReviewsCount,
+                                awaitingPaymentCount,
                             )}
                         />
                     ))}
@@ -257,6 +269,7 @@ export function Sidebar() {
                             totalUnreadCount,
                             pendingPaymentCount ?? 0,
                             unviewedReviewsCount,
+                            awaitingPaymentCount,
                         )}
                     />
                 ))}

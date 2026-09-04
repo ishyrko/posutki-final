@@ -8,6 +8,7 @@ use App\Application\Service\PropertyEngagementStatsCache;
 use App\Application\Command\CommandBusInterface;
 use App\Application\Command\Property\ApproveRevision\ApproveRevisionCommand;
 use App\Application\Command\Property\RejectRevision\RejectRevisionCommand;
+use App\Application\Service\FreeListingLimitService;
 use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Event\PropertyApprovedEvent;
@@ -53,6 +54,7 @@ final class PropertyModerationCrudController extends PropertyCrudController
         private readonly CommandBusInterface $commandBus,
         private readonly MessageBusInterface $notificationBus,
         private readonly PropertyPlacementService $placementService,
+        private readonly FreeListingLimitService $freeListingLimitService,
     ) {
         parent::__construct(
             $metroProximityCalculator,
@@ -240,15 +242,22 @@ final class PropertyModerationCrudController extends PropertyCrudController
             return $this->redirect($this->buildIndexUrl());
         }
 
+        $withinFreeLimit = $this->freeListingLimitService->canPublishFree($property);
         $grantFreeTrial = $this->placementService->shouldGrantFreeTrial($property);
-        $property->approve($grantFreeTrial);
+        $property->approve($grantFreeTrial, $withinFreeLimit);
         $this->propertyRepository->save($property);
-        if ($grantFreeTrial) {
-            $this->placementService->markFreePlacementTrialUsed($property);
-        }
-        $this->notificationBus->dispatch(new PropertyApprovedEvent((string) $property->getId()->getValue()));
 
-        $this->addFlash('success', 'Объявление одобрено');
+        if ($property->getStatus() === 'published') {
+            if ($grantFreeTrial) {
+                $this->placementService->markFreePlacementTrialUsed($property);
+            }
+            $this->notificationBus->dispatch(new PropertyApprovedEvent((string) $property->getId()->getValue()));
+            $this->addFlash('success', 'Объявление одобрено');
+        } else {
+            $this->addFlash('success', 'Объявление одобрено и ожидает оплаты (лимит бесплатных исчерпан)');
+        }
+
+        $this->freeListingLimitService->maybeRefreshCityLimitAfterStatusChange($property);
         return $this->redirect($this->buildIndexUrl());
     }
 

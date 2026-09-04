@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Presentation\Api\Controller;
 
 use App\Application\Command\Property\ArchiveProperty\ArchivePropertyCommand;
+use App\Application\Command\Property\PublishFreeSlot\PublishFreeSlotCommand;
 use App\Application\Command\Property\UnarchiveProperty\UnarchivePropertyCommand;
 use App\Application\Command\Property\CreateProperty\CreatePropertyCommand;
+use App\Application\Service\FreeListingLimitService;
 use App\Application\Command\Property\PublishProperty\PublishPropertyCommand;
 use App\Application\Command\Property\UpdateProperty\UpdatePropertyCommand;
 use App\Application\Command\Property\CreateAvailabilityBlock\CreateAvailabilityBlockCommand;
@@ -56,6 +58,7 @@ class PropertyController extends AbstractController
         private readonly BookingInquiryRepositoryInterface $bookingInquiryRepository,
         private readonly PropertyCalendarAggregator $propertyCalendarAggregator,
         private readonly ContentViewTracker $contentViewTracker,
+        private readonly FreeListingLimitService $freeListingLimitService,
     ) {
     }
 
@@ -155,6 +158,45 @@ class PropertyController extends AbstractController
         $properties = $this->queryBus->ask($query);
 
         return $this->json(ApiResponse::success($properties));
+    }
+
+    #[Route('/free-limit', name: 'free_limit', methods: ['GET'])]
+    public function freeLimit(Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $cityId = $request->query->getInt('cityId') ?: null;
+        $type = $request->query->get('type');
+        $type = is_string($type) && $type !== '' ? $type : null;
+
+        $limits = $this->freeListingLimitService->describeLimits(
+            $user->getId(),
+            $cityId,
+            $type,
+        );
+
+        return $this->json(ApiResponse::success($limits));
+    }
+
+    #[Route('/{id}/publish-free', name: 'publish_free', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function publishFree(string $id, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $command = new PublishFreeSlotCommand(
+            propertyId: $id,
+            userId: (string) $user->getId()->getValue(),
+        );
+
+        $this->commandBus->dispatch($command);
+
+        return $this->json(
+            ApiResponse::success(['message' => 'Объявление опубликовано'])
+        );
     }
 
     #[Route('/{id}', name: 'get', methods: ['GET'], requirements: ['id' => '\d+'])]
@@ -398,10 +440,17 @@ class PropertyController extends AbstractController
             userId: (string) $user->getId()->getValue(),
         );
 
-        $this->commandBus->dispatch($command);
+        $result = $this->commandBus->dispatch($command);
+
+        $requiresPayment = is_array($result) && ($result['requiresPayment'] ?? false);
 
         return $this->json(
-            ApiResponse::success(['message' => 'Объявление снова опубликовано'])
+            ApiResponse::success([
+                'requiresPayment' => $requiresPayment,
+                'message' => $requiresPayment
+                    ? 'Лимит бесплатных исчерпан, объявление ожидает оплаты'
+                    : 'Объявление снова опубликовано',
+            ])
         );
     }
 

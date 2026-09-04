@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Command\Property\ArchiveProperty;
 
+use App\Application\Service\FreeListingLimitService;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
@@ -12,6 +13,7 @@ final class ArchivePropertyHandler
 {
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
+        private readonly FreeListingLimitService $freeListingLimitService,
     ) {
     }
 
@@ -30,12 +32,14 @@ final class ArchivePropertyHandler
             throw new DomainException('Нет прав на скрытие этого объявления');
         }
 
-        if ($property->getStatus() !== 'published') {
-            throw new DomainException('Скрыть можно только опубликованное объявление');
+        if (!in_array($property->getStatus(), ['published', 'awaiting_payment'], true)) {
+            throw new DomainException('Скрыть можно только опубликованное объявление или объявление, ожидающее оплаты');
         }
 
+        $previousStatus = $property->getStatus();
         $property->archive();
         $this->propertyRepository->save($property);
+        $this->freeListingLimitService->maybeRefreshCityLimitAfterStatusChange($property, $previousStatus);
 
         $archivedAt = $property->getArchivedAt();
         if ($archivedAt === null) {

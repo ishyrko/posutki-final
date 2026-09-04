@@ -30,12 +30,17 @@
   </div>
   <div class="body">
     <p class="greeting">Здравствуйте, {{ owner.firstName }}!</p>
-    <span class="status-badge">VIP истёк</span>
+    <span class="status-badge">{% if hiddenDueToFreeLimit %}Объявление скрыто{% else %}VIP истёк{% endif %}</span>
     <p class="text">
-      Премиум размещение объявления <strong>«{{ property.title }}»</strong>
-      {% if isTrial %}(бесплатный VIP 1){% else %}(VIP {{ level }}){% endif %}
-      {% if expiresAtFormatted %}закончилось {{ expiresAtFormatted }}.{% else %}закончилось.{% endif %}
-      Размещение объявления в каталоге продолжится на бесплатном уровне на более низкой позиции.
+      {% if hiddenDueToFreeLimit %}
+        VIP-размещение объявления <strong>«{{ property.title }}»</strong> (VIP {{ level }}) истекло, а свободного бесплатного слота на аккаунте нет.
+        Объявление скрыто из каталога. Продлите VIP или освободите бесплатный слот, чтобы снова опубликовать его.
+      {% else %}
+        Премиум размещение объявления <strong>«{{ property.title }}»</strong>
+        {% if isTrial %}(бесплатный VIP 1){% else %}(VIP {{ level }}){% endif %}
+        {% if expiresAtFormatted %}закончилось {{ expiresAtFormatted }}.{% else %}закончилось.{% endif %}
+        Размещение объявления в каталоге продолжится на бесплатном уровне на более низкой позиции.
+      {% endif %}
     </p>
 
     <div class="details-card">
@@ -46,6 +51,7 @@
       {% endif %}
     </div>
 
+    {% if recentEngagement %}
     <p class="text">
       Количество взаимодействий за последние 2 недели по этому объявлению: <strong>{{ recentEngagement.total }}</strong>.
       Из них:
@@ -56,8 +62,9 @@
       <li>заявки — {{ recentEngagement.bookingInquiries }}</li>
       <li>добавления в избранное — {{ recentEngagement.favorites }}</li>
     </ul>
+    {% endif %}
 
-    <p class="text">Продлите VIP, чтобы вернуть высокую позицию в каталоге.</p>
+    <p class="text">{% if hiddenDueToFreeLimit %}Откройте кабинет, чтобы оплатить VIP или опубликовать объявление бесплатно.{% else %}Продлите VIP, чтобы вернуть высокую позицию в каталоге.{% endif %}</p>
 
     <a href="{{ listingsUrl }}" class="btn">Продлить в кабинете</a>
     <a href="{{ propertyUrl }}" class="btn-outline">Посмотреть объявление</a>

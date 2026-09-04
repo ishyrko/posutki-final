@@ -248,6 +248,7 @@ class PropertyCrudController extends AbstractCrudController
                 'Ожидает модерации' => 'moderation',
                 'Отклонено' => 'rejected',
                 'Опубликовано' => 'published',
+                'Ожидает оплаты' => 'awaiting_payment',
                 'В архиве' => 'archived',
                 'Удалено' => 'deleted',
             ])
@@ -256,6 +257,7 @@ class PropertyCrudController extends AbstractCrudController
                 'moderation' => 'info',
                 'rejected' => 'danger',
                 'published' => 'success',
+                'awaiting_payment' => 'warning',
                 'archived' => 'secondary',
                 'deleted' => 'danger',
             ]);
@@ -525,6 +527,7 @@ class PropertyCrudController extends AbstractCrudController
                 'Ожидает модерации' => 'moderation',
                 'Отклонено' => 'rejected',
                 'Опубликовано' => 'published',
+                'Ожидает оплаты' => 'awaiting_payment',
                 'В архиве' => 'archived',
                 'Удалено' => 'deleted',
             ]))

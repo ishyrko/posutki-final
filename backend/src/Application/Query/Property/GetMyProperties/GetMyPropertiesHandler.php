@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Query\Property\GetMyProperties;
 
+use App\Application\Service\FreeListingLimitService;
 use App\Application\DTO\PropertyDTO;
 use App\Application\Service\PropertyOwnerPublicContactResolver;
 use App\Domain\Favorite\Repository\FavoriteRepositoryInterface;
@@ -21,6 +22,7 @@ final class GetMyPropertiesHandler
         private FavoriteRepositoryInterface $favoriteRepository,
         private PropertyOwnerPublicContactResolver $ownerPublicContactResolver,
         private ReviewRepositoryInterface $reviewRepository,
+        private FreeListingLimitService $freeListingLimitService,
     ) {
     }
 
@@ -85,6 +87,9 @@ final class GetMyPropertiesHandler
                 $ownerId = $property->getOwnerId()->getValue();
                 $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
                 $propertyId = $property->getId()->getValue();
+                $canPublishFree = $property->getStatus() === 'awaiting_payment'
+                    ? $this->freeListingLimitService->canPublishFree($property)
+                    : null;
 
                 return PropertyDTO::fromEntity(
                     $property,
@@ -99,6 +104,7 @@ final class GetMyPropertiesHandler
                     $contact,
                     includeAllImages: true,
                     unviewedReviewsCount: $unviewedByProperty[$propertyId] ?? 0,
+                    canPublishFree: $canPublishFree,
                 );
             },
             $properties

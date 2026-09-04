@@ -135,6 +135,55 @@ final class PropertyTest extends TestCase
         $property->approve();
     }
 
+    public function testApproveWithoutFreeLimitMovesToAwaitingPayment(): void
+    {
+        $property = $this->createProperty();
+        $property->publish();
+
+        $property->approve(grantFreeTrial: true, withinFreeLimit: false);
+
+        self::assertSame('awaiting_payment', $property->getStatus());
+        self::assertNull($property->getPublishedAt());
+    }
+
+    public function testUnarchiveWithoutFreeLimitMovesToAwaitingPayment(): void
+    {
+        $property = $this->createProperty();
+        $property->publish();
+        $property->approve();
+        $property->archive();
+
+        $property->unarchive(withinFreeLimit: false);
+
+        self::assertSame('awaiting_payment', $property->getStatus());
+        self::assertNull($property->getArchivedAt());
+    }
+
+    public function testPublishFreeSlotFromAwaitingPayment(): void
+    {
+        $property = $this->createProperty();
+        $property->publish();
+        $property->approve(withinFreeLimit: false);
+
+        $property->publishFreeSlot(grantFreeTrial: false);
+
+        self::assertSame('published', $property->getStatus());
+        self::assertNotNull($property->getPublishedAt());
+    }
+
+    public function testDemoteToAwaitingPayment(): void
+    {
+        $property = $this->createProperty();
+        $property->publish();
+        $property->approve();
+        $publishedAt = $property->getPublishedAt();
+
+        $property->demoteToAwaitingPayment();
+
+        self::assertSame('awaiting_payment', $property->getStatus());
+        self::assertEquals($publishedAt, $property->getPublishedAt());
+    }
+
     public function testPendingRevisionDiffIgnoresEmptyCalendarListVersusNull(): void
     {
         $property = $this->createProperty();

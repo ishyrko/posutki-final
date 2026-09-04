@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Symfony\Command;
 
+use App\Application\Service\FreeListingLimitService;
 use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Enum\PropertyType;
@@ -32,6 +33,7 @@ class ExpirePropertyPlacementsCommand extends Command
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyPlacementService $placementService,
+        private readonly FreeListingLimitService $freeListingLimitService,
         private readonly UserRepositoryInterface $userRepository,
         private readonly PropertyRecentEngagementResolver $engagementResolver,
         private readonly PlacementMailer $mailer,
@@ -65,6 +67,7 @@ class ExpirePropertyPlacementsCommand extends Command
         }
 
         $emailsSent = 0;
+        $demotedCount = 0;
         $publishedApartmentCountByCity = [];
 
         foreach (array_keys($propertyIds) as $propertyId) {
@@ -73,22 +76,43 @@ class ExpirePropertyPlacementsCommand extends Command
                 continue;
             }
 
+            $wasPaidLevel = $this->freeListingLimitService->hasActivePaidLevel($property, $now);
+            $levelBeforeRecompute = $property->getPlacementBaseLevel();
+            $wasTrial = $property->isPlacementIsTrial();
+            $expiresAtBeforeRecompute = $property->getPlacementLevelExpiresAt();
+
             if ($this->shouldNotifyVipExpired($property, $now, $publishedApartmentCountByCity)) {
-                if ($this->notifyVipExpired($property)) {
+                if ($this->notifyVipExpired($property, $levelBeforeRecompute, $wasTrial, $expiresAtBeforeRecompute)) {
                     ++$emailsSent;
                     sleep(2);
                 }
             }
 
             $this->placementService->recomputeForProperty($property, $now);
+
+            if (
+                $wasPaidLevel
+                && $property->getStatus() === 'published'
+                && !$this->freeListingLimitService->canPublishFree($property)
+            ) {
+                $property->demoteToAwaitingPayment();
+                $this->propertyRepository->save($property);
+                $this->freeListingLimitService->maybeRefreshCityLimitAfterStatusChange($property, 'published');
+                if ($this->notifyHiddenDueToFreeLimit($property, $levelBeforeRecompute, $expiresAtBeforeRecompute)) {
+                    ++$emailsSent;
+                    sleep(2);
+                }
+                ++$demotedCount;
+            }
         }
 
         $io->success(sprintf(
-            'Expired %d active purchase(s), cancelled %d reservation(s), recomputed %d propert%s, sent %d VIP-expired email(s).',
+            'Expired %d active purchase(s), cancelled %d reservation(s), recomputed %d propert%s, demoted %d to awaiting_payment, sent %d email(s).',
             count($expiredActive),
             count($expiredReservations),
             count($propertyIds),
             count($propertyIds) === 1 ? 'y' : 'ies',
+            $demotedCount,
             $emailsSent,
         ));
 
@@ -118,7 +142,11 @@ class ExpirePropertyPlacementsCommand extends Command
             return false;
         }
 
-        // Still gets free VIP 1 trial after paid VIP ends — not a drop to free.
+        // Trial upsell emails only (paid VIP expiry warnings use notify-vip-expiring-soon).
+        if (!$property->isPlacementIsTrial()) {
+            return false;
+        }
+
         $freeTrialEndsAt = $property->getFreeTrialEndsAt();
         if ($freeTrialEndsAt !== null && $freeTrialEndsAt > $now) {
             return false;
@@ -137,8 +165,12 @@ class ExpirePropertyPlacementsCommand extends Command
         return $publishedApartmentCountByCity[$cityId] >= self::MIN_PUBLISHED_APARTMENTS_IN_CITY;
     }
 
-    private function notifyVipExpired(Property $property): bool
-    {
+    private function notifyVipExpired(
+        Property $property,
+        int $level,
+        bool $isTrial,
+        ?\DateTimeImmutable $expiresAt,
+    ): bool {
         $owner = $this->userRepository->findById($property->getOwnerId());
         if ($owner === null || $owner->getEmail()?->getValue() === null) {
             return false;
@@ -154,13 +186,44 @@ class ExpirePropertyPlacementsCommand extends Command
         $this->mailer->sendVipExpired(
             property: $property,
             owner: $owner,
-            level: $property->getPlacementBaseLevel(),
-            isTrial: $property->isPlacementIsTrial(),
-            expiresAt: $property->getPlacementLevelExpiresAt(),
+            level: $level,
+            isTrial: $isTrial,
+            expiresAt: $expiresAt,
             propertyUrl: $this->frontendUrls->publicPropertyForListing($property),
             listingsUrl: $this->frontendUrls->myListings(),
             dashboardUrl: $this->frontendUrls->cabinet(),
             recentEngagement: $recentEngagement,
+            hiddenDueToFreeLimit: false,
+        );
+
+        return true;
+    }
+
+    private function notifyHiddenDueToFreeLimit(
+        Property $property,
+        int $level,
+        ?\DateTimeImmutable $expiresAt,
+    ): bool {
+        $owner = $this->userRepository->findById($property->getOwnerId());
+        if ($owner === null || $owner->getEmail()?->getValue() === null) {
+            return false;
+        }
+
+        $recentEngagement = $this->engagementResolver->resolveIfAboveThreshold(
+            $property->getId()->getValue(),
+        );
+
+        $this->mailer->sendVipExpired(
+            property: $property,
+            owner: $owner,
+            level: $level,
+            isTrial: false,
+            expiresAt: $expiresAt,
+            propertyUrl: $this->frontendUrls->publicPropertyForListing($property),
+            listingsUrl: $this->frontendUrls->myListings(),
+            dashboardUrl: $this->frontendUrls->cabinet(),
+            recentEngagement: $recentEngagement,
+            hiddenDueToFreeLimit: true,
         );
 
         return true;

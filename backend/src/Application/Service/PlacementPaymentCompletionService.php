@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Service;
 
 use App\Domain\Property\Event\PlacementPaymentSucceededEvent;
+use App\Domain\Property\Event\PropertyApprovedEvent;
 use App\Domain\Payment\Entity\Payment;
 use App\Domain\Payment\Repository\PaymentRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
@@ -20,6 +21,7 @@ final class PlacementPaymentCompletionService
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyPlacementService $placementService,
+        private readonly FreeListingLimitService $freeListingLimitService,
         private readonly MessageBusInterface $notificationBus,
         private readonly LoggerInterface $logger,
     ) {
@@ -53,7 +55,16 @@ final class PlacementPaymentCompletionService
         }
 
         try {
+            $wasAwaitingPayment = $property->getStatus() === 'awaiting_payment';
             $this->placementService->activatePurchase($purchase, $property, adminId: null);
+
+            if ($wasAwaitingPayment && $this->freeListingLimitService->canPublishFree($property)) {
+                $property->publishAfterPayment();
+                $this->propertyRepository->save($property);
+                $this->freeListingLimitService->maybeRefreshCityLimitAfterStatusChange($property);
+                $this->notificationBus->dispatch(new PropertyApprovedEvent((string) $property->getId()->getValue()));
+            }
+
             $this->paymentRepository->save($payment);
 
             $purchaseId = $purchase->getId();

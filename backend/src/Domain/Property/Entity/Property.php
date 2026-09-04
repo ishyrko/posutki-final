@@ -376,7 +376,7 @@ class Property
             $this->publishedAt = new \DateTimeImmutable();
             $this->applyInitialPlacement($this->publishedAt, $grantFreeTrial);
         }
-        if ($status === 'published' || $status === 'moderation') {
+        if (in_array($status, ['published', 'moderation', 'awaiting_payment'], true)) {
             $this->archivedAt = null;
         }
         $this->updatedAt = new \DateTimeImmutable();
@@ -1623,23 +1623,65 @@ class Property
         $this->updatedAt = new \DateTimeImmutable();
     }
 
-    public function approve(bool $grantFreeTrial = true): void
+    public function approve(bool $grantFreeTrial = true, bool $withinFreeLimit = true): void
     {
         if ($this->status !== 'moderation') {
             throw new DomainException('Одобрить можно только объявления на модерации');
         }
 
         $now = new \DateTimeImmutable();
+
+        if (!$withinFreeLimit) {
+            $this->status = 'awaiting_payment';
+            $this->moderationComment = null;
+            $this->archivedAt = null;
+            $this->updatedAt = $now;
+
+            return;
+        }
+
+        $this->markPublished($now, $grantFreeTrial);
+    }
+
+    private function markPublished(\DateTimeImmutable $now, bool $grantFreeTrial): void
+    {
         $isFirstPublish = $this->publishedAt === null;
         $this->status = 'published';
         $this->moderationComment = null;
-        // Keep the original first-publication timestamp on re-approve after archive/edit.
         if ($isFirstPublish) {
             $this->publishedAt = $now;
             $this->applyInitialPlacement($now, $grantFreeTrial);
         }
         $this->archivedAt = null;
         $this->updatedAt = $now;
+    }
+
+    public function publishAfterPayment(): void
+    {
+        if ($this->status !== 'awaiting_payment') {
+            throw new DomainException('Опубликовать после оплаты можно только объявление, ожидающее оплаты');
+        }
+
+        $this->markPublished(new \DateTimeImmutable(), grantFreeTrial: false);
+    }
+
+    public function publishFreeSlot(bool $grantFreeTrial): void
+    {
+        if ($this->status !== 'awaiting_payment') {
+            throw new DomainException('Опубликовать бесплатно можно только объявление, ожидающее оплаты');
+        }
+
+        $this->markPublished(new \DateTimeImmutable(), $grantFreeTrial);
+    }
+
+    public function demoteToAwaitingPayment(): void
+    {
+        if ($this->status !== 'published') {
+            throw new DomainException('Снять с публикации можно только опубликованное объявление');
+        }
+
+        $this->status = 'awaiting_payment';
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function reject(?string $comment = null): void
@@ -1660,15 +1702,25 @@ class Property
         $this->updatedAt = new \DateTimeImmutable();
     }
 
-    public function unarchive(): void
+    public function unarchive(bool $withinFreeLimit = true): void
     {
         if ($this->status !== 'archived') {
             throw new DomainException('Активировать можно только скрытое объявление');
         }
 
+        $now = new \DateTimeImmutable();
+
+        if (!$withinFreeLimit) {
+            $this->status = 'awaiting_payment';
+            $this->archivedAt = null;
+            $this->updatedAt = $now;
+
+            return;
+        }
+
         $this->status = 'published';
         $this->archivedAt = null;
-        $this->updatedAt = new \DateTimeImmutable();
+        $this->updatedAt = $now;
     }
 
     public function incrementViews(): void

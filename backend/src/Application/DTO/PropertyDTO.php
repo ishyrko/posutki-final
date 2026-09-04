@@ -117,6 +117,7 @@ final class PropertyDTO implements \JsonSerializable
         public readonly ?array $viewerReview = null,
         public readonly int $unviewedReviewsCount = 0,
         public readonly ?\DateTimeImmutable $calendarLastUpdatedAt = null,
+        public readonly ?bool $canPublishFree = null,
     ) {
     }
 
@@ -140,6 +141,7 @@ final class PropertyDTO implements \JsonSerializable
         ?float $landmarkDistanceKm = null,
         array $nearbyLandmarks = [],
         int $unviewedReviewsCount = 0,
+        ?bool $canPublishFree = null,
     ): self {
         $district = $city->getRegionDistrict();
         $region = $district?->getRegion();
@@ -265,6 +267,7 @@ final class PropertyDTO implements \JsonSerializable
             viewerReview: $viewerReview,
             calendarLastUpdatedAt: $calendarLastUpdatedAt,
             unviewedReviewsCount: $unviewedReviewsCount,
+            canPublishFree: $canPublishFree,
         );
     }
 
@@ -388,6 +391,10 @@ final class PropertyDTO implements \JsonSerializable
 
         if ($this->viewerReview !== null) {
             $data['viewerReview'] = $this->viewerReview;
+        }
+
+        if ($this->canPublishFree !== null) {
+            $data['canPublishFree'] = $this->canPublishFree;
         }
 
         return $data;

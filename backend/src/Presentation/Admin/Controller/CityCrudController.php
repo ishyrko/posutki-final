@@ -19,6 +19,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
@@ -108,6 +109,11 @@ class CityCrudController extends AbstractCrudController
 
         yield BooleanField::new('isApartmentCatalog', 'Каталог квартир / главная')
             ->setHelp('Город в посуточном каталоге квартир и в блоке городов на главной.');
+
+        yield IntegerField::new('freeApartmentsPerAccount', 'Бесплатных квартир на аккаунт')
+            ->setFormTypeOption('disabled', true)
+            ->setHelp('Автоматически: max(1, 10 − число опубликованных квартир в городе).')
+            ->hideOnForm();
 
         yield NumberField::new('latitude', 'Широта')
             ->setNumDecimals(7)

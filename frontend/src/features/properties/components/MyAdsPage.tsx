@@ -20,7 +20,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { useArchiveProperty, useDeleteProperty, useExchangeRates, useMyProperties, useUnarchiveProperty } from '@/features/properties/hooks';
+import { useArchiveProperty, useDeleteProperty, useExchangeRates, useFreeListingLimits, useMyProperties, usePublishFreeProperty, useUnarchiveProperty } from '@/features/properties/hooks';
 import { Property, formatAddress, isPropertyEditable } from '@/features/properties/types';
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
@@ -42,13 +42,14 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-export type MyAdsStatus = 'published' | 'moderation' | 'rejected' | 'inactive';
+export type MyAdsStatus = 'published' | 'moderation' | 'rejected' | 'awaiting_payment' | 'inactive';
 
 const STATUS_CONFIG: Record<Property['status'], { label: string; className: string }> = {
     draft: { label: 'Черновик', className: 'bg-yellow-100 text-yellow-800' },
     moderation: { label: 'Ожидает модерации', className: 'bg-blue-100 text-blue-800' },
     rejected: { label: 'Отклонено', className: 'bg-red-100 text-red-800' },
     published: { label: 'Опубликовано', className: 'bg-green-100 text-green-800' },
+    awaiting_payment: { label: 'Требует оплаты', className: 'bg-orange-100 text-orange-800' },
     archived: { label: 'В архиве', className: 'bg-gray-100 text-gray-600' },
     deleted: { label: 'Удалено', className: 'bg-gray-100 text-gray-500' },
 };
@@ -56,6 +57,7 @@ const STATUS_CONFIG: Record<Property['status'], { label: string; className: stri
 const STATUS_TABS: Array<{ status: MyAdsStatus; label: string }> = [
     { status: 'published', label: 'Опубликовано' },
     { status: 'moderation', label: 'На модерации' },
+    { status: 'awaiting_payment', label: 'Требует оплаты' },
     { status: 'rejected', label: 'Отклоненные' },
     { status: 'inactive', label: 'Неактивные' },
 ];
@@ -63,6 +65,7 @@ const STATUS_TABS: Array<{ status: MyAdsStatus; label: string }> = [
 const STATUS_ROUTE_SEGMENTS: Record<MyAdsStatus, string> = {
     published: 'aktivnye',
     moderation: 'moderatsiya',
+    awaiting_payment: 'trebuet-oplaty',
     rejected: 'otklonennye',
     inactive: 'neaktivnye',
 };
@@ -112,6 +115,7 @@ function ListingCard({
 }) {
     const archive = useArchiveProperty();
     const unarchive = useUnarchiveProperty();
+    const publishFree = usePublishFreeProperty();
     const [placementDialog, setPlacementDialog] = useState<'level' | 'boost' | null>(null);
     const { data: rates } = useExchangeRates();
     const exchangeRates: ExchangeRates = useMemo(
@@ -310,6 +314,11 @@ function ListingCard({
                                 : `${property.specifications.area} м²`}
                         </span>
                     </div>
+                    {property.status === 'awaiting_payment' && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                            Лимит бесплатных объявлений исчерпан. Оплатите VIP или освободите слот: скройте другое объявление или купите для него VIP.
+                        </p>
+                    )}
                     {property.status === 'rejected' && property.moderationComment && (
                         <p className="mt-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-2 py-1.5">
                             Причина отклонения: {property.moderationComment}
@@ -428,6 +437,51 @@ function ListingCard({
                         >
                             <EyeOff className="w-3.5 h-3.5 mr-1" />Скрыть
                         </Button>
+                    ) : property.status === 'awaiting_payment' ? (
+                        <>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start bg-amber-500 text-white hover:bg-amber-600 hover:text-white"
+                                onClick={() => setPlacementDialog('level')}
+                            >
+                                <Star className="w-3.5 h-3.5 mr-1" />
+                                Оплатить и опубликовать
+                            </Button>
+                            {property.canPublishFree ? (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="justify-start"
+                                    disabled={publishFree.isPending && publishFree.variables === property.id}
+                                    onClick={() =>
+                                        publishFree.mutate(property.id, {
+                                            onSuccess: () => toast.success('Объявление опубликовано'),
+                                            onError: (e) =>
+                                                toast.error(getApiErrorMessage(e, 'Не удалось опубликовать объявление')),
+                                        })
+                                    }
+                                >
+                                    <Eye className="w-3.5 h-3.5 mr-1" />
+                                    Опубликовать бесплатно
+                                </Button>
+                            ) : null}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="justify-start"
+                                disabled={archive.isPending && archive.variables === property.id}
+                                onClick={() =>
+                                    archive.mutate(property.id, {
+                                        onSuccess: () => toast.success('Объявление скрыто'),
+                                        onError: (e) =>
+                                            toast.error(getApiErrorMessage(e, 'Не удалось скрыть объявление')),
+                                    })
+                                }
+                            >
+                                <EyeOff className="w-3.5 h-3.5 mr-1" />Скрыть
+                            </Button>
+                        </>
                     ) : property.status === 'archived' ? (
                         <Button
                             variant="ghost"
@@ -436,7 +490,12 @@ function ListingCard({
                             disabled={unarchive.isPending && unarchive.variables === property.id}
                             onClick={() =>
                                 unarchive.mutate(property.id, {
-                                    onSuccess: () => toast.success('Объявление снова опубликовано'),
+                                    onSuccess: (result) =>
+                                        toast.success(
+                                            result.requiresPayment
+                                                ? 'Лимит бесплатных исчерпан, объявление ожидает оплаты'
+                                                : 'Объявление снова опубликовано',
+                                        ),
                                     onError: (e) =>
                                         toast.error(getApiErrorMessage(e, 'Не удалось активировать объявление')),
                                 })
@@ -502,10 +561,13 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
         return {
             published: properties.filter((property) => property.status === 'published').length,
             moderation: properties.filter((property) => property.status === 'moderation').length,
+            awaiting_payment: properties.filter((property) => property.status === 'awaiting_payment').length,
             rejected: properties.filter((property) => property.status === 'rejected').length,
             inactive: properties.filter((property) => property.status === 'archived').length,
         };
     }, [properties]);
+
+    const { data: freeLimits } = useFreeListingLimits();
 
     const closeDeleteDialog = () => setDeleteTargetId(null);
 
@@ -556,6 +618,21 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
                     </ListingSubmitLink>
                 </Button>
             </div>
+
+            {freeLimits && (
+                <div className="mb-6 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                    Использовано <strong className="text-foreground">{freeLimits.account.used}</strong> из{' '}
+                    <strong className="text-foreground">{freeLimits.account.limit}</strong> бесплатных объявлений на аккаунте.
+                    {freeLimits.city ? (
+                        <>
+                            {' '}
+                            В выбранном городе для квартир:{' '}
+                            <strong className="text-foreground">{freeLimits.city.used}</strong> из{' '}
+                            <strong className="text-foreground">{freeLimits.city.limit}</strong>.
+                        </>
+                    ) : null}
+                </div>
+            )}
 
             <div className="flex flex-wrap gap-2 mb-6">
                 {STATUS_TABS.map((tab) => (
