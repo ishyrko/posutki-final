@@ -170,6 +170,7 @@ export interface Property {
     placementIsTrial?: boolean;
     freeTrialEndsAt?: string | null;
     canPublishFree?: boolean;
+    freeLimitBlockIntro?: string | null;
 }
 
 export interface FreeListingLimitsInfo {

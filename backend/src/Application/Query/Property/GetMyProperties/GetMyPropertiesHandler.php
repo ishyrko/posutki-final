@@ -87,9 +87,14 @@ final class GetMyPropertiesHandler
                 $ownerId = $property->getOwnerId()->getValue();
                 $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
                 $propertyId = $property->getId()->getValue();
-                $canPublishFree = $property->getStatus() === 'awaiting_payment'
-                    ? $this->freeListingLimitService->canPublishFree($property)
-                    : null;
+                $canPublishFree = null;
+                $freeLimitBlockIntro = null;
+                if ($property->getStatus() === 'awaiting_payment') {
+                    $canPublishFree = $this->freeListingLimitService->canPublishFree($property);
+                    if (!$canPublishFree) {
+                        $freeLimitBlockIntro = $this->freeListingLimitService->buildLimitExceededIntro($property);
+                    }
+                }
 
                 return PropertyDTO::fromEntity(
                     $property,
@@ -105,6 +110,7 @@ final class GetMyPropertiesHandler
                     includeAllImages: true,
                     unviewedReviewsCount: $unviewedByProperty[$propertyId] ?? 0,
                     canPublishFree: $canPublishFree,
+                    freeLimitBlockIntro: $freeLimitBlockIntro,
                 );
             },
             $properties

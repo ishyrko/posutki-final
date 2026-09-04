@@ -20,9 +20,8 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { useArchiveProperty, useDeleteProperty, useExchangeRates, useFreeListingLimits, useMyProperties, usePublishFreeProperty, useUnarchiveProperty } from '@/features/properties/hooks';
+import { useArchiveProperty, useDeleteProperty, useExchangeRates, useMyProperties, usePublishFreeProperty, useUnarchiveProperty } from '@/features/properties/hooks';
 import { Property, formatAddress, isPropertyEditable } from '@/features/properties/types';
-import { formatFreeLimitExceededMessage } from '@/features/properties/free-listing-limits';
 import { buildPropertyUrlFromRegionName } from '@/features/catalog/slugs';
 import { PriceInByn } from '@/components/BynCurrency';
 import { BuyPlacementDialog } from '@/features/placement/components/BuyPlacementDialog';
@@ -105,15 +104,16 @@ function getDeleteEligibility(property: Property) {
     return { neverPublished, daysUntilDelete, canDelete, showDeleteButton };
 }
 
+const AWAITING_PAYMENT_LIMIT_ACTION_HINT =
+    ' Оплатите VIP или освободите слот: скройте другое объявление или купите для него VIP.';
+
 function ListingCard({
     property,
     showPublicLinks,
-    accountLimits,
     onRequestDelete,
 }: {
     property: Property;
     showPublicLinks: boolean;
-    accountLimits?: { used: number; limit: number };
     onRequestDelete?: (propertyId: number) => void;
 }) {
     const archive = useArchiveProperty();
@@ -319,7 +319,9 @@ function ListingCard({
                     </div>
                     {property.status === 'awaiting_payment' && (
                         <p className="text-sm text-muted-foreground mt-2">
-                            {formatFreeLimitExceededMessage(property, accountLimits)}
+                            {property.canPublishFree
+                                ? 'Свободный слот доступен — можете опубликовать объявление бесплатно.'
+                                : `${property.freeLimitBlockIntro ?? 'Ваш лимит бесплатных объявлений исчерпан'}.${AWAITING_PAYMENT_LIMIT_ACTION_HINT}`}
                         </p>
                     )}
                     {property.status === 'rejected' && property.moderationComment && (
@@ -442,20 +444,11 @@ function ListingCard({
                         </Button>
                     ) : property.status === 'awaiting_payment' ? (
                         <>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="justify-start bg-amber-500 text-white hover:bg-amber-600 hover:text-white"
-                                onClick={() => setPlacementDialog('level')}
-                            >
-                                <Star className="w-3.5 h-3.5 mr-1" />
-                                Оплатить и опубликовать
-                            </Button>
                             {property.canPublishFree ? (
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="justify-start"
+                                    className="justify-start bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
                                     disabled={publishFree.isPending && publishFree.variables === property.id}
                                     onClick={() =>
                                         publishFree.mutate(property.id, {
@@ -467,6 +460,27 @@ function ListingCard({
                                 >
                                     <Eye className="w-3.5 h-3.5 mr-1" />
                                     Опубликовать бесплатно
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="justify-start bg-amber-500 text-white hover:bg-amber-600 hover:text-white"
+                                    onClick={() => setPlacementDialog('level')}
+                                >
+                                    <Star className="w-3.5 h-3.5 mr-1" />
+                                    Оплатить и опубликовать
+                                </Button>
+                            )}
+                            {property.canPublishFree ? (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="justify-start"
+                                    onClick={() => setPlacementDialog('level')}
+                                >
+                                    <Star className="w-3.5 h-3.5 mr-1" />
+                                    Оплатить VIP
                                 </Button>
                             ) : null}
                             <Button
@@ -566,8 +580,6 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
         };
     }, [properties]);
 
-    const { data: freeLimits } = useFreeListingLimits();
-
     const closeDeleteDialog = () => setDeleteTargetId(null);
 
     return (
@@ -666,7 +678,6 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
                             key={property.id}
                             property={property}
                             showPublicLinks={activeStatus !== 'inactive'}
-                            accountLimits={freeLimits?.account}
                             onRequestDelete={setDeleteTargetId}
                         />
                     ))}
