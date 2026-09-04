@@ -51,6 +51,16 @@ final readonly class FrontendUrlBuilder
         return $this->base() . '/kabinet/moi-obyavleniya/aktivnye/';
     }
 
+    public function awaitingPaymentListings(): string
+    {
+        return $this->base() . '/kabinet/moi-obyavleniya/trebuet-oplaty/';
+    }
+
+    public function tariffs(): string
+    {
+        return $this->base() . '/tarify/';
+    }
+
     public function messages(): string
     {
         return $this->base() . '/kabinet/soobshcheniya/';

@@ -75,6 +75,27 @@ final readonly class PropertyMailer
         );
     }
 
+    public function sendApprovedAwaitingPayment(Property $property, User $owner): void
+    {
+        $ownerEmail = $owner->getEmail()?->getValue();
+        if ($ownerEmail === null) {
+            return;
+        }
+
+        $this->send(
+            to: $ownerEmail,
+            subject: 'Объявление одобрено, но не опубликовано — ' . $property->getTitle(),
+            template: 'email/property/approved_awaiting_payment.html.twig',
+            context: [
+                'owner' => $owner,
+                'property' => $property,
+                'dashboardUrl' => $this->frontendUrls->cabinet(),
+                'awaitingPaymentUrl' => $this->frontendUrls->awaitingPaymentListings(),
+                'tariffsUrl' => $this->frontendUrls->tariffs(),
+            ],
+        );
+    }
+
     public function sendRejected(Property $property, User $owner, ?string $moderationComment): void
     {
         $ownerEmail = $owner->getEmail()?->getValue();

@@ -551,6 +551,9 @@ services:
     App\Application\Notification\Property\PropertyApprovedHandler:
         tags: [ { name: messenger.message_handler, bus: notification.bus } ]
 
+    App\Application\Notification\Property\PropertyApprovedAwaitingPaymentHandler:
+        tags: [ { name: messenger.message_handler, bus: notification.bus } ]
+
     App\Application\Notification\Property\PropertyRejectedHandler:
         tags: [ { name: messenger.message_handler, bus: notification.bus } ]
 

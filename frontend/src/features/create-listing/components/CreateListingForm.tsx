@@ -33,7 +33,6 @@ import { cn } from '@/lib/utils';
 import AddressMapPicker from '@/components/AddressMapPicker';
 import { geocodeAddress as yandexGeocode } from '@/lib/yandex-geocoder';
 import { getMyProperties } from '@/features/properties/api';
-import { useFreeListingLimits } from '@/features/properties/hooks';
 import { trackListingEvent } from '@/lib/gtag';
 import { useCityAutocompleteResults, useSearchStreets, useCreateProperty } from '../hooks';
 import type { ListingFormData, CreatePropertyPayload, CitySearchResult, AdditionalService } from '../types';
@@ -314,10 +313,6 @@ export function CreateListingForm() {
     const streetContainerRef = useRef<HTMLDivElement>(null);
 
     const { mutateAsync: createProperty, isPending: submitting } = useCreateProperty();
-    const { data: freeLimits } = useFreeListingLimits(
-        form.cityId,
-        form.propertyType === 'apartment' || form.propertyType === 'house' ? form.propertyType : null,
-    );
     const [smsAuthOpen, setSmsAuthOpen] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const listingPageOpenTrackedRef = useRef(false);
@@ -1018,21 +1013,6 @@ export function CreateListingForm() {
                     </p>
                 </div>
             </div>
-
-            {freeLimits && (
-                <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-                    Использовано <strong className="text-foreground">{freeLimits.account.used}</strong> из{' '}
-                    <strong className="text-foreground">{freeLimits.account.limit}</strong> бесплатных объявлений на аккаунте.
-                    {freeLimits.city && form.propertyType === 'apartment' ? (
-                        <>
-                            {' '}
-                            В этом городе для квартир:{' '}
-                            <strong className="text-foreground">{freeLimits.city.used}</strong> из{' '}
-                            <strong className="text-foreground">{freeLimits.city.limit}</strong>.
-                        </>
-                    ) : null}
-                </div>
-            )}
 
             <div className="grid grid-cols-6 gap-1.5 sm:gap-3">
                 {LISTING_STEPS.map(({ label, Icon }, i) => {

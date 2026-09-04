@@ -11,6 +11,7 @@ use App\Application\Command\Property\RejectRevision\RejectRevisionCommand;
 use App\Application\Service\FreeListingLimitService;
 use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Entity\Property;
+use App\Domain\Property\Event\PropertyApprovedAwaitingPaymentEvent;
 use App\Domain\Property\Event\PropertyApprovedEvent;
 use App\Domain\Property\Event\PropertyRejectedEvent;
 use App\Domain\Property\Repository\CityRepositoryInterface;
@@ -254,6 +255,7 @@ final class PropertyModerationCrudController extends PropertyCrudController
             $this->notificationBus->dispatch(new PropertyApprovedEvent((string) $property->getId()->getValue()));
             $this->addFlash('success', 'Объявление одобрено');
         } else {
+            $this->notificationBus->dispatch(new PropertyApprovedAwaitingPaymentEvent((string) $property->getId()->getValue()));
             $this->addFlash('success', 'Объявление одобрено и ожидает оплаты (лимит бесплатных исчерпан)');
         }
 

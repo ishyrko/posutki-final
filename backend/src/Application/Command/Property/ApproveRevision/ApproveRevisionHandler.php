@@ -7,6 +7,7 @@ namespace App\Application\Command\Property\ApproveRevision;
 use App\Application\Service\FreeListingLimitService;
 use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Entity\PropertyRevision;
+use App\Domain\Property\Event\PropertyApprovedAwaitingPaymentEvent;
 use App\Domain\Property\Event\PropertyApprovedEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
@@ -207,6 +208,7 @@ readonly class ApproveRevisionHandler
         }
 
         // Rejected listings become published after approved correction.
+        $becameAwaitingPayment = false;
         if ($property->getStatus() === 'rejected') {
             $withinFreeLimit = $this->freeListingLimitService->canPublishFree($property);
             if ($withinFreeLimit) {
@@ -217,6 +219,7 @@ readonly class ApproveRevisionHandler
                 }
             } else {
                 $property->setStatus('awaiting_payment');
+                $becameAwaitingPayment = true;
             }
         }
 
@@ -231,6 +234,8 @@ readonly class ApproveRevisionHandler
 
         if ($property->getStatus() === 'published') {
             $this->notificationBus->dispatch(new PropertyApprovedEvent($command->propertyId));
+        } elseif ($becameAwaitingPayment) {
+            $this->notificationBus->dispatch(new PropertyApprovedAwaitingPaymentEvent($command->propertyId));
         }
     }
 
