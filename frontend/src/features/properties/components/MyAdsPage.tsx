@@ -246,8 +246,8 @@ function ListingCard({
                                                 </span>
                                             </TooltipTrigger>
                                             <TooltipContent side="bottom" className="max-w-xs text-center">
-                                                Ограничения бесплатного размещения (фото, видео, Instagram,
-                                                сайт) описаны на странице тарифов
+                                                Ограничения бесплатного размещения (лимит количества объявлений,
+                                                фото, видео, Instagram, сайт) описаны на странице тарифов
                                             </TooltipContent>
                                         </Tooltip>
                                     </TooltipProvider>

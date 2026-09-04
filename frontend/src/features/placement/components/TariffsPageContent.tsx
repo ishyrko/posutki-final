@@ -112,10 +112,10 @@ export function TariffsPageContent() {
                     <h2 className="font-semibold text-foreground mb-2">Бесплатное размещение</h2>
                     <p className="text-sm text-muted-foreground">
                         После окончания бесплатного VIP 1 или оплаченного VIP объявление остаётся в
-                        каталоге на бесплатном уровне с более низкой позицией. На публичной карточке
-                        показываются не более {MAX_VISIBLE_PHOTOS_FREE_PLACEMENT} фотографий; видео,
-                        Instagram и сайт скрыты. Все данные сохраняются и снова отображаются после
-                        перехода на VIP.
+                        каталоге на бесплатном уровне с более низкой позицией. Бесплатно можно
+                        разместить до 5 объявлений (в зависимости от города). На публичной карточке показываются не более{' '}
+                        {MAX_VISIBLE_PHOTOS_FREE_PLACEMENT} фотографий; видео, Instagram и сайт
+                        скрыты. Все данные сохраняются и снова отображаются после перехода на VIP.
                     </p>
                 </div>
             </div>
@@ -276,6 +276,12 @@ export function TariffsPageContent() {
                     </tbody>
                 </table>
             </div>
+
+            {propertyType === 'apartment' ? (
+                <p className="text-xs text-muted-foreground -mt-4 mb-6">
+                    * Лимит бесплатных объявлений от одного пользователя зависит от города.
+                </p>
+            ) : null}
 
         </div>
     );
