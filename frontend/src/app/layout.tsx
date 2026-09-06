@@ -93,23 +93,6 @@ export default function RootLayout({
     })();
   `;
 
-  const performanceMeasureGuard = `
-    (function () {
-      if (typeof window === 'undefined' || typeof window.performance?.measure !== 'function') return;
-      var originalMeasure = window.performance.measure.bind(window.performance);
-      window.performance.measure = function () {
-        try {
-          return originalMeasure.apply(window.performance, arguments);
-        } catch (error) {
-          if (/(negative time stamp|does not exist)/i.test(String(error && error.message ? error.message : error))) {
-            return;
-          }
-          throw error;
-        }
-      };
-    })();
-  `;
-
   return (
     <html lang="ru" className={inter.variable}>
       <head>
@@ -124,11 +107,6 @@ export default function RootLayout({
           id="stale-chunk-reload-guard"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: staleChunkReloadGuard }}
-        />
-        <Script
-          id="performance-measure-guard"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: performanceMeasureGuard }}
         />
       </head>
       <body className="font-body antialiased">
