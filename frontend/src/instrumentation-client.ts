@@ -1,3 +1,4 @@
+/** Single client-side guard for noisy performance.measure errors (Metrika / DevTools). */
 const PERFORMANCE_MEASURE_ERROR_PATTERN = /(negative time stamp|does not exist)/i;
 
 if (typeof window !== "undefined" && typeof window.performance?.measure === "function") {
