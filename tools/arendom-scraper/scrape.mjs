@@ -6,15 +6,21 @@
  * Listing index comes from WP REST CPT `kvartiry` (homepage has no catalog links).
  * Details and photos are taken from the public card HTML + attached media.
  */
+import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { promisify } from 'node:util';
 import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const START_URL = process.env.START_URL || 'https://arendom.com/';
 const API_URL = process.env.API_URL || 'https://arendom.com/wp-json/wp/v2/kvartiry';
 const OUTPUT_DIR = process.env.OUTPUT_DIR || '/data';
 const DELAY_MS = Number.parseInt(process.env.DELAY_MS || '800', 10);
+const CHROME_UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+const execFileAsync = promisify(execFile);
 
 const skipPathParts = [
   '/wp-',
@@ -128,6 +134,162 @@ function toAbsolute(href, base) {
   } catch {
     return null;
   }
+}
+
+function hasEnoughPhotos(item) {
+  return Array.isArray(item?.images) && item.images.length >= 3;
+}
+
+function hasCoordinates(item) {
+  const latitude = Number(item?.latitude);
+  const longitude = Number(item?.longitude);
+  return Number.isFinite(latitude) && Number.isFinite(longitude) && latitude !== 0 && longitude !== 0;
+}
+
+function looksLikeBelarus(latitude, longitude) {
+  return latitude >= 51 && latitude <= 56.5 && longitude >= 23 && longitude <= 33;
+}
+
+function isYandexMapsUrl(href) {
+  if (!href) {
+    return false;
+  }
+  try {
+    const url = new URL(href, 'https://yandex.by');
+    const host = url.hostname.replace(/^www\./, '');
+    const isYandexHost = /(^|\.)yandex\.(by|ru|com)$/i.test(host) || /^maps\.yandex\./i.test(host);
+    if (!isYandexHost || /^(mc|metrika)\.yandex\./i.test(host)) {
+      return false;
+    }
+    return /\/maps(\/|$)/.test(url.pathname) || host.startsWith('maps.yandex');
+  } catch {
+    return false;
+  }
+}
+
+function collectYandexMapsUrls(html) {
+  const urls = [];
+  for (const match of html.matchAll(/href=["']([^"']+)["']/gi)) {
+    const href = decode(match[1]);
+    if (isYandexMapsUrl(href)) {
+      urls.push(href);
+    }
+  }
+  return [...new Set(urls)];
+}
+
+function parseLonLatPair(value) {
+  if (!value) {
+    return null;
+  }
+  const parts = decodeURIComponent(String(value)).split(',');
+  if (parts.length < 2) {
+    return null;
+  }
+  const first = Number.parseFloat(parts[0]);
+  const second = Number.parseFloat(parts[1]);
+  if (!Number.isFinite(first) || !Number.isFinite(second)) {
+    return null;
+  }
+  // Yandex `ll` / `pt` / `sll` are lon,lat.
+  if (looksLikeBelarus(second, first)) {
+    return { latitude: second, longitude: first };
+  }
+  if (looksLikeBelarus(first, second)) {
+    return { latitude: first, longitude: second };
+  }
+  return null;
+}
+
+function parseCoordinatesFromMapsUrl(rawUrl) {
+  let url;
+  try {
+    url = new URL(rawUrl, 'https://yandex.by');
+  } catch {
+    return null;
+  }
+  const params = new URLSearchParams(url.search);
+  if (url.hash.includes('=')) {
+    const hashQuery = url.hash.replace(/^#/, '');
+    const hashParams = new URLSearchParams(hashQuery.startsWith('?') ? hashQuery.slice(1) : hashQuery);
+    for (const [key, value] of hashParams) {
+      if (!params.has(key)) {
+        params.set(key, value);
+      }
+    }
+  }
+  for (const key of ['ll', 'pt', 'sll']) {
+    const parsed = parseLonLatPair(params.get(key));
+    if (parsed) {
+      return parsed;
+    }
+  }
+  return parseLonLatPair(params.get('whatshere[point]'));
+}
+
+async function readRedirectLocationWithCurl(url) {
+  const { stdout } = await execFileAsync(
+    'curl',
+    ['-sI', '-A', CHROME_UA, '--max-time', '8', url],
+    { timeout: 10_000 },
+  );
+  const match = String(stdout).match(/^location:\s*(.+)$/im);
+  const location = match ? match[1].trim() : '';
+  if (!location || /showcaptcha/i.test(location)) {
+    return null;
+  }
+  return location;
+}
+
+async function readFinalMapsUrlWithBrowser(page, url) {
+  const mapsPage = await page.context().newPage();
+  try {
+    await mapsPage.goto(url, { waitUntil: 'commit', timeout: 8_000 });
+    return mapsPage.url();
+  } finally {
+    await mapsPage.close();
+  }
+}
+
+async function resolveYandexMapsCoordinates(url, cache, page) {
+  if (cache.has(url)) {
+    return cache.get(url);
+  }
+
+  let coords = parseCoordinatesFromMapsUrl(url);
+
+  if (!coords) {
+    try {
+      const location = await readRedirectLocationWithCurl(url);
+      if (location) {
+        coords = parseCoordinatesFromMapsUrl(new URL(location, url).href);
+      }
+    } catch {
+      // Docker/host curl fingerprints differ; browser hop is the fallback.
+    }
+  }
+
+  if (!coords && page) {
+    try {
+      const finalUrl = await readFinalMapsUrlWithBrowser(page, url);
+      coords = parseCoordinatesFromMapsUrl(finalUrl);
+    } catch {
+      coords = null;
+    }
+  }
+
+  cache.set(url, coords ?? null);
+  return coords ?? null;
+}
+
+async function resolveListingCoordinates(html, cache, page) {
+  for (const url of collectYandexMapsUrls(html)) {
+    const coords = await resolveYandexMapsCoordinates(url, cache, page);
+    if (coords) {
+      return coords;
+    }
+  }
+  return null;
 }
 
 function parseAddress(title) {
@@ -253,6 +415,8 @@ function extractListing(url, html, text, meta = {}) {
     cityName,
     streetName: address.streetName,
     building: address.building,
+    latitude: null,
+    longitude: null,
     priceByn,
     area: areaMatch ? Number.parseFloat(areaMatch[1].replace(',', '.')) : 0,
     rooms,
@@ -436,9 +600,10 @@ async function main() {
   await ensureDir(imagesDir);
 
   const state = await loadState(outFile);
+  const mapsCache = new Map();
   const seen = new Set(
     state.listings
-      .filter((item) => Array.isArray(item.images) && item.images.length >= 3)
+      .filter((item) => hasEnoughPhotos(item) && hasCoordinates(item))
       .map((item) => String(item.externalId)),
   );
 
@@ -452,20 +617,17 @@ async function main() {
   const context = await browser.newContext({
     locale: 'ru-RU',
     viewport: { width: 1440, height: 900 },
-    userAgent:
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    userAgent: CHROME_UA,
   });
-  await context.addInitScript(() => {
+  await context.addInitScript((ua) => {
     Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
     Object.defineProperty(navigator, 'languages', { get: () => ['ru-RU', 'ru', 'en-US', 'en'] });
     Object.defineProperty(navigator, 'language', { get: () => 'ru-RU' });
-    const chromeUa =
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
-    Object.defineProperty(navigator, 'userAgent', { get: () => chromeUa });
-    Object.defineProperty(navigator, 'appVersion', { get: () => '5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' });
+    Object.defineProperty(navigator, 'userAgent', { get: () => ua });
+    Object.defineProperty(navigator, 'appVersion', { get: () => ua.replace(/^Mozilla\//, '') });
     Object.defineProperty(window, 'outerWidth', { get: () => window.innerWidth || 1440 });
     Object.defineProperty(window, 'outerHeight', { get: () => window.innerHeight || 900 });
-  });
+  }, CHROME_UA);
   const page = await context.newPage();
 
   console.log('Opening', START_URL);
@@ -525,8 +687,13 @@ async function main() {
       continue;
     }
 
+    const existing = state.listings.find((row) => String(row.externalId) === externalId) ?? null;
+    const reusePhotos = hasEnoughPhotos(existing);
+
     try {
-      const imageUrls = /^\d+$/.test(externalId) ? await fetchMediaUrls(page, externalId) : [];
+      const imageUrls = reusePhotos || !/^\d+$/.test(externalId)
+        ? []
+        : await fetchMediaUrls(page, externalId);
       const { html, text } = await readPageContent(page, url);
       const listing = extractListing(url, html, text, {
         externalId,
@@ -535,15 +702,26 @@ async function main() {
         cityName: cityFromTerms(item._embedded?.['wp:term']),
         imageUrls,
       });
-      if (!listing.title && listing.imageUrls.length < 3) {
+      if (!listing.title && listing.imageUrls.length < 3 && !reusePhotos) {
         console.log('Skip (too little data):', url);
         continue;
       }
-      listing.images = await downloadImages(page, listing, imagesDir);
-      if (listing.images.length === 0 && listing.imageUrls.length > 0) {
-        console.log('Refreshing challenge after empty photo set');
-        await waitForSite(page);
+      const coords = await resolveListingCoordinates(html, mapsCache, page);
+      if (coords) {
+        listing.latitude = coords.latitude;
+        listing.longitude = coords.longitude;
+      } else {
+        console.warn('No Yandex map coordinates:', listing.externalId, url);
+      }
+      if (reusePhotos) {
+        listing.images = existing.images;
+      } else {
         listing.images = await downloadImages(page, listing, imagesDir);
+        if (listing.images.length === 0 && listing.imageUrls.length > 0) {
+          console.log('Refreshing challenge after empty photo set');
+          await waitForSite(page);
+          listing.images = await downloadImages(page, listing, imagesDir);
+        }
       }
       delete listing.imageUrls;
       const existingIndex = state.listings.findIndex((row) => String(row.externalId) === listing.externalId);
@@ -552,13 +730,16 @@ async function main() {
       } else {
         state.listings.push(listing);
       }
-      if (listing.images.length >= 3) {
+      if (hasEnoughPhotos(listing) && hasCoordinates(listing)) {
         seen.add(listing.externalId);
       }
       await fs.writeFile(outFile, JSON.stringify(state, null, 2));
       processedThisRun += 1;
       consecutiveNetworkErrors = 0;
-      console.log('Saved', listing.externalId, listing.title, `${listing.images.length} photos`);
+      const coordsLabel = hasCoordinates(listing)
+        ? `${listing.latitude},${listing.longitude}`
+        : 'no-coords';
+      console.log('Saved', listing.externalId, listing.title, `${listing.images.length} photos`, coordsLabel);
       await sleep(DELAY_MS);
     } catch (error) {
       console.warn('Failed', url, error.message);
@@ -584,7 +765,16 @@ async function main() {
   console.log('Wrote', state.listings.length, 'listings to', outFile);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (path.resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
+
+export {
+  collectYandexMapsUrls,
+  parseCoordinatesFromMapsUrl,
+  resolveListingCoordinates,
+  resolveYandexMapsCoordinates,
+};

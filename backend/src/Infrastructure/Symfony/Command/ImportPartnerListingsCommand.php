@@ -34,7 +34,6 @@ use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\FileUploader;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
-use App\Infrastructure\Service\YandexForwardGeocoder;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -55,7 +54,6 @@ final class ImportPartnerListingsCommand extends Command
         private readonly CityRepositoryInterface $cityRepository,
         private readonly StreetRepositoryInterface $streetRepository,
         private readonly FileUploader $fileUploader,
-        private readonly YandexForwardGeocoder $forwardGeocoder,
         private readonly ExchangeRateService $exchangeRateService,
         private readonly MetroProximityCalculator $metroProximityCalculator,
         private readonly LandmarkProximityCalculator $landmarkProximityCalculator,
@@ -293,9 +291,9 @@ final class ImportPartnerListingsCommand extends Command
         }
 
         $street = $streetName !== '' ? $this->resolveStreet($city->getId(), $streetName) : null;
-        $coordinates = $this->resolveCoordinates($row, $cityName, $streetName, $building);
+        $coordinates = $this->resolveCoordinates($row);
         if ($coordinates === null) {
-            return $this->skippedResult('нет координат и геокодер не ответил');
+            return $this->skippedResult('нет координат');
         }
 
         if ($building === '') {
@@ -703,17 +701,15 @@ final class ImportPartnerListingsCommand extends Command
     /**
      * @param array<string, mixed> $row
      */
-    private function resolveCoordinates(array $row, string $cityName, string $streetName, string $building): ?Coordinates
+    private function resolveCoordinates(array $row): ?Coordinates
     {
         $lat = isset($row['latitude']) ? (float) $row['latitude'] : 0.0;
         $lon = isset($row['longitude']) ? (float) $row['longitude'] : 0.0;
-        if ($lat !== 0.0 && $lon !== 0.0) {
-            return Coordinates::create($lat, $lon);
+        if ($lat === 0.0 || $lon === 0.0) {
+            return null;
         }
 
-        $parts = array_filter(['Беларусь', $cityName, $streetName, $building], static fn(string $part): bool => $part !== '');
-
-        return $this->forwardGeocoder->geocodeAddress(implode(', ', $parts));
+        return Coordinates::create($lat, $lon);
     }
 
     private function resolveImagePath(string $ref, string $baseDir): ?string

@@ -9,6 +9,8 @@
       "cityName": "Минск",
       "streetName": "Независимости",
       "building": "10",
+      "latitude": 53.9045,
+      "longitude": 27.5615,
       "priceByn": 90,
       "area": 54,
       "rooms": 2,
