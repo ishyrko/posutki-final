@@ -18,6 +18,11 @@ use Doctrine\Common\Collections\Collection;
     columns: ['city_id', 'deal_type', 'type', 'status', 'placement_effective_level', 'placement_shuffle_key'],
 )]
 #[ORM\Index(columns: ['created_at'])]
+#[ORM\Index(name: 'IDX_PROPERTIES_OWNER_STATUS', columns: ['owner_id', 'status'])]
+#[ORM\Index(
+    name: 'IDX_PROPERTIES_STATUS_EXTERNAL_PUBLISHED',
+    columns: ['status', 'external_source', 'published_at'],
+)]
 #[ORM\UniqueConstraint(name: 'uniq_properties_external_source_id', columns: ['external_source', 'external_id'])]
 class Property
 {
