@@ -561,16 +561,20 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         return $qb->getQuery()->getResult();
     }
 
-    /**
-     * @return Property[]
-     */
-    public function findPublishedForReshuffle(): array
+    public function reshufflePublishedPlacementKeys(): int
     {
-        return $this->createQueryBuilder('p')
-            ->where('p.status = :status')
-            ->setParameter('status', 'published')
-            ->getQuery()
-            ->getResult();
+        $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+
+        return (int) $this->getEntityManager()->getConnection()->executeStatement(
+            'UPDATE properties
+             SET placement_shuffle_key = 1 + FLOOR(RAND() * 2147483646),
+                 updated_at = :now
+             WHERE status = :status',
+            [
+                'now' => $now,
+                'status' => 'published',
+            ],
+        );
     }
 
     /**

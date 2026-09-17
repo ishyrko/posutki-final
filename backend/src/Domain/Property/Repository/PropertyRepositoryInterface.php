@@ -58,9 +58,9 @@ interface PropertyRepositoryInterface
     ): array;
 
     /**
-     * @return Property[]
+     * Rotate VIP shuffle keys for all published listings in one UPDATE (no entity hydration).
      */
-    public function findPublishedForReshuffle(): array;
+    public function reshufflePublishedPlacementKeys(): int;
 
     /**
      * @return Property[]

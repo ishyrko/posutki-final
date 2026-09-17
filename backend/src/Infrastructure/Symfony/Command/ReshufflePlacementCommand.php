@@ -26,15 +26,7 @@ class ReshufflePlacementCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $properties = $this->propertyRepository->findPublishedForReshuffle();
-        $count = 0;
-
-        foreach ($properties as $property) {
-            $property->reshufflePlacement();
-            $this->propertyRepository->save($property);
-            ++$count;
-        }
-
+        $count = $this->propertyRepository->reshufflePublishedPlacementKeys();
         $io->success(sprintf('Reshuffled %d propert%s.', $count, $count === 1 ? 'y' : 'ies'));
 
         return Command::SUCCESS;
