@@ -24,6 +24,7 @@ use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Import\PartnerAmenityMapper;
+use App\Infrastructure\Import\PartnerCityMatcher;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\FileUploader;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
@@ -460,21 +461,11 @@ final class ImportPartnerListingsCommand extends Command
             'могилёв' => 'Могилёв',
         ];
         $lookup = $aliases[mb_strtolower($name)] ?? $name;
-        $normalized = $this->foldYo($lookup);
 
-        $candidates = $this->cityRepository->searchByName($lookup, null, 20);
-        foreach ($candidates as $candidate) {
-            if ($this->foldYo($candidate->getName()) === $normalized) {
-                return $candidate;
-            }
-        }
-
-        return $candidates[0] ?? null;
-    }
-
-    private function foldYo(string $value): string
-    {
-        return mb_strtolower(str_replace(['ё', 'Ё'], ['е', 'Е'], $value));
+        return PartnerCityMatcher::pick(
+            $lookup,
+            $this->cityRepository->searchByName($lookup, null, 20),
+        );
     }
 
     private function resolveStreet(int $cityId, string $name): ?Street
