@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Heart, MessageSquare, User, LogOut, ChevronRight, CreditCard, Star } from 'lucide-react';
+import { Home, Heart, MessageSquare, User, LogOut, ChevronRight, CreditCard, Star, BarChart3 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useUser, useLogout } from '@/features/auth/hooks';
 import { useUnreadCount } from '@/features/messages/hooks';
@@ -26,6 +26,7 @@ type NavItem = {
     badgeKey?: NavBadgeKey;
     ownerOnly?: boolean;
     hideOnMobileWhenOwner?: boolean;
+    desktopOnly?: boolean;
 };
 
 const navigation: NavItem[] = [
@@ -37,6 +38,14 @@ const navigation: NavItem[] = [
         activePrefix: '/kabinet/moi-obyavleniya',
         icon: Home,
         badgeKey: 'awaitingPayment',
+    },
+    {
+        name: 'Статистика',
+        href: '/kabinet/statistika/',
+        activePrefix: '/kabinet/statistika',
+        icon: BarChart3,
+        ownerOnly: true,
+        desktopOnly: true,
     },
     { name: 'Избранное', href: '/izbrannoe', icon: Heart, hideOnMobileWhenOwner: true },
     {
@@ -85,6 +94,9 @@ function filterNavigation(items: NavItem[], hasMyProperties: boolean, mobile: bo
             return false;
         }
         if (mobile && item.hideOnMobileWhenOwner && hasMyProperties) {
+            return false;
+        }
+        if (mobile && item.desktopOnly) {
             return false;
         }
         return true;

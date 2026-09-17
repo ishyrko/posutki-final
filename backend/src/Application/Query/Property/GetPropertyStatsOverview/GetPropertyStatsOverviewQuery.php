@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Application\Query\Property\GetAdminPropertyStatsOverview;
+namespace App\Application\Query\Property\GetPropertyStatsOverview;
 
-final class GetAdminPropertyStatsOverviewQuery
+final class GetPropertyStatsOverviewQuery
 {
     public function __construct(
         public readonly int $period,
@@ -13,6 +13,7 @@ final class GetAdminPropertyStatsOverviewQuery
         public readonly ?int $regionId = null,
         public readonly ?string $dateFrom = null,
         public readonly ?string $dateTo = null,
+        public readonly ?int $ownerId = null,
     ) {
     }
 }

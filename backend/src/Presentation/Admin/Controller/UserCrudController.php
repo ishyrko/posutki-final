@@ -60,9 +60,17 @@ class UserCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
+        $statsAction = Action::new('ownerStats', 'Статистика')
+            ->setIcon('fa fa-chart-line')
+            ->linkToUrl(function (User $user): string {
+                return $this->generateUrl('admin', ['ownerId' => $user->getId()->getValue()]);
+            });
+
         return $actions
             ->disable(Action::NEW, Action::DELETE)
-            ->add(Crud::PAGE_INDEX, Action::DETAIL);
+            ->add(Crud::PAGE_INDEX, Action::DETAIL)
+            ->add(Crud::PAGE_INDEX, $statsAction)
+            ->add(Crud::PAGE_DETAIL, $statsAction);
     }
 
     public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void

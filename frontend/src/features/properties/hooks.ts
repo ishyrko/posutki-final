@@ -2,7 +2,7 @@
 
 import { useMemo, useSyncExternalStore } from 'react';
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProperties, getProperty, getMyProperties, getMyPropertiesSummary, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, trackAnonymousFavorite, removeAnonymousFavorite, getFavorites, getExchangeRates, getPropertyStats, archiveProperty, unarchiveProperty, publishFreeProperty, getFreeListingLimits, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock } from './api';
+import { getProperties, getProperty, getMyProperties, getMyPropertiesSummary, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, trackAnonymousFavorite, removeAnonymousFavorite, getFavorites, getExchangeRates, getPropertyStats, getMyPropertiesStats, archiveProperty, unarchiveProperty, publishFreeProperty, getFreeListingLimits, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock } from './api';
 import { Property, PropertyFilters, PropertyListResponse, type MyPropertiesFilters } from './types';
 import { isAuthenticated } from '@/lib/auth';
 import { useIsHydrated } from '@/hooks/useIsHydrated';
@@ -348,6 +348,14 @@ export const usePropertyStats = (id: number, period: 7 | 30 | 90) => {
         queryKey: ['property-stats', id, period],
         queryFn: () => getPropertyStats(id, period),
         enabled: id > 0 && isAuthenticated(),
+    });
+};
+
+export const useMyPropertiesStats = (period: 7 | 30 | 90) => {
+    return useQuery({
+        queryKey: ['my-properties-stats', period],
+        queryFn: () => getMyPropertiesStats(period),
+        enabled: isAuthenticated(),
     });
 };
 

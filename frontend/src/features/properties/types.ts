@@ -187,19 +187,28 @@ export interface PropertyStatsPoint {
     bookingInquiries: number;
 }
 
+export interface PropertyStatsTotals {
+    views: number;
+    phoneViews: number;
+    favorites: number;
+    messages: number;
+    bookingInquiries: number;
+}
+
 export interface PropertyStats {
     property: {
         id: number;
         title: string;
     };
     period: number;
-    totals: {
-        views: number;
-        phoneViews: number;
-        favorites: number;
-        messages: number;
-        bookingInquiries: number;
-    };
+    totals: PropertyStatsTotals;
+    daily: PropertyStatsPoint[];
+}
+
+export interface MyPropertiesStats {
+    period: number;
+    propertiesCount: number;
+    totals: PropertyStatsTotals;
     daily: PropertyStatsPoint[];
 }
 

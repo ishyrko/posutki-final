@@ -113,8 +113,8 @@ services:
     App\Domain\Analytics\Repository\ContentViewDedupRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\ContentViewDedupRepository
 
-    App\Domain\Property\Repository\AdminPropertyStatsRepositoryInterface:
-        class: App\Infrastructure\Persistence\Doctrine\Repository\AdminPropertyStatsRepository
+    App\Domain\Property\Repository\PropertyStatsAggregateRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyStatsAggregateRepository
 
     App\Domain\Property\Repository\PropertyEngagementStatsRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\PropertyEngagementStatsRepository

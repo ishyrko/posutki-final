@@ -5,6 +5,9 @@
 {% block main %}
     <div class="content-body">
         <form method="get" action="{{ path('admin') }}" id="statsFiltersForm" class="d-flex flex-wrap gap-2 align-items-center mb-4">
+        {% if filters.ownerId %}
+            <input type="hidden" name="ownerId" value="{{ filters.ownerId }}">
+        {% endif %}
         <select name="period" class="form-select form-select-sm" style="width:auto;" onchange="handleStatsPeriodChange(this)">
             <option value="0" {% if filters.period == '0' %}selected{% endif %}>Сегодня</option>
             <option value="-1" {% if filters.period == '-1' %}selected{% endif %}>Вчера</option>
@@ -41,6 +44,22 @@
             {% endfor %}
         </select>
         </form>
+
+        {% if filters.ownerId %}
+            <p class="mb-3">
+                <span class="badge text-bg-primary">
+                    Владелец: {{ selectedOwner ?: ('#' ~ filters.ownerId) }}
+                </span>
+                <a href="{{ path('admin', {
+                    period: filters.period,
+                    dateFrom: filters.dateFrom,
+                    dateTo: filters.dateTo,
+                    type: filters.type,
+                    cityId: filters.cityId,
+                    regionId: filters.regionId
+                }) }}" class="ms-2 small">сбросить</a>
+            </p>
+        {% endif %}
 
         <p class="text-secondary mb-4">
             Агрегированная статистика по

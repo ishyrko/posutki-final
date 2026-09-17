@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Presentation\Admin\Controller;
 
-use App\Application\Query\Property\GetAdminPropertyStatsOverview\GetAdminPropertyStatsOverviewHandler;
-use App\Application\Query\Property\GetAdminPropertyStatsOverview\GetAdminPropertyStatsOverviewQuery;
+use App\Application\Query\Property\GetPropertyStatsOverview\GetPropertyStatsOverviewHandler;
+use App\Application\Query\Property\GetPropertyStatsOverview\GetPropertyStatsOverviewQuery;
 use App\Domain\Article\Entity\Article;
 use App\Domain\Article\Entity\ArticleCategory;
 use App\Domain\StaticPage\Entity\StaticPage;
@@ -26,7 +26,9 @@ use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\RegionRepositoryInterface;
+use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Entity\User;
+use App\Domain\User\Repository\UserRepositoryInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
@@ -40,10 +42,11 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 class DashboardController extends AbstractDashboardController
 {
     public function __construct(
-        private readonly GetAdminPropertyStatsOverviewHandler $adminPropertyStatsOverviewHandler,
+        private readonly GetPropertyStatsOverviewHandler $propertyStatsOverviewHandler,
         private readonly CityRepositoryInterface $cityRepository,
         private readonly RegionRepositoryInterface $regionRepository,
         private readonly PropertyRepositoryInterface $propertyRepository,
+        private readonly UserRepositoryInterface $userRepository,
         private readonly RequestStack $requestStack,
     ) {
     }
@@ -64,6 +67,8 @@ class DashboardController extends AbstractDashboardController
         $cityId = is_numeric($cityIdRaw) ? (int) $cityIdRaw : null;
         $regionIdRaw = $request?->query->get('regionId');
         $regionId = is_numeric($regionIdRaw) ? (int) $regionIdRaw : null;
+        $ownerIdRaw = $request?->query->get('ownerId');
+        $ownerId = is_numeric($ownerIdRaw) && (int) $ownerIdRaw > 0 ? (int) $ownerIdRaw : null;
 
         if ($type === PropertyType::Apartment->value) {
             $regionId = null;
@@ -74,13 +79,14 @@ class DashboardController extends AbstractDashboardController
             $regionId = null;
         }
 
-        $stats = ($this->adminPropertyStatsOverviewHandler)(new GetAdminPropertyStatsOverviewQuery(
+        $stats = ($this->propertyStatsOverviewHandler)(new GetPropertyStatsOverviewQuery(
             period: $period,
             propertyType: $type !== '' ? $type : null,
             cityId: $cityId,
             regionId: $regionId,
             dateFrom: $dateFrom,
             dateTo: $dateTo,
+            ownerId: $ownerId,
         ));
 
         $selectedCityName = null;
@@ -95,12 +101,25 @@ class DashboardController extends AbstractDashboardController
             $selectedRegionName = $selectedRegion?->getName();
         }
 
+        $selectedOwner = null;
+        if ($ownerId !== null) {
+            $owner = $this->userRepository->findById(Id::fromInt($ownerId));
+            if ($owner !== null) {
+                $name = $owner->getFullName();
+                $email = $owner->getEmail()?->getValue() ?? '';
+                $selectedOwner = $name !== '' && $email !== ''
+                    ? $name . ' · ' . $email
+                    : ($email !== '' ? $email : $name);
+            }
+        }
+
         return $this->render('admin/stats_dashboard.html.twig', [
             'stats' => $stats,
             'apartmentCities' => $this->findCitiesWithApartmentListings(),
             'houseRegions' => $this->regionRepository->findAll(),
             'selectedCityName' => $selectedCityName,
             'selectedRegionName' => $selectedRegionName,
+            'selectedOwner' => $selectedOwner,
             'filters' => [
                 'period' => $stats['dateFrom'] !== null ? 'custom' : (string) $stats['period'],
                 'dateFrom' => $stats['dateFrom'] ?? '',
@@ -108,6 +127,7 @@ class DashboardController extends AbstractDashboardController
                 'type' => $stats['propertyType'] ?? '',
                 'cityId' => $stats['cityId'] ?? '',
                 'regionId' => $stats['regionId'] ?? '',
+                'ownerId' => $stats['ownerId'] ?? '',
             ],
         ]);
     }

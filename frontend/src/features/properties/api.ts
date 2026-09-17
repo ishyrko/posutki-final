@@ -1,6 +1,6 @@
 import axios from 'axios';
 import api from '@/lib/api';
-import { Property, PropertyFilters, PropertyListResponse, PropertyStats, type Currency, type MyPropertiesFilters, type MyPropertiesSummary } from './types';
+import { Property, PropertyFilters, PropertyListResponse, PropertyStats, type Currency, type MyPropertiesFilters, type MyPropertiesStats, type MyPropertiesSummary } from './types';
 import { getMockPropertiesResponse, getMockProperty } from './mock-data';
 import { clearLocalFavoriteIds, getLocalFavoriteIds } from '@/lib/favorites-storage';
 import { getOrCreateVisitorId } from '@/lib/view-tracking';
@@ -240,6 +240,11 @@ export const trackPropertyView = async (
 
 export const getPropertyStats = async (id: number, period: 7 | 30 | 90): Promise<PropertyStats> => {
     const response = await api.get<{ data: PropertyStats }>(`/properties/${id}/stats?period=${period}`);
+    return response.data.data;
+};
+
+export const getMyPropertiesStats = async (period: 7 | 30 | 90): Promise<MyPropertiesStats> => {
+    const response = await api.get<{ data: MyPropertiesStats }>(`/properties/my/stats?period=${period}`);
     return response.data.data;
 };
 

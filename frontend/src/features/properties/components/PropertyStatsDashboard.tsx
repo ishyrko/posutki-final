@@ -1,0 +1,192 @@
+'use client';
+
+import { useMemo, type ReactNode } from 'react';
+import { BarChart3, CalendarCheck, Eye, Heart, MessageSquare, Phone } from 'lucide-react';
+import { ResponsiveContainer, CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis, Legend, BarChart, Bar } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { PropertyStatsPoint, PropertyStatsTotals } from '@/features/properties/types';
+
+export type StatsPeriod = '7' | '30' | '90';
+
+function formatShortDate(isoDate: string): string {
+    const date = new Date(`${isoDate}T00:00:00`);
+    if (Number.isNaN(date.getTime())) {
+        return isoDate;
+    }
+
+    return new Intl.DateTimeFormat('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+    }).format(date);
+}
+
+type PropertyStatsDashboardProps = {
+    totals?: PropertyStatsTotals;
+    daily?: PropertyStatsPoint[];
+    period: StatsPeriod;
+    onPeriodChange: (period: StatsPeriod) => void;
+    isLoading: boolean;
+    isError: boolean;
+    header: ReactNode;
+    errorMessage?: string;
+};
+
+export function PropertyStatsDashboard({
+    totals,
+    daily,
+    period,
+    onPeriodChange,
+    isLoading,
+    isError,
+    header,
+    errorMessage = 'Не удалось загрузить статистику. Проверьте доступ к объявлению.',
+}: PropertyStatsDashboardProps) {
+    const chartData = useMemo(
+        () => (daily ?? []).map((point) => ({ ...point, shortDate: formatShortDate(point.date) })),
+        [daily],
+    );
+
+    return (
+        <div className="space-y-6 min-w-0">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                <div className="min-w-0">{header}</div>
+
+                <Select value={period} onValueChange={(v) => onPeriodChange(v as StatsPeriod)}>
+                    <SelectTrigger className="w-full shrink-0 sm:w-[180px]">
+                        <SelectValue placeholder="Период" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="7">Последние 7 дней</SelectItem>
+                        <SelectItem value="30">Последние 30 дней</SelectItem>
+                        <SelectItem value="90">Последние 90 дней</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {isLoading && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="h-28 rounded-xl border border-border bg-card animate-pulse" />
+                    ))}
+                    <div className="sm:col-span-2 lg:col-span-3 h-80 rounded-xl border border-border bg-card animate-pulse" />
+                    <div className="sm:col-span-2 lg:col-span-3 h-80 rounded-xl border border-border bg-card animate-pulse" />
+                </div>
+            )}
+
+            {!isLoading && isError && (
+                <Card>
+                    <CardContent className="py-8 text-center text-muted-foreground">{errorMessage}</CardContent>
+                </Card>
+            )}
+
+            {!isLoading && !isError && totals && (
+                <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground inline-flex items-center gap-2">
+                                    <Eye className="h-4 w-4" />
+                                    Просмотры
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-3xl font-bold">{totals.views}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground inline-flex items-center gap-2">
+                                    <Phone className="h-4 w-4" />
+                                    Показы телефона
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-3xl font-bold">{totals.phoneViews}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground inline-flex items-center gap-2">
+                                    <Heart className="h-4 w-4" />
+                                    В избранное
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-3xl font-bold">{totals.favorites}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground inline-flex items-center gap-2">
+                                    <MessageSquare className="h-4 w-4" />
+                                    Сообщения
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-3xl font-bold">{totals.messages}</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="sm:col-span-2 lg:col-span-1">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground inline-flex items-center gap-2">
+                                    <CalendarCheck className="h-4 w-4" />
+                                    Заявки на бронирование
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-3xl font-bold">{totals.bookingInquiries}</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="inline-flex items-center gap-2">
+                                <BarChart3 className="h-4 w-4" />
+                                Динамика просмотров
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="min-w-0">
+                            <div className="w-full min-w-0">
+                                <ResponsiveContainer width="100%" height={320} minWidth={0}>
+                                    <LineChart data={chartData} margin={{ top: 8, right: 6, left: 4, bottom: 6 }}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="shortDate" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                                        <YAxis allowDecimals={false} width={36} tick={{ fontSize: 11 }} />
+                                        <Tooltip />
+                                        <Legend />
+                                        <Line type="monotone" dataKey="views" stroke="hsl(var(--primary))" strokeWidth={2} name="Просмотры" />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Обращения и избранное по дням</CardTitle>
+                        </CardHeader>
+                        <CardContent className="min-w-0">
+                            <div className="w-full min-w-0">
+                                <ResponsiveContainer width="100%" height={320} minWidth={0}>
+                                    <BarChart data={chartData} margin={{ top: 8, right: 6, left: 4, bottom: 6 }}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="shortDate" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                                        <YAxis allowDecimals={false} width={36} tick={{ fontSize: 11 }} />
+                                        <Tooltip />
+                                        <Legend />
+                                        <Bar dataKey="phoneViews" fill="hsl(var(--primary))" name="Показы телефона" />
+                                        <Bar dataKey="messages" fill="#7c3aed" name="Сообщения" />
+                                        <Bar dataKey="bookingInquiries" fill="#059669" name="Заявки на бронирование" />
+                                        <Bar dataKey="favorites" fill="#475569" name="В избранном" />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </>
+            )}
+        </div>
+    );
+}

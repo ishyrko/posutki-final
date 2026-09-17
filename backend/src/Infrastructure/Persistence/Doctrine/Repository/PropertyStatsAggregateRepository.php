@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence\Doctrine\Repository;
 
-use App\Domain\Property\Repository\AdminPropertyStatsRepositoryInterface;
+use App\Domain\Property\Repository\PropertyStatsAggregateRepositoryInterface;
+use App\Domain\Property\ValueObject\PropertyStatsFilter;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 
-final class AdminPropertyStatsRepository implements AdminPropertyStatsRepositoryInterface
+final class PropertyStatsAggregateRepository implements PropertyStatsAggregateRepositoryInterface
 {
     public function __construct(
         private readonly ManagerRegistry $registry,
@@ -18,11 +19,9 @@ final class AdminPropertyStatsRepository implements AdminPropertyStatsRepository
     public function findAggregatedDailyStats(
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
-        ?string $propertyType,
-        ?int $cityId,
-        ?int $regionId = null,
+        PropertyStatsFilter $filter,
     ): array {
-        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId, $regionId);
+        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($filter);
 
         $rows = $this->connection()->executeQuery(
             'SELECT s.stat_date AS stat_date,
@@ -58,11 +57,9 @@ final class AdminPropertyStatsRepository implements AdminPropertyStatsRepository
     public function findAggregatedDailyFavorites(
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
-        ?string $propertyType,
-        ?int $cityId,
-        ?int $regionId = null,
+        PropertyStatsFilter $filter,
     ): array {
-        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId, $regionId);
+        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($filter);
 
         $rows = $this->connection()->executeQuery(
             'SELECT DATE(f.created_at) AS stat_date,
@@ -96,11 +93,9 @@ final class AdminPropertyStatsRepository implements AdminPropertyStatsRepository
     public function findAggregatedDailyReceivedMessages(
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
-        ?string $propertyType,
-        ?int $cityId,
-        ?int $regionId = null,
+        PropertyStatsFilter $filter,
     ): array {
-        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId, $regionId);
+        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($filter);
 
         $rows = $this->connection()->executeQuery(
             'SELECT DATE(m.created_at) AS stat_date,
@@ -136,11 +131,9 @@ final class AdminPropertyStatsRepository implements AdminPropertyStatsRepository
     public function findAggregatedDailyBookingInquiries(
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
-        ?string $propertyType,
-        ?int $cityId,
-        ?int $regionId = null,
+        PropertyStatsFilter $filter,
     ): array {
-        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId, $regionId);
+        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($filter);
 
         $rows = $this->connection()->executeQuery(
             'SELECT DATE(b.created_at) AS stat_date,
@@ -171,39 +164,35 @@ final class AdminPropertyStatsRepository implements AdminPropertyStatsRepository
         );
     }
 
-    public function countProperties(?string $propertyType, ?int $cityId, ?int $regionId = null): int
+    public function countProperties(PropertyStatsFilter $filter): int
     {
-        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($propertyType, $cityId, $regionId, '');
+        [$filterSql, $joinSql, $filterParams] = $this->buildPropertyFilterSql($filter);
 
         return (int) $this->connection()->executeQuery(
-            'SELECT COUNT(p.id) FROM properties p' . $joinSql . ' WHERE 1 = 1' . $filterSql,
-            $filterParams,
+            'SELECT COUNT(p.id) FROM properties p' . $joinSql . ' WHERE p.status != :excludedStatus' . $filterSql,
+            array_merge($filterParams, ['excludedStatus' => 'deleted']),
         )->fetchOne();
     }
 
     /**
      * @return array{0: string, 1: string, 2: array<string, mixed>}
      */
-    private function buildPropertyFilterSql(
-        ?string $propertyType,
-        ?int $cityId,
-        ?int $regionId,
-        string $alias = 'p',
-    ): array {
+    private function buildPropertyFilterSql(PropertyStatsFilter $filter, string $alias = 'p'): array
+    {
         $tableAlias = $alias !== '' ? $alias : 'p';
         $conditions = [];
         $params = [];
         $joinSql = '';
 
-        if ($propertyType !== null) {
+        if ($filter->propertyType !== null) {
             $conditions[] = sprintf('%s.type = :propertyType', $tableAlias);
-            $params['propertyType'] = $propertyType;
+            $params['propertyType'] = $filter->propertyType;
         }
 
-        if ($cityId !== null) {
+        if ($filter->cityId !== null) {
             $conditions[] = sprintf('%s.city_id = :cityId', $tableAlias);
-            $params['cityId'] = $cityId;
-        } elseif ($regionId !== null) {
+            $params['cityId'] = $filter->cityId;
+        } elseif ($filter->regionId !== null) {
             $joinSql = sprintf(
                 ' INNER JOIN cities _stats_city ON _stats_city.id = %s.city_id'
                 . ' INNER JOIN region_districts _stats_rd ON _stats_rd.id = _stats_city.region_district_id'
@@ -211,7 +200,12 @@ final class AdminPropertyStatsRepository implements AdminPropertyStatsRepository
                 $tableAlias,
             );
             $conditions[] = '_stats_region.id = :regionId';
-            $params['regionId'] = $regionId;
+            $params['regionId'] = $filter->regionId;
+        }
+
+        if ($filter->ownerId !== null) {
+            $conditions[] = sprintf('%s.owner_id = :ownerId', $tableAlias);
+            $params['ownerId'] = $filter->ownerId;
         }
 
         $filterSql = $conditions === [] ? '' : ' AND ' . implode(' AND ', $conditions);

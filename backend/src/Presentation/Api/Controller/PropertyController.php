@@ -20,6 +20,8 @@ use App\Application\Query\Property\GetOwnerCalendar\GetOwnerCalendarQuery;
 use App\Application\Query\Property\GetHomeRegionHouseCounts\GetHomeRegionHouseCountsQuery;
 use App\Application\Query\Property\GetOwnerListings\GetOwnerListingsQuery;
 use App\Application\Query\Property\GetProperty\GetPropertyQuery;
+use App\Application\Query\Property\GetPropertyStatsOverview\GetPropertyStatsOverviewHandler;
+use App\Application\Query\Property\GetPropertyStatsOverview\GetPropertyStatsOverviewQuery;
 use App\Application\Query\Property\SearchProperties\SearchPropertiesQuery;
 use App\Application\Command\CommandBusInterface;
 use App\Application\Query\QueryBusInterface;
@@ -59,6 +61,7 @@ class PropertyController extends AbstractController
         private readonly PropertyCalendarAggregator $propertyCalendarAggregator,
         private readonly ContentViewTracker $contentViewTracker,
         private readonly FreeListingLimitService $freeListingLimitService,
+        private readonly GetPropertyStatsOverviewHandler $propertyStatsOverviewHandler,
     ) {
     }
 
@@ -206,6 +209,31 @@ class PropertyController extends AbstractController
         );
 
         return $this->json(ApiResponse::success($summary));
+    }
+
+    #[Route('/my/stats', name: 'my_stats', methods: ['GET'])]
+    public function myStats(Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $requestedPeriod = $request->query->getInt('period', 30);
+        $period = in_array($requestedPeriod, [7, 30, 90], true) ? $requestedPeriod : 30;
+
+        $stats = ($this->propertyStatsOverviewHandler)(new GetPropertyStatsOverviewQuery(
+            period: $period,
+            propertyType: null,
+            cityId: null,
+            ownerId: (int) $user->getId()->getValue(),
+        ));
+
+        return $this->json(ApiResponse::success([
+            'period' => $stats['period'],
+            'propertiesCount' => $stats['propertiesCount'],
+            'totals' => $stats['totals'],
+            'daily' => $stats['daily'],
+        ]));
     }
 
     #[Route('/free-limit', name: 'free_limit', methods: ['GET'])]

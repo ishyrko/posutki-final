@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Property\Repository;
 
-interface AdminPropertyStatsRepositoryInterface
+use App\Domain\Property\ValueObject\PropertyStatsFilter;
+
+interface PropertyStatsAggregateRepositoryInterface
 {
     /**
      * @return array<int, array{date: string, views: int, phoneViews: int}>
@@ -12,9 +14,7 @@ interface AdminPropertyStatsRepositoryInterface
     public function findAggregatedDailyStats(
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
-        ?string $propertyType,
-        ?int $cityId,
-        ?int $regionId = null,
+        PropertyStatsFilter $filter,
     ): array;
 
     /**
@@ -23,9 +23,7 @@ interface AdminPropertyStatsRepositoryInterface
     public function findAggregatedDailyFavorites(
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
-        ?string $propertyType,
-        ?int $cityId,
-        ?int $regionId = null,
+        PropertyStatsFilter $filter,
     ): array;
 
     /**
@@ -36,9 +34,7 @@ interface AdminPropertyStatsRepositoryInterface
     public function findAggregatedDailyReceivedMessages(
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
-        ?string $propertyType,
-        ?int $cityId,
-        ?int $regionId = null,
+        PropertyStatsFilter $filter,
     ): array;
 
     /**
@@ -47,10 +43,8 @@ interface AdminPropertyStatsRepositoryInterface
     public function findAggregatedDailyBookingInquiries(
         \DateTimeImmutable $startDate,
         \DateTimeImmutable $endDate,
-        ?string $propertyType,
-        ?int $cityId,
-        ?int $regionId = null,
+        PropertyStatsFilter $filter,
     ): array;
 
-    public function countProperties(?string $propertyType, ?int $cityId, ?int $regionId = null): int;
+    public function countProperties(PropertyStatsFilter $filter): int;
 }

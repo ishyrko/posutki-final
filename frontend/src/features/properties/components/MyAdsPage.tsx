@@ -667,12 +667,20 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
                         {total} в этом статусе
                     </p>
                 </div>
-                <Button asChild className="gap-2 w-full sm:w-auto">
-                    <ListingSubmitLink>
-                        <Plus className="w-4 h-4" />
-                        Новое объявление
-                    </ListingSubmitLink>
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <Button asChild variant="outline" className="gap-2 w-full sm:w-auto lg:hidden">
+                        <Link href="/kabinet/statistika/">
+                            <BarChart3 className="w-4 h-4" />
+                            Статистика
+                        </Link>
+                    </Button>
+                    <Button asChild className="gap-2 w-full sm:w-auto">
+                        <ListingSubmitLink>
+                            <Plus className="w-4 h-4" />
+                            Новое объявление
+                        </ListingSubmitLink>
+                    </Button>
+                </div>
             </div>
 
             <div className="flex flex-wrap gap-2 mb-4">
