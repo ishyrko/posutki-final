@@ -50,6 +50,8 @@ interface PropertyRepositoryInterface
         int $limit = 10,
         ?int $excludePropertyId = null,
         ?string $type = null,
+        ?int $regionId = null,
+        ?int $cityId = null,
     ): array;
 
     /**

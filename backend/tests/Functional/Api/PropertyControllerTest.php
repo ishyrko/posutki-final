@@ -129,6 +129,54 @@ final class PropertyControllerTest extends ApiTestCase
         self::assertSame($other->getId()->getValue(), $payload['data'][0]['id']);
     }
 
+    public function testOwnerListingsStayInCurrentRegionAndCapAtTen(): void
+    {
+        $owner = $this->createUser('owner-region-cap@example.com', 'Password123!');
+        $grodnoRegion = $this->createRegion('grodno-owner-listings', 'Гродненская область');
+        $grodnoDistrict = $this->createRegionDistrict($grodnoRegion, 'grodno-owner-district', 'Гродненский район');
+        $minskRegion = $this->createRegion('minsk-owner-listings', 'Минская область');
+        $minskDistrict = $this->createRegionDistrict($minskRegion, 'minsk-owner-district', 'Минский район');
+
+        $grodno = $this->createCity('Grodno Owner', 'grodno-owner-listings', 'г. Гродно', $grodnoDistrict);
+        $lida = $this->createCity('Lida Owner', 'lida-owner-listings', 'г. Лида', $grodnoDistrict);
+        $minsk = $this->createCity('Minsk Owner Listings', 'minsk-owner-listings-city', 'г. Минск', $minskDistrict);
+
+        $current = $this->createProperty($owner, $grodno, 'published');
+        $sameCity = $this->createProperty($owner, $grodno, 'published');
+        $sameRegion = $this->createProperty($owner, $lida, 'published');
+        $otherRegion = $this->createProperty($owner, $minsk, 'published');
+
+        $this->client->request('GET', '/api/properties/' . $current->getId()->getValue() . '/owner-listings?limit=20');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertTrue($payload['success']);
+        $ids = array_map(static fn(array $item): int => $item['id'], $payload['data']);
+        self::assertSame(
+            [$sameCity->getId()->getValue(), $sameRegion->getId()->getValue()],
+            $ids,
+        );
+        self::assertNotContains($otherRegion->getId()->getValue(), $ids);
+        self::assertNotContains($current->getId()->getValue(), $ids);
+    }
+
+    public function testOwnerListingsReturnAtMostTenApartments(): void
+    {
+        $owner = $this->createUser('owner-ten-cap@example.com', 'Password123!');
+        $city = $this->createCity('Owner Ten Cap', 'owner-ten-cap', 'г. Гродно');
+        $current = $this->createProperty($owner, $city, 'published');
+        for ($i = 0; $i < 11; ++$i) {
+            $this->createProperty($owner, $city, 'published');
+        }
+
+        $this->client->request('GET', '/api/properties/' . $current->getId()->getValue() . '/owner-listings?limit=20');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertTrue($payload['success']);
+        self::assertCount(10, $payload['data']);
+    }
+
     public function testOwnerListingsForHouseReturnsEmptyList(): void
     {
         $owner = $this->createUser('owner-house@example.com', 'Password123!');
