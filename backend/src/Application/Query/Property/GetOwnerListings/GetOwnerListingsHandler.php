@@ -58,15 +58,11 @@ final class GetOwnerListingsHandler
         }
 
         $ownerId = (string) $property->getOwnerId()->getValue();
-        $city = $this->cityRepository->findById($property->getCityId());
-        $regionId = $city?->getRegionDistrict()?->getRegion()->getId();
-
         $properties = $this->propertyRepository->findPublishedByOwner(
             $ownerId,
             min($query->limit, 10),
             $property->getId()->getValue(),
             PropertyType::Apartment->value,
-            $regionId,
             $property->getCityId(),
         );
 

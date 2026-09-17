@@ -45,6 +45,8 @@ interface PropertyRepositoryInterface
     public function existsByCityIdAndTitle(int $cityId, string $title, ?int $excludePropertyId = null): bool;
 
     /**
+     * Other published listings of the same owner in the given city.
+     *
      * @return Property[]
      */
     public function findPublishedByOwner(
@@ -52,7 +54,6 @@ interface PropertyRepositoryInterface
         int $limit = 10,
         ?int $excludePropertyId = null,
         ?string $type = null,
-        ?int $regionId = null,
         ?int $cityId = null,
     ): array;
 

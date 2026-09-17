@@ -129,9 +129,9 @@ final class PropertyControllerTest extends ApiTestCase
         self::assertSame($other->getId()->getValue(), $payload['data'][0]['id']);
     }
 
-    public function testOwnerListingsStayInCurrentRegionAndCapAtTen(): void
+    public function testOwnerListingsStayInCurrentCity(): void
     {
-        $owner = $this->createUser('owner-region-cap@example.com', 'Password123!');
+        $owner = $this->createUser('owner-city-cap@example.com', 'Password123!');
         $grodnoRegion = $this->createRegion('grodno-owner-listings', 'Гродненская область');
         $grodnoDistrict = $this->createRegionDistrict($grodnoRegion, 'grodno-owner-district', 'Гродненский район');
         $minskRegion = $this->createRegion('minsk-owner-listings', 'Минская область');
@@ -152,10 +152,8 @@ final class PropertyControllerTest extends ApiTestCase
         $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
         self::assertTrue($payload['success']);
         $ids = array_map(static fn(array $item): int => $item['id'], $payload['data']);
-        self::assertSame(
-            [$sameCity->getId()->getValue(), $sameRegion->getId()->getValue()],
-            $ids,
-        );
+        self::assertSame([$sameCity->getId()->getValue()], $ids);
+        self::assertNotContains($sameRegion->getId()->getValue(), $ids);
         self::assertNotContains($otherRegion->getId()->getValue(), $ids);
         self::assertNotContains($current->getId()->getValue(), $ids);
     }

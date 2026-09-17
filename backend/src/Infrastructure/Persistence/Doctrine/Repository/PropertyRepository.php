@@ -529,7 +529,6 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         int $limit = 10,
         ?int $excludePropertyId = null,
         ?string $type = null,
-        ?int $regionId = null,
         ?int $cityId = null,
     ): array {
         $limit = min(max($limit, 1), 10);
@@ -550,30 +549,14 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
                 ->setParameter('type', $type);
         }
 
-        if ($regionId !== null && $regionId > 0) {
-            $qb->innerJoin(City::class, 'ownerListingsCity', 'WITH', 'ownerListingsCity.id = p.cityId')
-                ->innerJoin('ownerListingsCity.regionDistrict', 'ownerListingsDistrict')
-                ->innerJoin('ownerListingsDistrict.region', 'ownerListingsRegion')
-                ->andWhere('ownerListingsRegion.id = :ownerListingsRegionId')
-                ->setParameter('ownerListingsRegionId', $regionId);
-        } elseif ($cityId !== null && $cityId > 0) {
+        if ($cityId !== null && $cityId > 0) {
             $qb->andWhere('p.cityId = :ownerListingsCityId')
                 ->setParameter('ownerListingsCityId', $cityId);
         }
 
-        if ($cityId !== null && $cityId > 0) {
-            $qb->addSelect('(CASE WHEN p.cityId = :ownerListingsPriorityCityId THEN 0 ELSE 1 END) AS HIDDEN sameCityPriority')
-                ->setParameter('ownerListingsPriorityCityId', $cityId)
-                ->orderBy('sameCityPriority', 'ASC')
-                ->addOrderBy('p.placementEffectiveLevel', 'DESC')
-                ->addOrderBy('p.placementShuffleKey', 'DESC')
-                ->addOrderBy('p.createdAt', 'DESC')
-                ->setMaxResults($limit);
-        } else {
-            $this->applyPlacementSort($qb);
-            $qb->addOrderBy('p.createdAt', 'DESC')
-                ->setMaxResults($limit);
-        }
+        $this->applyPlacementSort($qb);
+        $qb->addOrderBy('p.createdAt', 'DESC')
+            ->setMaxResults($limit);
 
         return $qb->getQuery()->getResult();
     }
