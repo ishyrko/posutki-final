@@ -358,6 +358,28 @@ final class PropertyListFilteringTest extends ApiTestCase
         self::assertNotContains($inMinsk->getId()->getValue(), $ids);
     }
 
+    public function testPublishedAtSortExcludesPartnerImportsFromHomepageFresh(): void
+    {
+        $owner = $this->createUser('filter-fresh-import@example.com', 'Password123!');
+        $city = $this->createCity();
+        $organic = $this->createProperty($owner, $city, 'published');
+        $imported = $this->createProperty($owner, $city, 'published');
+        $imported->setExternalIdentity('arendom', 'filter-fresh-10908');
+        $this->entityManager()->flush();
+
+        $this->client->request('GET', '/api/properties?sortBy=publishedAt&sortOrder=DESC');
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $freshIds = $this->idsFromListPayload();
+        self::assertContains($organic->getId()->getValue(), $freshIds);
+        self::assertNotContains($imported->getId()->getValue(), $freshIds);
+
+        $this->client->request('GET', '/api/properties?sortBy=createdAt&sortOrder=DESC');
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $catalogIds = $this->idsFromListPayload();
+        self::assertContains($organic->getId()->getValue(), $catalogIds);
+        self::assertContains($imported->getId()->getValue(), $catalogIds);
+    }
+
     private function setPropertyPlacementLevel(Property $property, int $level): void
     {
         $reflection = new \ReflectionProperty($property, 'placementEffectiveLevel');

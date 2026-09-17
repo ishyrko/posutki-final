@@ -74,6 +74,7 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         }
 
         // Recency by first publication — skip VIP/shuffle (homepage «Свежие объявления»).
+        // Partner imports are excluded in applyFilters so a bulk scrape cannot fill this block.
         if ($sortBy === 'publishedAt') {
             $qb->orderBy('p.publishedAt', $sortOrder)
                 ->addOrderBy('p.id', $sortOrder);
@@ -232,6 +233,10 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
             $qb->andWhere('p.maxDailyGuests IS NOT NULL')
                 ->andWhere('p.maxDailyGuests >= :minGuests')
                 ->setParameter('minGuests', $filters['minGuests']);
+        }
+
+        if (($filters['sortBy'] ?? '') === 'publishedAt') {
+            $qb->andWhere('p.externalSource IS NULL');
         }
     }
 
