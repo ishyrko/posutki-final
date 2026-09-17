@@ -644,6 +644,18 @@ class FileUploader
         };
     }
 
+    private function ensureTrueColor(\GdImage $image): \GdImage
+    {
+        if (!imageistruecolor($image)) {
+            imagepalettetotruecolor($image);
+        }
+
+        imagealphablending($image, false);
+        imagesavealpha($image, true);
+
+        return $image;
+    }
+
     private function writeImageResource(
         \GdImage $image,
         string $destinationPath,
@@ -656,6 +668,7 @@ class FileUploader
         }
 
         if ($outputFormat === 'webp') {
+            $image = $this->ensureTrueColor($image);
             imagewebp($image, $destinationPath, $this->getWebpQualityForScope($scope));
         } else {
             imageinterlace($image, true);
@@ -695,6 +708,7 @@ class FileUploader
         $thumbPath = $this->buildThumbnailStoragePath($originalPath, $thumbDirectory);
         if ($thumbPath !== null) {
             if ($originalFormat === 'webp') {
+                $thumb = $this->ensureTrueColor($thumb);
                 imagewebp($thumb, $thumbPath, self::THUMB_WEBP_QUALITY);
             } else {
                 imageinterlace($thumb, true);

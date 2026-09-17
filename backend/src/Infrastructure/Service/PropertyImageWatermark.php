@@ -65,6 +65,10 @@ final class PropertyImageWatermark
             return false;
         }
 
+        if (!imageistruecolor($image)) {
+            imagepalettetotruecolor($image);
+        }
+
         $imageWidth = imagesx($image);
         $imageHeight = imagesy($image);
         $watermarkWidth = imagesx($watermark);
@@ -187,6 +191,11 @@ final class PropertyImageWatermark
     private function writeImage(\GdImage $image, string $destinationPath, string $outputFormat): void
     {
         if ($outputFormat === 'webp' && function_exists('imagewebp')) {
+            if (!imageistruecolor($image)) {
+                imagepalettetotruecolor($image);
+            }
+            imagealphablending($image, false);
+            imagesavealpha($image, true);
             imagewebp($image, $destinationPath, 82);
         } else {
             imageinterlace($image, true);

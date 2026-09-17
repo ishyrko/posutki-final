@@ -36,6 +36,15 @@ final class PartnerCityMatcherTest extends TestCase
         self::assertSame($mogilev, PartnerCityMatcher::pick('Могилев', [$mogilev]));
     }
 
+    public function testMatchesUrbanSettlementWithDottedGpSuffix(): void
+    {
+        $urban = $this->city('Мачулищи г.п.');
+        $village = $this->city('Мачулище д.');
+
+        self::assertSame($urban, PartnerCityMatcher::pick('Мачулищи', [$village, $urban]));
+        self::assertSame('мачулищи', PartnerCityMatcher::coreName('Мачулищи г.п.'));
+    }
+
     private function city(string $name): City
     {
         $city = new City();

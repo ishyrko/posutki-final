@@ -31,6 +31,26 @@ final class FileUploaderTest extends TestCase
         $this->removeDirectory($this->projectDir);
     }
 
+    public function testPropertyUploadConvertsPalettePngToWebp(): void
+    {
+        if (!function_exists('imagecreate') || !function_exists('imagewebp') || !function_exists('imagepalettetotruecolor')) {
+            self::markTestSkipped('GD with WebP and palette conversion is required.');
+        }
+
+        $uploader = $this->createUploader();
+        $sourcePath = $this->createPalettePngFixture();
+        $uploadedFile = $this->createUploadedFile($sourcePath, 'palette.png', 'image/png');
+
+        $relativePath = $uploader->upload($uploadedFile, FileUploader::SCOPE_PROPERTIES);
+        $publicPath = $this->uploadDir . '/' . $relativePath;
+
+        self::assertSame('webp', pathinfo($relativePath, PATHINFO_EXTENSION));
+        self::assertFileExists($publicPath);
+        $info = getimagesize($publicPath);
+        self::assertIsArray($info);
+        self::assertSame('image/webp', $info['mime'] ?? null);
+    }
+
     public function testPropertyUploadCreatesOriginalPublicAndCleanThumb(): void
     {
         if (!function_exists('imagecreatefromjpeg')) {
@@ -225,6 +245,21 @@ final class FileUploaderTest extends TestCase
             imagepng($image, $targetPath);
         }
 
+        imagedestroy($image);
+
+        return $targetPath;
+    }
+
+    private function createPalettePngFixture(): string
+    {
+        $image = imagecreate(80, 60);
+        $background = imagecolorallocate($image, 34, 139, 34);
+        imagefilledrectangle($image, 0, 0, 79, 59, $background);
+        $dot = imagecolorallocate($image, 255, 255, 255);
+        imagefilledellipse($image, 40, 30, 20, 20, $dot);
+
+        $targetPath = sys_get_temp_dir() . '/fixture-palette-' . uniqid('', true) . '.png';
+        imagepng($image, $targetPath);
         imagedestroy($image);
 
         return $targetPath;

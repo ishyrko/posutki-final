@@ -40,7 +40,12 @@ final class PartnerCityMatcher
     public static function coreName(string $value): string
     {
         $folded = self::foldYo($value);
-        $stripped = preg_replace('/\s+(гп|аг|рп|кп|г|д|п|с)\.?\s*$/u', '', $folded) ?? $folded;
+        // Geo suffixes: «г.», «д.», «г.п.», «аг.», «р.п.», «к.п.», «х.».
+        $stripped = preg_replace(
+            '/\s+(?:г\.п|р\.п|к\.п|гп|аг|рп|кп|г|д|п|с|х)\.?\s*$/u',
+            '',
+            $folded,
+        ) ?? $folded;
 
         return trim($stripped);
     }
@@ -53,13 +58,13 @@ final class PartnerCityMatcher
     public static function settlementRank(string $name): int
     {
         $folded = self::foldYo($name);
+        if (preg_match('/\sг\.п\.?\s*$/u', $folded) === 1) {
+            return 1;
+        }
         if (preg_match('/\sг\.?\s*$/u', $folded) === 1) {
             return 0;
         }
-        if (preg_match('/\sгп\.?\s*$/u', $folded) === 1) {
-            return 1;
-        }
-        if (preg_match('/\sаг\.?\s*$/u', $folded) === 1) {
+        if (preg_match('/\s(?:аг|а\.г)\.?\s*$/u', $folded) === 1) {
             return 2;
         }
 
