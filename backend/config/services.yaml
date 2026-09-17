@@ -20,6 +20,8 @@ parameters:
     app.recaptcha.enabled: '%env(bool:RECAPTCHA_ENABLED)%'
     app.recaptcha.secret: '%env(string:RECAPTCHA_SECRET)%'
     app.yandex_geocoder_api_key: '%env(string:YANDEX_GEOCODER_API_KEY)%'
+    # Empty YANDEX_GEOCODER_REFERER falls back to FRONTEND_URL (production). Local keys may require a different HTTP Referer.
+    app.yandex_geocoder_referer: '%env(default:app.frontend_url:YANDEX_GEOCODER_REFERER)%'
     app.backend_url: '%env(resolve:BACKEND_URL)%'
     app.bepaid.shop_id: '%env(resolve:BEPAID_SHOP_ID)%'
     app.bepaid.secret_key: '%env(resolve:BEPAID_SECRET_KEY)%'
@@ -480,19 +482,19 @@ services:
     App\Infrastructure\Service\YandexGeocoderResponseProvider:
         arguments:
             $apiKey: '%app.yandex_geocoder_api_key%'
-            $referer: '%app.frontend_url%'
+            $referer: '%app.yandex_geocoder_referer%'
 
     App\Domain\Property\Service\GeocoderResponseProviderInterface: '@App\Infrastructure\Service\YandexGeocoderResponseProvider'
 
     App\Infrastructure\Service\YandexForwardGeocoder:
         arguments:
             $apiKey: '%app.yandex_geocoder_api_key%'
-            $referer: '%app.frontend_url%'
+            $referer: '%app.yandex_geocoder_referer%'
 
     App\Infrastructure\Symfony\Command\AuditLandmarkGeocodeCommand:
         arguments:
             $apiKey: '%app.yandex_geocoder_api_key%'
-            $referer: '%app.frontend_url%'
+            $referer: '%app.yandex_geocoder_referer%'
 
     App\Infrastructure\Service\NearestMetroStationResolver: ~
 
