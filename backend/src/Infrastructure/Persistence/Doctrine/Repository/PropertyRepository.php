@@ -443,6 +443,30 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         ]);
     }
 
+    public function existsByCityIdAndTitle(int $cityId, string $title, ?int $excludePropertyId = null): bool
+    {
+        $title = trim($title);
+        if ($cityId <= 0 || $title === '') {
+            return false;
+        }
+
+        $qb = $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->where('p.cityId = :cityId')
+            ->andWhere('p.title = :title')
+            ->andWhere('p.status != :deleted')
+            ->setParameter('cityId', $cityId)
+            ->setParameter('title', $title)
+            ->setParameter('deleted', 'deleted');
+
+        if ($excludePropertyId !== null && $excludePropertyId > 0) {
+            $qb->andWhere('p.id != :excludeId')
+                ->setParameter('excludeId', $excludePropertyId);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult() > 0;
+    }
+
     /**
      * @param array{
      *     status?: string|null,

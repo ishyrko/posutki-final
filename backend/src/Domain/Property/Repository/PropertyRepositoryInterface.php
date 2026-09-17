@@ -42,6 +42,8 @@ interface PropertyRepositoryInterface
 
     public function findByExternalSourceAndId(string $source, string $externalId): ?Property;
 
+    public function existsByCityIdAndTitle(int $cityId, string $title, ?int $excludePropertyId = null): bool;
+
     /**
      * @return Property[]
      */

@@ -97,9 +97,9 @@ scrape-arendom: ## Scrape arendom.com listings into backend/var/import/arendom (
 	@echo "${GREEN}Scraping arendom.com...${RESET}"
 	docker compose --profile tools run --rm -e LIMIT=$(or $(LIMIT),0) arendom-scraper sh -lc "npm install --omit=dev --no-audit --no-fund && node scrape.mjs --limit $(or $(LIMIT),0)"
 
-import-partner-listings: ## Import scraped partner listings. Usage: make import-partner-listings OWNER=123 DRY_RUN=1 LIMIT=10
+import-partner-listings: ## Import scraped partner listings. Usage: make import-partner-listings OWNER=123 DRY_RUN=1 LIMIT=10 FORCE_IMAGES=1
 	@echo "${GREEN}Importing partner listings...${RESET}"
-	docker compose exec php sh -lc "cd /var/www/backend && php bin/console app:import-partner-listings --owner=$(OWNER) --source=/var/www/backend/var/import/arendom/listings.json $(if $(DRY_RUN),--dry-run,) $(if $(LIMIT),--limit=$(LIMIT),)"
+	docker compose exec php sh -lc "cd /var/www/backend && php bin/console app:import-partner-listings --owner=$(OWNER) --source=/var/www/backend/var/import/arendom/listings.json $(if $(DRY_RUN),--dry-run,) $(if $(LIMIT),--limit=$(LIMIT),) $(if $(FORCE_IMAGES),--force-images,)"
 
 admin-user: ## Create or promote admin (EMAIL=... PASSWORD=... optional FIRST= LAST=)
 	@test -n "$(EMAIL)" && test -n "$(PASSWORD)" || (echo "${YELLOW}Usage: make admin-user EMAIL=you@example.com PASSWORD=secret [FIRST=Admin] [LAST=Admin]${RESET}" && exit 1)

@@ -15,6 +15,7 @@
       "floor": 5,
       "totalFloors": 9,
       "maxDailyGuests": 4,
+      "guestsParsed": 4,
       "dailySingleBeds": 2,
       "dailyDoubleBeds": 1,
       "checkInTime": "14:00",

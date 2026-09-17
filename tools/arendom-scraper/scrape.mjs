@@ -260,6 +260,7 @@ function extractListing(url, html, text, meta = {}) {
     totalFloors: totalFloors && floor && totalFloors < floor ? floor : totalFloors,
     bathrooms,
     maxDailyGuests: Math.max(parsedGuests || 0, rooms || 0, 2),
+    guestsParsed: parsedGuests || null,
     dailySingleBeds: rooms ? Math.max(0, rooms) : 2,
     dailyDoubleBeds: 1,
     checkInTime: firstMatch(text, /заезд[^\d]{0,20}(\d{1,2}:\d{2})/i) || '14:00',

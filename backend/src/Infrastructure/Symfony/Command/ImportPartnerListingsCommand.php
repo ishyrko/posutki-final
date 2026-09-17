@@ -11,6 +11,8 @@ use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\SellerType;
 use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Domain\Property\Repository\MetroStationRepositoryInterface;
+use App\Domain\Property\Repository\PropertyMetroStationRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\StreetRepositoryInterface;
 use App\Domain\Property\Service\CityDistrictResolverInterface;
@@ -26,6 +28,8 @@ use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Import\PartnerAmenityMapper;
 use App\Infrastructure\Import\PartnerCityMatcher;
 use App\Infrastructure\Import\PartnerJunkImageDetector;
+use App\Infrastructure\Import\PartnerListingDescriptionBuilder;
+use App\Infrastructure\Import\PartnerListingTitleBuilder;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\FileUploader;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
@@ -60,6 +64,10 @@ final class ImportPartnerListingsCommand extends Command
         private readonly ResidentialComplexResolverInterface $residentialComplexResolver,
         private readonly PartnerAmenityMapper $amenityMapper,
         private readonly PartnerJunkImageDetector $junkImageDetector,
+        private readonly PartnerListingTitleBuilder $titleBuilder,
+        private readonly PartnerListingDescriptionBuilder $descriptionBuilder,
+        private readonly PropertyMetroStationRepositoryInterface $propertyMetroStationRepository,
+        private readonly MetroStationRepositoryInterface $metroStationRepository,
     ) {
         parent::__construct();
     }
@@ -70,7 +78,8 @@ final class ImportPartnerListingsCommand extends Command
             ->addOption('owner', null, InputOption::VALUE_REQUIRED, 'User id of the partner account')
             ->addOption('source', null, InputOption::VALUE_REQUIRED, 'Path to listings.json')
             ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Validate and report without writing')
-            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Max listings to process', '0');
+            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Max listings to process', '0')
+            ->addOption('force-images', null, InputOption::VALUE_NONE, 'Re-upload photos on update');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -79,6 +88,7 @@ final class ImportPartnerListingsCommand extends Command
         $ownerIdRaw = (string) $input->getOption('owner');
         $sourcePath = (string) $input->getOption('source');
         $dryRun = (bool) $input->getOption('dry-run');
+        $forceImages = (bool) $input->getOption('force-images');
         $limit = max(0, (int) $input->getOption('limit'));
 
         if ($ownerIdRaw === '' || $sourcePath === '') {
@@ -113,11 +123,14 @@ final class ImportPartnerListingsCommand extends Command
         /** @var list<mixed> $rows */
         $rows = is_array($decoded['listings'] ?? null) ? $decoded['listings'] : [];
         $baseDir = dirname($sourcePath);
+        $fingerprintCounts = PartnerListingDescriptionBuilder::fingerprintCountsFromRows($rows);
 
         $created = 0;
         $updated = 0;
         $skipped = 0;
         $processed = 0;
+        /** @var array<int, array<string, true>> $usedTitles */
+        $usedTitles = [];
 
         foreach ($rows as $index => $row) {
             if ($limit > 0 && $processed >= $limit) {
@@ -137,34 +150,70 @@ final class ImportPartnerListingsCommand extends Command
                 continue;
             }
 
-            $resolved = $this->resolveRow($row, $baseDir, $sourceName, $externalId, $dryRun);
+            $resolved = $this->resolveRow($row, $sourceName, $externalId, $fingerprintCounts);
             if ($resolved['skip'] !== null) {
                 ++$skipped;
                 $io->warning(sprintf('%s/%s: %s', $sourceName, $externalId, $resolved['skip']));
                 continue;
             }
 
-            if ($dryRun) {
-                $io->writeln(sprintf(
-                    '[dry-run] %s/%s — %s (%s)',
-                    $sourceName,
-                    $externalId,
-                    $resolved['title'],
-                    $resolved['asDraft'] ? 'draft' : 'publish',
-                ));
+            $existing = $this->propertyRepository->findByExternalSourceAndId($sourceName, $externalId);
+            $uploadableRefs = $this->collectUploadableImageRefs($resolved['imageRefs'], $baseDir);
+
+            if ($existing === null) {
+                $resolved['title'] = $this->uniquifyTitle($resolved, $usedTitles, null);
+                $imageCount = $dryRun ? count($uploadableRefs) : 0;
+                if (!$dryRun) {
+                    $resolved['images'] = $this->uploadImages($uploadableRefs, $baseDir);
+                    $imageCount = count($resolved['images']);
+                }
+                $resolved['asDraft'] = $this->shouldStayDraft($resolved, $imageCount);
+
+                if ($dryRun) {
+                    $io->writeln(sprintf(
+                        '[dry-run] создать %s/%s — %s (%s)',
+                        $sourceName,
+                        $externalId,
+                        $resolved['title'],
+                        $resolved['asDraft'] ? 'draft' : 'publish',
+                    ));
+                    $io->writeln('  ' . $resolved['description']);
+                    ++$created;
+                    continue;
+                }
+
+                $this->createListing($owner->getId(), $resolved, $owner->isTrustedPublisher());
+                ++$created;
+                $io->writeln(sprintf('создано %s/%s — %s', $sourceName, $externalId, $resolved['title']));
                 continue;
             }
 
-            $existing = $this->propertyRepository->findByExternalSourceAndId($sourceName, $externalId);
-            if ($existing === null) {
-                $this->createListing($owner->getId(), $resolved, $owner->isTrustedPublisher());
-                ++$created;
-                $io->writeln(sprintf('создано %s/%s', $sourceName, $externalId));
-            } else {
-                $this->updateListing($existing, $resolved);
+            $reloadImages = $this->shouldReloadImages($existing, $uploadableRefs, $forceImages);
+            if ($dryRun) {
+                $io->writeln(sprintf(
+                    '[dry-run] обновить %s/%s — тексты сохранены без изменений, фото %s',
+                    $sourceName,
+                    $externalId,
+                    $reloadImages ? 'будут загружены заново' : 'без изменений',
+                ));
+                $io->writeln(sprintf('  сгенерировано (не применяется): %s', $resolved['title']));
+                $io->writeln('  ' . $resolved['description']);
                 ++$updated;
-                $io->writeln(sprintf('обновлено %s/%s', $sourceName, $externalId));
+                continue;
             }
+
+            $images = null;
+            if ($reloadImages) {
+                $images = $this->uploadImages($uploadableRefs, $baseDir);
+            }
+            $this->updateListing($existing, $resolved, $images);
+            ++$updated;
+            $io->writeln(sprintf(
+                'обновлено %s/%s — тексты сохранены без изменений%s',
+                $sourceName,
+                $externalId,
+                $reloadImages ? ', фото загружены заново' : '',
+            ));
         }
 
         $io->success(sprintf(
@@ -181,26 +230,33 @@ final class ImportPartnerListingsCommand extends Command
 
     /**
      * @param array<string, mixed> $row
+     * @param array<string, int> $fingerprintCounts
      *
      * @return array{
      *     skip: ?string,
      *     title: string,
      *     description: string,
+     *     useGeneratedDescription: bool,
      *     city: ?City,
      *     street: ?Street,
      *     streetName: ?string,
+     *     streetLabel: ?string,
      *     building: string,
      *     coordinates: ?Coordinates,
+     *     imageRefs: list<string>,
      *     images: list<string>,
      *     amenities: list<string>,
      *     price: Price,
      *     priceByn: int,
+     *     priceAmount: int,
      *     area: float,
+     *     rawArea: float,
      *     rooms: ?int,
      *     floor: ?int,
      *     totalFloors: ?int,
      *     bathrooms: ?int,
      *     maxDailyGuests: int,
+     *     guestsForCopy: ?int,
      *     dailySingleBeds: int,
      *     dailyDoubleBeds: int,
      *     checkInTime: string,
@@ -211,16 +267,24 @@ final class ImportPartnerListingsCommand extends Command
      *     externalId: string,
      * }
      */
-    private function resolveRow(array $row, string $baseDir, string $sourceName, string $externalId, bool $dryRun): array
-    {
-        $title = trim((string) ($row['title'] ?? ''));
-        $description = trim((string) ($row['description'] ?? ''));
+    private function resolveRow(
+        array $row,
+        string $sourceName,
+        string $externalId,
+        array $fingerprintCounts,
+    ): array {
+        $partnerDescription = trim((string) ($row['description'] ?? ''));
         $cityName = trim((string) ($row['cityName'] ?? ''));
         $streetName = trim((string) ($row['streetName'] ?? ''));
         $building = trim((string) ($row['building'] ?? ''));
         $priceAmount = (int) ($row['priceByn'] ?? 0);
         $area = (float) ($row['area'] ?? 0);
-        $imageRefs = is_array($row['images'] ?? null) ? $row['images'] : [];
+        $imageRefs = [];
+        foreach (is_array($row['images'] ?? null) ? $row['images'] : [] as $ref) {
+            if (is_string($ref) && $ref !== '') {
+                $imageRefs[] = $ref;
+            }
+        }
         $amenityLabels = is_array($row['amenities'] ?? null) ? $row['amenities'] : [];
 
         $city = $this->resolveCity($cityName);
@@ -237,48 +301,43 @@ final class ImportPartnerListingsCommand extends Command
         if ($building === '') {
             $building = '1';
         }
-        if ($title === '') {
-            $title = sprintf('Квартира в г. %s', $city->getName());
-        }
-        if (mb_strlen($title) < 10) {
-            $title = $title . ', ' . $city->getName();
-        }
-        if (mb_strlen($title) > 200) {
-            $title = mb_substr($title, 0, 200);
-        }
 
-        $imageUrls = [];
-        if (!$dryRun) {
-            foreach ($imageRefs as $ref) {
-                if (!is_string($ref) || $ref === '') {
-                    continue;
-                }
-                $uploaded = $this->uploadImage($ref, $baseDir);
-                if ($uploaded !== null) {
-                    $imageUrls[] = $uploaded;
-                }
-                if (count($imageUrls) >= PropertyImageLimitsValidator::MAX_APARTMENT) {
-                    break;
-                }
-            }
+        $rooms = isset($row['rooms']) ? (int) $row['rooms'] : null;
+        $maxDailyGuests = max(1, (int) ($row['maxDailyGuests'] ?? 2));
+        $guestsForCopy = $this->resolveGuestsForCopy($row, $rooms, $maxDailyGuests);
+        $streetLabel = $street?->getName() ?? ($streetName !== '' ? $streetName : null);
+        $checkInTime = $this->normalizeTime((string) ($row['checkInTime'] ?? '14:00'));
+        $checkOutTime = $this->normalizeTime((string) ($row['checkOutTime'] ?? '12:00'));
+        $minStayDays = max(1, (int) ($row['minStayDays'] ?? 1));
+
+        $useGeneratedDescription = PartnerListingDescriptionBuilder::isTemplate(
+            $partnerDescription,
+            $fingerprintCounts,
+        );
+        if ($useGeneratedDescription) {
+            $description = $this->descriptionBuilder->build(
+                rooms: $rooms,
+                guests: $guestsForCopy,
+                city: $city,
+                streetLabel: $streetLabel,
+                building: $building,
+                externalId: $externalId,
+                hasBusinessDocs: PartnerListingDescriptionBuilder::mentionsBusinessDocs($partnerDescription),
+                minStayDays: $minStayDays,
+                checkInTime: $checkInTime,
+                checkOutTime: $checkOutTime,
+            );
         } else {
-            $imageUrls = array_values(array_filter(
-                array_map(static fn(mixed $ref): string => is_string($ref) ? $ref : '', $imageRefs),
-            ));
+            $description = $partnerDescription;
+            if ($description === '') {
+                $description = sprintf('Посуточная аренда квартиры в городе %s.', $city->getName());
+            }
+            if (mb_strlen($description) < 50) {
+                $description .= ' Подробности уточняйте у владельца при бронировании.';
+            }
         }
 
-        $asDraft = count($imageUrls) < PropertyImageLimitsValidator::MIN
-            || mb_strlen($description) < 50
-            || $area <= 0
-            || $priceAmount < PropertyDailyPriceValidator::MIN_DAILY_PRICE_BYN;
-
-        if ($description === '') {
-            $description = sprintf('Посуточная аренда квартиры в городе %s.', $city->getName());
-        }
-        if (mb_strlen($description) < 50) {
-            $description .= ' Подробности уточняйте у владельца при бронировании.';
-            $asDraft = true;
-        }
+        $title = $this->titleBuilder->build($rooms, $guestsForCopy, $city, $streetLabel);
 
         $price = Price::fromAmount($priceAmount, 'BYN');
         $priceByn = $this->exchangeRateService->calculatePriceByn($priceAmount, 'BYN');
@@ -287,33 +346,170 @@ final class ImportPartnerListingsCommand extends Command
             'skip' => null,
             'title' => $title,
             'description' => $description,
+            'useGeneratedDescription' => $useGeneratedDescription,
             'city' => $city,
             'street' => $street,
             'streetName' => $street?->getName() ?? ($streetName !== '' ? $streetName : null),
+            'streetLabel' => $streetLabel,
             'building' => $building,
             'coordinates' => $coordinates,
-            'images' => $imageUrls,
+            'imageRefs' => $imageRefs,
+            'images' => [],
             'amenities' => $this->amenityMapper->map(array_map(
                 static fn(mixed $label): string => is_string($label) ? $label : '',
                 $amenityLabels,
             )),
             'price' => $price,
             'priceByn' => $priceByn,
+            'priceAmount' => $priceAmount,
             'area' => $area > 0 ? $area : 30.0,
-            'rooms' => isset($row['rooms']) ? (int) $row['rooms'] : null,
+            'rawArea' => $area,
+            'rooms' => $rooms,
             'floor' => isset($row['floor']) ? (int) $row['floor'] : null,
             'totalFloors' => isset($row['totalFloors']) ? (int) $row['totalFloors'] : null,
             'bathrooms' => isset($row['bathrooms']) ? (int) $row['bathrooms'] : 1,
-            'maxDailyGuests' => max(1, (int) ($row['maxDailyGuests'] ?? 2)),
+            'maxDailyGuests' => $maxDailyGuests,
+            'guestsForCopy' => $guestsForCopy,
             'dailySingleBeds' => max(0, (int) ($row['dailySingleBeds'] ?? 2)),
             'dailyDoubleBeds' => max(0, (int) ($row['dailyDoubleBeds'] ?? 0)),
-            'checkInTime' => $this->normalizeTime((string) ($row['checkInTime'] ?? '14:00')),
-            'checkOutTime' => $this->normalizeTime((string) ($row['checkOutTime'] ?? '12:00')),
-            'minStayDays' => max(1, (int) ($row['minStayDays'] ?? 1)),
-            'asDraft' => $asDraft,
+            'checkInTime' => $checkInTime,
+            'checkOutTime' => $checkOutTime,
+            'minStayDays' => $minStayDays,
+            'asDraft' => false,
             'externalSource' => $sourceName,
             'externalId' => $externalId,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $resolved
+     * @param array<int, array<string, true>> $usedTitles
+     */
+    private function uniquifyTitle(array $resolved, array &$usedTitles, ?int $excludePropertyId): string
+    {
+        /** @var City $city */
+        $city = $resolved['city'];
+        $title = $this->titleBuilder->build(
+            $resolved['rooms'],
+            $resolved['guestsForCopy'],
+            $city,
+            $resolved['streetLabel'],
+        );
+        if ($this->titleIsTaken($city->getId(), $title, $usedTitles, $excludePropertyId)) {
+            $title = $this->titleBuilder->build(
+                $resolved['rooms'],
+                $resolved['guestsForCopy'],
+                $city,
+                $resolved['streetLabel'],
+                true,
+            );
+        }
+        $usedTitles[$city->getId()][$title] = true;
+
+        return $title;
+    }
+
+    /**
+     * @param array<int, array<string, true>> $usedTitles
+     */
+    private function titleIsTaken(int $cityId, string $title, array $usedTitles, ?int $excludePropertyId): bool
+    {
+        if (isset($usedTitles[$cityId][$title])) {
+            return true;
+        }
+
+        return $this->propertyRepository->existsByCityIdAndTitle($cityId, $title, $excludePropertyId);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function resolveGuestsForCopy(array $row, ?int $rooms, int $maxDailyGuests): ?int
+    {
+        if (array_key_exists('guestsParsed', $row) && $row['guestsParsed'] !== null && $row['guestsParsed'] !== '') {
+            $parsed = (int) $row['guestsParsed'];
+
+            return $parsed > 0 ? $parsed : null;
+        }
+
+        if ($rooms !== null && $maxDailyGuests > $rooms) {
+            return $maxDailyGuests;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $resolved
+     */
+    private function shouldStayDraft(array $resolved, int $imageCount): bool
+    {
+        $description = (string) $resolved['description'];
+
+        return $imageCount < PropertyImageLimitsValidator::MIN
+            || mb_strlen($description) < 50
+            || (float) $resolved['rawArea'] <= 0
+            || (int) $resolved['priceAmount'] < PropertyDailyPriceValidator::MIN_DAILY_PRICE_BYN;
+    }
+
+    /**
+     * @param list<string> $uploadableRefs
+     */
+    private function shouldReloadImages(Property $property, array $uploadableRefs, bool $forceImages): bool
+    {
+        if ($forceImages) {
+            return true;
+        }
+
+        $existing = $property->getImages();
+        if ($existing === []) {
+            return true;
+        }
+
+        return count($existing) !== count($uploadableRefs);
+    }
+
+    /**
+     * @param list<string> $imageRefs
+     *
+     * @return list<string>
+     */
+    private function collectUploadableImageRefs(array $imageRefs, string $baseDir): array
+    {
+        $uploadable = [];
+        foreach ($imageRefs as $ref) {
+            $path = $this->resolveImagePath($ref, $baseDir);
+            if ($path === null || $this->junkImageDetector->isJunk($path)) {
+                continue;
+            }
+            $uploadable[] = $ref;
+            if (count($uploadable) >= PropertyImageLimitsValidator::MAX_APARTMENT) {
+                break;
+            }
+        }
+
+        return $uploadable;
+    }
+
+    /**
+     * @param list<string> $imageRefs
+     *
+     * @return list<string>
+     */
+    private function uploadImages(array $imageRefs, string $baseDir): array
+    {
+        $imageUrls = [];
+        foreach ($imageRefs as $ref) {
+            $uploaded = $this->uploadImage($ref, $baseDir);
+            if ($uploaded !== null) {
+                $imageUrls[] = $uploaded;
+            }
+            if (count($imageUrls) >= PropertyImageLimitsValidator::MAX_APARTMENT) {
+                break;
+            }
+        }
+
+        return $imageUrls;
     }
 
     /**
@@ -372,6 +568,16 @@ final class ImportPartnerListingsCommand extends Command
         $this->propertyRepository->save($property);
         $this->syncPlaces($property, $coordinates, $city->getId());
 
+        if ($resolved['useGeneratedDescription']) {
+            $stationName = $this->nearestMetroStationName($property);
+            if ($stationName !== null) {
+                $property->update(description: $this->descriptionBuilder->appendMetro(
+                    $property->getDescription(),
+                    $stationName,
+                ));
+            }
+        }
+
         if (!$resolved['asDraft'] && $trusted && $property->getStatus() === 'moderation') {
             $property->approve(grantFreeTrial: false, withinFreeLimit: true);
         }
@@ -381,8 +587,9 @@ final class ImportPartnerListingsCommand extends Command
 
     /**
      * @param array<string, mixed> $resolved
+     * @param list<string>|null $images
      */
-    private function updateListing(Property $property, array $resolved): void
+    private function updateListing(Property $property, array $resolved, ?array $images): void
     {
         /** @var City $city */
         $city = $resolved['city'];
@@ -392,8 +599,6 @@ final class ImportPartnerListingsCommand extends Command
         $price = $resolved['price'];
 
         $property->update(
-            title: $resolved['title'],
-            description: $resolved['description'],
             price: $price,
             area: $resolved['area'],
             rooms: $resolved['rooms'],
@@ -411,7 +616,7 @@ final class ImportPartnerListingsCommand extends Command
             streetId: $resolved['street']?->getId(),
             streetName: $resolved['streetName'],
             coordinates: $coordinates,
-            images: $resolved['images'] !== [] ? $resolved['images'] : null,
+            images: $images,
             amenities: $resolved['amenities'],
             sellerType: SellerType::Business->value,
         );
@@ -419,6 +624,19 @@ final class ImportPartnerListingsCommand extends Command
         $property->setExternalIdentity($resolved['externalSource'], $resolved['externalId']);
         $this->syncPlaces($property, $coordinates, $city->getId());
         $this->propertyRepository->save($property);
+    }
+
+    private function nearestMetroStationName(Property $property): ?string
+    {
+        $links = $this->propertyMetroStationRepository->findByPropertyId($property->getId()->getValue());
+        $nearest = $links[0] ?? null;
+        if ($nearest === null) {
+            return null;
+        }
+
+        $station = $this->metroStationRepository->findById($nearest->getMetroStationId());
+
+        return $station?->getName();
     }
 
     private function syncPlaces(Property $property, Coordinates $coordinates, int $cityId): void
@@ -498,13 +716,20 @@ final class ImportPartnerListingsCommand extends Command
         return $this->forwardGeocoder->geocodeAddress(implode(', ', $parts));
     }
 
-    private function uploadImage(string $ref, string $baseDir): ?string
+    private function resolveImagePath(string $ref, string $baseDir): ?string
     {
         $path = $ref;
         if (!str_starts_with($ref, '/') && !preg_match('#^[a-z][a-z0-9+.-]*://#i', $ref)) {
             $path = $baseDir . '/' . ltrim($ref, '/');
         }
-        if (!is_file($path)) {
+
+        return is_file($path) ? $path : null;
+    }
+
+    private function uploadImage(string $ref, string $baseDir): ?string
+    {
+        $path = $this->resolveImagePath($ref, $baseDir);
+        if ($path === null) {
             return null;
         }
         if ($this->junkImageDetector->isJunk($path)) {
@@ -542,21 +767,27 @@ final class ImportPartnerListingsCommand extends Command
             'skip' => $reason,
             'title' => '',
             'description' => '',
+            'useGeneratedDescription' => false,
             'city' => null,
             'street' => null,
             'streetName' => null,
+            'streetLabel' => null,
             'building' => '',
             'coordinates' => null,
+            'imageRefs' => [],
             'images' => [],
             'amenities' => [],
             'price' => Price::fromAmount(0, 'BYN'),
             'priceByn' => 0,
+            'priceAmount' => 0,
             'area' => 0.0,
+            'rawArea' => 0.0,
             'rooms' => null,
             'floor' => null,
             'totalFloors' => null,
             'bathrooms' => null,
             'maxDailyGuests' => 1,
+            'guestsForCopy' => null,
             'dailySingleBeds' => 0,
             'dailyDoubleBeds' => 0,
             'checkInTime' => '14:00',
