@@ -6,6 +6,7 @@
  * Listing index comes from WP REST CPT `kvartiry` (homepage has no catalog links).
  * Details and photos are taken from the public card HTML + attached media.
  */
+import { createHash } from 'node:crypto';
 import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -25,6 +26,12 @@ const skipPathParts = [
   '/region/',
   '/kvartiry/page/',
 ];
+
+/** Theme chrome, not listing photos (header Instagram icon is 1684702232_instagramm.png). */
+const skipImagePath = /logo|icon|sprite|watermark|favicon|instagramm?|whatsapp|viber|telegram|facebook/i;
+
+/** MD5 of arendom.com header Instagram PNG attached/scraped on every card. */
+const skipImageMd5 = new Set(['75bf81195ba4f2b5281194c56001e931']);
 
 const amenityLabels = [
   'Wi-Fi',
@@ -141,6 +148,35 @@ function parseAddress(title) {
   };
 }
 
+function isListingPhotoUrl(src) {
+  if (!src || src.startsWith('data:')) {
+    return false;
+  }
+  if (!/wp-content\/uploads/i.test(src)) {
+    return false;
+  }
+  if (skipImagePath.test(src)) {
+    return false;
+  }
+  if (/\/cropped-/i.test(src) || /-\d{2,4}x\d{2,4}\.(jpe?g|png|webp)(?:\?|$)/i.test(src)) {
+    return false;
+  }
+  return true;
+}
+
+function collectPageImageUrls(html, url) {
+  const fromLightbox = [...html.matchAll(/data-pswp-src=["']([^"']+)["']/gi)]
+    .map((match) => toAbsolute(match[1], url))
+    .filter(isListingPhotoUrl);
+  if (fromLightbox.length >= 3) {
+    return [...new Set(fromLightbox)];
+  }
+  const fromTags = [...html.matchAll(/<(?:img|source)[^>]+(?:src|data-src|data-lazy-src)=["']([^"']+)["']/gi)]
+    .map((match) => toAbsolute(match[1], url))
+    .filter(isListingPhotoUrl);
+  return [...new Set([...fromLightbox, ...fromTags])];
+}
+
 function looksLikeListingUrl(url) {
   if (!url || !url.startsWith('https://arendom.com/')) {
     return false;
@@ -185,10 +221,10 @@ function extractListing(url, html, text, meta = {}) {
   const address = parseAddress(title);
   const cityName = decode(meta.cityName) || address.cityName;
 
-  const htmlImages = [...html.matchAll(/<(?:img|source)[^>]+(?:src|data-src|data-lazy-src)=["']([^"']+)["']/gi)]
-    .map((match) => toAbsolute(match[1], url))
-    .filter((src) => src && !src.startsWith('data:') && /wp-content\/uploads/i.test(src) && !/logo|icon|sprite|watermark|favicon/i.test(src));
-  const uniqueImages = [...new Set([...(meta.imageUrls || []), ...htmlImages])].slice(0, 20);
+  const uniqueImages = [...new Set([
+    ...(meta.imageUrls || []).filter(isListingPhotoUrl),
+    ...collectPageImageUrls(html, url),
+  ])].slice(0, 20);
 
   const amenityCandidates = amenityLabels.filter((label) => text.toLowerCase().includes(label.toLowerCase()));
   const bathrooms =
@@ -295,7 +331,7 @@ async function fetchMediaUrls(page, postId) {
     return data
       .filter((item) => String(item.mime_type || '').startsWith('image/'))
       .map((item) => item.source_url)
-      .filter(Boolean);
+      .filter(isListingPhotoUrl);
   } catch {
     return [];
   }
@@ -343,13 +379,19 @@ async function downloadImages(page, listing, imagesDir) {
         console.warn('Skip image', url, result?.contentType || result?.status);
         continue;
       }
+      const bytes = Buffer.from(result.b64, 'base64');
+      const md5 = createHash('md5').update(bytes).digest('hex');
+      if (skipImageMd5.has(md5)) {
+        console.warn('Skip chrome image', url);
+        continue;
+      }
       const ext = /png/i.test(result.contentType) || url.includes('.png')
         ? 'png'
         : /webp/i.test(result.contentType) || url.includes('.webp')
           ? 'webp'
           : 'jpg';
       const fileName = `${String(index).padStart(2, '0')}.${ext}`;
-      await fs.writeFile(path.join(dir, fileName), Buffer.from(result.b64, 'base64'));
+      await fs.writeFile(path.join(dir, fileName), bytes);
       local.push(path.posix.join('images', listing.externalId, fileName));
     } catch (error) {
       console.warn('Image failed', url, error.message);

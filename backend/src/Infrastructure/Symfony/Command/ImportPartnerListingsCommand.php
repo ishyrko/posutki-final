@@ -25,6 +25,7 @@ use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Import\PartnerAmenityMapper;
 use App\Infrastructure\Import\PartnerCityMatcher;
+use App\Infrastructure\Import\PartnerJunkImageDetector;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\FileUploader;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
@@ -58,6 +59,7 @@ final class ImportPartnerListingsCommand extends Command
         private readonly CityMicrodistrictResolverInterface $cityMicrodistrictResolver,
         private readonly ResidentialComplexResolverInterface $residentialComplexResolver,
         private readonly PartnerAmenityMapper $amenityMapper,
+        private readonly PartnerJunkImageDetector $junkImageDetector,
     ) {
         parent::__construct();
     }
@@ -503,6 +505,9 @@ final class ImportPartnerListingsCommand extends Command
             $path = $baseDir . '/' . ltrim($ref, '/');
         }
         if (!is_file($path)) {
+            return null;
+        }
+        if ($this->junkImageDetector->isJunk($path)) {
             return null;
         }
 
