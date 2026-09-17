@@ -209,7 +209,7 @@ export function OwnerOtherListings({ propertyId, ownerName }: OwnerOtherListings
           className="mb-6 md:mb-8"
         >
           <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">{heading}</h2>
-          <p className="mt-1 text-muted-foreground">Ещё объекты этого владельца</p>
+          <p className="mt-1 text-muted-foreground">Ещё квартиры этого владельца в этом городе</p>
         </motion.div>
 
         <OwnerListingsCarousel
