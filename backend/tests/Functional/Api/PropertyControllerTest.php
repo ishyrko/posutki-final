@@ -32,6 +32,23 @@ final class PropertyControllerTest extends ApiTestCase
         self::assertSame($property->getId()->getValue(), $payload['data']['id']);
     }
 
+    public function testGetPublishedBusinessListingWithoutLegalProfileReturnsOk(): void
+    {
+        $owner = $this->createUser('owner-business-listing@example.com', 'Password123!');
+        $city = $this->createCity('Grodno Business', 'grodno-business', 'г. Гродно');
+        $property = $this->createProperty($owner, $city, 'published');
+        $property->setSellerType('business');
+        $this->entityManager()->flush();
+
+        $this->client->request('GET', '/api/properties/' . $property->getId()->getValue());
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+
+        $payload = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertTrue($payload['success']);
+        self::assertSame($property->getId()->getValue(), $payload['data']['id']);
+    }
+
     public function testGetNonPublishedPropertyWithoutAuthReturnsNotFound(): void
     {
         $owner = $this->createUser('owner-draft@example.com', 'Password123!');
