@@ -11,6 +11,12 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { buildCatalogUrl } from "@/features/catalog/slugs";
 import {
   fetchApartmentCatalogCities,
@@ -20,6 +26,7 @@ import {
   fetchHomeCityApartmentCounts,
   formatApartmentCount,
 } from "@/features/home/city-apartment-counts";
+import { splitHomeApartmentCatalogCities } from "@/features/home/group-home-catalog-cities";
 
 const FEATURED_CITY_ICONS: Record<string, LucideIcon> = {
   minsk: Building2,
@@ -47,6 +54,40 @@ interface CitySectionProps {
   apartmentCountsBySlug?: Record<string, number>;
 }
 
+const CityCard = ({
+  city,
+  count,
+}: {
+  city: ApartmentCatalogCity;
+  count?: number;
+}) => {
+  const Icon = city.isMain ? FEATURED_CITY_ICONS[city.slug] : undefined;
+  const featured = Boolean(city.isMain && Icon);
+
+  return (
+    <Link
+      href={buildCityHref(city)}
+      className={
+        featured
+          ? "group flex flex-col items-center gap-3 p-6 rounded-xl bg-card shadow-card hover:shadow-card-hover transition-all duration-200 hover:-translate-y-1"
+          : "group flex flex-col items-center justify-center gap-0.5 px-4 py-3 rounded-xl bg-card shadow-card hover:shadow-card-hover transition-all duration-200 hover:-translate-y-1"
+      }
+    >
+      {Icon && featured ? (
+        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-150">
+          <Icon className="h-6 w-6 text-primary" />
+        </div>
+      ) : null}
+      <div className="text-center">
+        <p className="font-display font-semibold text-foreground">{city.name}</p>
+        {count != null ? (
+          <p className="text-sm text-muted-foreground">{formatApartmentCount(count)}</p>
+        ) : null}
+      </div>
+    </Link>
+  );
+};
+
 const CitySection = ({ apartmentCatalogCities, apartmentCountsBySlug }: CitySectionProps) => {
   const [clientCities, setClientCities] = useState<ApartmentCatalogCity[] | null>(null);
   const [clientCounts, setClientCounts] = useState<Record<string, number> | null>(null);
@@ -57,7 +98,15 @@ const CitySection = ({ apartmentCatalogCities, apartmentCountsBySlug }: CitySect
     [apartmentCountsBySlug, clientCounts],
   );
 
-  const needsClientCities = cities.length === 0;
+  const { mainCities, regionGroups } = useMemo(
+    () => splitHomeApartmentCatalogCities(cities),
+    [cities],
+  );
+
+  const secondaryCitiesNeedRegion =
+    cities.some((city) => !city.isMain) &&
+    cities.filter((city) => !city.isMain).every((city) => !city.regionSlug);
+  const needsClientCities = cities.length === 0 || secondaryCitiesNeedRegion;
   const needsClientCounts = useMemo(
     () => cities.some((city) => counts[city.slug] == null),
     [cities, counts],
@@ -109,38 +158,32 @@ const CitySection = ({ apartmentCatalogCities, apartmentCountsBySlug }: CitySect
           <p className="text-muted-foreground">Посуточная аренда по всей Беларуси</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {cities.map((city) => {
-            const Icon = city.isMain ? FEATURED_CITY_ICONS[city.slug] : undefined;
-            const featured = Boolean(city.isMain && Icon);
+        {mainCities.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {mainCities.map((city) => (
+              <CityCard key={city.slug} city={city} count={counts[city.slug]} />
+            ))}
+          </div>
+        ) : null}
 
-            return (
-              <Link
-                key={city.slug}
-                href={buildCityHref(city)}
-                className={
-                  featured
-                    ? "group flex flex-col items-center gap-3 p-6 rounded-xl bg-card shadow-card hover:shadow-card-hover transition-all duration-200 hover:-translate-y-1"
-                    : "group flex flex-col items-center justify-center gap-0.5 px-4 py-3 rounded-xl bg-card shadow-card hover:shadow-card-hover transition-all duration-200 hover:-translate-y-1"
-                }
-              >
-                {Icon && featured ? (
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-150">
-                    <Icon className="h-6 w-6 text-primary" />
+        {regionGroups.length > 0 && !secondaryCitiesNeedRegion ? (
+          <Accordion type="multiple" className={mainCities.length > 0 ? "mt-6 w-full" : "w-full"}>
+            {regionGroups.map((group) => (
+              <AccordionItem key={group.slug} value={group.slug}>
+                <AccordionTrigger className="text-left font-display text-lg font-semibold hover:no-underline">
+                  {group.label}
+                </AccordionTrigger>
+                <AccordionContent className="text-base">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    {group.cities.map((city) => (
+                      <CityCard key={city.slug} city={city} count={counts[city.slug]} />
+                    ))}
                   </div>
-                ) : null}
-                <div className="text-center">
-                  <p className="font-display font-semibold text-foreground">{city.name}</p>
-                  {counts[city.slug] != null ? (
-                    <p className="text-sm text-muted-foreground">
-                      {formatApartmentCount(counts[city.slug])}
-                    </p>
-                  ) : null}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        ) : null}
       </div>
     </section>
   );

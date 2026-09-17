@@ -29,7 +29,37 @@ final class CityApartmentCatalogTest extends ApiTestCase
         self::assertSame(['minsk', 'brest', 'vitebsk', 'baranovichi'], $slugs);
         self::assertTrue($payload['data']['cities'][0]['isMain']);
         self::assertSame($minsk->getId(), $payload['data']['cities'][0]['id']);
+        self::assertArrayHasKey('regionSlug', $payload['data']['cities'][0]);
+        self::assertArrayHasKey('regionName', $payload['data']['cities'][0]);
         self::assertNotContains('borisov', $slugs);
+    }
+
+    public function testApartmentCatalogCitiesIncludeRegion(): void
+    {
+        $brestRegion = $this->createRegion('brest', 'Брест');
+        $brestDistrict = $this->createRegionDistrict($brestRegion, 'brest-district', 'Брестский район');
+        $minskRegion = $this->createRegion('minsk', 'Минск');
+        $minskDistrict = $this->createRegionDistrict($minskRegion, 'minsk-city-district', 'Минский район');
+
+        $this->createCity('Брест', 'brest', 'г. Брест', $brestDistrict, false, true, true);
+        $this->createCity('Барановичи', 'baranovichi', 'г. Барановичи', $brestDistrict, false, false, true);
+        $this->createCity('Борисов', 'borisov', 'г. Борисов', $minskDistrict, false, false, true);
+
+        $this->client->request('GET', '/api/address/cities/apartment-catalog');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $payload = json_decode($this->client->getResponse()->getContent() ?: '', true);
+        self::assertIsArray($payload['data']['cities'] ?? null);
+
+        $citiesBySlug = [];
+        foreach ($payload['data']['cities'] as $city) {
+            $citiesBySlug[$city['slug']] = $city;
+        }
+
+        self::assertSame('brest', $citiesBySlug['brest']['regionSlug']);
+        self::assertSame('Брест', $citiesBySlug['brest']['regionName']);
+        self::assertSame('brest', $citiesBySlug['baranovichi']['regionSlug']);
+        self::assertSame('minsk', $citiesBySlug['borisov']['regionSlug']);
     }
 
     public function testHomeCityApartmentCountsUsesApartmentCatalogCities(): void

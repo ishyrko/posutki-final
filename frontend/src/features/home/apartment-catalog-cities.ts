@@ -8,6 +8,8 @@ export interface ApartmentCatalogCity {
     namePrepositional?: string | null;
     nameGenitive?: string | null;
     isMain: boolean;
+    regionSlug?: string | null;
+    regionName?: string | null;
 }
 
 interface ApartmentCatalogApiResponse {

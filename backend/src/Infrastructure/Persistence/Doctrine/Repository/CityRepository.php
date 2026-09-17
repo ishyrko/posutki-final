@@ -101,6 +101,8 @@ class CityRepository extends ServiceEntityRepository implements CityRepositoryIn
     {
         /** @var list<City> $cities */
         $cities = $this->createQueryBuilder('c')
+            ->leftJoin('c.regionDistrict', 'rd')->addSelect('rd')
+            ->leftJoin('rd.region', 'r')->addSelect('r')
             ->where('c.isApartmentCatalog = :catalog')
             ->setParameter('catalog', true)
             ->getQuery()

@@ -14,7 +14,7 @@ interface ApartmentCatalogApiResponse {
 
 export const fetchApartmentCatalogSlugSets = cache(async (): Promise<ApartmentCatalogSlugSets> => {
     const data = await fetchPublicApi<ApartmentCatalogApiResponse>('/address/cities/apartment-catalog', {
-        next: { revalidate: 300 },
+        next: { revalidate: 300, tags: ['apartment-catalog'] },
     });
 
     return {
