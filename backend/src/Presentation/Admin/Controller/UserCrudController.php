@@ -88,10 +88,12 @@ class UserCrudController extends AbstractCrudController
             ->hideOnForm();
 
         yield TextField::new('firstName', 'Имя')
-            ->setFormTypeOption('required', false);
+            ->setFormTypeOption('required', false)
+            ->setFormTypeOption('empty_data', '');
 
         yield TextField::new('lastName', 'Фамилия')
-            ->setFormTypeOption('required', false);
+            ->setFormTypeOption('required', false)
+            ->setFormTypeOption('empty_data', '');
         yield TextField::new('phone', 'Телефон');
 
         yield BooleanField::new('isVerified', 'Верифицирован')

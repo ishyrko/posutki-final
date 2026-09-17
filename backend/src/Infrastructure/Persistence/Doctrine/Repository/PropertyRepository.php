@@ -9,7 +9,6 @@ use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\PropertyMetroStation;
 use App\Domain\Property\Entity\PropertyLandmark;
 use App\Domain\Property\Enum\PropertyType;
-use App\Domain\Property\Limit\FreeListingLimits;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -95,13 +94,7 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         $qb->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
 
-        /** @var Property[] $result */
-        $result = $qb->getQuery()->getResult();
-
-        return FreeListingLimits::capItemsPerOwner(
-            $result,
-            static fn(Property $property): string => (string) $property->getOwnerId()->getValue(),
-        );
+        return $qb->getQuery()->getResult();
     }
 
     /**
