@@ -339,6 +339,21 @@ function collectPageImageUrls(html, url) {
   return [...new Set([...fromLightbox, ...fromTags])];
 }
 
+function parseBathroom(value) {
+  if (/раздельн/i.test(value)) {
+    return { bathrooms: 1, bathroomType: 'separate', amenity: 'раздельный санузел' };
+  }
+  if (/совмещ/i.test(value)) {
+    return { bathrooms: 1, bathroomType: 'combined', amenity: 'совмещенный санузел' };
+  }
+  const countMatch = value.match(/(\d+)/);
+  const count = countMatch ? Number.parseInt(countMatch[1], 10) : 0;
+  if (count >= 2) {
+    return { bathrooms: count, bathroomType: 'two', amenity: null };
+  }
+  return { bathrooms: 1, bathroomType: 'combined', amenity: 'совмещенный санузел' };
+}
+
 function looksLikeListingUrl(url) {
   if (!url || !url.startsWith('https://arendom.com/')) {
     return false;
@@ -380,6 +395,8 @@ function extractListing(url, html, text, meta = {}) {
     text.match(/(\d+)\s*максимум гост/i) ||
     text.match(/максимум гост[^\d]{0,12}(\d+)/i);
   const bathroomsMatch = text.match(/санузел[:\s]+([^\n]+)/i);
+  const bathroomValue = bathroomsMatch ? bathroomsMatch[1].trim() : '';
+  const bathroom = parseBathroom(bathroomValue);
   const address = parseAddress(title);
   const cityName = decode(meta.cityName) || address.cityName;
 
@@ -389,12 +406,9 @@ function extractListing(url, html, text, meta = {}) {
   ])].slice(0, 20);
 
   const amenityCandidates = amenityLabels.filter((label) => text.toLowerCase().includes(label.toLowerCase()));
-  const bathrooms =
-    bathroomsMatch && /раздельн/i.test(bathroomsMatch[1])
-      ? 2
-      : bathroomsMatch
-        ? 1
-        : 1;
+  if (bathroom.amenity && !amenityCandidates.includes(bathroom.amenity)) {
+    amenityCandidates.push(bathroom.amenity);
+  }
 
   const rooms = roomsMatch ? Number.parseInt(roomsMatch[1], 10) : null;
   const parsedGuests = guestsMatch ? Number.parseInt(guestsMatch[1], 10) : 0;
@@ -422,7 +436,8 @@ function extractListing(url, html, text, meta = {}) {
     rooms,
     floor,
     totalFloors: totalFloors && floor && totalFloors < floor ? floor : totalFloors,
-    bathrooms,
+    bathrooms: bathroom.bathrooms,
+    bathroomType: bathroom.bathroomType,
     maxDailyGuests: Math.max(parsedGuests || 0, rooms || 0, 2),
     guestsParsed: parsedGuests || null,
     dailySingleBeds: rooms ? Math.max(0, rooms) : 2,

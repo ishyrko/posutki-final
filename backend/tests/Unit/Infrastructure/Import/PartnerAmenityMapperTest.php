@@ -14,8 +14,8 @@ final class PartnerAmenityMapperTest extends TestCase
         $mapper = new PartnerAmenityMapper();
 
         self::assertSame(
-            ['wifi', 'fridge', 'tv', 'washing_machine'],
-            $mapper->map(['Wi-Fi', 'холодильник', 'Телевизор', 'стиралка']),
+            ['wifi', 'fridge', 'tv', 'washing_machine', 'bathroom_separate', 'bathroom_combined'],
+            $mapper->map(['Wi-Fi', 'холодильник', 'Телевизор', 'стиралка', 'раздельный', 'совмещенный']),
         );
     }
 }

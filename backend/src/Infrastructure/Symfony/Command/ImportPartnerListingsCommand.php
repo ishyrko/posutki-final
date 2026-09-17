@@ -26,6 +26,7 @@ use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Import\PartnerAmenityMapper;
+use App\Infrastructure\Import\PartnerBathroomMapper;
 use App\Infrastructure\Import\PartnerCityMatcher;
 use App\Infrastructure\Import\PartnerJunkImageDetector;
 use App\Infrastructure\Import\PartnerListingDescriptionBuilder;
@@ -61,6 +62,7 @@ final class ImportPartnerListingsCommand extends Command
         private readonly CityMicrodistrictResolverInterface $cityMicrodistrictResolver,
         private readonly ResidentialComplexResolverInterface $residentialComplexResolver,
         private readonly PartnerAmenityMapper $amenityMapper,
+        private readonly PartnerBathroomMapper $bathroomMapper,
         private readonly PartnerJunkImageDetector $junkImageDetector,
         private readonly PartnerListingTitleBuilder $titleBuilder,
         private readonly PartnerListingDescriptionBuilder $descriptionBuilder,
@@ -339,6 +341,13 @@ final class ImportPartnerListingsCommand extends Command
 
         $price = Price::fromAmount($priceAmount, 'BYN');
         $priceByn = $this->exchangeRateService->calculatePriceByn($priceAmount, 'BYN');
+        $bathroom = $this->bathroomMapper->apply(
+            $row,
+            $this->amenityMapper->map(array_map(
+                static fn(mixed $label): string => is_string($label) ? $label : '',
+                $amenityLabels,
+            )),
+        );
 
         return [
             'skip' => null,
@@ -353,10 +362,7 @@ final class ImportPartnerListingsCommand extends Command
             'coordinates' => $coordinates,
             'imageRefs' => $imageRefs,
             'images' => [],
-            'amenities' => $this->amenityMapper->map(array_map(
-                static fn(mixed $label): string => is_string($label) ? $label : '',
-                $amenityLabels,
-            )),
+            'amenities' => $bathroom['amenities'],
             'price' => $price,
             'priceByn' => $priceByn,
             'priceAmount' => $priceAmount,
@@ -365,7 +371,7 @@ final class ImportPartnerListingsCommand extends Command
             'rooms' => $rooms,
             'floor' => isset($row['floor']) ? (int) $row['floor'] : null,
             'totalFloors' => isset($row['totalFloors']) ? (int) $row['totalFloors'] : null,
-            'bathrooms' => isset($row['bathrooms']) ? (int) $row['bathrooms'] : 1,
+            'bathrooms' => $bathroom['bathrooms'],
             'maxDailyGuests' => $maxDailyGuests,
             'guestsForCopy' => $guestsForCopy,
             'dailySingleBeds' => max(0, (int) ($row['dailySingleBeds'] ?? 2)),
