@@ -170,7 +170,7 @@ const CitySection = ({ apartmentCatalogCities, apartmentCountsBySlug }: CitySect
           <Accordion type="multiple" className={mainCities.length > 0 ? "mt-6 w-full" : "w-full"}>
             {regionGroups.map((group) => (
               <AccordionItem key={group.slug} value={group.slug}>
-                <AccordionTrigger className="text-left font-display text-lg font-semibold hover:no-underline">
+                <AccordionTrigger className="text-left font-display text-lg font-semibold hover:no-underline md:justify-start md:gap-2">
                   {group.label}
                 </AccordionTrigger>
                 <AccordionContent className="text-base">
