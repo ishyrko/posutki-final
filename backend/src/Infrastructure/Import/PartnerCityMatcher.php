@@ -31,7 +31,14 @@ final class PartnerCityMatcher
 
         usort(
             $exact,
-            static fn(City $left, City $right): int => self::settlementRank($left->getName()) <=> self::settlementRank($right->getName()),
+            static function (City $left, City $right): int {
+                $rank = self::settlementRank($left->getName()) <=> self::settlementRank($right->getName());
+                if ($rank !== 0) {
+                    return $rank;
+                }
+
+                return self::cityPreference($right) <=> self::cityPreference($left);
+            },
         );
 
         return $exact[0];
@@ -65,9 +72,20 @@ final class PartnerCityMatcher
             return 0;
         }
         if (preg_match('/\s(?:аг|а\.г)\.?\s*$/u', $folded) === 1) {
-            return 2;
+            return 3;
+        }
+        if (preg_match('/\s(?:р\.п|к\.п|д|п|с|х)\.?\s*$/u', $folded) === 1) {
+            return 4;
         }
 
-        return 3;
+        // «Гомель», «Речица», «Старые Дороги» — город без суффикса, не агрогородок.
+        return 0;
+    }
+
+    private static function cityPreference(City $city): int
+    {
+        return ($city->isMain() ? 4 : 0)
+            + ($city->isApartmentCatalog() ? 2 : 0)
+            + ($city->isListingSuggested() ? 1 : 0);
     }
 }

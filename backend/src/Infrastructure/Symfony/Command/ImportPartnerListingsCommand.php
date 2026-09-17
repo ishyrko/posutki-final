@@ -464,7 +464,7 @@ final class ImportPartnerListingsCommand extends Command
 
         return PartnerCityMatcher::pick(
             $lookup,
-            $this->cityRepository->searchByName($lookup, null, 20),
+            $this->cityRepository->searchByName($lookup, null, 50),
         );
     }
 

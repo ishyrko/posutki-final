@@ -36,6 +36,21 @@ final class PartnerCityMatcherTest extends TestCase
         self::assertSame($mogilev, PartnerCityMatcher::pick('Могилев', [$mogilev]));
     }
 
+    public function testPrefersUnsuffixedCityOverAgrotown(): void
+    {
+        $agrotown = $this->city('Гомель аг.');
+        $city = $this->city('Гомель');
+        $village = $this->city('Речица д.');
+        $rechitsa = $this->city('Речица');
+        $rechitsaAg = $this->city('Речица аг.');
+        $staryeDorogi = $this->city('Старые Дороги');
+        $staryeDorogiAg = $this->city('Старые Дороги аг.');
+
+        self::assertSame($city, PartnerCityMatcher::pick('Гомель', [$agrotown, $city]));
+        self::assertSame($rechitsa, PartnerCityMatcher::pick('Речица', [$village, $rechitsaAg, $rechitsa]));
+        self::assertSame($staryeDorogi, PartnerCityMatcher::pick('Старые Дороги', [$staryeDorogiAg, $staryeDorogi]));
+    }
+
     public function testMatchesUrbanSettlementWithDottedGpSuffix(): void
     {
         $urban = $this->city('Мачулищи г.п.');
