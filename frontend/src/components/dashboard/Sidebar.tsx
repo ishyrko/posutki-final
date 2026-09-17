@@ -9,7 +9,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useUser, useLogout } from '@/features/auth/hooks';
 import { useUnreadCount } from '@/features/messages/hooks';
 import { useUnreadBookingInquiryCount } from '@/features/properties/booking-inquiry';
-import { useMyProperties } from '@/features/properties/hooks';
+import { useMyPropertiesSummary } from '@/features/properties/hooks';
 import { useOwnerFeaturesContext } from '@/features/properties/OwnerFeaturesProvider';
 import { usePendingPlacementPaymentCount } from '@/features/placement/hooks';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -175,27 +175,15 @@ export function Sidebar() {
     const { data: user } = useUser();
     const logout = useLogout();
     const ownerFeatures = useOwnerFeaturesContext();
-    const myPropertiesQuery = useMyProperties(1, 50);
-    const hasMyProperties = myPropertiesQuery.isSuccess
-        ? (myPropertiesQuery.data?.data.length ?? 0) > 0
+    const myPropertiesSummary = useMyPropertiesSummary();
+    const hasMyProperties = myPropertiesSummary.isSuccess
+        ? myPropertiesSummary.data.hasAny
         : (ownerFeatures?.initialHasMyProperties ?? false);
-    const unviewedReviewsCount = useMemo(
-        () =>
-            (myPropertiesQuery.data?.data ?? []).reduce(
-                (sum, property) => sum + (property.unviewedReviewsCount ?? 0),
-                0,
-            ),
-        [myPropertiesQuery.data?.data],
-    );
+    const unviewedReviewsCount = myPropertiesSummary.data?.unviewedReviews ?? 0;
     const { data: unreadCount } = useUnreadCount();
     const { data: unreadBookingInquiryCount } = useUnreadBookingInquiryCount();
     const { data: pendingPaymentCount } = usePendingPlacementPaymentCount();
-    const awaitingPaymentCount = useMemo(
-        () =>
-            (myPropertiesQuery.data?.data ?? []).filter((property) => property.status === 'awaiting_payment')
-                .length,
-        [myPropertiesQuery.data?.data],
-    );
+    const awaitingPaymentCount = myPropertiesSummary.data?.awaitingPayment ?? 0;
     const totalUnreadCount = (unreadCount ?? 0) + (hasMyProperties ? (unreadBookingInquiryCount ?? 0) : 0);
     const navigationWithReviewsHref = useMemo(
         () =>

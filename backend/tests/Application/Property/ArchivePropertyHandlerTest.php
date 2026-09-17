@@ -6,13 +6,16 @@ namespace App\Tests\Application\Property;
 
 use App\Application\Command\Property\ArchiveProperty\ArchivePropertyCommand;
 use App\Application\Command\Property\ArchiveProperty\ArchivePropertyHandler;
+use App\Application\Service\FreeListingLimitService;
 use App\Domain\Property\Entity\Property;
+use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Repository\UserRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 
 final class ArchivePropertyHandlerTest extends TestCase
@@ -26,7 +29,7 @@ final class ArchivePropertyHandlerTest extends TestCase
         $repository->method('findById')->willReturn($property);
         $repository->expects(self::once())->method('save')->with($property);
 
-        $handler = new ArchivePropertyHandler($repository);
+        $handler = new ArchivePropertyHandler($repository, $this->createFreeListingLimitService());
         $archivedAt = $handler(new ArchivePropertyCommand('10', '5'));
 
         self::assertSame('archived', $property->getStatus());
@@ -41,7 +44,7 @@ final class ArchivePropertyHandlerTest extends TestCase
         $repository = $this->createStub(PropertyRepositoryInterface::class);
         $repository->method('findById')->willReturn($property);
 
-        $handler = new ArchivePropertyHandler($repository);
+        $handler = new ArchivePropertyHandler($repository, $this->createFreeListingLimitService());
 
         $this->expectException(DomainException::class);
         $this->expectExceptionMessage('Скрыть можно только опубликованное объявление');
@@ -57,7 +60,7 @@ final class ArchivePropertyHandlerTest extends TestCase
         $repository = $this->createStub(PropertyRepositoryInterface::class);
         $repository->method('findById')->willReturn($property);
 
-        $handler = new ArchivePropertyHandler($repository);
+        $handler = new ArchivePropertyHandler($repository, $this->createFreeListingLimitService());
 
         $this->expectException(DomainException::class);
         $this->expectExceptionMessage('Нет прав на скрытие этого объявления');
@@ -101,5 +104,14 @@ final class ArchivePropertyHandlerTest extends TestCase
         $idReflection->setValue($property, Id::fromInt(10));
 
         return $property;
+    }
+
+    private function createFreeListingLimitService(): FreeListingLimitService
+    {
+        return new FreeListingLimitService(
+            $this->createStub(PropertyRepositoryInterface::class),
+            $this->createStub(CityRepositoryInterface::class),
+            $this->createStub(UserRepositoryInterface::class),
+        );
     }
 }

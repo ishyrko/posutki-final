@@ -23,6 +23,26 @@ class CityRepository extends ServiceEntityRepository implements CityRepositoryIn
         return $this->find($id);
     }
 
+    public function findByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(
+            $ids,
+            static fn(mixed $id): bool => is_int($id) && $id > 0,
+        )));
+        if ($ids === []) {
+            return [];
+        }
+
+        /** @var list<City> $cities */
+        $cities = $this->createQueryBuilder('c')
+            ->where('c.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->getQuery()
+            ->getResult();
+
+        return $cities;
+    }
+
     public function findBySlug(string $slug): ?City
     {
         return $this->findOneBy(['slug' => $slug]);

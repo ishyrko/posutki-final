@@ -124,6 +124,22 @@ services:
     networks:
       - posutki_network
 
+  arendom-scraper:
+    image: mcr.microsoft.com/playwright:v1.49.1-noble
+    profiles: ["tools"]
+    user: "0:0"
+    working_dir: /app
+    volumes:
+      - ./tools/arendom-scraper:/app
+      - ./backend/var/import/arendom:/data
+    environment:
+      - OUTPUT_DIR=/data
+    extra_hosts:
+      - "arendom.com:45.87.219.244"
+    command: ["sh", "-lc", "npm install --omit=dev --no-audit --no-fund && node scrape.mjs"]
+    networks:
+      - posutki_network
+
 volumes:
   mysql_data:
   frontend_node_modules:

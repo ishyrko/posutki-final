@@ -149,15 +149,63 @@ class PropertyController extends AbstractController
             return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
         }
 
+        $status = $request->query->get('status');
+        $status = is_string($status) && $status !== '' ? $status : null;
+        $q = $request->query->get('q');
+        $q = is_string($q) && trim($q) !== '' ? trim($q) : null;
+        $sort = $request->query->get('sort', 'createdAt');
+        $sort = is_string($sort) && $sort !== '' ? $sort : 'createdAt';
+        $sortOrder = strtoupper((string) $request->query->get('sortOrder', 'DESC')) === 'ASC' ? 'ASC' : 'DESC';
+        $limit = $request->query->getInt('limit', 20);
+        if ($limit < 1) {
+            $limit = 20;
+        }
+        if ($limit > 100) {
+            $limit = 100;
+        }
+
         $query = new \App\Application\Query\Property\GetMyProperties\GetMyPropertiesQuery(
             userId: (string) $user->getId()->getValue(),
-            page: $request->query->getInt('page', 1),
-            limit: $request->query->getInt('limit', 20),
+            page: max(1, $request->query->getInt('page', 1)),
+            limit: $limit,
+            status: $status,
+            q: $q,
+            cityId: $request->query->getInt('cityId') ?: null,
+            sort: $sort,
+            sortOrder: $sortOrder,
         );
 
-        $properties = $this->queryBus->ask($query);
+        $result = $this->queryBus->ask($query);
+        $payload = ApiResponse::paginated(
+            $result['items'],
+            $result['total'],
+            $result['page'],
+            $result['limit'],
+        );
+        $payload['meta'] = [
+            'total' => $result['total'],
+            'page' => $result['page'],
+            'limit' => $result['limit'],
+            'counts' => $result['counts'],
+        ];
 
-        return $this->json(ApiResponse::success($properties));
+        return $this->json($payload);
+    }
+
+    #[Route('/my/summary', name: 'my_summary', methods: ['GET'])]
+    public function mySummary(#[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return $this->json(ApiResponse::error('Требуется авторизация', 401), 401);
+        }
+
+        $summary = $this->queryBus->ask(
+            new \App\Application\Query\Property\GetMyProperties\GetMyPropertiesSummaryQuery(
+                (string) $user->getId()->getValue(),
+            ),
+        );
+
+        return $this->json(ApiResponse::success($summary));
     }
 
     #[Route('/free-limit', name: 'free_limit', methods: ['GET'])]

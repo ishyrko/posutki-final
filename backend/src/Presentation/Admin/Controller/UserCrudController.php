@@ -20,6 +20,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ImageField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 
@@ -103,6 +104,18 @@ class UserCrudController extends AbstractCrudController
             ->renderAsSwitch(false)
             ->setHelp('Один бесплатный VIP 1 на 2 недели на аккаунт');
 
+        yield BooleanField::new('isPartner', 'Партнёр')
+            ->renderAsSwitch(false)
+            ->setHelp('Свой лимит объявлений, без городского потолка бесплатных квартир');
+
+        yield IntegerField::new('partnerListingLimit', 'Лимит объявлений партнёра')
+            ->setRequired(false)
+            ->setHelp('Пусто = ' . FreeListingLimits::DEFAULT_PARTNER_LISTING_LIMIT . '. Учитывается только если включён флаг «Партнёр».');
+
+        yield BooleanField::new('isTrustedPublisher', 'Доверенная публикация')
+            ->renderAsSwitch(false)
+            ->setHelp('Объявления публикуются без модерации, правки применяются сразу, без бесплатного VIP-trial');
+
         yield ArrayField::new('roles', 'Роли');
 
         yield ImageField::new('avatar', 'Аватар')
@@ -128,10 +141,14 @@ class UserCrudController extends AbstractCrudController
         $ownerId = (string) $user->getId()->getValue();
         $totalCount = $this->propertyRepository->countByOwner($ownerId);
         $freePublished = $this->propertyRepository->countFreePublishedByOwner($user->getId());
+        $accountLimit = $user->isPartner()
+            ? ($user->getPartnerListingLimit() ?? FreeListingLimits::DEFAULT_PARTNER_LISTING_LIMIT)
+            : FreeListingLimits::MAX_PUBLISHED_PER_ACCOUNT;
         $limitSummary = sprintf(
-            '<p class="text-muted mb-2">Бесплатных опубликованных: <strong>%d</strong> из %d</p>',
+            '<p class="text-muted mb-2">Бесплатных опубликованных: <strong>%d</strong> из %d%s</p>',
             $freePublished,
-            FreeListingLimits::MAX_PUBLISHED_PER_ACCOUNT,
+            $accountLimit,
+            $user->isPartner() ? ' (партнёр)' : '',
         );
         if ($totalCount === 0) {
             return $limitSummary . '<p class="text-muted mb-0">У пользователя нет объявлений.</p>';
@@ -200,6 +217,8 @@ class UserCrudController extends AbstractCrudController
             ->add('isVerified')
             ->add('isPhoneVerified')
             ->add('hasUsedFreePlacementTrial')
+            ->add('isPartner')
+            ->add('isTrustedPublisher')
             ->add('createdAt');
     }
 }

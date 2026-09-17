@@ -9,6 +9,7 @@ use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\PropertyMetroStation;
 use App\Domain\Property\Entity\PropertyLandmark;
 use App\Domain\Property\Enum\PropertyType;
+use App\Domain\Property\Limit\FreeListingLimits;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -94,7 +95,13 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         $qb->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
 
-        return $qb->getQuery()->getResult();
+        /** @var Property[] $result */
+        $result = $qb->getQuery()->getResult();
+
+        return FreeListingLimits::capItemsPerOwner(
+            $result,
+            static fn(Property $property): string => (string) $property->getOwnerId()->getValue(),
+        );
     }
 
     /**
@@ -384,16 +391,115 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         return '(' . implode(' OR ', $chunks) . ')';
     }
 
-    public function findByOwner(string $ownerId, int $page = 1, int $limit = 20): array
+    public function findByOwner(string $ownerId, int $page = 1, int $limit = 20, array $filters = []): array
     {
-        return $this->createQueryBuilder('p')
-            ->where('p.ownerId = :ownerId')
-            ->setParameter('ownerId', $ownerId)
-            ->orderBy('p.createdAt', 'DESC')
+        $qb = $this->createOwnerQueryBuilder($ownerId, $filters);
+        $this->applyOwnerSort($qb, $filters);
+
+        return $qb
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    public function countByOwner(string $ownerId, array $filters = []): int
+    {
+        return (int) $this->createOwnerQueryBuilder($ownerId, $filters)
+            ->select('COUNT(p.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countByOwnerGroupedByStatus(string $ownerId, array $filters = []): array
+    {
+        $filtersWithoutStatus = $filters;
+        unset($filtersWithoutStatus['status']);
+
+        /** @var list<array{status: string, cnt: string|int}> $rows */
+        $rows = $this->createOwnerQueryBuilder($ownerId, $filtersWithoutStatus)
+            ->select('p.status AS status', 'COUNT(p.id) AS cnt')
+            ->groupBy('p.status')
+            ->getQuery()
+            ->getArrayResult();
+
+        $out = [];
+        foreach ($rows as $row) {
+            $out[(string) $row['status']] = (int) $row['cnt'];
+        }
+
+        return $out;
+    }
+
+    public function findByExternalSourceAndId(string $source, string $externalId): ?Property
+    {
+        $source = trim($source);
+        $externalId = trim($externalId);
+        if ($source === '' || $externalId === '') {
+            return null;
+        }
+
+        return $this->findOneBy([
+            'externalSource' => $source,
+            'externalId' => $externalId,
+        ]);
+    }
+
+    /**
+     * @param array{
+     *     status?: string|null,
+     *     q?: string|null,
+     *     cityId?: int|null,
+     *     sort?: string|null,
+     *     sortOrder?: string|null,
+     * } $filters
+     */
+    private function createOwnerQueryBuilder(string $ownerId, array $filters): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->where('p.ownerId = :ownerId')
+            ->setParameter('ownerId', $ownerId);
+
+        $status = $filters['status'] ?? null;
+        if (is_string($status) && $status !== '' && $status !== 'all') {
+            if ($status === 'inactive') {
+                $status = 'archived';
+            }
+            $qb->andWhere('p.status = :ownerStatus')
+                ->setParameter('ownerStatus', $status);
+        }
+
+        $cityId = isset($filters['cityId']) ? (int) $filters['cityId'] : 0;
+        if ($cityId > 0) {
+            $qb->andWhere('p.cityId = :ownerCityId')
+                ->setParameter('ownerCityId', $cityId);
+        }
+
+        $q = isset($filters['q']) && is_string($filters['q']) ? trim($filters['q']) : '';
+        if ($q !== '') {
+            $qb->andWhere('(p.title LIKE :ownerQuery OR p.streetName LIKE :ownerQuery)')
+                ->setParameter('ownerQuery', '%' . $q . '%');
+        }
+
+        return $qb;
+    }
+
+    /**
+     * @param array{sort?: string|null, sortOrder?: string|null} $filters
+     */
+    private function applyOwnerSort(QueryBuilder $qb, array $filters): void
+    {
+        $sort = $filters['sort'] ?? 'createdAt';
+        $sortOrder = strtoupper((string) ($filters['sortOrder'] ?? 'DESC')) === 'ASC' ? 'ASC' : 'DESC';
+        $allowed = [
+            'createdAt' => 'p.createdAt',
+            'publishedAt' => 'p.publishedAt',
+            'price' => 'p.priceByn',
+            'title' => 'p.title',
+        ];
+        $field = $allowed[$sort] ?? 'p.createdAt';
+        $qb->orderBy($field, $sortOrder)
+            ->addOrderBy('p.id', $sortOrder);
     }
 
     public function findPublishedByOwner(
@@ -570,16 +676,6 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
             $alias,
             $alias,
         );
-    }
-
-    public function countByOwner(string $ownerId): int
-    {
-        return (int) $this->createQueryBuilder('p')
-            ->select('COUNT(p.id)')
-            ->where('p.ownerId = :ownerId')
-            ->setParameter('ownerId', $ownerId)
-            ->getQuery()
-            ->getSingleScalarResult();
     }
 
     public function findCityIdsWithListings(string $propertyType): array

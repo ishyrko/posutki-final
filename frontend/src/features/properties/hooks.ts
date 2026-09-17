@@ -2,8 +2,8 @@
 
 import { useMemo, useSyncExternalStore } from 'react';
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProperties, getProperty, getMyProperties, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, trackAnonymousFavorite, removeAnonymousFavorite, getFavorites, getExchangeRates, getPropertyStats, archiveProperty, unarchiveProperty, publishFreeProperty, getFreeListingLimits, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock } from './api';
-import { Property, PropertyFilters, PropertyListResponse } from './types';
+import { getProperties, getProperty, getMyProperties, getMyPropertiesSummary, updateProperty, UpdatePropertyPayload, getFavoriteIds, addFavorite, removeFavorite, trackAnonymousFavorite, removeAnonymousFavorite, getFavorites, getExchangeRates, getPropertyStats, archiveProperty, unarchiveProperty, publishFreeProperty, getFreeListingLimits, deleteProperty, getPropertyCalendar, getOwnerListings, getOwnerCalendar, createAvailabilityBlock, deleteAvailabilityBlock } from './api';
+import { Property, PropertyFilters, PropertyListResponse, type MyPropertiesFilters } from './types';
 import { isAuthenticated } from '@/lib/auth';
 import { useIsHydrated } from '@/hooks/useIsHydrated';
 import { useOwnerFeaturesContext } from './OwnerFeaturesProvider';
@@ -114,10 +114,20 @@ export const useProperty = (id: number, options: UsePropertyOptions = {}) => {
     });
 };
 
-export const useMyProperties = (page = 1, limit = 20) => {
+export const useMyProperties = (filters: MyPropertiesFilters = {}) => {
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 20;
     return useQuery({
-        queryKey: ['my-properties', page, limit],
-        queryFn: () => getMyProperties(page, limit),
+        queryKey: ['my-properties', page, limit, filters.status ?? null, filters.q ?? null, filters.cityId ?? null, filters.sort ?? null, filters.sortOrder ?? null],
+        queryFn: () => getMyProperties({ ...filters, page, limit }),
+        enabled: isAuthenticated(),
+    });
+};
+
+export const useMyPropertiesSummary = () => {
+    return useQuery({
+        queryKey: ['my-properties-summary'],
+        queryFn: getMyPropertiesSummary,
         enabled: isAuthenticated(),
     });
 };
@@ -125,10 +135,10 @@ export const useMyProperties = (page = 1, limit = 20) => {
 /** True, если у пользователя есть хотя бы одно объявление (любой статус). */
 export const useHasMyProperties = () => {
     const ownerFeatures = useOwnerFeaturesContext();
-    const query = useMyProperties(1, 1);
+    const query = useMyPropertiesSummary();
 
     const hasMyProperties = query.isSuccess
-        ? query.data.data.length > 0
+        ? query.data.hasAny
         : (ownerFeatures?.initialHasMyProperties ?? false);
 
     return {
@@ -144,6 +154,7 @@ export const useUpdateProperty = () => {
         onSuccess: (_result, variables) => {
             queryClient.invalidateQueries({ queryKey: ['property', variables.id] });
             queryClient.invalidateQueries({ queryKey: ['my-properties'] });
+            queryClient.invalidateQueries({ queryKey: ['my-properties-summary'] });
         },
     });
 };
@@ -346,6 +357,7 @@ export const useArchiveProperty = () => {
         mutationFn: (id: number) => archiveProperty(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['my-properties'] });
+            queryClient.invalidateQueries({ queryKey: ['my-properties-summary'] });
             queryClient.invalidateQueries({ queryKey: ['properties'] });
         },
     });
@@ -357,6 +369,7 @@ export const useUnarchiveProperty = () => {
         mutationFn: (id: number) => unarchiveProperty(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['my-properties'] });
+            queryClient.invalidateQueries({ queryKey: ['my-properties-summary'] });
             queryClient.invalidateQueries({ queryKey: ['properties'] });
             queryClient.invalidateQueries({ queryKey: ['free-listing-limits'] });
         },
@@ -369,6 +382,7 @@ export const usePublishFreeProperty = () => {
         mutationFn: (id: number) => publishFreeProperty(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['my-properties'] });
+            queryClient.invalidateQueries({ queryKey: ['my-properties-summary'] });
             queryClient.invalidateQueries({ queryKey: ['properties'] });
             queryClient.invalidateQueries({ queryKey: ['free-listing-limits'] });
         },
@@ -389,6 +403,7 @@ export const useDeleteProperty = () => {
         mutationFn: (id: number) => deleteProperty(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['my-properties'] });
+            queryClient.invalidateQueries({ queryKey: ['my-properties-summary'] });
             queryClient.invalidateQueries({ queryKey: ['properties'] });
         },
     });

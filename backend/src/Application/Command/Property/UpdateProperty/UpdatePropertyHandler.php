@@ -25,6 +25,7 @@ use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\Exception\UnauthorizedException;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
@@ -40,6 +41,7 @@ readonly class UpdatePropertyHandler
         private CityDistrictResolverInterface $cityDistrictResolver,
         private CityMicrodistrictResolverInterface $cityMicrodistrictResolver,
         private ResidentialComplexResolverInterface $residentialComplexResolver,
+        private UserRepositoryInterface $userRepository,
     ) {
     }
 
@@ -128,7 +130,7 @@ readonly class UpdatePropertyHandler
             $coordinates = Coordinates::create($command->latitude, $command->longitude);
         }
 
-        if (in_array($property->getStatus(), ['published', 'rejected'], true)) {
+        if (in_array($property->getStatus(), ['published', 'rejected'], true) && !$this->isTrustedPublisher($command->userId)) {
             if ($this->isOnlyPriceChange($command, $property)) {
                 if ($price !== null) {
                     $property->update(price: $price);
@@ -246,6 +248,13 @@ readonly class UpdatePropertyHandler
         $this->propertyRepository->save($property);
 
         return false;
+    }
+
+    private function isTrustedPublisher(string $userId): bool
+    {
+        $user = $this->userRepository->findById(Id::fromString($userId));
+
+        return $user !== null && $user->isTrustedPublisher();
     }
 
     private function isOnlyPriceChange(UpdatePropertyCommand $command, Property $property): bool

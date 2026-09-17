@@ -26,6 +26,7 @@ use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
+use App\Application\Service\FreeListingLimitService;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 final class CreatePropertyHandler
@@ -40,6 +41,7 @@ final class CreatePropertyHandler
         private readonly CityMicrodistrictResolverInterface $cityMicrodistrictResolver,
         private readonly ResidentialComplexResolverInterface $residentialComplexResolver,
         private readonly MessageBusInterface $notificationBus,
+        private readonly FreeListingLimitService $freeListingLimitService,
     ) {
     }
 
@@ -174,7 +176,13 @@ final class CreatePropertyHandler
         $this->landmarkProximityCalculator->syncForProperty($property);
         $this->propertyRepository->save($property);
 
-        $this->notificationBus->dispatch(new PropertySubmittedForModerationEvent((string) $property->getId()->getValue()));
+        if ($user->isTrustedPublisher()) {
+            $withinFreeLimit = $this->freeListingLimitService->canPublishFree($property);
+            $property->approve(grantFreeTrial: false, withinFreeLimit: $withinFreeLimit);
+            $this->propertyRepository->save($property);
+        } else {
+            $this->notificationBus->dispatch(new PropertySubmittedForModerationEvent((string) $property->getId()->getValue()));
+        }
 
         return $property->getId()->getValue();
     }

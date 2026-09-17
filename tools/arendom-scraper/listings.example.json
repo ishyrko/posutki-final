@@ -1,0 +1,26 @@
+{
+  "source": "arendom",
+  "listings": [
+    {
+      "externalId": "example-1",
+      "url": "https://arendom.com/example-1",
+      "title": "2-комнатная квартира на Независимости",
+      "description": "Уютная квартира в центре города с отдельной спальней, кухней и всем необходимым для короткой поездки.",
+      "cityName": "Минск",
+      "streetName": "Независимости",
+      "building": "10",
+      "priceByn": 90,
+      "area": 54,
+      "rooms": 2,
+      "floor": 5,
+      "totalFloors": 9,
+      "maxDailyGuests": 4,
+      "dailySingleBeds": 2,
+      "dailyDoubleBeds": 1,
+      "checkInTime": "14:00",
+      "checkOutTime": "12:00",
+      "amenities": ["Wi-Fi", "холодильник", "телевизор", "стиральная машина"],
+      "images": []
+    }
+  ]
+}

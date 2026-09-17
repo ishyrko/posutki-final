@@ -21,6 +21,26 @@ class StreetRepository extends ServiceEntityRepository implements StreetReposito
         return $this->find($id);
     }
 
+    public function findByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(
+            $ids,
+            static fn(mixed $id): bool => is_int($id) && $id > 0,
+        )));
+        if ($ids === []) {
+            return [];
+        }
+
+        /** @var list<Street> $streets */
+        $streets = $this->createQueryBuilder('s')
+            ->where('s.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->getQuery()
+            ->getResult();
+
+        return $streets;
+    }
+
     public function findByCityId(int $cityId): array
     {
         return $this->createQueryBuilder('s')

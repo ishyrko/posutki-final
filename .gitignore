@@ -6,6 +6,9 @@
 frontend/.next-cpanel/
 frontend/.next-staging/
 
+# Partner scraper install artifacts
+tools/arendom-scraper/node_modules/
+
 # Symfony local overrides (full copy or deltas; not committed)
 backend/.env.local
 /backend/public/uploads/

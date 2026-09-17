@@ -90,6 +90,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'boolean', name: 'allow_messages_and_inquiries', options: ['default' => true])]
     private bool $allowMessagesAndInquiries = true;
 
+    #[ORM\Column(type: 'boolean', name: 'is_partner', options: ['default' => false])]
+    private bool $isPartner = false;
+
+    #[ORM\Column(type: 'integer', nullable: true, name: 'partner_listing_limit')]
+    private ?int $partnerListingLimit = null;
+
+    #[ORM\Column(type: 'boolean', name: 'is_trusted_publisher', options: ['default' => false])]
+    private bool $isTrustedPublisher = false;
+
     public function __construct(
         ?Email $email,
         string $password,
@@ -467,6 +476,41 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setAllowMessagesAndInquiries(bool $allowMessagesAndInquiries): void
     {
         $this->allowMessagesAndInquiries = $allowMessagesAndInquiries;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function isPartner(): bool
+    {
+        return $this->isPartner;
+    }
+
+    public function setIsPartner(bool $isPartner): void
+    {
+        $this->isPartner = $isPartner;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getPartnerListingLimit(): ?int
+    {
+        return $this->partnerListingLimit;
+    }
+
+    public function setPartnerListingLimit(?int $partnerListingLimit): void
+    {
+        $this->partnerListingLimit = $partnerListingLimit !== null && $partnerListingLimit > 0
+            ? $partnerListingLimit
+            : null;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function isTrustedPublisher(): bool
+    {
+        return $this->isTrustedPublisher;
+    }
+
+    public function setIsTrustedPublisher(bool $isTrustedPublisher): void
+    {
+        $this->isTrustedPublisher = $isTrustedPublisher;
         $this->updatedAt = new \DateTimeImmutable();
     }
 

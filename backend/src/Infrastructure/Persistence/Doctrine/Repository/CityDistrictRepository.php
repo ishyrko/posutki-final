@@ -22,6 +22,26 @@ class CityDistrictRepository extends ServiceEntityRepository implements CityDist
         return $this->find($id);
     }
 
+    public function findByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(
+            $ids,
+            static fn(mixed $id): bool => is_int($id) && $id > 0,
+        )));
+        if ($ids === []) {
+            return [];
+        }
+
+        /** @var list<CityDistrict> $districts */
+        $districts = $this->createQueryBuilder('d')
+            ->where('d.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->getQuery()
+            ->getResult();
+
+        return $districts;
+    }
+
     public function findByCityIdAndOfficialName(int $cityId, string $officialName): ?CityDistrict
     {
         return $this->createQueryBuilder('d')

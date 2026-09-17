@@ -10,7 +10,11 @@ final class GetMyPropertiesQuery
         public string $userId,
         public int $page = 1,
         public int $limit = 20,
-        )
-    {
+        public ?string $status = null,
+        public ?string $q = null,
+        public ?int $cityId = null,
+        public string $sort = 'createdAt',
+        public string $sortOrder = 'DESC',
+    ) {
     }
 }

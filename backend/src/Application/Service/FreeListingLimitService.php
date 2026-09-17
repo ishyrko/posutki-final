@@ -10,12 +10,15 @@ use App\Domain\Property\Limit\FreeListingLimits;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Entity\User;
+use App\Domain\User\Repository\UserRepositoryInterface;
 
 final class FreeListingLimitService
 {
     public function __construct(
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly CityRepositoryInterface $cityRepository,
+        private readonly UserRepositoryInterface $userRepository,
     ) {
     }
 
@@ -48,10 +51,15 @@ final class FreeListingLimitService
     {
         $ownerId = $property->getOwnerId();
         $excludeId = $property->getId();
+        $owner = $this->userRepository->findById($ownerId);
 
         $accountUsed = $this->propertyRepository->countFreePublishedByOwner($ownerId, $excludeId);
-        if ($accountUsed >= FreeListingLimits::MAX_PUBLISHED_PER_ACCOUNT) {
+        if ($accountUsed >= $this->accountLimitForUser($owner)) {
             return false;
+        }
+
+        if ($owner !== null && $owner->isPartner()) {
+            return true;
         }
 
         if ($property->getType() !== PropertyType::Apartment->value) {
@@ -83,7 +91,18 @@ final class FreeListingLimitService
             $property->getId(),
         );
 
-        return $accountUsed >= FreeListingLimits::MAX_PUBLISHED_PER_ACCOUNT;
+        $owner = $this->userRepository->findById($property->getOwnerId());
+
+        return $accountUsed >= $this->accountLimitForUser($owner);
+    }
+
+    public function accountLimitForUser(?User $user): int
+    {
+        if ($user !== null && $user->isPartner()) {
+            return $user->getPartnerListingLimit() ?? FreeListingLimits::DEFAULT_PARTNER_LISTING_LIMIT;
+        }
+
+        return FreeListingLimits::MAX_PUBLISHED_PER_ACCOUNT;
     }
 
     public function buildLimitExceededIntro(Property $property, bool $afterPaidVipExpires = false): string
@@ -126,14 +145,19 @@ final class FreeListingLimitService
     public function describeLimits(Id $ownerId, ?int $cityId, ?string $propertyType): array
     {
         $accountUsed = $this->propertyRepository->countFreePublishedByOwner($ownerId);
+        $owner = $this->userRepository->findById($ownerId);
 
         $result = [
             'account' => [
                 'used' => $accountUsed,
-                'limit' => FreeListingLimits::MAX_PUBLISHED_PER_ACCOUNT,
+                'limit' => $this->accountLimitForUser($owner),
             ],
             'city' => null,
         ];
+
+        if ($owner !== null && $owner->isPartner()) {
+            return $result;
+        }
 
         if ($propertyType === PropertyType::Apartment->value && $cityId !== null && $cityId > 0) {
             $city = $this->cityRepository->findById($cityId);

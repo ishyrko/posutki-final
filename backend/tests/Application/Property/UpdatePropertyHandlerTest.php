@@ -23,6 +23,8 @@ use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Entity\User;
+use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
@@ -73,6 +75,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
+            $this->createUserRepository(),
         );
 
         $requiresModeration = $handler(new UpdatePropertyCommand(
@@ -84,6 +87,43 @@ final class UpdatePropertyHandlerTest extends TestCase
 
         self::assertTrue($requiresModeration);
         self::assertSame($originalTitle, $property->getTitle());
+    }
+
+    public function testTrustedPublisherAppliesPublishedUpdateWithoutRevision(): void
+    {
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $revisionRepository = $this->createMock(PropertyRevisionRepositoryInterface::class);
+        $propertyMetroStationRepository = $this->createMock(PropertyMetroStationRepositoryInterface::class);
+        $metroCalculator = $this->createMetroCalculator($propertyMetroStationRepository);
+        $exchangeRateService = $this->createExchangeRateService(['USD' => 3.2]);
+
+        $property = $this->createProperty(ownerId: 1, propertyId: 201);
+        $property->setStatus('published');
+
+        $propertyRepository->method('findById')->willReturn($property);
+        $propertyRepository->expects(self::exactly(2))->method('save')->with($property);
+        $revisionRepository->expects(self::never())->method('save');
+
+        $handler = new UpdatePropertyHandler(
+            $propertyRepository,
+            $revisionRepository,
+            $exchangeRateService,
+            $metroCalculator,
+            $this->createLandmarkCalculator(),
+            $this->createCityDistrictResolver(),
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
+            $this->createUserRepository(trusted: true),
+        );
+
+        $requiresModeration = $handler(new UpdatePropertyCommand(
+            propertyId: '201',
+            userId: '1',
+            title: 'Trusted update title',
+        ));
+
+        self::assertFalse($requiresModeration);
+        self::assertSame('Trusted update title', $property->getTitle());
     }
 
     public function testPropertyTypeChangeThrowsDomainException(): void
@@ -109,6 +149,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
+            $this->createUserRepository(),
         );
 
         $this->expectException(DomainException::class);
@@ -145,6 +186,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
+            $this->createUserRepository(),
         );
 
         $this->expectException(DomainException::class);
@@ -189,6 +231,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
+            $this->createUserRepository(),
         );
 
         $requiresModeration = $handler(new UpdatePropertyCommand(
@@ -253,6 +296,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
+            $this->createUserRepository(),
         );
 
         $handler(new UpdatePropertyCommand(
@@ -355,5 +399,18 @@ final class UpdatePropertyHandlerTest extends TestCase
     private function createResidentialComplexResolver(): ResidentialComplexResolverInterface
     {
         return $this->createStub(ResidentialComplexResolverInterface::class);
+    }
+
+    private function createUserRepository(bool $trusted = false): UserRepositoryInterface
+    {
+        $user = User::registerViaPhone('+375291112233');
+        if ($trusted) {
+            $user->setIsTrustedPublisher(true);
+        }
+
+        $userRepository = $this->createStub(UserRepositoryInterface::class);
+        $userRepository->method('findById')->willReturn($user);
+
+        return $userRepository;
     }
 }

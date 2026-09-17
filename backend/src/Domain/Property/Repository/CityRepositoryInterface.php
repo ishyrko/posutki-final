@@ -10,6 +10,12 @@ interface CityRepositoryInterface
 {
     public function findById(int $id): ?City;
 
+    /**
+     * @param list<int> $ids
+     * @return list<City>
+     */
+    public function findByIds(array $ids): array;
+
     public function findBySlug(string $slug): ?City;
 
     /** @return City[] */

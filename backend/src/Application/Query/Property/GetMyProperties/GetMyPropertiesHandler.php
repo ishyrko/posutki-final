@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace App\Application\Query\Property\GetMyProperties;
 
-use App\Application\Service\FreeListingLimitService;
 use App\Application\DTO\PropertyDTO;
+use App\Application\Service\FreeListingLimitService;
 use App\Application\Service\PropertyOwnerPublicContactResolver;
 use App\Domain\Favorite\Repository\FavoriteRepositoryInterface;
-use App\Domain\Property\Repository\{PropertyRepositoryInterface, CityRepositoryInterface, CityDistrictRepositoryInterface, StreetRepositoryInterface};
+use App\Domain\Property\Entity\City;
+use App\Domain\Property\Entity\CityDistrict;
+use App\Domain\Property\Entity\Street;
+use App\Domain\Property\Repository\CityDistrictRepositoryInterface;
+use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Domain\Property\Repository\PropertyRepositoryInterface;
+use App\Domain\Property\Repository\StreetRepositoryInterface;
 use App\Domain\Review\Repository\ReviewRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
 
@@ -28,61 +34,50 @@ final class GetMyPropertiesHandler
 
     public function __invoke(GetMyPropertiesQuery $query): array
     {
+        $filters = [
+            'status' => $query->status,
+            'q' => $query->q,
+            'cityId' => $query->cityId,
+            'sort' => $query->sort,
+            'sortOrder' => $query->sortOrder,
+        ];
+
         $properties = $this->propertyRepository->findByOwner(
             $query->userId,
             $query->page,
-            $query->limit
+            $query->limit,
+            $filters,
         );
+        $total = $this->propertyRepository->countByOwner($query->userId, $filters);
+        $statusCounts = $this->propertyRepository->countByOwnerGroupedByStatus($query->userId, $filters);
 
         $ownerId = Id::fromString($query->userId);
         $unviewedByProperty = $this->reviewRepository->countUnviewedGroupedByPropertyForOwner($ownerId);
 
-        $cityIds = array_unique(array_map(
-            fn($p) => $p->getCityId(),
-            $properties
-        ));
+        $cityIds = array_values(array_unique(array_filter(array_map(
+            static fn($p) => $p->getCityId(),
+            $properties,
+        ))));
+        $streetIds = array_values(array_unique(array_filter(array_map(
+            static fn($p) => $p->getStreetId(),
+            $properties,
+        ))));
+        $cityDistrictIds = array_values(array_unique(array_filter(array_map(
+            static fn($p) => $p->getCityDistrictId(),
+            $properties,
+        ))));
 
-        $streetIds = array_filter(array_unique(array_map(
-            fn($p) => $p->getStreetId(),
-            $properties
-        )));
-
-        $cityDistrictIds = array_filter(array_unique(array_map(
-            fn($p) => $p->getCityDistrictId(),
-            $properties
-        )));
-
-        $cities = [];
-        foreach ($cityIds as $cityId) {
-            $city = $this->cityRepository->findById($cityId);
-            if ($city !== null) {
-                $cities[$cityId] = $city;
-            }
-        }
-
-        $streets = [];
-        foreach ($streetIds as $streetId) {
-            $street = $this->streetRepository->findById($streetId);
-            if ($street !== null) {
-                $streets[$streetId] = $street;
-            }
-        }
-
-        $cityDistricts = [];
-        foreach ($cityDistrictIds as $cityDistrictId) {
-            $cityDistrict = $this->cityDistrictRepository->findById($cityDistrictId);
-            if ($cityDistrict !== null) {
-                $cityDistricts[$cityDistrictId] = $cityDistrict;
-            }
-        }
+        $cities = $this->indexById($this->cityRepository->findByIds($cityIds));
+        $streets = $this->indexById($this->streetRepository->findByIds($streetIds));
+        $cityDistricts = $this->indexById($this->cityDistrictRepository->findByIds($cityDistrictIds));
 
         $ownerIds = array_values(array_unique(array_map(
             static fn($property) => $property->getOwnerId()->getValue(),
-            $properties
+            $properties,
         )));
         $ownerContacts = $this->ownerPublicContactResolver->resolveForOwnerIds($ownerIds);
 
-        return array_map(
+        $items = array_map(
             function ($property) use ($cities, $streets, $cityDistricts, $ownerContacts, $unviewedByProperty) {
                 $ownerId = $property->getOwnerId()->getValue();
                 $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
@@ -113,7 +108,38 @@ final class GetMyPropertiesHandler
                     freeLimitBlockIntro: $freeLimitBlockIntro,
                 );
             },
-            $properties
+            $properties,
         );
+
+        return [
+            'items' => $items,
+            'total' => $total,
+            'page' => $query->page,
+            'limit' => $query->limit,
+            'counts' => [
+                'published' => $statusCounts['published'] ?? 0,
+                'moderation' => $statusCounts['moderation'] ?? 0,
+                'awaiting_payment' => $statusCounts['awaiting_payment'] ?? 0,
+                'rejected' => $statusCounts['rejected'] ?? 0,
+                'inactive' => $statusCounts['archived'] ?? 0,
+                'draft' => $statusCounts['draft'] ?? 0,
+                'all' => array_sum($statusCounts),
+            ],
+        ];
+    }
+
+    /**
+     * @param list<City|Street|CityDistrict> $entities
+     *
+     * @return array<int, City|Street|CityDistrict>
+     */
+    private function indexById(array $entities): array
+    {
+        $indexed = [];
+        foreach ($entities as $entity) {
+            $indexed[$entity->getId()] = $entity;
+        }
+
+        return $indexed;
     }
 }

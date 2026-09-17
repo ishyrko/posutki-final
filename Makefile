@@ -8,7 +8,7 @@ test-unit:
 
 test-functional:
 	docker compose exec php sh -lc "cd /var/www/backend && composer test:functional"
-.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo backend-seed-demo-landmarks backend-watermark-property-images backend-watermark-property-images-dry-run admin-user frontend-install frontend-dev frontend-build frontend-build-cpanel frontend-build-cpanel-prod frontend-build-cpanel-prod-local frontend-build-cpanel-verify-3g frontend-export-cpanel frontend-cpanel-clean clean exchange-rates sync-metro-proximity sync-landmark-proximity backfill-city-districts sync-calendars reshuffle-placement notify-vip-expiring prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-sync-landmark-proximity prod-backfill-city-districts prod-sync-calendars prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
+.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo backend-seed-demo-landmarks backend-watermark-property-images backend-watermark-property-images-dry-run scrape-arendom import-partner-listings admin-user frontend-install frontend-dev frontend-build frontend-build-cpanel frontend-build-cpanel-prod frontend-build-cpanel-prod-local frontend-build-cpanel-verify-3g frontend-export-cpanel frontend-cpanel-clean clean exchange-rates sync-metro-proximity sync-landmark-proximity backfill-city-districts sync-calendars reshuffle-placement notify-vip-expiring prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-sync-landmark-proximity prod-backfill-city-districts prod-sync-calendars prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
 
 PROD_ENV_FILE = .env.prod
 CPANEL_ENV_FILE = .env.cpanel
@@ -92,6 +92,14 @@ backend-watermark-property-images: ## Watermark local property photos and conver
 backend-watermark-property-images-dry-run: ## Preview property image watermark backfill
 	@echo "${GREEN}Dry-run property image watermark (app:watermark-property-images --dry-run)...${RESET}"
 	docker-compose exec php sh -lc "cd /var/www/backend && php bin/console app:watermark-property-images --dry-run --no-interaction"
+
+scrape-arendom: ## Scrape arendom.com listings into backend/var/import/arendom (LIMIT=0 means all)
+	@echo "${GREEN}Scraping arendom.com...${RESET}"
+	docker compose --profile tools run --rm -e LIMIT=$(or $(LIMIT),0) arendom-scraper sh -lc "npm install --omit=dev --no-audit --no-fund && node scrape.mjs --limit $(or $(LIMIT),0)"
+
+import-partner-listings: ## Import scraped partner listings. Usage: make import-partner-listings OWNER=123 DRY_RUN=1 LIMIT=10
+	@echo "${GREEN}Importing partner listings...${RESET}"
+	docker compose exec php sh -lc "cd /var/www/backend && php bin/console app:import-partner-listings --owner=$(OWNER) --source=/var/www/backend/var/import/arendom/listings.json $(if $(DRY_RUN),--dry-run,) $(if $(LIMIT),--limit=$(LIMIT),)"
 
 admin-user: ## Create or promote admin (EMAIL=... PASSWORD=... optional FIRST= LAST=)
 	@test -n "$(EMAIL)" && test -n "$(PASSWORD)" || (echo "${YELLOW}Usage: make admin-user EMAIL=you@example.com PASSWORD=secret [FIRST=Admin] [LAST=Admin]${RESET}" && exit 1)

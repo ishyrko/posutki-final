@@ -7,13 +7,16 @@ namespace App\Tests\Application\Property;
 use App\Application\Command\Property\UnarchiveProperty\UnarchivePropertyCommand;
 use App\Application\Command\Property\UnarchiveProperty\UnarchivePropertyHandler;
 use App\Application\Service\FreeListingLimitService;
+use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\Property;
+use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Repository\UserRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 
 final class UnarchivePropertyHandlerTest extends TestCase
@@ -28,8 +31,7 @@ final class UnarchivePropertyHandlerTest extends TestCase
         $repository->method('findById')->willReturn($property);
         $repository->expects(self::once())->method('save')->with($property);
 
-        $freeListingLimitService = $this->createStub(FreeListingLimitService::class);
-        $freeListingLimitService->method('canPublishFree')->willReturn(true);
+        $freeListingLimitService = $this->createFreeListingLimitService();
 
         $handler = new UnarchivePropertyHandler($repository, $freeListingLimitService);
         $handler(new UnarchivePropertyCommand('11', '7'));
@@ -47,8 +49,7 @@ final class UnarchivePropertyHandlerTest extends TestCase
         $repository = $this->createStub(PropertyRepositoryInterface::class);
         $repository->method('findById')->willReturn($property);
 
-        $freeListingLimitService = $this->createStub(FreeListingLimitService::class);
-        $freeListingLimitService->method('canPublishFree')->willReturn(true);
+        $freeListingLimitService = $this->createFreeListingLimitService();
 
         $handler = new UnarchivePropertyHandler($repository, $freeListingLimitService);
 
@@ -66,8 +67,7 @@ final class UnarchivePropertyHandlerTest extends TestCase
         $repository = $this->createStub(PropertyRepositoryInterface::class);
         $repository->method('findById')->willReturn($property);
 
-        $freeListingLimitService = $this->createStub(FreeListingLimitService::class);
-        $freeListingLimitService->method('canPublishFree')->willReturn(true);
+        $freeListingLimitService = $this->createFreeListingLimitService();
 
         $handler = new UnarchivePropertyHandler($repository, $freeListingLimitService);
 
@@ -113,5 +113,23 @@ final class UnarchivePropertyHandlerTest extends TestCase
         $idReflection->setValue($property, Id::fromInt(11));
 
         return $property;
+    }
+
+    private function createFreeListingLimitService(): FreeListingLimitService
+    {
+        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
+        $propertyRepository->method('countFreePublishedByOwner')->willReturn(0);
+        $propertyRepository->method('countFreePublishedApartmentsByOwnerInCity')->willReturn(0);
+
+        $city = $this->createStub(City::class);
+        $city->method('getFreeApartmentsPerAccount')->willReturn(10);
+        $cityRepository = $this->createStub(CityRepositoryInterface::class);
+        $cityRepository->method('findById')->willReturn($city);
+
+        return new FreeListingLimitService(
+            $propertyRepository,
+            $cityRepository,
+            $this->createStub(UserRepositoryInterface::class),
+        );
     }
 }

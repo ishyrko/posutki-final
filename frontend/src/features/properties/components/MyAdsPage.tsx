@@ -1,14 +1,16 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ExchangeRates } from '@/features/properties/api';
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from '@/features/properties/price-display';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ListingSubmitLink } from '@/components/ListingSubmitLink';
-import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, CalendarDays, Rocket, Star, User, Phone, MessagesSquare } from 'lucide-react';
+import { Plus, Edit, Eye, EyeOff, Trash2, MapPin, BedDouble, Maximize, Clock, BarChart3, CalendarDays, Rocket, Star, User, Phone, MessagesSquare, Search, Archive } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -111,10 +113,14 @@ function ListingCard({
     property,
     showPublicLinks,
     onRequestDelete,
+    selected,
+    onToggleSelect,
 }: {
     property: Property;
     showPublicLinks: boolean;
     onRequestDelete?: (propertyId: number) => void;
+    selected?: boolean;
+    onToggleSelect?: (propertyId: number) => void;
 }) {
     const archive = useArchiveProperty();
     const unarchive = useUnarchiveProperty();
@@ -199,11 +205,21 @@ function ListingCard({
                     </span>
                 </div>
             )}
+            {onToggleSelect ? (
+                <div className="absolute top-2 left-2 z-10" onClick={(event) => event.preventDefault()}>
+                    <Checkbox
+                        checked={selected}
+                        onCheckedChange={() => onToggleSelect(property.id)}
+                        className="bg-card/90 border-border shadow-sm"
+                        aria-label="Выбрать объявление"
+                    />
+                </div>
+            ) : null}
         </>
     );
 
     const imageClassName =
-        'relative sm:w-48 flex-shrink-0 aspect-[4/3] sm:aspect-auto sm:h-auto overflow-hidden';
+        'relative sm:w-40 flex-shrink-0 aspect-[4/3] sm:aspect-auto sm:min-h-[7.5rem] overflow-hidden';
 
     return (
         <div className="w-full max-w-full flex flex-col sm:flex-row bg-card rounded-xl shadow-card overflow-hidden">
@@ -553,34 +569,60 @@ function ListingCard({
     );
 }
 
-function isStatusMatch(propertyStatus: Property['status'], tabStatus: MyAdsStatus) {
-    if (tabStatus === 'inactive') {
-        return propertyStatus === 'archived';
-    }
-    return propertyStatus === tabStatus;
-}
-
 export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
+    const PAGE_SIZE = 20;
     const deletePropertyMutation = useDeleteProperty();
+    const archivePropertyMutation = useArchiveProperty();
     const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
-    const { data, isLoading } = useMyProperties();
+    const [page, setPage] = useState(1);
+    const [searchInput, setSearchInput] = useState('');
+    const [q, setQ] = useState('');
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+    useEffect(() => {
+        setPage(1);
+        setSelectedIds([]);
+    }, [activeStatus, q]);
+
+    const { data, isLoading } = useMyProperties({
+        page,
+        limit: PAGE_SIZE,
+        status: activeStatus,
+        q: q || undefined,
+    });
     const properties = useMemo(() => data?.data ?? [], [data?.data]);
-
-    const filteredProperties = useMemo(() => {
-        return properties.filter((property) => isStatusMatch(property.status, activeStatus));
-    }, [activeStatus, properties]);
-
-    const statusCounts = useMemo(() => {
-        return {
-            published: properties.filter((property) => property.status === 'published').length,
-            moderation: properties.filter((property) => property.status === 'moderation').length,
-            awaiting_payment: properties.filter((property) => property.status === 'awaiting_payment').length,
-            rejected: properties.filter((property) => property.status === 'rejected').length,
-            inactive: properties.filter((property) => property.status === 'archived').length,
-        };
-    }, [properties]);
-
+    const total = data?.meta.total ?? properties.length;
+    const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const statusCounts = {
+        published: data?.meta.counts?.published ?? 0,
+        moderation: data?.meta.counts?.moderation ?? 0,
+        awaiting_payment: data?.meta.counts?.awaiting_payment ?? 0,
+        rejected: data?.meta.counts?.rejected ?? 0,
+        inactive: data?.meta.counts?.inactive ?? 0,
+    };
+    const canBulkArchive = activeStatus === 'published' || activeStatus === 'awaiting_payment';
     const closeDeleteDialog = () => setDeleteTargetId(null);
+
+    const toggleSelected = (propertyId: number) => {
+        setSelectedIds((current) =>
+            current.includes(propertyId)
+                ? current.filter((id) => id !== propertyId)
+                : [...current, propertyId],
+        );
+    };
+
+    const handleBulkArchive = async () => {
+        if (selectedIds.length === 0) {
+            return;
+        }
+        try {
+            await Promise.all(selectedIds.map((id) => archivePropertyMutation.mutateAsync(id)));
+            toast.success(`Скрыто объявлений: ${selectedIds.length}`);
+            setSelectedIds([]);
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Не удалось скрыть объявления'));
+        }
+    };
 
     return (
         <motion.div
@@ -621,6 +663,9 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                 <div>
                     <h1 className="font-display text-2xl font-bold text-foreground">Мои объявления</h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        {total} в этом статусе
+                    </p>
                 </div>
                 <Button asChild className="gap-2 w-full sm:w-auto">
                     <ListingSubmitLink>
@@ -630,7 +675,7 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
                 </Button>
             </div>
 
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="flex flex-wrap gap-2 mb-4">
                 {STATUS_TABS.map((tab) => (
                     <Link
                         key={tab.status}
@@ -647,15 +692,50 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
                 ))}
             </div>
 
+            <form
+                className="flex flex-col sm:flex-row gap-2 mb-4"
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    setQ(searchInput.trim());
+                }}
+            >
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                        value={searchInput}
+                        onChange={(event) => setSearchInput(event.target.value)}
+                        placeholder="Поиск по названию или улице"
+                        className="pl-9 h-10"
+                    />
+                </div>
+                <Button type="submit" variant="outline">Найти</Button>
+                {canBulkArchive && selectedIds.length > 0 && (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        className="gap-2"
+                        onClick={handleBulkArchive}
+                        disabled={archivePropertyMutation.isPending}
+                    >
+                        <Archive className="w-4 h-4" />
+                        Скрыть выбранные ({selectedIds.length})
+                    </Button>
+                )}
+            </form>
+
             {isLoading ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="h-36 bg-card rounded-xl shadow-card animate-pulse" />
+                        <div key={i} className="h-28 bg-card rounded-xl shadow-card animate-pulse" />
                     ))}
                 </div>
-            ) : filteredProperties.length === 0 ? (
+            ) : properties.length === 0 ? (
                 <div className="text-center py-16 bg-card rounded-xl shadow-card">
-                    {properties.length === 0 ? (
+                    {q || (data?.meta.counts?.all ?? 0) > 0 ? (
+                        <p className="text-muted-foreground">
+                            В этом статусе объявлений нет
+                        </p>
+                    ) : (
                         <>
                             <p className="text-muted-foreground mb-4">У вас пока нет объявлений</p>
                             <Button asChild className="gap-2">
@@ -665,23 +745,48 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
                                 </ListingSubmitLink>
                             </Button>
                         </>
-                    ) : (
-                        <p className="text-muted-foreground">
-                            В этом статусе объявлений нет
-                        </p>
                     )}
                 </div>
             ) : (
-                <div className="space-y-4">
-                    {filteredProperties.map((property) => (
-                        <ListingCard
-                            key={property.id}
-                            property={property}
-                            showPublicLinks={activeStatus !== 'inactive'}
-                            onRequestDelete={setDeleteTargetId}
-                        />
-                    ))}
-                </div>
+                <>
+                    <div className="space-y-3">
+                        {properties.map((property) => (
+                            <ListingCard
+                                key={property.id}
+                                property={property}
+                                showPublicLinks={activeStatus !== 'inactive'}
+                                onRequestDelete={setDeleteTargetId}
+                                selected={selectedIds.includes(property.id)}
+                                onToggleSelect={canBulkArchive ? toggleSelected : undefined}
+                            />
+                        ))}
+                    </div>
+                    {pageCount > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-6">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={page <= 1}
+                                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                            >
+                                Назад
+                            </Button>
+                            <span className="text-sm text-muted-foreground">
+                                {page} / {pageCount}
+                            </span>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={page >= pageCount}
+                                onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+                            >
+                                Вперёд
+                            </Button>
+                        </div>
+                    )}
+                </>
             )}
         </motion.div>
     );

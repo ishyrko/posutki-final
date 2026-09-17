@@ -31,9 +31,16 @@ interface PropertyRepositoryInterface
 
     public function count(array $filters = []): int;
 
-    public function findByOwner(string $ownerId, int $page = 1, int $limit = 20): array;
+    public function findByOwner(string $ownerId, int $page = 1, int $limit = 20, array $filters = []): array;
 
-    public function countByOwner(string $ownerId): int;
+    public function countByOwner(string $ownerId, array $filters = []): int;
+
+    /**
+     * @return array<string, int> status => count
+     */
+    public function countByOwnerGroupedByStatus(string $ownerId, array $filters = []): array;
+
+    public function findByExternalSourceAndId(string $source, string $externalId): ?Property;
 
     /**
      * @return Property[]

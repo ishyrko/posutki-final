@@ -10,6 +10,12 @@ interface StreetRepositoryInterface
 {
     public function findById(int $id): ?Street;
 
+    /**
+     * @param list<int> $ids
+     * @return list<Street>
+     */
+    public function findByIds(array $ids): array;
+
     /** @return Street[] */
     public function findByCityId(int $cityId): array;
 

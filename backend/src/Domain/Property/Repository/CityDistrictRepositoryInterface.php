@@ -10,6 +10,12 @@ interface CityDistrictRepositoryInterface
 {
     public function findById(int $id): ?CityDistrict;
 
+    /**
+     * @param list<int> $ids
+     * @return list<CityDistrict>
+     */
+    public function findByIds(array $ids): array;
+
     public function findByCityIdAndOfficialName(int $cityId, string $officialName): ?CityDistrict;
 
     /** @deprecated use findByCityIdAndOfficialName */

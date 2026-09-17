@@ -6,8 +6,11 @@ namespace App\Tests\Application\Property;
 
 use App\Application\Command\Property\CreateProperty\CreatePropertyCommand;
 use App\Application\Command\Property\CreateProperty\CreatePropertyHandler;
+use App\Application\Service\FreeListingLimitService;
 use App\Domain\Exchange\Repository\ExchangeRateRepositoryInterface;
 use App\Domain\Property\Event\PropertySubmittedForModerationEvent;
+use App\Domain\Property\Entity\City;
+use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Service\CityDistrictResolverInterface;
 use App\Domain\Property\Service\CityMicrodistrictResolverInterface;
@@ -71,6 +74,7 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
             $notificationBus,
+            $this->createFreeListingLimitService(),
         );
 
         $propertyId = $handler($this->createValidCommand(priceCurrency: 'USD'));
@@ -124,6 +128,7 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
             $notificationBus,
+            $this->createFreeListingLimitService(),
         );
 
         $handler($this->createValidCommand(priceCurrency: 'USD'));
@@ -149,6 +154,7 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
             $notificationBus,
+            $this->createFreeListingLimitService(),
         );
 
         $this->expectException(DomainException::class);
@@ -174,6 +180,7 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
             $notificationBus,
+            $this->createFreeListingLimitService(),
         );
 
         $this->expectException(DomainException::class);
@@ -199,12 +206,86 @@ final class CreatePropertyHandlerTest extends TestCase
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
             $notificationBus,
+            $this->createFreeListingLimitService(),
         );
 
         $this->expectException(DomainException::class);
         $this->expectExceptionMessage('Для подачи объявления необходимо указать и подтвердить email в профиле');
 
         $handler($this->createValidCommand());
+    }
+
+    public function testTrustedPublisherApprovesWithoutModerationEventAndWithoutFreeTrial(): void
+    {
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $metroCalculator = $this->createMetroCalculator();
+        $notificationBus = $this->createMock(MessageBusInterface::class);
+        $exchangeRateService = $this->createExchangeRateService(['USD' => 3.2]);
+        $freeListingLimitService = $this->createFreeListingLimitService();
+
+        $savedProperty = null;
+        $propertyRepository
+            ->expects(self::exactly(3))
+            ->method('save')
+            ->with(self::isInstanceOf(\App\Domain\Property\Entity\Property::class))
+            ->willReturnCallback(function ($property) use (&$savedProperty): void {
+                $savedProperty = $property;
+                $idReflection = new \ReflectionProperty($property, 'id');
+                $idReflection->setAccessible(true);
+                if (!$idReflection->isInitialized($property)) {
+                    $idReflection->setValue($property, Id::fromInt(321));
+                }
+            });
+
+        $notificationBus->expects(self::never())->method('dispatch');
+
+        $user = User::registerViaPhone('+375291112233');
+        $emailReflection = new \ReflectionProperty($user, 'email');
+        $emailReflection->setAccessible(true);
+        $emailReflection->setValue($user, Email::fromString('partner@example.com'));
+        $user->verify();
+        $user->setIsTrustedPublisher(true);
+        $userRepository = $this->createStub(UserRepositoryInterface::class);
+        $userRepository->method('findById')->willReturn($user);
+
+        $handler = new CreatePropertyHandler(
+            $propertyRepository,
+            $userRepository,
+            $exchangeRateService,
+            $metroCalculator,
+            $this->createLandmarkCalculator(),
+            $this->createCityDistrictResolver(),
+            $this->createCityMicrodistrictResolver(),
+            $this->createResidentialComplexResolver(),
+            $notificationBus,
+            $freeListingLimitService,
+        );
+
+        $propertyId = $handler($this->createValidCommand());
+
+        self::assertSame(321, $propertyId);
+        self::assertNotNull($savedProperty);
+        self::assertSame('published', $savedProperty->getStatus());
+        self::assertSame(0, $savedProperty->getPlacementBaseLevel());
+        self::assertFalse($savedProperty->isPlacementIsTrial());
+    }
+
+    private function createFreeListingLimitService(): FreeListingLimitService
+    {
+        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
+        $propertyRepository->method('countFreePublishedByOwner')->willReturn(0);
+        $propertyRepository->method('countFreePublishedApartmentsByOwnerInCity')->willReturn(0);
+
+        $city = $this->createStub(City::class);
+        $city->method('getFreeApartmentsPerAccount')->willReturn(10);
+        $cityRepository = $this->createStub(CityRepositoryInterface::class);
+        $cityRepository->method('findById')->willReturn($city);
+
+        return new FreeListingLimitService(
+            $propertyRepository,
+            $cityRepository,
+            $this->createStub(UserRepositoryInterface::class),
+        );
     }
 
     private function createUserRepository(bool $phoneVerified = true, bool $emailVerified = true): UserRepositoryInterface

@@ -292,6 +292,10 @@ services:
         tags:
             - { name: messenger.message_handler, bus: query.bus }
 
+    App\Application\Query\Property\GetMyProperties\GetMyPropertiesSummaryHandler:
+        tags:
+            - { name: messenger.message_handler, bus: query.bus }
+
     App\Application\Query\Property\GetOwnerListings\GetOwnerListingsHandler:
         tags:
             - { name: messenger.message_handler, bus: query.bus }

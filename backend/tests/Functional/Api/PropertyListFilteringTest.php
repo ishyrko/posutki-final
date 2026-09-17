@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Functional\Api;
 
 use App\Domain\Property\Entity\Property;
+use App\Domain\Property\Limit\FreeListingLimits;
 
 /**
  * HTTP tests for GET /api/properties query filters (SearchProperties → PropertyRepository::applyFilters).
@@ -356,6 +357,27 @@ final class PropertyListFilteringTest extends ApiTestCase
         $ids = $this->idsFromListPayload();
         self::assertContains($inMolodechno->getId()->getValue(), $ids);
         self::assertNotContains($inMinsk->getId()->getValue(), $ids);
+    }
+
+    public function testCatalogCapsListingsFromOneOwnerOnAPage(): void
+    {
+        $partner = $this->createUser('filter-owner-cap-partner@example.com', 'Password123!');
+        $other = $this->createUser('filter-owner-cap-other@example.com', 'Password123!');
+        $city = $this->createCity('Owner Cap City', 'owner-cap-city', 'г. Минск');
+
+        $partnerIds = [];
+        for ($i = 0; $i < 11; ++$i) {
+            $partnerIds[] = $this->createProperty($partner, $city, 'published')->getId()->getValue();
+        }
+        $otherProperty = $this->createProperty($other, $city, 'published');
+
+        $this->client->request('GET', '/api/properties?limit=20');
+
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+        $ids = $this->idsFromListPayload();
+        $partnerOnPage = array_values(array_intersect($ids, $partnerIds));
+        self::assertCount(FreeListingLimits::MAX_CATALOG_LISTINGS_PER_OWNER_PER_PAGE, $partnerOnPage);
+        self::assertContains($otherProperty->getId()->getValue(), $ids);
     }
 
     private function setPropertyPlacementLevel(Property $property, int $level): void

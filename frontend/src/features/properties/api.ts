@@ -1,6 +1,6 @@
 import axios from 'axios';
 import api from '@/lib/api';
-import { Property, PropertyFilters, PropertyListResponse, PropertyStats, type Currency } from './types';
+import { Property, PropertyFilters, PropertyListResponse, PropertyStats, type Currency, type MyPropertiesFilters, type MyPropertiesSummary } from './types';
 import { getMockPropertiesResponse, getMockProperty } from './mock-data';
 import { clearLocalFavoriteIds, getLocalFavoriteIds } from '@/lib/favorites-storage';
 import { getOrCreateVisitorId } from '@/lib/view-tracking';
@@ -183,17 +183,44 @@ export const syncLocalFavoritesToServer = async (): Promise<void> => {
     clearLocalFavoriteIds();
 };
 
-export const getMyProperties = async (page = 1, limit = 20): Promise<PropertyListResponse> => {
+export const getMyProperties = async (filters: MyPropertiesFilters = {}): Promise<PropertyListResponse> => {
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 20;
     try {
-        const response = await api.get<{ data: Property[] }>(`/properties/my?page=${page}&limit=${limit}`);
+        const params = new URLSearchParams();
+        params.append('page', String(page));
+        params.append('limit', String(limit));
+        if (filters.status) params.append('status', filters.status);
+        if (filters.q) params.append('q', filters.q);
+        if (filters.cityId) params.append('cityId', String(filters.cityId));
+        if (filters.sort) params.append('sort', filters.sort);
+        if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+
+        const response = await api.get<{
+            data: Property[];
+            pagination?: { total: number; page: number; limit: number; pages: number };
+            meta?: PropertyListResponse['meta'];
+        }>(`/properties/my?${params.toString()}`);
         const properties = response.data.data;
+        const pagination = response.data.pagination;
+        const meta = response.data.meta;
         return {
             data: properties,
-            meta: { total: properties.length, page, limit },
+            meta: {
+                total: meta?.total ?? pagination?.total ?? properties.length,
+                page: meta?.page ?? pagination?.page ?? page,
+                limit: meta?.limit ?? pagination?.limit ?? limit,
+                counts: meta?.counts,
+            },
         };
     } catch {
         return getMockPropertiesResponse({ page, limit });
     }
+};
+
+export const getMyPropertiesSummary = async (): Promise<MyPropertiesSummary> => {
+    const response = await api.get<{ data: MyPropertiesSummary }>('/properties/my/summary');
+    return response.data.data;
 };
 
 export const trackPhoneView = async (id: number): Promise<void> => {

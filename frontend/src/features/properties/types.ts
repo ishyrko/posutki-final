@@ -239,8 +239,33 @@ export interface PropertyListResponse {
         total: number;
         page: number;
         limit: number;
+        counts?: {
+            published: number;
+            moderation: number;
+            awaiting_payment: number;
+            rejected: number;
+            inactive: number;
+            draft?: number;
+            all?: number;
+        };
     };
 }
+
+export type MyPropertiesFilters = {
+    page?: number;
+    limit?: number;
+    status?: string;
+    q?: string;
+    cityId?: number;
+    sort?: string;
+    sortOrder?: 'ASC' | 'DESC';
+};
+
+export type MyPropertiesSummary = {
+    hasAny: boolean;
+    awaitingPayment: number;
+    unviewedReviews: number;
+};
 
 /**
  * Compose a human-readable address string from the address object.

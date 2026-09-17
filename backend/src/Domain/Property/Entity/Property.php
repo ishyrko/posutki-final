@@ -18,6 +18,7 @@ use Doctrine\Common\Collections\Collection;
     columns: ['city_id', 'deal_type', 'type', 'status', 'placement_effective_level', 'placement_shuffle_key'],
 )]
 #[ORM\Index(columns: ['created_at'])]
+#[ORM\UniqueConstraint(name: 'uniq_properties_external_source_id', columns: ['external_source', 'external_id'])]
 class Property
 {
     #[ORM\Id]
@@ -229,6 +230,12 @@ class Property
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'external_calendar_synced_at')]
     private ?\DateTimeImmutable $externalCalendarSyncedAt = null;
+
+    #[ORM\Column(type: 'string', length: 50, nullable: true, name: 'external_source')]
+    private ?string $externalSource = null;
+
+    #[ORM\Column(type: 'string', length: 100, nullable: true, name: 'external_id')]
+    private ?string $externalId = null;
 
     /**
      * @var Collection<int, PropertyRevision>
@@ -560,6 +567,25 @@ class Property
     public function getExternalCalendarSyncedAt(): ?\DateTimeImmutable
     {
         return $this->externalCalendarSyncedAt;
+    }
+
+    public function getExternalSource(): ?string
+    {
+        return $this->externalSource;
+    }
+
+    public function getExternalId(): ?string
+    {
+        return $this->externalId;
+    }
+
+    public function setExternalIdentity(?string $source, ?string $externalId): void
+    {
+        $source = $source !== null ? trim($source) : null;
+        $externalId = $externalId !== null ? trim($externalId) : null;
+        $this->externalSource = $source === '' ? null : $source;
+        $this->externalId = $externalId === '' ? null : $externalId;
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     /**

@@ -29,6 +29,7 @@ use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
@@ -73,6 +74,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
+            $this->createUserRepository(),
         );
 
         $requiresModeration = $handler(new UpdatePropertyCommand(
@@ -172,6 +174,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
+            $this->createUserRepository(),
         );
 
         $requiresModeration = $handler(new UpdatePropertyCommand(
@@ -234,6 +237,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
+            $this->createUserRepository(),
         );
 
         $requiresModeration = $handler(new UpdatePropertyCommand(
@@ -374,6 +378,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
+            $this->createUserRepository(),
         );
 
         $requiresModeration = $handler(new UpdatePropertyCommand(
@@ -503,6 +508,19 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
     private function createResidentialComplexResolver(): ResidentialComplexResolverInterface
     {
         return $this->createStub(ResidentialComplexResolverInterface::class);
+    }
+
+    private function createUserRepository(bool $trusted = false): UserRepositoryInterface
+    {
+        $user = User::registerViaPhone('+375291112233');
+        if ($trusted) {
+            $user->setIsTrustedPublisher(true);
+        }
+
+        $userRepository = $this->createStub(UserRepositoryInterface::class);
+        $userRepository->method('findById')->willReturn($user);
+
+        return $userRepository;
     }
 
     private function createPlacementService(PropertyRepositoryInterface $propertyRepository): PropertyPlacementService
