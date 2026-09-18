@@ -24,6 +24,7 @@ use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Import\PartnerAmenityMapper;
 use App\Infrastructure\Import\PartnerBathroomMapper;
@@ -31,6 +32,7 @@ use App\Infrastructure\Import\PartnerCityMatcher;
 use App\Infrastructure\Import\PartnerJunkImageDetector;
 use App\Infrastructure\Import\PartnerListingDescriptionBuilder;
 use App\Infrastructure\Import\PartnerListingTitleBuilder;
+use App\Infrastructure\Migration\Data\ArendomPartnerSplitData;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\FileUploader;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
@@ -120,6 +122,9 @@ final class ImportPartnerListingsCommand extends Command
         $sourceName = is_string($decoded['source'] ?? null) && $decoded['source'] !== ''
             ? (string) $decoded['source']
             : 'arendom';
+        $secondOwner = $sourceName === ArendomPartnerSplitData::EXTERNAL_SOURCE
+            ? $this->userRepository->findVerifiedByPhone(ArendomPartnerSplitData::SECOND_PHONE)
+            : null;
         /** @var list<mixed> $rows */
         $rows = is_array($decoded['listings'] ?? null) ? $decoded['listings'] : [];
         $baseDir = dirname($sourcePath);
@@ -182,7 +187,8 @@ final class ImportPartnerListingsCommand extends Command
                     continue;
                 }
 
-                $this->createListing($owner->getId(), $resolved, $owner->isTrustedPublisher());
+                $listingOwner = $this->resolveArendomListingOwner($owner, $secondOwner, $resolved['city']);
+                $this->createListing($listingOwner->getId(), $resolved, $listingOwner->isTrustedPublisher());
                 ++$created;
                 $io->writeln(sprintf('создано %s/%s — %s', $sourceName, $externalId, $resolved['title']));
                 continue;
@@ -514,6 +520,19 @@ final class ImportPartnerListingsCommand extends Command
         }
 
         return $imageUrls;
+    }
+
+    private function resolveArendomListingOwner(User $owner, ?User $secondOwner, mixed $city): User
+    {
+        if (
+            $secondOwner === null
+            || !$city instanceof City
+            || !ArendomPartnerSplitData::isSecondPartnerCity($city->getSlug())
+        ) {
+            return $owner;
+        }
+
+        return $secondOwner;
     }
 
     /**
