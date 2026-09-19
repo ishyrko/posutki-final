@@ -32,7 +32,6 @@ import { PriceDisplay, BynCurrencyMark } from "@/components/BynCurrency";
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from "@/features/properties/price-display";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useNearViewport } from "@/hooks/useNearViewport";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { BookingInquiryModal } from "@/features/properties/components/BookingInquiryModal";
 import {
   getPropertySellerName,
@@ -137,7 +136,6 @@ export default function PropertyDetailClient({
   const [contactOpen, setContactOpen] = useState(false);
   const [reviewFormOpen, setReviewFormOpen] = useState(false);
   const openBookingAfterContactCloseRef = useRef(false);
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     setReviewFormOpen(false);
@@ -489,41 +487,34 @@ export default function PropertyDetailClient({
 
         <section className="container mx-auto min-w-0 px-4 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 rounded-2xl overflow-hidden max-h-[500px]">
-            <motion.div
-              className="md:col-span-2 md:row-span-2 relative cursor-pointer group aspect-[4/3] w-full min-h-0 overflow-hidden md:min-h-0"
+            <div
+              className="md:col-span-2 md:row-span-2 relative cursor-pointer group aspect-[4/3] w-full min-h-0 overflow-hidden transition-transform duration-150 hover:scale-[1.005] md:min-h-0"
               onClick={() => setLightboxOpen(true)}
-              whileHover={{ scale: 1.005 }}
             >
-              {isMobile === undefined ? (
-                <GalleryPortraitFrame
-                  src={mainImageThumbSrc}
-                  alt="Главное фото"
-                  fetchPriority="high"
-                  loading="eager"
-                />
-              ) : isMobile ? (
-                <PropertyMobileGallery
-                  images={galleryImages}
-                  currentIndex={currentImage}
-                  onIndexChange={setCurrentImage}
-                  onOpenLightbox={() => setLightboxOpen(true)}
-                />
-              ) : (
+              <div className="absolute inset-0 hidden md:block">
                 <GalleryPortraitFrame
                   src={mainImageFullSrc}
                   blurSrc={mainImageThumbSrc}
                   alt="Главное фото"
                   fetchPriority="high"
                   loading="eager"
+                  decoding="sync"
                 />
-              )}
+              </div>
+              <div className="absolute inset-0 md:hidden">
+                <PropertyMobileGallery
+                  images={galleryImages}
+                  currentIndex={currentImage}
+                  onIndexChange={setCurrentImage}
+                  onOpenLightbox={() => setLightboxOpen(true)}
+                />
+              </div>
               <div className="pointer-events-none absolute inset-0 z-[2] bg-foreground/0 group-hover:bg-foreground/10 transition-colors" />
-            </motion.div>
-            {isMobile === false &&
-              galleryImages.slice(1, 5).map((image, i) => (
+            </div>
+            {galleryImages.slice(1, 5).map((image, i) => (
                 <div
                   key={i}
-                  className="relative cursor-pointer group overflow-hidden"
+                  className="relative hidden cursor-pointer group overflow-hidden md:block"
                   onClick={() => {
                     setCurrentImage(i + 1);
                     setLightboxOpen(true);
@@ -545,8 +536,7 @@ export default function PropertyDetailClient({
                 </div>
               ))}
           </div>
-          {isMobile === true && (
-            <>
+          <div className="md:hidden">
               <div className="flex items-center justify-center gap-2 mt-3">
                 <button
                   type="button"
@@ -587,8 +577,7 @@ export default function PropertyDetailClient({
                   </div>
                 </div>
               )}
-            </>
-          )}
+          </div>
         </section>
 
         <div className="container mx-auto min-w-0 px-4 pb-16">
