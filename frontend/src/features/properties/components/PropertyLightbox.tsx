@@ -1,7 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useCallback, useEffect, useRef } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import {
@@ -22,11 +21,12 @@ export function PropertyLightbox({
   onIndexChange,
   onClose,
 }: PropertyLightboxProps) {
+  const startIndex = useRef(currentIndex).current;
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: images.length > 1,
     align: 'center',
     duration: 25,
-    startIndex: currentIndex,
+    startIndex,
   });
 
   const onSelect = useCallback(() => {
@@ -73,21 +73,25 @@ export function PropertyLightbox({
     };
 
     document.addEventListener('keydown', onKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const { body } = document;
+    const previousOverflow = body.style.overflow;
+    const previousPaddingRight = body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) {
+      body.style.paddingRight = `${scrollbarWidth}px`;
+    }
 
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = previousOverflow;
+      body.style.overflow = previousOverflow;
+      body.style.paddingRight = previousPaddingRight;
     };
   }, [images.length, onClose, scrollNext, scrollPrev]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-foreground/95 flex items-center justify-center"
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-foreground/95"
       onClick={onClose}
     >
       <button
@@ -126,7 +130,7 @@ export function PropertyLightbox({
       )}
       <div
         ref={emblaRef}
-        className="w-full max-w-[90vw] touch-pan-y"
+        className="w-full max-w-[90vw] overflow-hidden touch-pan-y"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex">
@@ -142,7 +146,8 @@ export function PropertyLightbox({
                   <img
                     src={src}
                     alt=""
-                    decoding="async"
+                    decoding={i === currentIndex ? 'sync' : 'async'}
+                    fetchPriority={i === currentIndex ? 'high' : 'low'}
                     className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg"
                   />
                 ) : (
@@ -156,6 +161,6 @@ export function PropertyLightbox({
       <div className="absolute bottom-6 text-background/70 text-sm pointer-events-none">
         {currentIndex + 1} / {images.length}
       </div>
-    </motion.div>
+    </div>
   );
 }

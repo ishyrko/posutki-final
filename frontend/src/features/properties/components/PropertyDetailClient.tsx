@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Heart, Share2, MapPin, BedDouble, Bath, Maximize,
   Building2, Calendar, Layers, Phone, TrainFront,
@@ -1132,16 +1132,14 @@ export default function PropertyDetailClient({
         <OwnerOtherListings propertyId={property.id} ownerName={sellerName} />
       )}
 
-      <AnimatePresence>
-        {lightboxOpen && (
-          <PropertyLightbox
-            images={galleryImages}
-            currentIndex={currentImage}
-            onIndexChange={setCurrentImage}
-            onClose={() => setLightboxOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+      {lightboxOpen && (
+        <PropertyLightbox
+          images={galleryImages}
+          currentIndex={currentImage}
+          onIndexChange={setCurrentImage}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
 
       {canSubmitBookingInquiry && (
         <BookingInquiryModal
