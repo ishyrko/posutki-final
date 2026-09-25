@@ -18,8 +18,6 @@ use App\Domain\Property\Validation\DailyRentDetailsValidator;
 use App\Domain\Property\Validation\DealConditionsValidator;
 use App\Domain\Property\Validation\PaymentMethodsValidator;
 use App\Domain\Property\Validation\PropertyDailyPriceValidator;
-use App\Domain\Property\Validation\PropertyDealCombinationValidator;
-use App\Domain\Property\Validation\RoomDealDetailsValidator;
 use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
@@ -96,8 +94,6 @@ readonly class ApproveRevisionHandler
         }
         $effectiveLandArea = isset($data['landArea']) ? (float) $data['landArea'] : $property->getLandArea();
         DailyRentDetailsValidator::assertValid(
-            dealType: $effectiveDealType,
-            propertyType: $effectiveType,
             maxDailyGuests: isset($data['maxDailyGuests']) ? (int) $data['maxDailyGuests'] : $property->getMaxDailyGuests(),
             dailySingleBeds: array_key_exists('dailySingleBeds', $data) ? (int) $data['dailySingleBeds'] : $property->getDailySingleBeds(),
             dailyDoubleBeds: array_key_exists('dailyDoubleBeds', $data) ? (int) $data['dailyDoubleBeds'] : $property->getDailyDoubleBeds(),
@@ -105,15 +101,6 @@ readonly class ApproveRevisionHandler
             checkOutTime: isset($data['checkOutTime']) ? (string) $data['checkOutTime'] : $property->getCheckOutTime(),
             minStayDays: isset($data['minStayDays']) ? (int) $data['minStayDays'] : ($property->getMinStayDays() ?? 1),
         );
-        $effectiveRoomsInDeal = isset($data['roomsInDeal']) ? (int) $data['roomsInDeal'] : $property->getRoomsInDeal();
-        $effectiveRoomsArea = isset($data['roomsArea']) ? (float) $data['roomsArea'] : $property->getRoomsArea();
-        RoomDealDetailsValidator::assertValid(
-            dealType: $effectiveDealType,
-            propertyType: $effectiveType,
-            roomsInDeal: $effectiveRoomsInDeal,
-            roomsArea: $effectiveRoomsArea,
-        );
-        PropertyDealCombinationValidator::assertValid($effectiveDealType, $effectiveType);
         $this->assertAreaConstraints($effectiveType, $effectiveLandArea);
 
         if ($priceAmount !== null) {
@@ -121,7 +108,7 @@ readonly class ApproveRevisionHandler
                 $priceAmount,
                 $priceCurrency ?? 'BYN',
             );
-            PropertyDailyPriceValidator::assertValid($effectiveDealType, $effectiveType, $priceByn);
+            PropertyDailyPriceValidator::assertValid($priceByn);
         }
 
         $property->update(

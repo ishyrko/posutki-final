@@ -43,10 +43,6 @@ final class AcceptBookingInquiryHandler
             throw new DomainException('Объявление не найдено');
         }
 
-        if ($property->getDealType() !== 'daily') {
-            throw new DomainException('Принять заявку можно только для посуточной аренды');
-        }
-
         $blockId = null;
         if ($command->bookCalendar) {
             $checkIn = $inquiry->getCheckIn();

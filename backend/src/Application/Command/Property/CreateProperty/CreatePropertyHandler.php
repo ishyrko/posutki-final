@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Application\Command\Property\CreateProperty;
 
 use App\Domain\Property\Entity\Property;
-use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Event\PropertySubmittedForModerationEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Service\CityDistrictResolverInterface;
@@ -16,9 +15,7 @@ use App\Domain\Property\Validation\DealConditionsValidator;
 use App\Domain\Property\Validation\PaymentMethodsValidator;
 use App\Domain\Property\Validation\FloorTotalFloorsValidator;
 use App\Domain\Property\Validation\PropertyDailyPriceValidator;
-use App\Domain\Property\Validation\PropertyDealCombinationValidator;
 use App\Domain\Property\Validation\PropertyImageLimitsValidator;
-use App\Domain\Property\Validation\RoomDealDetailsValidator;
 use App\Domain\Property\ValueObject\{Price, Address, Coordinates};
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
@@ -51,12 +48,8 @@ final class CreatePropertyHandler
     {
         DealConditionsValidator::assertValid($command->dealConditions, $command->dealType, $command->type);
         PaymentMethodsValidator::assertValid($command->paymentMethods);
-        $effectiveMinStayDays = $command->dealType === DealType::Daily->value
-            ? ($command->minStayDays ?? 1)
-            : null;
+        $effectiveMinStayDays = $command->minStayDays ?? 1;
         DailyRentDetailsValidator::assertValid(
-            dealType: $command->dealType,
-            propertyType: $command->type,
             maxDailyGuests: $command->maxDailyGuests,
             dailySingleBeds: $command->dailySingleBeds,
             dailyDoubleBeds: $command->dailyDoubleBeds,
@@ -64,19 +57,12 @@ final class CreatePropertyHandler
             checkOutTime: $command->checkOutTime,
             minStayDays: $effectiveMinStayDays,
         );
-        RoomDealDetailsValidator::assertValid(
-            dealType: $command->dealType,
-            propertyType: $command->type,
-            roomsInDeal: $command->roomsInDeal,
-            roomsArea: $command->roomsArea,
-        );
-        PropertyDealCombinationValidator::assertValid($command->dealType, $command->type);
         PropertyImageLimitsValidator::assertValid($command->type, count($command->images));
         FloorTotalFloorsValidator::assertValid($command->floor, $command->totalFloors);
         $this->assertAreaConstraints($command->type, $command->area, $command->landArea);
 
         $priceByn = $this->exchangeRateService->calculatePriceByn($command->priceAmount, $command->priceCurrency);
-        PropertyDailyPriceValidator::assertValid($command->dealType, $command->type, $priceByn);
+        PropertyDailyPriceValidator::assertValid($priceByn);
 
         $ownerId = Id::fromString($command->ownerId);
         $user = $this->userRepository->findById($ownerId);

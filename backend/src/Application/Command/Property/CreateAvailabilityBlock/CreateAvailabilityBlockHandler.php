@@ -32,10 +32,6 @@ final class CreateAvailabilityBlockHandler
             throw new DomainException('Нет прав на управление календарём этого объявления');
         }
 
-        if ($property->getDealType() !== 'daily') {
-            throw new DomainException('Календарь доступен только для посуточной аренды');
-        }
-
         $startDate = $this->parseDate($command->startDate, 'Дата начала');
         $endDate = $this->parseDate($command->endDate, 'Дата окончания');
 

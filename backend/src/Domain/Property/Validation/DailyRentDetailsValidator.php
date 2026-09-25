@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Property\Validation;
 
-use App\Domain\Property\Enum\DealType;
 use App\Domain\Shared\Exception\DomainException;
 
 final class DailyRentDetailsValidator
@@ -12,8 +11,6 @@ final class DailyRentDetailsValidator
     public const int MAX_MIN_STAY_DAYS = 90;
 
     public static function assertValid(
-        string $dealType,
-        string $propertyType,
         ?int $maxDailyGuests,
         ?int $dailySingleBeds,
         ?int $dailyDoubleBeds,
@@ -21,27 +18,25 @@ final class DailyRentDetailsValidator
         ?string $checkOutTime,
         ?int $minStayDays = null,
     ): void {
-        if ($dealType === DealType::Daily->value) {
-            if ($maxDailyGuests === null || $maxDailyGuests <= 0) {
-                throw new DomainException('Укажите максимальное число гостей для посуточной аренды');
-            }
-            if ($maxDailyGuests > 20) {
-                throw new DomainException('Максимум 20 гостей для посуточной аренды');
-            }
-            $effectiveMinStay = $minStayDays ?? 1;
-            if ($effectiveMinStay < 1 || $effectiveMinStay > self::MAX_MIN_STAY_DAYS) {
-                throw new DomainException(
-                    sprintf('Минимальный срок проживания: от 1 до %d суток', self::MAX_MIN_STAY_DAYS),
-                );
-            }
-            $single = $dailySingleBeds ?? 0;
-            $double = $dailyDoubleBeds ?? 0;
-            if ($single < 0 || $double < 0) {
-                throw new DomainException('Некорректное число кроватей для посуточной аренды');
-            }
-            if ($single + $double <= 0) {
-                throw new DomainException('Укажите количество односпальных или двуспальных кроватей');
-            }
+        if ($maxDailyGuests === null || $maxDailyGuests <= 0) {
+            throw new DomainException('Укажите максимальное число гостей для посуточной аренды');
+        }
+        if ($maxDailyGuests > 20) {
+            throw new DomainException('Максимум 20 гостей для посуточной аренды');
+        }
+        $effectiveMinStay = $minStayDays ?? 1;
+        if ($effectiveMinStay < 1 || $effectiveMinStay > self::MAX_MIN_STAY_DAYS) {
+            throw new DomainException(
+                sprintf('Минимальный срок проживания: от 1 до %d суток', self::MAX_MIN_STAY_DAYS),
+            );
+        }
+        $single = $dailySingleBeds ?? 0;
+        $double = $dailyDoubleBeds ?? 0;
+        if ($single < 0 || $double < 0) {
+            throw new DomainException('Некорректное число кроватей для посуточной аренды');
+        }
+        if ($single + $double <= 0) {
+            throw new DomainException('Укажите количество односпальных или двуспальных кроватей');
         }
 
         if ($checkInTime !== null && !self::isValidTime($checkInTime)) {

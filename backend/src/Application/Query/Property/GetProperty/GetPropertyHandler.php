@@ -7,7 +7,6 @@ namespace App\Application\Query\Property\GetProperty;
 use App\Application\Service\PropertyCalendarAggregator;
 use App\Application\Service\PropertyOwnerPublicContactResolver;
 use App\Application\DTO\PropertyDTO;
-use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\SellerType;
 use App\Domain\Property\Repository\{
     PropertyRepositoryInterface,
@@ -157,31 +156,29 @@ final class GetPropertyHandler
         }
 
         $dailySellerLegalProfile = null;
-        if ($property->getDealType() === DealType::Daily->value) {
-            $sellerType = $property->getSellerType();
-            $ownerId = $property->getOwnerId();
+        $sellerType = $property->getSellerType();
+        $ownerId = $property->getOwnerId();
 
-            if ($sellerType === SellerType::Individual->value) {
-                $profile = $this->userIndividualProfileRepository->findByUserId($ownerId);
-                if ($profile !== null) {
-                    $dailySellerLegalProfile = [
-                        'type' => SellerType::Individual->value,
-                        'lastName' => $profile->getLastName(),
-                        'firstName' => $profile->getFirstName(),
-                        'middleName' => $profile->getMiddleName(),
-                        'unp' => $profile->getUnp(),
-                    ];
-                }
-            } elseif ($sellerType === SellerType::Business->value) {
-                $profile = $this->userBusinessProfileRepository->findByUserId($ownerId);
-                if ($profile !== null) {
-                    $dailySellerLegalProfile = [
-                        'type' => SellerType::Business->value,
-                        'organizationName' => $profile->getOrganizationName(),
-                        'contactName' => $profile->getContactName(),
-                        'unp' => $profile->getUnp(),
-                    ];
-                }
+        if ($sellerType === SellerType::Individual->value) {
+            $profile = $this->userIndividualProfileRepository->findByUserId($ownerId);
+            if ($profile !== null) {
+                $dailySellerLegalProfile = [
+                    'type' => SellerType::Individual->value,
+                    'lastName' => $profile->getLastName(),
+                    'firstName' => $profile->getFirstName(),
+                    'middleName' => $profile->getMiddleName(),
+                    'unp' => $profile->getUnp(),
+                ];
+            }
+        } elseif ($sellerType === SellerType::Business->value) {
+            $profile = $this->userBusinessProfileRepository->findByUserId($ownerId);
+            if ($profile !== null) {
+                $dailySellerLegalProfile = [
+                    'type' => SellerType::Business->value,
+                    'organizationName' => $profile->getOrganizationName(),
+                    'contactName' => $profile->getContactName(),
+                    'unp' => $profile->getUnp(),
+                ];
             }
         }
 

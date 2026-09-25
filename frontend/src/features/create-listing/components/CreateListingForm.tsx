@@ -150,16 +150,10 @@ const chipActive = `${pillBtnBase} bg-primary text-primary-foreground border bor
 const amenityChipInactive = `${pillBtnBase} bg-muted/70 border border-transparent text-foreground hover:bg-muted`;
 const amenityChipActive = `${pillBtnBase} bg-primary text-primary-foreground border border-primary`;
 
-/** Сайт только для посуточной сдачи: квартира или усадьба. */
-const DAILY_PROPERTY_TYPE_VALUES = ['apartment', 'house'] as const;
-
-const dailyPropertyChoices: { value: (typeof DAILY_PROPERTY_TYPE_VALUES)[number]; label: string; icon: typeof Building2 }[] = [
+const dailyPropertyChoices: { value: 'apartment' | 'house'; label: string; icon: typeof Building2 }[] = [
     { value: 'apartment', label: 'Квартира', icon: Building2 },
     { value: 'house', label: 'Усадьба', icon: Home },
 ];
-
-const isAllowedDailyPropertyType = (t: string): boolean =>
-    (DAILY_PROPERTY_TYPE_VALUES as readonly string[]).includes(t);
 
 const lotAreaTypes = ['house'];
 
@@ -455,8 +449,6 @@ export function CreateListingForm() {
                 }
                 if (!form.propertyType) {
                     errs.propertyType = 'Выберите тип объекта';
-                } else if (!isAllowedDailyPropertyType(form.propertyType)) {
-                    errs.propertyType = 'Выберите квартиру или усадьбу';
                 }
                 break;
             case 2: {
@@ -591,42 +583,40 @@ export function CreateListingForm() {
                 if (buildingErr) errs.building = buildingErr;
                 break;
             }
-            case 6:
-                if (form.dealType === 'daily') {
-                    if (!form.maxDailyGuests) {
-                        errs.maxDailyGuests = 'Укажите максимум гостей';
-                    } else if (!Number.isFinite(Number(form.maxDailyGuests)) || Number(form.maxDailyGuests) <= 0) {
-                        errs.maxDailyGuests = 'Укажите корректное число гостей';
-                    } else if (Number(form.maxDailyGuests) > MAX_DAILY_GUESTS) {
-                        errs.maxDailyGuests = `Не более ${MAX_DAILY_GUESTS} гостей`;
-                    }
-                    const singleBeds = Number(form.dailySingleBeds);
-                    const doubleBeds = Number(form.dailyDoubleBeds);
-                    if (!Number.isFinite(singleBeds) || singleBeds < 0 || singleBeds > DAILY_BEDS_MAX) {
-                        errs.dailySingleBeds = `Односпальных: от 0 до ${DAILY_BEDS_MAX}`;
-                    }
-                    if (!Number.isFinite(doubleBeds) || doubleBeds < 0 || doubleBeds > DAILY_BEDS_MAX) {
-                        errs.dailyDoubleBeds = `Двуспальных: от 0 до ${DAILY_BEDS_MAX}`;
-                    }
-                    if (
-                        !errs.dailySingleBeds
-                        && !errs.dailyDoubleBeds
-                        && Number.isFinite(singleBeds)
-                        && Number.isFinite(doubleBeds)
-                        && singleBeds + doubleBeds < 1
-                    ) {
-                        errs.dailySingleBeds = 'Укажите хотя бы одну кровать';
-                    }
-                    if (form.checkInTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkInTime)) {
-                        errs.checkInTime = 'Формат времени: ЧЧ:ММ';
-                    }
-                    if (form.checkOutTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkOutTime)) {
-                        errs.checkOutTime = 'Формат времени: ЧЧ:ММ';
-                    }
-                    const minStay = form.minStayDays.trim() === '' ? 1 : Number(form.minStayDays);
-                    if (!Number.isFinite(minStay) || minStay < 1 || minStay > MAX_MIN_STAY_DAYS) {
-                        errs.minStayDays = `От 1 до ${MAX_MIN_STAY_DAYS} суток`;
-                    }
+            case 6: {
+                if (!form.maxDailyGuests) {
+                    errs.maxDailyGuests = 'Укажите максимум гостей';
+                } else if (!Number.isFinite(Number(form.maxDailyGuests)) || Number(form.maxDailyGuests) <= 0) {
+                    errs.maxDailyGuests = 'Укажите корректное число гостей';
+                } else if (Number(form.maxDailyGuests) > MAX_DAILY_GUESTS) {
+                    errs.maxDailyGuests = `Не более ${MAX_DAILY_GUESTS} гостей`;
+                }
+                const singleBeds = Number(form.dailySingleBeds);
+                const doubleBeds = Number(form.dailyDoubleBeds);
+                if (!Number.isFinite(singleBeds) || singleBeds < 0 || singleBeds > DAILY_BEDS_MAX) {
+                    errs.dailySingleBeds = `Односпальных: от 0 до ${DAILY_BEDS_MAX}`;
+                }
+                if (!Number.isFinite(doubleBeds) || doubleBeds < 0 || doubleBeds > DAILY_BEDS_MAX) {
+                    errs.dailyDoubleBeds = `Двуспальных: от 0 до ${DAILY_BEDS_MAX}`;
+                }
+                if (
+                    !errs.dailySingleBeds
+                    && !errs.dailyDoubleBeds
+                    && Number.isFinite(singleBeds)
+                    && Number.isFinite(doubleBeds)
+                    && singleBeds + doubleBeds < 1
+                ) {
+                    errs.dailySingleBeds = 'Укажите хотя бы одну кровать';
+                }
+                if (form.checkInTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkInTime)) {
+                    errs.checkInTime = 'Формат времени: ЧЧ:ММ';
+                }
+                if (form.checkOutTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkOutTime)) {
+                    errs.checkOutTime = 'Формат времени: ЧЧ:ММ';
+                }
+                const minStay = form.minStayDays.trim() === '' ? 1 : Number(form.minStayDays);
+                if (!Number.isFinite(minStay) || minStay < 1 || minStay > MAX_MIN_STAY_DAYS) {
+                    errs.minStayDays = `От 1 до ${MAX_MIN_STAY_DAYS} суток`;
                 }
                 if (!form.price) errs.price = 'Укажите цену';
                 else {
@@ -634,6 +624,7 @@ export function CreateListingForm() {
                     if (priceError) errs.price = priceError;
                 }
                 break;
+            }
         }
 
         setErrors(errs);
@@ -646,7 +637,6 @@ export function CreateListingForm() {
             case 1:
                 return !!(
                     form.propertyType
-                    && isAllowedDailyPropertyType(form.propertyType)
                     && !userLoading
                     && canSubmitListing
                 );
@@ -702,16 +692,14 @@ export function CreateListingForm() {
                 return !!(
                     form.price
                     && !getDailyPriceFieldError(form.price)
-                    && (form.dealType !== 'daily' || (
-                        !!form.maxDailyGuests
-                        && Number(form.maxDailyGuests) > 0
-                        && Number(form.maxDailyGuests) <= MAX_DAILY_GUESTS
-                        && Number(form.dailySingleBeds) >= 0
-                        && Number(form.dailyDoubleBeds) >= 0
-                        && Number(form.dailySingleBeds) + Number(form.dailyDoubleBeds) >= 1
-                        && Number(form.minStayDays || 1) >= 1
-                        && Number(form.minStayDays || 1) <= MAX_MIN_STAY_DAYS
-                    ))
+                    && !!form.maxDailyGuests
+                    && Number(form.maxDailyGuests) > 0
+                    && Number(form.maxDailyGuests) <= MAX_DAILY_GUESTS
+                    && Number(form.dailySingleBeds) >= 0
+                    && Number(form.dailyDoubleBeds) >= 0
+                    && Number(form.dailySingleBeds) + Number(form.dailyDoubleBeds) >= 1
+                    && Number(form.minStayDays || 1) >= 1
+                    && Number(form.minStayDays || 1) <= MAX_MIN_STAY_DAYS
                 );
             default: return false;
         }
@@ -833,22 +821,18 @@ export function CreateListingForm() {
                 : undefined,
             dealConditions: form.dealConditions.length > 0 ? form.dealConditions : undefined,
             paymentMethods: form.paymentMethods.length > 0 ? form.paymentMethods : undefined,
-            maxDailyGuests: form.dealType === 'daily' && form.maxDailyGuests
+            maxDailyGuests: form.maxDailyGuests
                 ? Number(form.maxDailyGuests)
                 : undefined,
-            dailySingleBeds:
-                form.dealType === 'daily' ? Number(form.dailySingleBeds) || 0 : undefined,
-            dailyDoubleBeds:
-                form.dealType === 'daily' ? Number(form.dailyDoubleBeds) || 0 : undefined,
-            checkInTime: form.dealType === 'daily' && form.checkInTime
+            dailySingleBeds: Number(form.dailySingleBeds) || 0,
+            dailyDoubleBeds: Number(form.dailyDoubleBeds) || 0,
+            checkInTime: form.checkInTime
                 ? form.checkInTime
                 : undefined,
-            checkOutTime: form.dealType === 'daily' && form.checkOutTime
+            checkOutTime: form.checkOutTime
                 ? form.checkOutTime
                 : undefined,
-            minStayDays: form.dealType === 'daily'
-                ? Number(form.minStayDays || 1)
-                : undefined,
+            minStayDays: Number(form.minStayDays || 1),
             prepaymentRequired: form.propertyType === 'house' ? form.prepaymentRequired : undefined,
             additionalCheckInConditions: form.propertyType === 'house'
                 ? form.additionalCheckInConditions.trim()
@@ -877,9 +861,7 @@ export function CreateListingForm() {
                 ? form.websiteUrl.trim()
                 : undefined,
             videoUrl: form.videoUrl.trim() || undefined,
-            externalCalendarUrls: form.dealType === 'daily'
-                ? form.externalCalendarUrls.map((url) => url.trim()).filter(Boolean)
-                : undefined,
+            externalCalendarUrls: form.externalCalendarUrls.map((url) => url.trim()).filter(Boolean),
         };
 
         try {
@@ -1867,8 +1849,7 @@ export function CreateListingForm() {
                         {/* Step 6: Условия размещения (посуточная аренда + цена) и контакты */}
                         {step === 6 && (
                             <>
-                                {form.dealType === 'daily' && (
-                                    <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
+                                <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                         <h2 className="font-display text-lg font-semibold text-foreground">Посуточная аренда</h2>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                             <div>
@@ -2000,9 +1981,7 @@ export function CreateListingForm() {
                                             </div>
                                         )}
                                     </div>
-                                )}
 
-                                {['apartment', 'house'].includes(form.propertyType) && (
                                     <div className="bg-card rounded-2xl shadow-card p-6 space-y-4">
                                         <h2 className="font-display text-lg font-semibold text-foreground">Правила и условия</h2>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
@@ -2023,7 +2002,6 @@ export function CreateListingForm() {
                                             ))}
                                         </div>
                                     </div>
-                                )}
 
                                 <div className="bg-card rounded-2xl shadow-card p-6 space-y-4">
                                     <h2 className="font-display text-lg font-semibold text-foreground">Способы оплаты</h2>
@@ -2046,8 +2024,7 @@ export function CreateListingForm() {
                                     </div>
                                 </div>
 
-                                {form.dealType === 'daily' && (
-                                    <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
+                                <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                         <div>
                                             <h2 className="font-display text-lg font-semibold text-foreground">Синхронизация календарей</h2>
                                             <p className="text-xs text-muted-foreground mt-1">
@@ -2092,7 +2069,6 @@ export function CreateListingForm() {
                                             Добавить календарь
                                         </button>
                                     </div>
-                                )}
 
                                 <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                     <h2 className="font-display text-lg font-semibold text-foreground">Стоимость</h2>

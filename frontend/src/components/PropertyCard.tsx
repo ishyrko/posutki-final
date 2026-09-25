@@ -2,9 +2,8 @@
 
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Heart, MapPin, BedDouble, Bath, Star, Users } from "lucide-react";
+import { Heart, MapPin, BedDouble, Star, Users } from "lucide-react";
 import Link from "next/link";
-import { formatBynWithUsd } from "@/lib/currency";
 import { useToggleFavorite, useFavoriteIds } from "@/features/properties/hooks";
 import { buildPropertyUrl } from "@/features/catalog/slugs";
 import { PROPERTY_TYPE_NOMINATIVE_DAILY } from "@/features/properties/property-deal-heading";
@@ -13,7 +12,6 @@ interface PropertyCardProps {
   id: number;
   image: string;
   price: ReactNode;
-  /** BYN equivalent for the secondary USD line when `secondaryPrice` is omitted (non-daily). */
   primaryBynAmount?: number;
   /** Approximate price in listing currency (or USD if listing was in BYN). */
   secondaryPrice?: string;
@@ -45,18 +43,14 @@ const PropertyCard = ({
   id,
   image,
   price,
-  primaryBynAmount,
   secondaryPrice,
   title,
   address,
   beds,
-  baths,
-  area,
   maxGuests,
   typeLabel,
   showTypeBadge = true,
   index = 0,
-  dealType,
   propertyType,
   regionSlug,
   rating,
@@ -79,7 +73,6 @@ const PropertyCard = ({
   };
 
   const href = buildPropertyUrl(propertyType, id, regionSlug);
-  const isDaily = dealType === "daily";
   const showRating = rating != null && rating > 0;
   const imageTypeBadge = showTypeBadge
     ? typeLabel?.trim() || (propertyType ? PROPERTY_TYPE_NOMINATIVE_DAILY[propertyType] : undefined)
@@ -164,7 +157,7 @@ const PropertyCard = ({
                 {beds} комн.
               </span>
             )}
-            {isDaily && maxGuests != null && maxGuests > 0 && (
+            {maxGuests != null && maxGuests > 0 && (
               <>
                 <span className="w-1 h-1 rounded-full bg-border shrink-0" />
                 <span className="flex items-center gap-1">
@@ -173,33 +166,13 @@ const PropertyCard = ({
                 </span>
               </>
             )}
-            {!isDaily && (
-              <>
-                {baths > 0 && (
-                  <span className="flex items-center gap-1">
-                    <Bath className="w-3.5 h-3.5" />
-                    {baths} сан.
-                  </span>
-                )}
-                {area > 0 && (
-                  <span className="flex items-center gap-1">
-                    {`${area} м²`}
-                  </span>
-                )}
-              </>
-            )}
           </div>
 
           <div className="flex items-baseline gap-1 mt-auto pt-3 border-t border-border">
             <span className="font-display text-lg font-bold text-foreground">{price}</span>
-            {isDaily && <span className="text-sm text-muted-foreground">/ сутки</span>}
-            {!isDaily && (
-              <span className="text-xs text-muted-foreground">
-                {secondaryPrice ?? (primaryBynAmount != null ? formatBynWithUsd(primaryBynAmount).usd : null)}
-              </span>
-            )}
+            <span className="text-sm text-muted-foreground">/ сутки</span>
           </div>
-          {isDaily && secondaryPrice && (
+          {secondaryPrice && (
             <span className="text-xs text-muted-foreground mt-0.5">{secondaryPrice}</span>
           )}
       </Link>

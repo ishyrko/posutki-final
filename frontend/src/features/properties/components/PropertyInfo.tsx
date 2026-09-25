@@ -55,16 +55,13 @@ export function PropertyInfo({ property }: PropertyInfoProps) {
                             formattedPriceForeign
                         )}
                     </div>
-                    {property.dealType === 'rent' && <div className="text-xs text-muted-foreground mt-1">в месяц</div>}
                 </div>
             </div>
 
             {/* Premium Specs Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    property.type === 'land'
-                        ? { icon: Maximize, label: "Площадь участка", value: property.specifications.landArea ? `${property.specifications.landArea} сот.` : '-' }
-                        : { icon: Maximize, label: "Площадь общая", value: `${property.specifications.area} м²` },
+                    { icon: Maximize, label: "Площадь общая", value: `${property.specifications.area} м²` },
                     ...(property.type === 'house'
                         ? [{ icon: MapPin, label: "Площадь участка", value: property.specifications.landArea ? `${property.specifications.landArea} сот.` : '-' }]
                         : []),

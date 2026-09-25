@@ -1962,17 +1962,7 @@ class Property
         if ($images !== null) $this->images = $images;
         if ($amenities !== null) $this->amenities = $amenities;
 
-        if ($dealType !== null && $dealType !== 'daily') {
-            $this->maxDailyGuests = null;
-            $this->dailySingleBeds = null;
-            $this->dailyDoubleBeds = null;
-            $this->checkInTime = null;
-            $this->checkOutTime = null;
-            $this->minStayDays = null;
-            $this->sellerType = null;
-        }
-
-        if ($sellerType !== null && $this->dealType === 'daily') {
+        if ($sellerType !== null) {
             $this->sellerType = $sellerType;
         }
 

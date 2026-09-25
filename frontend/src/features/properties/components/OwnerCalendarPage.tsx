@@ -320,21 +320,6 @@ export function OwnerCalendarPage() {
         );
     }
 
-    if (!isLoadingProperty && property && property.dealType !== 'daily') {
-        return (
-            <div className="text-center py-20 space-y-4">
-                <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
-                    <AlertTriangle className="h-9 w-9 text-destructive" />
-                </div>
-                <h2 className="font-display text-2xl font-bold text-foreground">Календарь недоступен</h2>
-                <p className="text-sm text-muted-foreground">Календарь занятости есть только у объявлений посуточной аренды.</p>
-                <Button asChild>
-                    <Link href="/kabinet/moi-obyavleniya/aktivnye/">К моим объявлениям</Link>
-                </Button>
-            </div>
-        );
-    }
-
     if (!isLoading && (isError || !property)) {
         return (
             <div className="text-center py-20 space-y-4">

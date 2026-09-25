@@ -566,16 +566,12 @@ export function BookingInquiryModal({ open, onOpenChange, property }: BookingInq
                                 <div className="space-y-2">
                                     <p className="text-sm text-foreground leading-snug">{addressStr}</p>
                                     <div className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2.5 py-1 text-sm font-semibold text-emerald-800">
-                                        {property.dealType === 'daily' && (
-                                            <span className="font-normal">от</span>
-                                        )}
+                                        <span className="font-normal">от</span>
                                         <PriceDisplay
                                             amount={priceDisplay.primaryAmount}
                                             currency={priceDisplay.primaryCurrency}
                                         />
-                                        {property.dealType === 'daily' && (
-                                            <span className="font-normal">/ сутки</span>
-                                        )}
+                                        <span className="font-normal">/ сутки</span>
                                     </div>
                                 </div>
                             </aside>

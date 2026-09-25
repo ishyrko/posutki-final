@@ -328,9 +328,7 @@ function ListingCard({
                         </span>
                         <span className="flex items-center gap-1">
                             <Maximize className="w-3.5 h-3.5" />
-                            {property.type === 'land'
-                                ? (property.specifications.landArea ? `${property.specifications.landArea} сот.` : '-')
-                                : `${property.specifications.area} м²`}
+                            {`${property.specifications.area} м²`}
                         </span>
                     </div>
                     {property.status === 'awaiting_payment' && (
@@ -400,13 +398,11 @@ function ListingCard({
                             ) : null}
                         </Link>
                     </Button>
-                    {property.dealType === 'daily' && (
-                        <Button variant="ghost" size="sm" asChild className="justify-start">
-                            <Link href={`/kabinet/kalendar/${property.id}/`}>
-                                <CalendarDays className="w-3.5 h-3.5 mr-1" />Календарь
-                            </Link>
-                        </Button>
-                    )}
+                    <Button variant="ghost" size="sm" asChild className="justify-start">
+                        <Link href={`/kabinet/kalendar/${property.id}/`}>
+                            <CalendarDays className="w-3.5 h-3.5 mr-1" />Календарь
+                        </Link>
+                    </Button>
                     {property.status === 'published' && (
                         <>
                             <Button

@@ -206,14 +206,6 @@ class CreatePropertyRequest
     #[Assert\Callback]
     public function validateDailyPrice(ExecutionContextInterface $context): void
     {
-        if ($this->dealType !== DealType::Daily->value) {
-            return;
-        }
-
-        if (!in_array($this->type, [PropertyType::Apartment->value, PropertyType::House->value], true)) {
-            return;
-        }
-
         if (!isset($this->price['amount'])) {
             return;
         }
@@ -226,7 +218,7 @@ class CreatePropertyRequest
         }
 
         try {
-            PropertyDailyPriceValidator::assertValid($this->dealType, $this->type, $amount);
+            PropertyDailyPriceValidator::assertValid($amount);
         } catch (DomainException $e) {
             $context->buildViolation($e->getMessage())
                 ->atPath('price.amount')

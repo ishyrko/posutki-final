@@ -16,9 +16,7 @@ use App\Domain\Property\Validation\DealConditionsValidator;
 use App\Domain\Property\Validation\PaymentMethodsValidator;
 use App\Domain\Property\Validation\FloorTotalFloorsValidator;
 use App\Domain\Property\Validation\PropertyDailyPriceValidator;
-use App\Domain\Property\Validation\PropertyDealCombinationValidator;
 use App\Domain\Property\Validation\PropertyImageLimitsValidator;
-use App\Domain\Property\Validation\RoomDealDetailsValidator;
 use App\Domain\Property\ValueObject\Address;
 use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
@@ -80,12 +78,8 @@ readonly class UpdatePropertyHandler
             PaymentMethodsValidator::assertValid($command->paymentMethods);
         }
         $effectiveLandArea = $command->landArea ?? $property->getLandArea();
-        $effectiveMinStayDays = $effectiveDealType === 'daily'
-            ? ($command->minStayDays ?? $property->getMinStayDays() ?? 1)
-            : null;
+        $effectiveMinStayDays = $command->minStayDays ?? $property->getMinStayDays() ?? 1;
         DailyRentDetailsValidator::assertValid(
-            dealType: $effectiveDealType,
-            propertyType: $effectiveType,
             maxDailyGuests: $command->maxDailyGuests ?? $property->getMaxDailyGuests(),
             dailySingleBeds: $command->dailySingleBeds ?? $property->getDailySingleBeds(),
             dailyDoubleBeds: $command->dailyDoubleBeds ?? $property->getDailyDoubleBeds(),
@@ -93,15 +87,6 @@ readonly class UpdatePropertyHandler
             checkOutTime: $command->checkOutTime ?? $property->getCheckOutTime(),
             minStayDays: $effectiveMinStayDays,
         );
-        $effectiveRoomsInDeal = $command->roomsInDeal ?? $property->getRoomsInDeal();
-        $effectiveRoomsArea = $command->roomsArea ?? $property->getRoomsArea();
-        RoomDealDetailsValidator::assertValid(
-            dealType: $effectiveDealType,
-            propertyType: $effectiveType,
-            roomsInDeal: $effectiveRoomsInDeal,
-            roomsArea: $effectiveRoomsArea,
-        );
-        PropertyDealCombinationValidator::assertValid($effectiveDealType, $effectiveType);
         if ($command->images !== null) {
             PropertyImageLimitsValidator::assertValid($effectiveType, count($command->images));
         }
@@ -110,7 +95,7 @@ readonly class UpdatePropertyHandler
         $effectivePriceAmount = $command->priceAmount ?? $property->getPrice()->getAmount();
         $effectivePriceCurrency = $command->priceCurrency ?? $property->getPrice()->getCurrency();
         $priceByn = $this->exchangeRateService->calculatePriceByn($effectivePriceAmount, $effectivePriceCurrency);
-        PropertyDailyPriceValidator::assertValid($effectiveDealType, $effectiveType, $priceByn);
+        PropertyDailyPriceValidator::assertValid($priceByn);
 
         $price = null;
         if ($command->priceAmount !== null) {

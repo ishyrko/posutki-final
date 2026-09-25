@@ -439,7 +439,7 @@ export default function PropertyDetailClient({
       : []),
   ].filter((spec) => spec.value !== "-");
 
-  const hasCheckInInfo = property.dealType === "daily" && (
+  const hasCheckInInfo = Boolean(
     property.specifications.checkInTime ||
     property.specifications.checkOutTime ||
     hasPositiveNumber(property.specifications.maxDailyGuests) ||
@@ -679,17 +679,13 @@ export default function PropertyDetailClient({
                   )}
                 </div>
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  {property.dealType === "daily" && (
-                    <span className="text-sm text-muted-foreground">от</span>
-                  )}
+                  <span className="text-sm text-muted-foreground">от</span>
                   <span className="text-3xl font-bold text-primary">
                     <PriceDisplay amount={priceDisplay.primaryAmount} currency={priceDisplay.primaryCurrency} />
                   </span>
-                  {property.dealType === "daily" && (
-                    <span className="text-sm text-muted-foreground">/ сутки</span>
-                  )}
+                  <span className="text-sm text-muted-foreground">/ сутки</span>
                 </div>
-                {property.dealType === "daily" && property.weekendPriceNegotiable && (
+                {property.weekendPriceNegotiable && (
                   <p className="text-sm text-muted-foreground mt-1">
                     В выходные и праздничные дни цена договорная
                   </p>
@@ -1134,15 +1130,11 @@ export default function PropertyDetailClient({
       {showMobileContactBar && (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-xl px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
           <div className="flex items-baseline gap-1.5 flex-wrap mb-2.5">
-            {property.dealType === "daily" && (
-              <span className="text-sm text-muted-foreground">от</span>
-            )}
+            <span className="text-sm text-muted-foreground">от</span>
             <span className="text-xl font-bold text-primary">
               <PriceDisplay amount={priceDisplay.primaryAmount} currency={priceDisplay.primaryCurrency} />
             </span>
-            {property.dealType === "daily" && (
-              <span className="text-sm text-muted-foreground">/ сутки</span>
-            )}
+            <span className="text-sm text-muted-foreground">/ сутки</span>
           </div>
           <Button
             className="w-full h-11 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 border-0"

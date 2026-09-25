@@ -34,10 +34,6 @@ final class GetOwnerCalendarHandler
             throw new DomainException('Нет прав на просмотр календаря этого объявления');
         }
 
-        if ($property->getDealType() !== 'daily') {
-            throw new DomainException('Календарь доступен только для посуточной аренды');
-        }
-
         $token = $property->ensureCalendarExportToken();
         $this->propertyRepository->save($property);
 

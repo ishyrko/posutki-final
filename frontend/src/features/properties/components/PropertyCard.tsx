@@ -23,7 +23,6 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
   const {
     id,
     title,
-    dealType,
     type,
     address,
     specifications,
@@ -143,20 +142,16 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
                 <span className="text-sm font-bold ml-1">{specifications.bathrooms}</span>
               </div>
             )}
-            {(type === 'land'
-              ? specifications.landArea != null && specifications.landArea > 0
-              : specifications.area != null && specifications.area > 0) ? (
+            {specifications.area != null && specifications.area > 0 ? (
               <div className="flex flex-col gap-1 min-w-0">
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Maximize className="w-4 h-4" />
                   <span className="text-[10px] font-bold uppercase tracking-wider opacity-60 px-0.5">
-                    {type === 'land' ? 'Участок' : 'Площадь общая'}
+                    Площадь общая
                   </span>
                 </div>
                 <span className="text-sm font-bold ml-1">
-                  {type === 'land'
-                    ? `${specifications.landArea} сот.`
-                    : `${specifications.area} м²`}
+                  {`${specifications.area} м²`}
                 </span>
               </div>
             ) : null}

@@ -49,7 +49,6 @@ import { createUploadedPhotoFromUrl } from '@/features/create-listing/photo-util
 import type { UploadedPhoto } from '@/features/create-listing/types';
 import {
     balconyOptions,
-    dealConditionOptions,
     sanitizeDealConditionsForPropertyType,
     bathroomsRequired,
     roomsRequired,
@@ -623,10 +622,6 @@ export default function EditPropertyPage() {
                 return;
             }
         }
-        if (form.dealType === 'daily' && form.type === 'room') {
-            toast.error('Посуточная сдача комнат недоступна');
-            return;
-        }
         if (
             bathroomsRequired(form.type)
             && showBathrooms(form.type)
@@ -683,47 +678,45 @@ export default function EditPropertyPage() {
             toast.error('Площадь кухни должна быть положительной');
             return;
         }
-        if (form.dealType === 'daily') {
-            if (!form.maxDailyGuests || !Number.isFinite(maxDailyGuests) || maxDailyGuests <= 0) {
-                toast.error('Укажите максимальное число гостей');
-                return;
-            }
-            if (maxDailyGuests > MAX_DAILY_GUESTS) {
-                toast.error(`Максимум ${MAX_DAILY_GUESTS} гостей`);
-                return;
-            }
-            if (
-                !Number.isFinite(dailySingleBeds)
-                || dailySingleBeds < 0
-                || dailySingleBeds > DAILY_BEDS_MAX
-            ) {
-                toast.error(`Односпальных кроватей: от 0 до ${DAILY_BEDS_MAX}`);
-                return;
-            }
-            if (
-                !Number.isFinite(dailyDoubleBeds)
-                || dailyDoubleBeds < 0
-                || dailyDoubleBeds > DAILY_BEDS_MAX
-            ) {
-                toast.error(`Двуспальных кроватей: от 0 до ${DAILY_BEDS_MAX}`);
-                return;
-            }
-            if (dailySingleBeds + dailyDoubleBeds < 1) {
-                toast.error('Укажите хотя бы одну кровать');
-                return;
-            }
-            if (form.checkInTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkInTime)) {
-                toast.error('Время заезда должно быть в формате ЧЧ:ММ');
-                return;
-            }
-            if (form.checkOutTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkOutTime)) {
-                toast.error('Время выезда должно быть в формате ЧЧ:ММ');
-                return;
-            }
-            if (!Number.isFinite(minStayDays) || minStayDays < 1 || minStayDays > MAX_MIN_STAY_DAYS) {
-                toast.error(`Минимальный срок: от 1 до ${MAX_MIN_STAY_DAYS} суток`);
-                return;
-            }
+        if (!form.maxDailyGuests || !Number.isFinite(maxDailyGuests) || maxDailyGuests <= 0) {
+            toast.error('Укажите максимальное число гостей');
+            return;
+        }
+        if (maxDailyGuests > MAX_DAILY_GUESTS) {
+            toast.error(`Максимум ${MAX_DAILY_GUESTS} гостей`);
+            return;
+        }
+        if (
+            !Number.isFinite(dailySingleBeds)
+            || dailySingleBeds < 0
+            || dailySingleBeds > DAILY_BEDS_MAX
+        ) {
+            toast.error(`Односпальных кроватей: от 0 до ${DAILY_BEDS_MAX}`);
+            return;
+        }
+        if (
+            !Number.isFinite(dailyDoubleBeds)
+            || dailyDoubleBeds < 0
+            || dailyDoubleBeds > DAILY_BEDS_MAX
+        ) {
+            toast.error(`Двуспальных кроватей: от 0 до ${DAILY_BEDS_MAX}`);
+            return;
+        }
+        if (dailySingleBeds + dailyDoubleBeds < 1) {
+            toast.error('Укажите хотя бы одну кровать');
+            return;
+        }
+        if (form.checkInTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkInTime)) {
+            toast.error('Время заезда должно быть в формате ЧЧ:ММ');
+            return;
+        }
+        if (form.checkOutTime && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(form.checkOutTime)) {
+            toast.error('Время выезда должно быть в формате ЧЧ:ММ');
+            return;
+        }
+        if (!Number.isFinite(minStayDays) || minStayDays < 1 || minStayDays > MAX_MIN_STAY_DAYS) {
+            toast.error(`Минимальный срок: от 1 до ${MAX_MIN_STAY_DAYS} суток`);
+            return;
         }
         const priceError = getDailyPriceFieldError(form.price);
         if (priceError) {
@@ -795,12 +788,12 @@ export default function EditPropertyPage() {
                     : undefined,
                 dealConditions: form.dealConditions.length ? form.dealConditions : undefined,
                 paymentMethods: form.paymentMethods.length ? form.paymentMethods : undefined,
-                maxDailyGuests: form.dealType === 'daily' && form.maxDailyGuests ? Number(form.maxDailyGuests) : undefined,
-                dailySingleBeds: form.dealType === 'daily' ? dailySingleBeds : undefined,
-                dailyDoubleBeds: form.dealType === 'daily' ? dailyDoubleBeds : undefined,
-                checkInTime: form.dealType === 'daily' && form.checkInTime ? form.checkInTime : undefined,
-                checkOutTime: form.dealType === 'daily' && form.checkOutTime ? form.checkOutTime : undefined,
-                minStayDays: form.dealType === 'daily' ? minStayDays : undefined,
+                maxDailyGuests: form.maxDailyGuests ? Number(form.maxDailyGuests) : undefined,
+                dailySingleBeds,
+                dailyDoubleBeds,
+                checkInTime: form.checkInTime ? form.checkInTime : undefined,
+                checkOutTime: form.checkOutTime ? form.checkOutTime : undefined,
+                minStayDays,
                 prepaymentRequired: form.type === 'house' ? form.prepaymentRequired : undefined,
                 additionalCheckInConditions: form.type === 'house' ? form.additionalCheckInConditions.trim() : undefined,
                 banquetSeats: form.type === 'house' && form.banquetSeats.trim() ? Number(form.banquetSeats) : undefined,
@@ -828,9 +821,7 @@ export default function EditPropertyPage() {
                     ? form.websiteUrl.trim()
                     : undefined,
                 videoUrl: form.videoUrl.trim(),
-                externalCalendarUrls: form.dealType === 'daily'
-                    ? form.externalCalendarUrls.map((url) => url.trim()).filter(Boolean)
-                    : undefined,
+                externalCalendarUrls: form.externalCalendarUrls.map((url) => url.trim()).filter(Boolean),
             };
             const result = await updateProperty({ id: propertyId, data: payload });
             toast.success(result.message);
@@ -1208,8 +1199,7 @@ export default function EditPropertyPage() {
                                     )}
                         </div>
 
-                        {form.dealType === 'daily' && (
-                            <>
+                        <>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <Label className="text-foreground">Максимальное число гостей *</Label>
@@ -1325,8 +1315,7 @@ export default function EditPropertyPage() {
                                     </div>
                                 </div>
                             )}
-                            </>
-                        )}
+                        </>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {showRenovation(form.type) && (
@@ -1363,28 +1352,6 @@ export default function EditPropertyPage() {
                             )}
                         </div>
 
-                        {form.dealType !== 'daily' && (
-                            <div>
-                                <Label className="text-foreground">Условия сделки</Label>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                                    {dealConditionOptions(form.dealType, form.type).map((option) => {
-                                        const selected = form.dealConditions.includes(option);
-                                        return (
-                                            <button
-                                                key={option}
-                                                onClick={() => toggleDealCondition(option)}
-                                                className={`px-3 py-2 rounded-lg text-sm border transition-all ${selected
-                                                    ? 'border-primary bg-accent text-foreground'
-                                                    : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
-                                                    }`}
-                                            >
-                                                {option}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </section>
 
@@ -1765,8 +1732,7 @@ export default function EditPropertyPage() {
                     </section>
                 )}
 
-                {form.dealType === 'daily' && (
-                    <section className="bg-card rounded-2xl shadow-card border border-border p-6 space-y-5">
+                <section className="bg-card rounded-2xl shadow-card border border-border p-6 space-y-5">
                         <div>
                             <h2 className="text-lg font-semibold text-foreground mb-1">Синхронизация календарей</h2>
                             <p className="text-xs text-muted-foreground">
@@ -1811,11 +1777,8 @@ export default function EditPropertyPage() {
                             Добавить календарь
                         </Button>
                     </section>
-                )}
 
-                {/* Deal rules (daily) */}
-                {['apartment', 'house'].includes(form.type) && (
-                    <section className="bg-card rounded-2xl shadow-card border border-border p-6">
+                <section className="bg-card rounded-2xl shadow-card border border-border p-6">
                         <h2 className="text-lg font-semibold text-foreground mb-4">Правила и условия</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                             {DEAL_RULE_OPTIONS.map(({ id, label }) => (
@@ -1835,7 +1798,6 @@ export default function EditPropertyPage() {
                             ))}
                         </div>
                     </section>
-                )}
 
                 <section className="bg-card rounded-2xl shadow-card border border-border p-6">
                     <h2 className="text-lg font-semibold text-foreground mb-4">Способы оплаты</h2>
