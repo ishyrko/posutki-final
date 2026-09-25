@@ -1,0 +1,55 @@
+---
+description: Проверять ESLint на изменённых frontend-файлах перед завершением задачи
+alwaysApply: true
+---
+
+# Линтер: изменённые файлы
+
+После правок в **`frontend/`** (особенно перед тем как считать задачу готовой) **запускай ESLint** и исправляй замечания в затронутых файлах.
+
+## Когда проверять
+
+- Закончил правки в `.ts` / `.tsx` / `.mjs` во `frontend/`.
+- Пользователь просил «проверить линтер», «починить линты», «всё чисто».
+- Большой рефакторинг или массовые правки — имеет смысл прогнать весь `src`.
+
+## Как собрать список файлов
+
+Из корня репозитория — только то, что реально менялось в этой задаче (staged + unstaged относительно `HEAD`):
+
+```bash
+git diff --name-only HEAD -- 'frontend/src/**/*.ts' 'frontend/src/**/*.tsx' 'frontend/src/**/*.mjs'
+git diff --name-only --cached HEAD -- 'frontend/src/**/*.ts' 'frontend/src/**/*.tsx' 'frontend/src/**/*.mjs'
+```
+
+Объедини списки без дубликатов. Не линть файлы, которые не менялись, если пользователь не просил полный прогон.
+
+## Как запускать (Docker)
+
+Не `npm` на хосте — контейнер **`frontend`** (см. правило `docker-make`):
+
+```bash
+docker compose exec -T frontend sh -lc 'cd /app && npm run lint -- path/to/file.tsx --max-warnings 0'
+```
+
+Несколько файлов — перечисли аргументами в одной команде. Пути относительно `/app` (как в репозитории: `src/...`).
+
+Полный прогон:
+
+```bash
+docker compose exec -T frontend sh -lc 'cd /app && npm run lint -- src --max-warnings 0'
+```
+
+## Ожидаемый результат
+
+- **`--max-warnings 0`**: и errors, и warnings должны быть исправлены (стандарт проекта).
+- IDE `ReadLints` — дополнение, не замена CLI: ориентир — успешный `npm run lint` в контейнере.
+
+## Бэкенд
+
+Отдельного ESLint/PHPStan в Makefile нет. Для PHP после существенных правок при необходимости: `make test-unit` (или `make test`), но это не замена frontend-линтера.
+
+## Типичные ловушки (React 19 / eslint-plugin-react-hooks)
+
+- Не монтировать Radix (`Select`, `Accordion`) на клиенте **во время гидрации** только ради линта — отложенный mount через `useEffect` (как в Hero), иначе съедут `useId` у соседних виджетов.
+- Курсы валют: не оставлять только `DEFAULT_EXCHANGE_RATES_FALLBACK` на SSR, если клиент сразу подтянет `/exchange-rates` — будет мигание цен; курс с сервера в `QueryProvider` / layout.
