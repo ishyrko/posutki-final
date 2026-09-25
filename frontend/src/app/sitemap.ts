@@ -9,6 +9,7 @@ import {
   MINSK_CITY_SLUG,
   REGION_SLUGS,
   ROOM_BUCKET_VALUES,
+  ALL_HOUSES_CATALOG_PATH,
   buildCatalogUrl,
   buildPropertyUrlFromRegionName,
   buildRoomCatalogUrl,
@@ -48,6 +49,7 @@ function staticEntries(now: Date): Entry[] {
     { url: "/o-nas/", changeFrequency: "yearly", priority: 0.4 },
     { url: "/kontakty/", changeFrequency: "yearly", priority: 0.5 },
     { url: "/sdat-kvartiru-na-sutki/", changeFrequency: "monthly", priority: 0.7 },
+    { url: ALL_HOUSES_CATALOG_PATH, changeFrequency: "daily", priority: 0.8 },
     { url: "/razmestit/", changeFrequency: "yearly", priority: 0.4 },
     { url: "/oplata/", changeFrequency: "yearly", priority: 0.4 },
     {

@@ -40,6 +40,9 @@ export const PROPERTY_TYPE_SLUG_TO_VALUE: Record<string, string> = {
   doma: 'house',
 };
 
+/** Каталог всех домов по Беларуси (не областная страница `/doma/`). */
+export const ALL_HOUSES_CATALOG_PATH = '/usadby-v-belarusi/';
+
 export const PROPERTY_TYPE_VALUE_TO_SLUG = Object.fromEntries(
   Object.entries(PROPERTY_TYPE_SLUG_TO_VALUE).map(([slug, val]) => [val, slug]),
 );

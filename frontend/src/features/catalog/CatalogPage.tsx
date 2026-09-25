@@ -298,6 +298,8 @@ interface CatalogPageProps {
   citySeoFooter?: CatalogCitySeoFooterProps | null;
   placeSeoFooter?: CatalogPlaceSeoFooterProps | null;
   roomSeoFooter?: CatalogPlaceSeoFooterProps | null;
+  /** Дома по всей Беларуси: не подставлять область Минска. */
+  nationwide?: boolean;
   children?: ReactNode;
 }
 
@@ -309,6 +311,7 @@ export default function CatalogPage({
   citySeoFooter = null,
   placeSeoFooter = null,
   roomSeoFooter = null,
+  nationwide = false,
   children,
 }: CatalogPageProps) {
   const router = useRouter();
@@ -511,7 +514,7 @@ export default function CatalogPage({
       f.citySlug = parsed.citySlug;
     } else if (parsed.regionSlug) {
       f.regionSlug = parsed.regionSlug;
-    } else {
+    } else if (!nationwide) {
       f.regionSlug = "minsk";
     }
     if (parsed.propertyType) f.type = parsed.propertyType;
@@ -549,7 +552,7 @@ export default function CatalogPage({
     else if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     return f;
-  }, [fetchAllForClientFilters, currentPage, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.microdistrictSlug, parsed.residentialComplexSlug, parsed.landmarkSlug, parsed.nearMetro, parsed.metroStationSlug, parsed.roomsBucket, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort, landmarkMaxDistanceKm]);
+  }, [fetchAllForClientFilters, currentPage, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.microdistrictSlug, parsed.residentialComplexSlug, parsed.landmarkSlug, parsed.nearMetro, parsed.metroStationSlug, parsed.roomsBucket, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort, landmarkMaxDistanceKm, nationwide]);
 
   const navigateRoomSelection = (nextBuckets: RoomFilterBucket[]) => {
     const sorted = [...nextBuckets].sort(sortRoomBuckets);
@@ -1355,7 +1358,7 @@ export default function CatalogPage({
                     properties={mapProperties}
                     activeId={activeMarker}
                     onMarkerClick={(id) => setActiveMarker(id)}
-                    regionSlug={parsed.regionSlug ?? "minsk"}
+                    regionSlug={nationwide ? undefined : (parsed.regionSlug ?? "minsk")}
                     citySlug={parsed.citySlug}
                   />
                 </div>

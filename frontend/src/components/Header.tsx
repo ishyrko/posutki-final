@@ -29,7 +29,7 @@ import { isAuthenticated } from "@/lib/auth";
 import { withRegionalCatalogHref, HEADER_REGION_MINSK_SLUG } from "@/lib/region-header";
 import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
 import { useHeaderCatalogPropertyType } from "@/hooks/useHeaderCatalogPropertyType";
-import { buildCatalogUrl } from "@/features/catalog/slugs";
+import { ALL_HOUSES_CATALOG_PATH, buildCatalogUrl } from "@/features/catalog/slugs";
 import { useSyncExternalStore } from "react";
 import { useCurrency } from "@/context/CurrencyContext";
 import { BynCurrencyMark } from "@/components/BynCurrency";
@@ -88,7 +88,7 @@ function buildMegaMenu(
       {
         title: "Каталог",
         items: [
-          { label: "Все дома", desc: "Дома и коттеджи на сутки", icon: <Building2 className="h-4 w-4" />, href: r("/doma/") },
+          { label: "Все дома", desc: "Дома и коттеджи на сутки", icon: <Building2 className="h-4 w-4" />, href: ALL_HOUSES_CATALOG_PATH },
         ],
       },
       {
