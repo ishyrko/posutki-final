@@ -165,7 +165,6 @@ export function RichContentHtml({ html, className }: RichContentHtmlProps) {
               </button>
             )}
 
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <motion.img
               key={currentImage}
               initial={{ opacity: 0, scale: 0.95 }}

@@ -92,7 +92,10 @@ const CitySection = ({ apartmentCatalogCities, apartmentCountsBySlug }: CitySect
   const [clientCities, setClientCities] = useState<ApartmentCatalogCity[] | null>(null);
   const [clientCounts, setClientCounts] = useState<Record<string, number> | null>(null);
 
-  const cities = clientCities ?? apartmentCatalogCities ?? [];
+  const cities = useMemo(
+    () => clientCities ?? apartmentCatalogCities ?? [],
+    [clientCities, apartmentCatalogCities],
+  );
   const counts = useMemo(
     () => ({ ...apartmentCountsBySlug, ...clientCounts }),
     [apartmentCountsBySlug, clientCounts],

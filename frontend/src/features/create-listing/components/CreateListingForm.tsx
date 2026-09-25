@@ -35,7 +35,7 @@ import { geocodeAddress as yandexGeocode } from '@/lib/yandex-geocoder';
 import { getMyProperties } from '@/features/properties/api';
 import { trackListingEvent } from '@/lib/gtag';
 import { useCityAutocompleteResults, useSearchStreets, useCreateProperty } from '../hooks';
-import type { ListingFormData, CreatePropertyPayload, CitySearchResult, AdditionalService } from '../types';
+import type { ListingFormData, CreatePropertyPayload, CitySearchResult } from '../types';
 import { PropertyPhotoGrid } from './PropertyPhotoGrid';
 import { LISTING_AMENITY_GROUPS } from '../listing-amenity-groups';
 import { PAYMENT_METHOD_OPTIONS } from '@/features/properties/payment-methods';
@@ -157,7 +157,7 @@ const dailyPropertyChoices: { value: 'apartment' | 'house'; label: string; icon:
 
 const lotAreaTypes = ['house'];
 
-const requiresAreaInSquareMeters = (_propertyType: string): boolean => true;
+const requiresAreaInSquareMeters = (): boolean => true;
 const needsLotArea = (propertyType: string): boolean => lotAreaTypes.includes(propertyType);
 
 const titlePlaceholderByType: Record<string, string> = {

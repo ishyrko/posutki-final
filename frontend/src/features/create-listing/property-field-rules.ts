@@ -8,19 +8,31 @@ export const renovationOptions = [
 ];
 
 /** Только посуточно — без варианта «без ремонта». */
-export const renovationOptionsForDeal = (_dealType: string): string[] =>
-    renovationOptions.filter((o) => o !== 'Без ремонта');
+export const renovationOptionsForDeal = (dealType: string): string[] => {
+    void dealType;
+    return renovationOptions.filter((o) => o !== 'Без ремонта');
+};
 
 export const balconyOptions = ['Нет', 'Балкон', 'Лоджия', 'Балкон и лоджия'];
 
-export const dealConditionOptions = (_dealType: string, _propertyType?: string): string[] => [];
+export const dealConditionOptions = (dealType: string, propertyType?: string): string[] => {
+    void dealType;
+    void propertyType;
+    return [];
+};
 
 export const sanitizeDealConditionsForPropertyType = (
-    _propertyType: string,
+    propertyType: string,
     dealConditions: string[],
-): string[] => dealConditions;
+): string[] => {
+    void propertyType;
+    return dealConditions;
+};
 
-export const showDealConditions = (_dealType: string): boolean => false;
+export const showDealConditions = (dealType: string): boolean => {
+    void dealType;
+    return false;
+};
 
 export const showRooms = (type: string): boolean => ['apartment', 'house'].includes(type);
 
@@ -47,4 +59,8 @@ export const roomsRequired = (type: string): boolean => type === 'apartment';
 
 export const bathroomsRequired = (type: string): boolean => type === 'apartment';
 
-export const showRoomDealFields = (_type: string, _dealType: string): boolean => false;
+export const showRoomDealFields = (type: string, dealType: string): boolean => {
+    void type;
+    void dealType;
+    return false;
+};

@@ -5,6 +5,7 @@ type IconProps = { className?: string };
 /** Official Viber brand asset (viber.com). */
 export function ViberIcon({ className }: IconProps) {
     return (
+        // eslint-disable-next-line @next/next/no-img-element -- static brand PNG
         <img
             src="/icons/viber.png"
             alt=""

@@ -76,6 +76,7 @@ export function RegisterForm() {
         },
     });
 
+    // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form watch for strength meter
     const passwordValue = form.watch('password');
 
     const passwordStrength = useMemo(() => {

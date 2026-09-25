@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -86,7 +86,10 @@ export function BuyPlacementDialog({
     const { data: levelsData, isLoading: levelsLoading } = usePropertyPlacementLevels(
         open ? property.id : null,
     );
-    const levels = levelsData?.levels ?? [];
+    const levels = useMemo(
+        () => levelsData?.levels ?? [],
+        [levelsData?.levels],
+    );
     const maxLevel = levelsData?.scope.maxLevel ?? 5;
     const locationLabel = levelsData?.scope.locationLabel
         ?? (isHouse ? property.address?.regionName ?? 'области' : property.address?.cityName ?? 'города');
@@ -114,20 +117,15 @@ export function BuyPlacementDialog({
         return [...PLACEMENT_DURATIONS];
     }, [level, currentLevel, renewalMonthsLeft]);
 
-    useEffect(() => {
-        if (
-            durationOptions.length > 0 &&
-            !durationOptions.includes(durationMonths as (typeof PLACEMENT_DURATIONS)[number])
-        ) {
-            setDurationMonths(durationOptions[0]);
-        }
-    }, [durationOptions, durationMonths]);
-
-    useEffect(() => {
-        if (level != null && level > currentLevel && currentLevel > 0 && !upgradeAllowed) {
-            setLevel(null);
-        }
-    }, [level, currentLevel, upgradeAllowed]);
+    if (
+        durationOptions.length > 0 &&
+        !durationOptions.includes(durationMonths as (typeof PLACEMENT_DURATIONS)[number])
+    ) {
+        setDurationMonths(durationOptions[0]);
+    }
+    if (level != null && level > currentLevel && currentLevel > 0 && !upgradeAllowed) {
+        setLevel(null);
+    }
 
     const quoteEnabled =
         open &&

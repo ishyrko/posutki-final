@@ -64,18 +64,23 @@ export function GalleryPortraitFrame({
 
 /** True only when image is clearly wider than tall. */
 export function useImageClearlyLandscape(src: string): boolean | null {
-  const [clearlyLandscape, setClearlyLandscape] = useState<boolean | null>(null);
+  const [landscapeBySrc, setLandscapeBySrc] = useState<{
+    src: string;
+    value: boolean | null;
+  }>({ src, value: null });
 
   useEffect(() => {
-    setClearlyLandscape(null);
     const img = new Image();
     const finish = () => {
       if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-        setClearlyLandscape(img.naturalWidth > img.naturalHeight * 1.02);
+        setLandscapeBySrc({
+          src,
+          value: img.naturalWidth > img.naturalHeight * 1.02,
+        });
       }
     };
     img.addEventListener('load', finish);
-    img.addEventListener('error', () => setClearlyLandscape(false));
+    img.addEventListener('error', () => setLandscapeBySrc({ src, value: false }));
     img.src = src;
     if (img.complete) finish();
     return () => {
@@ -83,7 +88,10 @@ export function useImageClearlyLandscape(src: string): boolean | null {
     };
   }, [src]);
 
-  return clearlyLandscape;
+  if (landscapeBySrc.src !== src) {
+    return null;
+  }
+  return landscapeBySrc.value;
 }
 
 export function GalleryGridThumb({

@@ -118,8 +118,10 @@ const PropertyMap = ({
     ? (CITY_MAP_VIEW[citySlug] ?? CITY_MAP_VIEW[regionSlug ?? ""] ?? BELARUS_MAP_VIEW)
     : (CITY_MAP_VIEW[regionSlug ?? ""] ?? BELARUS_MAP_VIEW);
 
-  onMarkerClickRef.current = onMarkerClick;
-  activeIdRef.current = activeId;
+  useEffect(() => {
+    onMarkerClickRef.current = onMarkerClick;
+    activeIdRef.current = activeId;
+  }, [onMarkerClick, activeId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -247,7 +249,7 @@ const PropertyMap = ({
         map.setBounds(bounds, { checkZoomRange: true, zoomMargin: 40 });
       }
     }
-  }, [properties, showBalloons, mapReady, fallbackView.center, fallbackView.zoom]);
+  }, [properties, showBalloons, mapReady, fallbackView.center, fallbackView.zoom, activeId]);
 
   return (
     <div

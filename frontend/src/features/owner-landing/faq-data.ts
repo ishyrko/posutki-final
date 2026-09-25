@@ -1,6 +1,6 @@
 import type { FaqItem } from "@/lib/json-ld/faq";
 
-export interface OwnerLandingFaqItem extends FaqItem {}
+export type OwnerLandingFaqItem = FaqItem;
 
 /**
  * Общий источник вопросов для FAQ-аккордеона и FAQPage JSON-LD -

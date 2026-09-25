@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, Shield, CheckCircle,
   Users, Utensils, Wifi, Tv, Sofa, Car, Waves, Wind,
   ShowerHead, Flame, Coffee, Snowflake, Baby, WashingMachine,
-  LogIn, LogOut, UserCheck,   Sunrise, Wallet, ExternalLink,
+  LogIn, LogOut, UserCheck, Wallet, ExternalLink,
 } from "lucide-react";
 import { LISTING_AMENITY_GROUPS } from "@/features/create-listing/listing-amenity-groups";
 import { formatMinStayDays } from "@/features/create-listing/validation";
@@ -113,10 +113,10 @@ export default function PropertyDetailClient({
   initialProperty,
   children,
 }: PropertyDetailClientProps) {
-  const ssrFetchedAtRef = useRef(Date.now());
+  const [ssrFetchedAt] = useState(() => Date.now());
   const { data: property, isLoading, isError } = useProperty(id, {
     initialData: initialProperty,
-    initialDataUpdatedAt: ssrFetchedAtRef.current,
+    initialDataUpdatedAt: ssrFetchedAt,
   });
   const { selectedCurrency } = useCurrency();
   const { data: rates } = useExchangeRates();
@@ -145,11 +145,12 @@ export default function PropertyDetailClient({
   const [bookingOpen, setBookingOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [reviewFormOpen, setReviewFormOpen] = useState(false);
-  const openBookingAfterContactCloseRef = useRef(false);
-
-  useEffect(() => {
+  const [reviewFormScopeId, setReviewFormScopeId] = useState(id);
+  if (reviewFormScopeId !== id) {
+    setReviewFormScopeId(id);
     setReviewFormOpen(false);
-  }, [id]);
+  }
+  const openBookingAfterContactCloseRef = useRef(false);
 
   const galleryImages: GalleryImageSource[] = useMemo(() => {
     const fromProperty = property?.images?.map((img) => ({
@@ -170,6 +171,12 @@ export default function PropertyDetailClient({
       url: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80",
     }];
   }, [property?.images, initialProperty.images]);
+
+  const videoEmbed = useMemo(
+    () => getVideoEmbedInfo(property?.videoUrl ?? initialProperty.videoUrl),
+    [property?.videoUrl, initialProperty.videoUrl],
+  );
+  const { ref: mapSectionRef, isNear: isMapNear } = useNearViewport();
 
   const mainImageThumbSrc = galleryThumbSrc(galleryImages[0]);
   const mainImageFullSrc = galleryFullSrc(galleryImages[0]);
@@ -292,10 +299,8 @@ export default function PropertyDetailClient({
 
   const showExtraPhotosOverlay = galleryImages.length > 5;
   const extraPhotoCount = galleryImages.length - 4;
-  const videoEmbed = useMemo(() => getVideoEmbedInfo(property.videoUrl), [property.videoUrl]);
   const addressStr = formatAddress(property.address);
   const coords = property.coordinates;
-  const { ref: mapSectionRef, isNear: isMapNear } = useNearViewport();
   const nearbyMetroStations = property.nearbyMetroStations ?? [];
   const nearbyLandmarks = property.nearbyLandmarks ?? [];
 

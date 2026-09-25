@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import {
@@ -21,7 +21,7 @@ export function PropertyLightbox({
   onIndexChange,
   onClose,
 }: PropertyLightboxProps) {
-  const startIndex = useRef(currentIndex).current;
+  const [startIndex] = useState(() => currentIndex);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: images.length > 1,
     align: 'center',

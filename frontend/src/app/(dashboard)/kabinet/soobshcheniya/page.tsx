@@ -948,12 +948,8 @@ export default function MessagesPage() {
     const markBookingInquiriesRead = useMarkBookingInquiriesRead();
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState<MessagesTab>('conversations');
-
-    useEffect(() => {
-        if (!hasMyProperties && activeTab === 'bookings') {
-            setActiveTab('conversations');
-        }
-    }, [activeTab, hasMyProperties]);
+    const visibleTab =
+        !hasMyProperties && activeTab === 'bookings' ? 'conversations' : activeTab;
 
     const conversations = conversationsData?.data || [];
     const selectedConversation = conversations.find((c) => c.id === selectedId);
@@ -962,7 +958,7 @@ export default function MessagesPage() {
         if (tab === 'bookings' && (unreadBookingInquiryCount ?? 0) > 0) {
             markBookingInquiriesRead.mutate();
         }
-        if (activeTab === 'bookings' && tab !== 'bookings') {
+        if (visibleTab === 'bookings' && tab !== 'bookings') {
             queryClient.invalidateQueries({ queryKey: ['booking-inquiries'] });
         }
         setActiveTab(tab);
@@ -1004,10 +1000,10 @@ export default function MessagesPage() {
             <div className={cn('grid grid-cols-2 gap-2 mb-4 max-lg:px-4', selectedId && 'max-lg:hidden')}>
                 <Button
                     type="button"
-                    variant={activeTab === 'conversations' ? 'default' : 'outline'}
+                    variant={visibleTab === 'conversations' ? 'default' : 'outline'}
                     className={cn(
                         'w-full min-w-0 h-auto py-2.5 px-2 sm:px-4 text-xs sm:text-sm whitespace-normal',
-                        activeTab === 'conversations' && 'bg-gradient-primary text-primary-foreground border-0',
+                        visibleTab === 'conversations' && 'bg-gradient-primary text-primary-foreground border-0',
                     )}
                     onClick={() => handleTabChange('conversations')}
                 >
@@ -1016,20 +1012,20 @@ export default function MessagesPage() {
                 </Button>
                 <Button
                     type="button"
-                    variant={activeTab === 'bookings' ? 'default' : 'outline'}
+                    variant={visibleTab === 'bookings' ? 'default' : 'outline'}
                     className={cn(
                         'w-full min-w-0 h-auto py-2.5 px-2 sm:px-4 text-xs sm:text-sm whitespace-normal',
-                        activeTab === 'bookings' && 'bg-gradient-primary text-primary-foreground border-0',
+                        visibleTab === 'bookings' && 'bg-gradient-primary text-primary-foreground border-0',
                     )}
                     onClick={() => handleTabChange('bookings')}
                 >
                     <CalendarCheck className="w-4 h-4 shrink-0" />
                     <span className="sm:hidden">Заявки</span>
                     <span className="hidden sm:inline">Заявки на бронирование</span>
-                    {(unreadBookingInquiryCount ?? 0) > 0 && activeTab !== 'bookings' && (
+                    {(unreadBookingInquiryCount ?? 0) > 0 && visibleTab !== 'bookings' && (
                         <span className={cn(
                             'ml-2 min-w-[20px] h-5 px-1.5 rounded-full text-xs flex items-center justify-center font-medium',
-                            activeTab === 'bookings'
+                            visibleTab === 'bookings'
                                 ? 'bg-primary-foreground/20 text-primary-foreground'
                                 : 'bg-primary text-primary-foreground',
                         )}
@@ -1047,7 +1043,7 @@ export default function MessagesPage() {
                 selectedId && 'max-lg:fixed max-lg:inset-x-0 max-lg:top-16 max-lg:bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] max-lg:z-20 max-lg:h-auto',
             )}
             >
-                {activeTab === 'bookings' ? (
+                {visibleTab === 'bookings' ? (
                     <BookingInquiriesPanel onOpenConversation={openConversation} />
                 ) : isLoading ? (
                     <div className="flex items-center justify-center h-full">

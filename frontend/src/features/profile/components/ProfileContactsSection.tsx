@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Phone, Plus, Trash2, CheckCircle2, Clock, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,13 +69,13 @@ export function ProfileContactsSection({ user }: { user: User | undefined }) {
     const [deleteTarget, setDeleteTarget] = useState<{ id: number; phone: string } | null>(null);
     const [telegram, setTelegram] = useState('');
     const [telegramError, setTelegramError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (user) {
-            setTelegram(user.telegram ? `@${user.telegram}` : '');
-            setTelegramError(null);
-        }
-    }, [user?.telegram, user?.id]);
+    const [telegramSyncKey, setTelegramSyncKey] = useState<string | null>(null);
+    const userTelegramSyncKey = user ? `${user.id}:${user.telegram ?? ''}` : null;
+    if (userTelegramSyncKey !== null && telegramSyncKey !== userTelegramSyncKey) {
+        setTelegramSyncKey(userTelegramSyncKey);
+        setTelegram(user.telegram ? `@${user.telegram}` : '');
+        setTelegramError(null);
+    }
 
     const saveContactSettings = (overrides?: {
         phoneHasViber?: boolean;

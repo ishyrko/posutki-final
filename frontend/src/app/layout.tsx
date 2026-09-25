@@ -122,6 +122,7 @@ export default function RootLayout({
         <AnalyticsScripts />
         <noscript>
           <div>
+            {/* eslint-disable-next-line @next/next/no-img-element -- Metrika noscript pixel */}
             <img
                 src={`https://mc.yandex.ru/watch/${YANDEX_METRIKA_COUNTER_ID}`}
                 style={{ position: "absolute", left: "-9999px" }}

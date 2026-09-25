@@ -54,10 +54,11 @@ const HeroSection = () => {
   const [propertyType, setPropertyType] = useState<CatalogPropertyType>("apartment");
   const [cityValue, setCityValue] = useState("minsk");
   const [guestCount, setGuestCount] = useState(2);
-  // Radix Select generates unstable aria-controls ids across SSR/CSR — mount after hydration.
+  // Radix Select calls useId. Mounting it on the client during hydration (useSyncExternalStore
+  // client snapshot is already true) shifts ids of every later Radix widget, including the city accordion.
   const [selectsReady, setSelectsReady] = useState(false);
-
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- must stay false for the hydration render
     setSelectsReady(true);
   }, []);
 

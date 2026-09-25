@@ -4,7 +4,6 @@ import {
   isBaseCityApartmentCatalogPage,
   isDeprecatedFourPlusRoomCatalogPage,
   isRoomCatalogPage,
-  isRoomSeoBucket,
   resolveCatalogCitySlug,
   resolveCatalogUrlParamsFromCitySlug,
   type ParsedSegments,

@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { ListingSubmitLink } from "@/components/ListingSubmitLink";
 import {
   SlidersHorizontal,
@@ -253,7 +252,7 @@ function propertyToListCard(p: Property, rates: ExchangeRates, metroFilterStatio
 
 function propertyToMapItem(p: Property, rates: ExchangeRates, displayCurrency: Currency = "BYN"): MapProperty | null {
   if (!p.coordinates?.latitude || !p.coordinates?.longitude) return null;
-  const { primaryAmount, primaryPlain } = formatPropertyPrices(p, rates, displayCurrency);
+  const { primaryPlain } = formatPropertyPrices(p, rates, displayCurrency);
   return {
     id: p.id,
     lat: p.coordinates.latitude,
@@ -360,8 +359,14 @@ export default function CatalogPage({
   const { data: cityPlacesData } = useCityPlaces(catalogCitySlug, placesFilterVisible);
   const { data: cityLandmarksData } = useCityLandmarks(catalogCitySlug, landmarkFilterVisible);
   const metroStations = metroStationsData ?? EMPTY_METRO_STATIONS;
-  const cityDistricts = cityDistrictsData ?? [];
-  const cityPlaces = cityPlacesData ?? [];
+  const cityDistricts = useMemo(
+    () => cityDistrictsData ?? [],
+    [cityDistrictsData],
+  );
+  const cityPlaces = useMemo(
+    () => cityPlacesData ?? [],
+    [cityPlacesData],
+  );
   const cityLandmarks = cityLandmarksData ?? [];
   const roomsFilterVisible = showRoomsCatalogFilter(parsed.propertyType);
 
@@ -487,7 +492,7 @@ export default function CatalogPage({
     if (routeMetroStation) return routeMetroStation.id;
     if ((parsed.nearMetro || nearMetro) && metroStationId !== "all") return Number(metroStationId);
     return null;
-  }, [metroFilterVisible, parsed.metroStationSlug, metroStations, nearMetro, metroStationId]);
+  }, [metroFilterVisible, parsed.metroStationSlug, parsed.nearMetro, metroStations, nearMetro, metroStationId]);
 
   const hasClientOnlyFilters =
     selectedAmenityIds.length > 0 || selectedPaymentMethodIds.length > 0;
@@ -552,7 +557,7 @@ export default function CatalogPage({
     else if (sort === "price-asc") { f.sortBy = "price"; f.sortOrder = "ASC"; }
     else if (sort === "price-desc") { f.sortBy = "price"; f.sortOrder = "DESC"; }
     return f;
-  }, [fetchAllForClientFilters, currentPage, parsed.regionSlug, parsed.propertyType, parsed.citySlug, parsed.cityDistrictSlug, parsed.microdistrictSlug, parsed.residentialComplexSlug, parsed.landmarkSlug, parsed.nearMetro, parsed.metroStationSlug, parsed.roomsBucket, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort, landmarkMaxDistanceKm, nationwide]);
+  }, [fetchAllForClientFilters, currentPage, parsed, metroFilterVisible, metroStations, roomsFilterVisible, roomBuckets, metroStationId, nearMetro, minPrice, maxPrice, guestsFromQuery, selectedCurrency, hasPriceFilter, sort, landmarkMaxDistanceKm, nationwide]);
 
   const navigateRoomSelection = (nextBuckets: RoomFilterBucket[]) => {
     const sorted = [...nextBuckets].sort(sortRoomBuckets);
@@ -631,7 +636,7 @@ export default function CatalogPage({
     router.push(query ? `${pathname}?${query}` : pathname);
   };
 
-  const resetToFirstPage = () => {
+  const resetToFirstPage = useCallback(() => {
     if (currentPage === 1) return;
 
     setCurrentPage(1);
@@ -639,7 +644,7 @@ export default function CatalogPage({
     params.delete("page");
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname);
-  };
+  }, [currentPage, pathname, router, searchParams]);
 
   const setGuestsFilter = (count: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -702,7 +707,7 @@ export default function CatalogPage({
     if (totalPages > 0 && currentPage > totalPages) {
       resetToFirstPage();
     }
-  }, [hasClientOnlyFilters, isLoading, totalPages, currentPage]);
+  }, [hasClientOnlyFilters, isLoading, totalPages, currentPage, resetToFirstPage]);
 
   const mapProperties: MapProperty[] = useMemo(() => {
     return displayProperties

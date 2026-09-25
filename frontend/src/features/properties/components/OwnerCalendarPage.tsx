@@ -137,7 +137,7 @@ export function OwnerCalendarPage() {
 
     const year = cursor.getFullYear();
     const month = cursor.getMonth();
-    const lastDay = new Date(year, month + 1, 0);
+    const lastDay = useMemo(() => new Date(year, month + 1, 0), [year, month]);
     const startOffset = (new Date(year, month, 1).getDay() + 6) % 7;
     const totalCells = Math.ceil((startOffset + lastDay.getDate()) / 7) * 7;
 

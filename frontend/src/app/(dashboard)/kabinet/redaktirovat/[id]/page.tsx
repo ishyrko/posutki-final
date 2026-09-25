@@ -126,7 +126,7 @@ function propertyTypeLabel(type: string): string {
 }
 const lotAreaTypes = ['house'];
 
-const requiresAreaInSquareMeters = (_propertyType: string): boolean => true;
+const requiresAreaInSquareMeters = (): boolean => true;
 const needsLotArea = (propertyType: string): boolean => lotAreaTypes.includes(propertyType);
 
 const DEFAULT_CENTER: [number, number] = [53.9045, 27.5615];

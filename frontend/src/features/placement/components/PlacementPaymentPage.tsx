@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
@@ -55,9 +55,9 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
     const confirmedRef = useRef(false);
     const awaitingTokenRef = useRef(false);
 
-    const cleanReturnUrl = () => {
+    const cleanReturnUrl = useCallback(() => {
         router.replace(`/kabinet/oplata/${purchaseId}/`);
-    };
+    }, [purchaseId, router]);
 
     useEffect(() => {
         if (!hasReturnParams || isLoading || !purchase) {
@@ -67,7 +67,7 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
         if (purchase.status === 'active' && isSuccessReturn) {
             cleanReturnUrl();
         }
-    }, [hasReturnParams, isLoading, isSuccessReturn, purchase, purchaseId, router]);
+    }, [cleanReturnUrl, hasReturnParams, isLoading, isSuccessReturn, purchase]);
 
     useEffect(() => {
         if (!returnStatus || confirmedRef.current) {
@@ -80,7 +80,7 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
                     return;
                 }
                 awaitingTokenRef.current = true;
-                setAwaitingActivation(true);
+                queueMicrotask(() => setAwaitingActivation(true));
                 toast.message('Оплата получена, подтверждаем статус…');
                 void refetch();
                 cleanReturnUrl();
@@ -88,7 +88,7 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
             }
 
             confirmedRef.current = true;
-            setAwaitingActivation(true);
+            queueMicrotask(() => setAwaitingActivation(true));
             cleanReturnUrl();
             confirmPlacementPayment(
                 { purchaseId, token: checkoutToken },
@@ -119,12 +119,12 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
         void refetch();
     }, [
         checkoutToken,
+        cleanReturnUrl,
         confirmPlacementPayment,
         isSuccessReturn,
         purchaseId,
         refetch,
         returnStatus,
-        router,
     ]);
 
     if (isLoading) {

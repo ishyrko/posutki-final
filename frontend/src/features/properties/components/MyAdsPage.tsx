@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ExchangeRates } from '@/features/properties/api';
 import { DEFAULT_EXCHANGE_RATES_FALLBACK, formatPropertyPrices } from '@/features/properties/price-display';
 import { motion } from 'framer-motion';
@@ -149,7 +149,10 @@ function ListingCard({
     const { data: placementLevelsData } = usePropertyPlacementLevels(
         property.status === 'published' ? property.id : null,
     );
-    const placementLevels = placementLevelsData?.levels ?? [];
+    const placementLevels = useMemo(
+        () => placementLevelsData?.levels ?? [],
+        [placementLevelsData?.levels],
+    );
     const freeTierBand = placementLevelsData?.freeTier;
     const locationLabel = placementLevelsData?.scope.locationLabel
         ?? (isHouse ? property.address?.regionName ?? 'области' : property.address?.cityName ?? 'города');
@@ -574,11 +577,15 @@ export function MyAdsPage({ activeStatus }: { activeStatus: MyAdsStatus }) {
     const [searchInput, setSearchInput] = useState('');
     const [q, setQ] = useState('');
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
-
-    useEffect(() => {
+    const [prevListFilters, setPrevListFilters] = useState({ activeStatus, q });
+    if (
+        prevListFilters.activeStatus !== activeStatus
+        || prevListFilters.q !== q
+    ) {
+        setPrevListFilters({ activeStatus, q });
         setPage(1);
         setSelectedIds([]);
-    }, [activeStatus, q]);
+    }
 
     const { data, isLoading } = useMyProperties({
         page,

@@ -65,7 +65,6 @@ const PropertyListCard = ({
   beds,
   baths,
   area,
-  landArea,
   tag,
   index = 0,
   description,
