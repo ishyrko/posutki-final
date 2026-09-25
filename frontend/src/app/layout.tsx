@@ -11,6 +11,7 @@ import { CurrencyProvider } from "@/context/CurrencyContext";
 import { YANDEX_METRIKA_COUNTER_ID } from "@/lib/metrika";
 import DeployVersionGuard from "@/components/DeployVersionGuard";
 import AnalyticsScripts from "@/components/AnalyticsScripts";
+import { fetchExchangeRates } from "@/lib/exchange-rates-server";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -44,11 +45,12 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialExchangeRates = await fetchExchangeRates();
   const staleChunkReloadGuard = `
     (function () {
       var key = 'posutki-chunk-reload';
@@ -110,7 +112,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <QueryProvider>
+        <QueryProvider initialExchangeRates={initialExchangeRates}>
           <CurrencyProvider>
             {children}
           </CurrencyProvider>
