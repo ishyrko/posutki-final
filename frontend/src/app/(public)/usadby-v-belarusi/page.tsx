@@ -11,9 +11,9 @@ import { JsonLdScript } from "@/lib/json-ld/json-ld-script";
 import { buildBreadcrumbJsonLd, type Crumb } from "@/lib/breadcrumbs";
 import { buildPageMetadata } from "@/lib/seo/open-graph";
 
-const PAGE_TITLE = "Дома и коттеджи на сутки в Беларуси";
+const PAGE_TITLE = "Усадьбы на сутки в Беларуси";
 const PAGE_DESCRIPTION =
-  "Снять дом на сутки в Беларуси. Посуточная аренда домов и коттеджей без посредников в Беларуси с ценами, описанием и фото на Posutki.by";
+  "Снять усадьбу на сутки в Беларуси. Посуточная аренда усадеб без посредников в Беларуси с ценами, описанием и фото на Posutki.by";
 
 const parsed: ParsedSegments = {
   dealType: IMPLICIT_DEAL_TYPE,

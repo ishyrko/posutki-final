@@ -10,14 +10,14 @@ use App\Domain\Property\Service\ApartmentCatalogCityRegistry;
 
 /**
  * Публичные маршруты Next.js — в синхроне с frontend/src/features/catalog/slugs.ts
- * (посуточно: kvartiry/doma, id, для областных центров — префикс региона).
+ * (посуточно: kvartiry/usadby, id, для областных центров — префикс региона).
  */
 final readonly class FrontendUrlBuilder
 {
     /** @var array<string, string> */
     private const PROPERTY_TYPE_TO_PATH_SLUG = [
         'apartment' => 'kvartiry',
-        'house' => 'doma',
+        'house' => 'usadby',
     ];
 
     /** @var list<string> */

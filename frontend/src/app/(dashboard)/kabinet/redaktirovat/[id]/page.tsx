@@ -119,7 +119,7 @@ import {
 
 const propertyTypes = [
     { value: 'apartment', label: 'Квартира' },
-    { value: 'house', label: 'Дом / коттедж' },
+    { value: 'house', label: 'Усадьба' },
 ];
 
 function propertyTypeLabel(type: string): string {

@@ -37,10 +37,10 @@ export const IMPLICIT_DEAL_TYPE = 'daily' as const;
 /** Типы жилья в URL (посуточный каталог). */
 export const PROPERTY_TYPE_SLUG_TO_VALUE: Record<string, string> = {
   kvartiry: 'apartment',
-  doma: 'house',
+  usadby: 'house',
 };
 
-/** Каталог всех домов по Беларуси (не областная страница `/doma/`). */
+/** Каталог всех усадеб по Беларуси (не областная страница `/usadby/`). */
 export const ALL_HOUSES_CATALOG_PATH = '/usadby-v-belarusi/';
 
 export const PROPERTY_TYPE_VALUE_TO_SLUG = Object.fromEntries(
@@ -148,12 +148,12 @@ const CATALOG_HOUSE_LOCATION: Record<string, string> = {
 /** H1 / meta для страниц каталога по типу жилья. */
 export const DAILY_DEAL_PAGE_TITLES: Record<string, string> = {
   apartment: 'Квартиры на сутки',
-  house: 'Дома и коттеджи на сутки',
+  house: 'Усадьбы на сутки',
 };
 
 export const PROPERTY_TYPE_LABELS: Record<string, string> = {
   apartment: 'квартир',
-  house: 'домов',
+  house: 'усадеб',
 };
 
 /** Именительный падеж города для подписи в баннере достопримечательности. */
@@ -1248,7 +1248,7 @@ export function buildCatalogMetaTitle(
 
   const houseLocation = resolveHouseCatalogMetaLocation(parsed);
   if (houseLocation) {
-    return `Дома и коттеджи на сутки ${houseLocation}. Посуточная аренда домов от владельцев.`;
+    return `Усадьбы на сутки ${houseLocation}. Посуточная аренда усадеб от владельцев.`;
   }
 
   return null;
@@ -1304,7 +1304,7 @@ export function buildCatalogMetaDescription(
 
   const houseLocation = resolveHouseCatalogMetaLocation(parsed);
   if (houseLocation) {
-    return `Снять дом на сутки ${houseLocation}. Посуточная аренда домов и коттеджей без посредников ${houseLocation} с ценами, описанием и фото на Posutki.by`;
+    return `Снять усадьбу на сутки ${houseLocation}. Посуточная аренда усадеб без посредников ${houseLocation} с ценами, описанием и фото на Posutki.by`;
   }
 
   return null;

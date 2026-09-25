@@ -96,7 +96,7 @@ type PropertyDetailClientProps = {
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   apartment: "Квартира",
-  house: "Дом",
+  house: "Усадьба",
 };
 
 function hasPositiveNumber(value: number | null | undefined): value is number {
@@ -399,7 +399,7 @@ export default function PropertyDetailClient({
       : []),
   ].filter((spec) => spec.value !== "-");
 
-  // Полная таблица «О доме»
+  // Полная таблица «Об усадьбе»
   const houseInfoSpecs = [
     ...(showBathrooms(property.type) && hasPositiveNumber(property.specifications.bathrooms)
       ? [{ icon: Bath, label: "Санузлы", value: String(property.specifications.bathrooms) }]
@@ -908,10 +908,10 @@ export default function PropertyDetailClient({
                 </motion.div>
               )}
 
-              {/* О доме — detailed specs table */}
+              {/* Об усадьбе — detailed specs table */}
               {houseInfoSpecs.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
-                  <h2 className="text-xl font-bold text-foreground mb-3">О доме</h2>
+                  <h2 className="text-xl font-bold text-foreground mb-3">Об усадьбе</h2>
                   <div className="rounded-xl border border-border/50 overflow-hidden max-w-lg">
                     {houseInfoSpecs.map((spec, i) => (
                       <div

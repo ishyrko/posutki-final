@@ -51,7 +51,7 @@ final class FrontendUrlBuilderTest extends TestCase
         $property->method('getCityId')->willReturn(18868);
 
         self::assertSame(
-            'https://posutki.by/grodno/doma/42/',
+            'https://posutki.by/grodno/usadby/42/',
             $builder->publicPropertyForListing($property),
         );
     }

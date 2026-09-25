@@ -27,7 +27,7 @@
         <select name="type" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
             <option value="" {% if filters.type is empty %}selected{% endif %}>Все типы</option>
             <option value="apartment" {% if filters.type == 'apartment' %}selected{% endif %}>Квартиры</option>
-            <option value="house" {% if filters.type == 'house' %}selected{% endif %}>Дома</option>
+            <option value="house" {% if filters.type == 'house' %}selected{% endif %}>Усадьбы</option>
         </select>
 
         <select name="cityId" class="form-select form-select-sm" style="min-width:220px; max-width:320px;" onchange="this.form.submit()" {% if filters.type != 'apartment' %}hidden{% endif %}>
@@ -63,7 +63,7 @@
 
         <p class="text-secondary mb-4">
             Агрегированная статистика по
-            {% if filters.type == 'apartment' %}квартирам{% elseif filters.type == 'house' %}домам{% else %}всем объявлениям{% endif %}
+            {% if filters.type == 'apartment' %}квартирам{% elseif filters.type == 'house' %}усадьбам{% else %}всем объявлениям{% endif %}
             {% if selectedCityName %}в г. {{ selectedCityName }}{% elseif selectedRegionName %}в {{ selectedRegionName }}{% else %}по всей Беларуси{% endif %}
             {% if stats.dateFrom and stats.dateTo %}
                 с {{ stats.dateFrom|date('d.m.Y') }} по {{ stats.dateTo|date('d.m.Y') }}

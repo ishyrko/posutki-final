@@ -105,7 +105,7 @@ export function PropertyInfo({ property }: PropertyInfoProps) {
                     <h4 className="font-display font-bold text-lg">Характеристики</h4>
                     <ul className="space-y-3">
                         {[
-                            { label: "Тип", value: property.type === 'apartment' ? 'Квартира' : 'Дом' },
+                            { label: "Тип", value: property.type === 'apartment' ? 'Квартира' : 'Усадьба' },
                             { label: "Состояние", value: "Отличное" },
                             {
                                 label: "Этаж",

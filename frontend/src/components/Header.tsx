@@ -84,24 +84,24 @@ function buildMegaMenu(
         ],
       },
     ],
-    Дома: [
+    Усадьбы: [
       {
         title: "Каталог",
         items: [
-          { label: "Все дома", desc: "Дома и коттеджи на сутки", icon: <Building2 className="h-4 w-4" />, href: ALL_HOUSES_CATALOG_PATH },
+          { label: "Все усадьбы", desc: "Усадьбы на сутки", icon: <Building2 className="h-4 w-4" />, href: ALL_HOUSES_CATALOG_PATH },
         ],
       },
       {
         title: "Особенности",
         items: [
-          { label: "С баней/сауной", desc: "Отдых с парилкой", icon: <Flame className="h-4 w-4" />, href: r("/doma/?amenity=sauna") },
-          { label: "С бассейном", desc: "Бассейн на участке", icon: <Bath className="h-4 w-4" />, href: r("/doma/?amenity=pool") },
+          { label: "С баней/сауной", desc: "Отдых с парилкой", icon: <Flame className="h-4 w-4" />, href: r("/usadby/?amenity=sauna") },
+          { label: "С бассейном", desc: "Бассейн на участке", icon: <Bath className="h-4 w-4" />, href: r("/usadby/?amenity=pool") },
         ],
       },
       {
         title: "Для кого",
         items: [
-          { label: "Для большой компании", desc: "От 8+ гостей", icon: <Users className="h-4 w-4" />, href: r("/doma/?guests=8") },
+          { label: "Для большой компании", desc: "От 8+ гостей", icon: <Users className="h-4 w-4" />, href: r("/usadby/?guests=8") },
         ],
       },
     ],
@@ -374,7 +374,7 @@ const Header = () => {
 
             <div className="mt-6 pt-5 border-t border-border flex items-center justify-between gap-4">
               <p className="text-sm text-muted-foreground">
-                Аренда квартир и домов посуточно по всей Беларуси — проверенные объявления с фото
+                Аренда квартир и усадеб посуточно по всей Беларуси — проверенные объявления с фото
               </p>
               <Link href={searchHref} onClick={() => setActiveMega(null)}>
                 <Button variant="outline" size="sm" className="gap-2 shrink-0">

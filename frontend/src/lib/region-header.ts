@@ -28,7 +28,7 @@ export function withRegionalCatalogHref(href: string, regionSlug: string): strin
 
   const isRegionalCatalogHref =
     href.startsWith("/kvartiry/") ||
-    href.startsWith("/doma/") ||
+    href.startsWith("/usadby/") ||
     href.startsWith("/vozle-metro/") ||
     href.startsWith("/kvartiry/vozle-metro/") ||
     href.startsWith("/kvartiry/metro/");

@@ -22,10 +22,28 @@ function redirectToHttps(request: NextRequest): NextResponse | null {
     return NextResponse.redirect(target, 301);
 }
 
+/** 301: устаревший сегмент каталога `doma` → `usadby`. */
+function redirectLegacyDomaCatalogPath(request: NextRequest): NextResponse | null {
+    const segments = request.nextUrl.pathname.split('/').filter(Boolean);
+    const hasDoma = segments.some((segment) => segment === 'doma');
+    if (!hasDoma) {
+        return null;
+    }
+    const newSegments = segments.map((segment) => (segment === 'doma' ? 'usadby' : segment));
+    const newPath = `/${newSegments.join('/')}/`;
+    const target = new URL(`${newPath}${request.nextUrl.search}`, request.url);
+    return NextResponse.redirect(target, 301);
+}
+
 export function middleware(request: NextRequest) {
     const httpsRedirect = redirectToHttps(request);
     if (httpsRedirect) {
         return httpsRedirect;
+    }
+
+    const legacyDomaRedirect = redirectLegacyDomaCatalogPath(request);
+    if (legacyDomaRedirect) {
+        return legacyDomaRedirect;
     }
 
     const token = request.cookies.get(AUTH_TOKEN_KEY)?.value;

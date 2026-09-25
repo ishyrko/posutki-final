@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 
 /**
- * Тип жилья в URL каталога: квартиры по умолчанию, дома — если в пути есть сегмент `doma`.
+ * Тип жилья в URL каталога: квартиры по умолчанию, усадьбы — если в пути есть сегмент `usadby`.
  * Не использует parseSegments / apartment-catalog slug store — Header рендерится и в кабинете
  * без ApartmentCatalogSlugProvider.
  */
@@ -13,6 +13,6 @@ export function useHeaderCatalogPropertyType(): "apartment" | "house" {
 
   return useMemo(() => {
     const segments = pathname.split("/").filter(Boolean);
-    return segments.includes("doma") ? "house" : "apartment";
+    return segments.includes("usadby") ? "house" : "apartment";
   }, [pathname]);
 }

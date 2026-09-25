@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildPageMetadata({
       title: "О нас | Посутки.by",
       description:
-        "Посутки.by — посуточная аренда квартир и домов в Беларуси: удобный поиск жилья для гостей и размещение объявлений для собственников.",
+        "Посутки.by — посуточная аренда квартир и усадеб в Беларуси: удобный поиск жилья для гостей и размещение объявлений для собственников.",
       path: `/${SLUG}/`,
     });
   }
@@ -27,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: page.metaTitle ?? `${page.title} | Посутки.by`,
     description:
       page.metaDescription ??
-      "Посуточная аренда квартир и домов в Беларуси на Posutki.by.",
+      "Посуточная аренда квартир и усадеб в Беларуси на Posutki.by.",
     path: `/${SLUG}/`,
   });
 }

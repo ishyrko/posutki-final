@@ -15,11 +15,11 @@ final class HousePlacementScopeSettingsCrudController extends AbstractPlacementS
 
     protected function entityLabelSingular(): string
     {
-        return 'Настройки VIP (дома)';
+        return 'Настройки VIP (усадьбы)';
     }
 
     protected function entityLabelPlural(): string
     {
-        return 'Настройки VIP — дома';
+        return 'Настройки VIP — усадьбы';
     }
 }

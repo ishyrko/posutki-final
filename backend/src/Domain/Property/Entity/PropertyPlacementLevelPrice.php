@@ -198,10 +198,10 @@ class PropertyPlacementLevelPrice
 
         if ($this->propertyType === PropertyType::House->value) {
             if ($this->regionId === null) {
-                throw new DomainException('Для домов нужно выбрать область');
+                throw new DomainException('Для усадеб нужно выбрать область');
             }
             if ($this->cityId !== null) {
-                throw new DomainException('Для домов город не указывается');
+                throw new DomainException('Для усадеб город не указывается');
             }
         }
     }

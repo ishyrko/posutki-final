@@ -6,9 +6,9 @@ import { buildPageMetadata } from '@/lib/seo/open-graph';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = buildPageMetadata({
-    title: 'Разместить объявление о посуточной аренде квартиры или дома на Posutki.by',
+    title: 'Разместить объявление о посуточной аренде квартиры или усадьбы на Posutki.by',
     description:
-        'Подайте объявление о посуточной аренде квартиры или дома на Posutki.by. Бесплатное размещение для владельцев жилья в Беларуси.',
+        'Подайте объявление о посуточной аренде квартиры или усадьбы на Posutki.by. Бесплатное размещение для владельцев жилья в Беларуси.',
     path: '/razmestit/',
 });
 

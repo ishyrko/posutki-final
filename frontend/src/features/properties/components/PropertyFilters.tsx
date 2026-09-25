@@ -29,7 +29,7 @@ const cities = [
 const propertyTypes = [
   { value: "all", label: "Все типы" },
   { value: "apartment", label: "Квартира" },
-  { value: "house", label: "Дом" },
+  { value: "house", label: "Усадьба" },
 ];
 
 export function PropertyFilters() {

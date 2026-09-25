@@ -8,7 +8,7 @@ export default function HomeSeoTextSection() {
       <div className="text-sm md:text-base text-muted-foreground leading-relaxed space-y-3">
         <p>
           <span className="font-medium text-foreground">Посутки.by</span> — сервис посуточной аренды
-          жилья, где можно снять квартиру на сутки, а также или дом или усадьбу напрямую у владельцев. Актуальные
+          жилья, где можно снять квартиру или усадьбу на сутки напрямую у владельцев. Актуальные
           объявления в Минске, Гродно, Бресте, Витебске, Гомеле, Могилёве и других городах Беларуси.
         </p>
         <p>

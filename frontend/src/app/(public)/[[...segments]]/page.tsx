@@ -169,9 +169,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!isCatalogRoute(parsed)) {
     const homeTitle =
-      "Квартиры и дома на сутки в Беларуси - посуточная аренда в Минске и других городах";
+      "Квартиры и усадьбы на сутки в Беларуси - посуточная аренда в Минске и других городах";
     const homeDescription =
-      "Снимайте квартиры и дома на сутки в Беларуси напрямую от владельцев на Posutki.by. Минск, Гродно, Брест, Витебск, Гомель, Могилёв — актуальные объявления, удобный поиск по городу, типу жилья и количеству гостей.";
+      "Снимайте квартиры и усадьбы на сутки в Беларуси напрямую от владельцев на Posutki.by. Минск, Гродно, Брест, Витебск, Гомель, Могилёв — актуальные объявления, удобный поиск по городу, типу жилья и количеству гостей.";
 
     return {
       title: homeTitle,
@@ -407,10 +407,10 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
       if (sanitizedHtml || faqItems.length > 0) {
         const regionName = regionCatalogContent.name?.trim() || "области";
         citySeoFooter = {
-          heading: `Аренда домов — ${regionName}`,
+          heading: `Аренда усадеб — ${regionName}`,
           html: sanitizedHtml ?? "",
           faq: faqItems.length > 0 ? faqItems : undefined,
-          faqTitle: faqItems.length > 0 ? `Вопросы об аренде домов — ${regionName}` : undefined,
+          faqTitle: faqItems.length > 0 ? `Вопросы об аренде усадеб — ${regionName}` : undefined,
         };
       }
       if (faqItems.length > 0) {

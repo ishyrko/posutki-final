@@ -150,12 +150,12 @@ const chipActive = `${pillBtnBase} bg-primary text-primary-foreground border bor
 const amenityChipInactive = `${pillBtnBase} bg-muted/70 border border-transparent text-foreground hover:bg-muted`;
 const amenityChipActive = `${pillBtnBase} bg-primary text-primary-foreground border border-primary`;
 
-/** Сайт только для посуточной сдачи: квартира или дом. */
+/** Сайт только для посуточной сдачи: квартира или усадьба. */
 const DAILY_PROPERTY_TYPE_VALUES = ['apartment', 'house'] as const;
 
 const dailyPropertyChoices: { value: (typeof DAILY_PROPERTY_TYPE_VALUES)[number]; label: string; icon: typeof Building2 }[] = [
     { value: 'apartment', label: 'Квартира', icon: Building2 },
-    { value: 'house', label: 'Дом', icon: Home },
+    { value: 'house', label: 'Усадьба', icon: Home },
 ];
 
 const isAllowedDailyPropertyType = (t: string): boolean =>
@@ -168,7 +168,7 @@ const needsLotArea = (propertyType: string): boolean => lotAreaTypes.includes(pr
 
 const titlePlaceholderByType: Record<string, string> = {
     apartment: 'Например: Уютная квартира на сутки в центре',
-    house: 'Например: Дом на сутки с баней и участком',
+    house: 'Например: Усадьба на сутки с баней и участком',
 };
 
 const defaultTitlePlaceholder = 'Например: Объект в хорошем районе';
@@ -456,7 +456,7 @@ export function CreateListingForm() {
                 if (!form.propertyType) {
                     errs.propertyType = 'Выберите тип объекта';
                 } else if (!isAllowedDailyPropertyType(form.propertyType)) {
-                    errs.propertyType = 'Выберите квартиру или дом';
+                    errs.propertyType = 'Выберите квартиру или усадьбу';
                 }
                 break;
             case 2: {
@@ -1099,13 +1099,13 @@ export function CreateListingForm() {
                     transition={{ duration: 0.25 }}
                     className="space-y-6"
                 >
-                        {/* Step 1: только посуточно — квартира или дом */}
+                        {/* Step 1: только посуточно — квартира или усадьба */}
                         {step === 1 && (
                             <div className="bg-card rounded-2xl shadow-card p-6 space-y-5">
                                 <div>
                                     <h2 className="font-display text-lg font-semibold text-foreground">Тип объекта</h2>
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        Посуточная сдача — выберите квартиру или дом
+                                        Посуточная сдача — выберите квартиру или усадьбу
                                     </p>
                                 </div>
 

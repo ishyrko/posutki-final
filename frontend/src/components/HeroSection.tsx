@@ -42,7 +42,7 @@ function buildHeroCatalogHref(cityValue: string, propertyType: CatalogPropertyTy
 }
 
 function propertyTypeLabel(value: CatalogPropertyType): string {
-  return value === "house" ? "Дом" : "Квартира";
+  return value === "house" ? "Усадьба" : "Квартира";
 }
 
 function cityLabel(value: string): string {
@@ -82,10 +82,10 @@ const HeroSection = () => {
       <div className="relative container mx-auto px-4 py-12 md:py-16 lg:py-20">
         <div className="max-w-3xl mx-auto text-center mb-6 md:mb-8">
           <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-primary-foreground mb-4 text-balance">
-            Квартиры и дома на сутки в Беларуси
+            Квартиры и усадьбы на сутки в Беларуси
           </h1>
           <p className="text-lg md:text-xl text-primary-foreground/80 font-body">
-            Квартиры и дома для посуточной аренды от владельцев
+            Квартиры и усадьбы для посуточной аренды от владельцев
           </p>
         </div>
 
@@ -117,7 +117,7 @@ const HeroSection = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="apartment">Квартира</SelectItem>
-                        <SelectItem value="house">Дом</SelectItem>
+                        <SelectItem value="house">Усадьба</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (

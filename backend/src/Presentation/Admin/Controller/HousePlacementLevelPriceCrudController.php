@@ -15,11 +15,11 @@ final class HousePlacementLevelPriceCrudController extends AbstractPlacementLeve
 
     protected function entityLabelSingular(): string
     {
-        return 'VIP-тариф (дома)';
+        return 'VIP-тариф (усадьбы)';
     }
 
     protected function entityLabelPlural(): string
     {
-        return 'VIP-тарифы — дома';
+        return 'VIP-тарифы - усадьбы';
     }
 }

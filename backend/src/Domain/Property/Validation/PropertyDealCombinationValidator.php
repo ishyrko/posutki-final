@@ -9,7 +9,7 @@ use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Shared\Exception\DomainException;
 
 /**
- * Сайт только посуточная аренда квартир и домов.
+ * Сайт только посуточная аренда квартир и усадеб.
  */
 final class PropertyDealCombinationValidator
 {
@@ -20,7 +20,7 @@ final class PropertyDealCombinationValidator
         }
 
         if (PropertyType::tryFrom($propertyType) === null) {
-            throw new DomainException('Допустимы только квартира или дом.');
+            throw new DomainException('Допустимы только квартира или усадьба.');
         }
     }
 }

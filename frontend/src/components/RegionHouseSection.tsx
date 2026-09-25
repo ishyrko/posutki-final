@@ -86,9 +86,9 @@ const RegionHouseSection = ({ houseCountsBySlug }: RegionHouseSectionProps) => {
       <div className="container mx-auto px-4">
         <div className="mb-6 md:mb-8">
           <h2 className="text-3xl font-bold text-foreground font-display mb-2">
-            Дома и коттеджи на сутки в Беларуси
+            Усадьбы на сутки в Беларуси
           </h2>
-          <p className="text-muted-foreground">Посуточная аренда домов по областям</p>
+          <p className="text-muted-foreground">Посуточная аренда усадеб по областям</p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">

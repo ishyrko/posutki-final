@@ -13,7 +13,7 @@ enum PropertyType: string
     {
         return match ($this) {
             self::Apartment => 'Квартира',
-            self::House     => 'Дом',
+            self::House     => 'Усадьба',
         };
     }
 

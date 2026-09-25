@@ -208,11 +208,11 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::section('Размещение');
         yield MenuItem::linkToCrud('VIP-тарифы — квартиры', 'fa fa-building', PropertyPlacementLevelPrice::class)
             ->setController(ApartmentPlacementLevelPriceCrudController::class);
-        yield MenuItem::linkToCrud('VIP-тарифы — дома', 'fa fa-house', PropertyPlacementLevelPrice::class)
+        yield MenuItem::linkToCrud('VIP-тарифы — усадьбы', 'fa fa-house', PropertyPlacementLevelPrice::class)
             ->setController(HousePlacementLevelPriceCrudController::class);
         yield MenuItem::linkToCrud('Настройки VIP — квартиры', 'fa fa-building', PropertyPlacementScopeSettings::class)
             ->setController(ApartmentPlacementScopeSettingsCrudController::class);
-        yield MenuItem::linkToCrud('Настройки VIP — дома', 'fa fa-house', PropertyPlacementScopeSettings::class)
+        yield MenuItem::linkToCrud('Настройки VIP — усадьбы', 'fa fa-house', PropertyPlacementScopeSettings::class)
             ->setController(HousePlacementScopeSettingsCrudController::class);
         yield MenuItem::linkToCrud('Заявки на размещение', 'fa fa-receipt', PropertyPlacementPurchase::class);
 

@@ -17,7 +17,7 @@ const Footer = () => {
       : withRegionalCatalogHref("/kvartiry/", regionSlug);
 
   const kvartiry = withRegionalCatalogHref("/kvartiry/", regionSlug);
-  const doma = withRegionalCatalogHref("/doma/", regionSlug);
+  const usadby = withRegionalCatalogHref("/usadby/", regionSlug);
 
   return (
     <footer className="bg-foreground py-12 md:py-16">
@@ -46,7 +46,7 @@ const Footer = () => {
             <ul className="space-y-2.5">
               {[
                 { label: "Квартиры посуточно", href: kvartiry },
-                { label: "Дома и коттеджи", href: doma },
+                { label: "Усадьбы", href: usadby },
                 { label: "Статьи и гиды", href: "/stati/" },
               ].map((item) => (
                 <li key={item.label}>
