@@ -27,6 +27,10 @@ class Region
     #[ORM\Column(type: 'string', length: 100, nullable: true)]
     private ?string $code;
 
+    #[ORM\ManyToOne(targetEntity: City::class)]
+    #[ORM\JoinColumn(name: 'center_city_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    private ?City $centerCity = null;
+
     public function getId(): int
     {
         return $this->id;
@@ -50,6 +54,11 @@ class Region
     public function getCode(): ?string
     {
         return $this->code;
+    }
+
+    public function getCenterCity(): ?City
+    {
+        return $this->centerCity;
     }
 
     public function __toString(): string

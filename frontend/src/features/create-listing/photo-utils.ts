@@ -28,6 +28,19 @@ export const createUploadedPhotoFromUrl = (url: string): UploadedPhoto => ({
     url,
 });
 
+export function resolveUploadedPhotoSrc(photo: UploadedPhoto): string {
+    return photo.thumbnailUrl || photo.url;
+}
+
+export function preloadUploadedPhotoSrc(url: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error('Не удалось загрузить изображение'));
+        image.src = url;
+    });
+}
+
 export const revokePhotoPreviewUrl = (photo: UploadedPhoto): void => {
     if (photo.url.startsWith('blob:')) {
         URL.revokeObjectURL(photo.url);

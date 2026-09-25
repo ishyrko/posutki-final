@@ -31,18 +31,20 @@ export const showBathrooms = (type: string): boolean => ['apartment', 'house'].i
 
 export const showFloor = (type: string): boolean => type === 'apartment';
 
-export const showTotalFloors = (type: string): boolean => ['apartment', 'house'].includes(type);
+export const showTotalFloors = (type: string): boolean => type === 'apartment';
 
-export const showYearBuilt = (type: string): boolean => ['apartment', 'house'].includes(type);
+export const showYearBuilt = (type: string): boolean => type === 'apartment';
 
-export const showRenovation = (type: string): boolean => ['apartment', 'house'].includes(type);
+export const showRenovation = (type: string): boolean => type === 'apartment';
 
 export const showBalcony = (type: string): boolean => type === 'apartment';
 
-export const showLivingArea = (type: string): boolean => ['apartment', 'house'].includes(type);
+export const showLivingArea = (type: string): boolean => type === 'apartment';
 
-export const showKitchenArea = (type: string): boolean => ['apartment', 'house'].includes(type);
+export const showKitchenArea = (type: string): boolean => type === 'apartment';
 
 export const roomsRequired = (type: string): boolean => type === 'apartment';
+
+export const bathroomsRequired = (type: string): boolean => type === 'apartment';
 
 export const showRoomDealFields = (_type: string, _dealType: string): boolean => false;

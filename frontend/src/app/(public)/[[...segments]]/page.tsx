@@ -12,6 +12,7 @@ import {
   buildSegmentsCanonicalPath,
   isPropertyId,
   isBaseCityApartmentCatalogPage,
+  isBaseRegionHouseCatalogPage,
   isRoomCatalogPage,
   isRoomSeoBucket,
   buildCatalogCitySeoHeading,
@@ -49,6 +50,7 @@ import { fetchCityApartmentCountsForHome } from "@/lib/city-apartment-counts-ser
 import { fetchApartmentCatalogSlugSets, ensureApartmentCatalogSlugsConfigured } from "@/lib/apartment-catalog-slugs-server";
 import { CatalogSlugProviderFromSets } from "@/components/CatalogSlugProviderFromSets";
 import { fetchCityCatalogContent } from "@/lib/city-catalog-seo-server";
+import { fetchRegionCatalogSeo } from "@/lib/region-catalog-seo-server";
 import {
   fetchDistrictCatalogSeo,
   fetchMicrodistrictCatalogSeo,
@@ -387,6 +389,30 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
         };
       }
 
+      if (faqItems.length > 0) {
+        cityFaqJsonLd = buildFaqPageJsonLd(faqItems);
+      }
+    }
+  }
+
+  if (isFirstPage && isBaseRegionHouseCatalogPage(parsed) && parsed.regionSlug && !citySeoFooter) {
+    const regionCatalogContent = await fetchRegionCatalogSeo(parsed.regionSlug);
+    if (regionCatalogContent?.catalogSeoVisible) {
+      const rawSeoText = regionCatalogContent.catalogSeoText?.trim() ?? null;
+      const faqItems = (regionCatalogContent.faq ?? []).filter(
+        (item): item is FaqItem =>
+          Boolean(item?.question?.trim()) && Boolean(item?.answer?.trim()),
+      );
+      const sanitizedHtml = rawSeoText ? sanitizeArticleHtml(rawSeoText) : null;
+      if (sanitizedHtml || faqItems.length > 0) {
+        const regionName = regionCatalogContent.name?.trim() || "области";
+        citySeoFooter = {
+          heading: `Аренда домов — ${regionName}`,
+          html: sanitizedHtml ?? "",
+          faq: faqItems.length > 0 ? faqItems : undefined,
+          faqTitle: faqItems.length > 0 ? `Вопросы об аренде домов — ${regionName}` : undefined,
+        };
+      }
       if (faqItems.length > 0) {
         cityFaqJsonLd = buildFaqPageJsonLd(faqItems);
       }

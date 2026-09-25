@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, Shield, CheckCircle,
   Users, Utensils, Wifi, Tv, Sofa, Car, Waves, Wind,
   ShowerHead, Flame, Coffee, Snowflake, Baby, WashingMachine,
-  LogIn, LogOut, UserCheck, Sunrise, Wallet,
+  LogIn, LogOut, UserCheck,   Sunrise, Wallet, ExternalLink,
 } from "lucide-react";
 import { LISTING_AMENITY_GROUPS } from "@/features/create-listing/listing-amenity-groups";
 import { formatMinStayDays } from "@/features/create-listing/validation";
@@ -24,6 +24,7 @@ import { trackViewOnce } from "@/lib/view-tracking";
 import { useUser } from "@/features/auth/hooks";
 import { formatAddress, Property } from "@/features/properties/types";
 import { PropertyAddress } from "@/features/properties/components/PropertyAddress";
+import { PropertyCenterDistances } from "@/features/properties/components/PropertyCenterDistances";
 import { getVideoEmbedInfo } from "@/features/properties/lib/videoEmbed";
 import { PropertyVideoPlayer } from "@/features/properties/components/PropertyVideoPlayer";
 import { formatPropertyDealHeading } from "@/features/properties/property-deal-heading";
@@ -97,6 +98,15 @@ const PROPERTY_TYPE_LABELS: Record<string, string> = {
   apartment: "Квартира",
   house: "Дом",
 };
+
+function hasPositiveNumber(value: number | null | undefined): value is number {
+  return value != null && value > 0;
+}
+
+function formatExternalHref(url: string): string {
+  const trimmed = url.trim();
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
 
 export default function PropertyDetailClient({
   id,
@@ -369,32 +379,32 @@ export default function PropertyDetailClient({
     {
       icon: Building2,
       label: property.typeLabel ?? PROPERTY_TYPE_LABELS[property.type] ?? property.type,
-      value: showRooms(property.type) && property.specifications.rooms != null
+      value: showRooms(property.type) && hasPositiveNumber(property.specifications.rooms)
         ? `${property.specifications.rooms}-комн.`
         : (property.typeLabel ?? PROPERTY_TYPE_LABELS[property.type] ?? property.type),
     },
     property.type === "land"
-      ? { icon: Maximize, label: "Площадь участка", value: property.specifications.landArea ? `${property.specifications.landArea} сот.` : "-" }
-      : { icon: Maximize, label: "Площадь общая", value: `${property.specifications.area} м²` },
-    ...(showFloor(property.type) && property.specifications.floor != null
+      ? { icon: Maximize, label: "Площадь участка", value: hasPositiveNumber(property.specifications.landArea) ? `${property.specifications.landArea} сот.` : "-" }
+      : { icon: Maximize, label: "Площадь общая", value: hasPositiveNumber(property.specifications.area) ? `${property.specifications.area} м²` : "-" },
+    ...(showFloor(property.type) && hasPositiveNumber(property.specifications.floor)
       ? [{
           icon: Layers,
           label: "Этаж",
-          value: property.specifications.totalFloors != null
+          value: hasPositiveNumber(property.specifications.totalFloors)
             ? `${property.specifications.floor} из ${property.specifications.totalFloors}`
             : String(property.specifications.floor),
         }]
-      : showTotalFloors(property.type) && property.specifications.totalFloors != null
+      : showTotalFloors(property.type) && hasPositiveNumber(property.specifications.totalFloors)
       ? [{ icon: Layers, label: "Этажей", value: String(property.specifications.totalFloors) }]
       : []),
   ].filter((spec) => spec.value !== "-");
 
   // Полная таблица «О доме»
   const houseInfoSpecs = [
-    ...(showBathrooms(property.type) && property.specifications.bathrooms != null
+    ...(showBathrooms(property.type) && hasPositiveNumber(property.specifications.bathrooms)
       ? [{ icon: Bath, label: "Санузлы", value: String(property.specifications.bathrooms) }]
       : []),
-    ...(showYearBuilt(property.type) && property.specifications.yearBuilt != null
+    ...(showYearBuilt(property.type) && hasPositiveNumber(property.specifications.yearBuilt)
       ? [{ icon: Calendar, label: "Год постройки", value: String(property.specifications.yearBuilt) }]
       : []),
     ...(showRenovation(property.type) && property.specifications.renovation
@@ -403,19 +413,19 @@ export default function PropertyDetailClient({
     ...(showBalcony(property.type) && property.specifications.balcony
       ? [{ icon: CheckCircle, label: "Балкон / лоджия", value: property.specifications.balcony }]
       : []),
-    ...(showLivingArea(property.type) && property.specifications.livingArea != null
+    ...(showLivingArea(property.type) && hasPositiveNumber(property.specifications.livingArea)
       ? [{ icon: Maximize, label: "Жилая площадь", value: `${property.specifications.livingArea} м²` }]
       : []),
-    ...(showKitchenArea(property.type) && property.specifications.kitchenArea != null
+    ...(showKitchenArea(property.type) && hasPositiveNumber(property.specifications.kitchenArea)
       ? [{ icon: Maximize, label: "Площадь кухни", value: `${property.specifications.kitchenArea} м²` }]
       : []),
-    ...(property.type === "house" && property.specifications.landArea != null
+    ...(property.type === "house" && hasPositiveNumber(property.specifications.landArea)
       ? [{ icon: MapPin, label: "Площадь участка", value: `${property.specifications.landArea} сот.` }]
       : []),
-    ...(showRoomDealFields(property.type, property.dealType) && property.specifications.roomsInDeal != null
+    ...(showRoomDealFields(property.type, property.dealType) && hasPositiveNumber(property.specifications.roomsInDeal)
       ? [{ icon: BedDouble, label: "Комнат в сделке", value: String(property.specifications.roomsInDeal) }]
       : []),
-    ...(showRoomDealFields(property.type, property.dealType) && property.specifications.roomsArea != null
+    ...(showRoomDealFields(property.type, property.dealType) && hasPositiveNumber(property.specifications.roomsArea)
       ? [{ icon: Maximize, label: "Площадь комнат в сделке", value: `${property.specifications.roomsArea} м²` }]
       : []),
     ...(showDealConditions(property.dealType) && (property.specifications.dealConditions?.length ?? 0) > 0
@@ -432,10 +442,13 @@ export default function PropertyDetailClient({
   const hasCheckInInfo = property.dealType === "daily" && (
     property.specifications.checkInTime ||
     property.specifications.checkOutTime ||
-    (property.specifications.maxDailyGuests != null) ||
-    (property.specifications.dailySingleBeds != null) ||
-    (property.specifications.dailyDoubleBeds != null) ||
+    hasPositiveNumber(property.specifications.maxDailyGuests) ||
+    hasPositiveNumber(property.specifications.dailySingleBeds) ||
+    hasPositiveNumber(property.specifications.dailyDoubleBeds) ||
     (property.specifications.minStayDays != null && property.specifications.minStayDays > 1) ||
+    (property.specifications.banquetSeats != null && property.specifications.banquetSeats > 0) ||
+    property.specifications.prepaymentRequired ||
+    Boolean(property.specifications.additionalCheckInConditions?.trim()) ||
     (property.specifications.dealConditions?.length ?? 0) > 0
   );
 
@@ -631,6 +644,9 @@ export default function PropertyDetailClient({
                       <PropertyAddress address={property.address} propertyType={property.type} />
                     </span>
                   </p>
+                  {property.type === "house" && (
+                    <PropertyCenterDistances distances={property.locationDistances} />
+                  )}
                   {nearbyMetroStations.length > 0 && (
                     <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
                       {nearbyMetroStations.slice(0, 2).map((station) => {
@@ -730,13 +746,34 @@ export default function PropertyDetailClient({
                         <span className="text-sm font-semibold text-foreground">{property.specifications.checkOutTime}</span>
                       </div>
                     )}
-                    {property.specifications.maxDailyGuests != null && (
+                    {hasPositiveNumber(property.specifications.maxDailyGuests) && (
                       <div className="flex items-center justify-between px-4 py-3 border-t border-border/40 bg-muted/20">
                         <span className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Users className="w-4 h-4 text-primary/70" />
                           Максимум гостей
                         </span>
                         <span className="text-sm font-semibold text-foreground">{property.specifications.maxDailyGuests}</span>
+                      </div>
+                    )}
+                    {property.specifications.banquetSeats != null && property.specifications.banquetSeats > 0 && (
+                      <div className="flex items-center justify-between px-4 py-3 border-t border-border/40">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Users className="w-4 h-4 text-primary/70" />
+                          Мест для банкета
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">{property.specifications.banquetSeats}</span>
+                      </div>
+                    )}
+                    {property.specifications.prepaymentRequired && (
+                      <div className="flex items-center justify-between px-4 py-3 border-t border-border/40 bg-muted/20">
+                        <span className="text-sm text-muted-foreground">Предоплата</span>
+                        <span className="text-sm font-semibold text-foreground">Требуется</span>
+                      </div>
+                    )}
+                    {property.specifications.additionalCheckInConditions?.trim() && (
+                      <div className="px-4 py-3 border-t border-border/40">
+                        <p className="text-sm text-muted-foreground mb-1">Дополнительные условия</p>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">{property.specifications.additionalCheckInConditions}</p>
                       </div>
                     )}
                     {property.specifications.minStayDays != null && property.specifications.minStayDays > 1 && (
@@ -750,7 +787,7 @@ export default function PropertyDetailClient({
                         </span>
                       </div>
                     )}
-                    {property.specifications.dailySingleBeds != null && (
+                    {hasPositiveNumber(property.specifications.dailySingleBeds) && (
                       <div className="flex items-center justify-between px-4 py-3 border-t border-border/40">
                         <span className="flex items-center gap-2 text-sm text-muted-foreground">
                           <BedDouble className="w-4 h-4 text-primary/70" />
@@ -759,7 +796,7 @@ export default function PropertyDetailClient({
                         <span className="text-sm font-semibold text-foreground">{property.specifications.dailySingleBeds}</span>
                       </div>
                     )}
-                    {property.specifications.dailyDoubleBeds != null && (
+                    {hasPositiveNumber(property.specifications.dailyDoubleBeds) && (
                       <div className="flex items-center justify-between px-4 py-3 border-t border-border/40 bg-muted/20">
                         <span className="flex items-center gap-2 text-sm text-muted-foreground">
                           <BedDouble className="w-4 h-4 text-primary/70" />
@@ -888,6 +925,36 @@ export default function PropertyDetailClient({
                         <span className="text-sm font-medium text-foreground">{spec.value}</span>
                       </div>
                     ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {(property.instagramUrl?.trim() || property.websiteUrl?.trim()) && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
+                  <h2 className="text-xl font-bold text-foreground mb-3">Ссылки</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {property.instagramUrl?.trim() && (
+                      <a
+                        href={formatExternalHref(property.instagramUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 bg-muted rounded-lg px-3 py-1.5 text-sm text-foreground hover:bg-muted/80 transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                        Instagram
+                      </a>
+                    )}
+                    {property.websiteUrl?.trim() && (
+                      <a
+                        href={formatExternalHref(property.websiteUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 bg-muted rounded-lg px-3 py-1.5 text-sm text-foreground hover:bg-muted/80 transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                        Сайт
+                      </a>
+                    )}
                   </div>
                 </motion.div>
               )}

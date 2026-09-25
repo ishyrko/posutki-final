@@ -10,6 +10,8 @@ export const DAILY_BEDS_MAX = 50;
 /** Максимум гостей для посуточной аренды (главная, подача, редактирование, API). */
 export const MAX_DAILY_GUESTS = 20;
 export const MAX_MIN_STAY_DAYS = 90;
+export const MAX_BANQUET_SEATS = 500;
+export const ADDITIONAL_CHECK_IN_CONDITIONS_MAX_LENGTH = 2000;
 
 export function formatMinStayDays(count: number): string {
     const abs = Math.abs(count);

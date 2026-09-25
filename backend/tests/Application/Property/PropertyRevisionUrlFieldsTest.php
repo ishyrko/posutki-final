@@ -32,8 +32,11 @@ use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\ExchangeRateService;
+use App\Application\Service\FreeListingLimitService;
+use App\Infrastructure\Service\CityBoundaryProvider;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
+use App\Infrastructure\Service\PropertyCityDistanceCalculator;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -71,6 +74,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
             $this->createLandmarkCalculator(),
+            $this->createPropertyCityDistanceCalculator(),
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
@@ -125,6 +129,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
             $this->createLandmarkCalculator(),
+            $this->createPropertyCityDistanceCalculator(),
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
@@ -135,6 +140,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
                 }
             },
             $this->createPlacementService($propertyRepository),
+            $this->createFreeListingLimitService(),
         );
 
         $handler(new ApproveRevisionCommand(
@@ -171,6 +177,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
             $this->createLandmarkCalculator(),
+            $this->createPropertyCityDistanceCalculator(),
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
@@ -234,6 +241,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
             $this->createLandmarkCalculator(),
+            $this->createPropertyCityDistanceCalculator(),
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
@@ -308,6 +316,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
             $this->createLandmarkCalculator(),
+            $this->createPropertyCityDistanceCalculator(),
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
@@ -318,6 +327,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
                 }
             },
             $this->createPlacementService($propertyRepository),
+            $this->createFreeListingLimitService(),
         );
 
         $handler(new ApproveRevisionCommand(
@@ -375,6 +385,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createExchangeRateService(['USD' => 3.2]),
             $this->createMetroCalculator(),
             $this->createLandmarkCalculator(),
+            $this->createPropertyCityDistanceCalculator(),
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
@@ -536,6 +547,34 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createStub(CityRepositoryInterface::class),
             $userRepository,
             $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
+        );
+    }
+
+    private function createFreeListingLimitService(): FreeListingLimitService
+    {
+        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
+        $propertyRepository->method('countFreePublishedByOwner')->willReturn(0);
+        $propertyRepository->method('countFreePublishedApartmentsByOwnerInCity')->willReturn(0);
+
+        $cityRepository = $this->createStub(CityRepositoryInterface::class);
+        $cityRepository->method('findById')->willReturn(null);
+
+        return new FreeListingLimitService(
+            $propertyRepository,
+            $cityRepository,
+            $this->createStub(UserRepositoryInterface::class),
+        );
+    }
+
+    private function createPropertyCityDistanceCalculator(): PropertyCityDistanceCalculator
+    {
+        $cityRepository = $this->createStub(CityRepositoryInterface::class);
+        $cityRepository->method('findAllCities')->willReturn([]);
+        $cityRepository->method('findByIdWithRegionChain')->willReturn(null);
+
+        return new PropertyCityDistanceCalculator(
+            $cityRepository,
+            new CityBoundaryProvider(dirname(__DIR__, 3) . '/resources/geo/city-boundaries.json'),
         );
     }
 }

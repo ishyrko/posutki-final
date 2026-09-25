@@ -52,6 +52,9 @@ readonly class UpdatePropertyCommand
         public ?string $websiteUrl = null,
         public ?string $videoUrl = null,
         public ?array $externalCalendarUrls = null,
+        public ?bool $prepaymentRequired = null,
+        public ?string $additionalCheckInConditions = null,
+        public ?int $banquetSeats = null,
     ) {
     }
 }

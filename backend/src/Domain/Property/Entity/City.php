@@ -49,6 +49,9 @@ class City
     #[ORM\Column(type: 'boolean', name: 'is_main', options: ['default' => false])]
     private bool $isMain = false;
 
+    #[ORM\Column(type: 'boolean', name: 'is_city', options: ['default' => false])]
+    private bool $isCity = false;
+
     #[ORM\Column(type: 'boolean', name: 'is_listing_suggested', options: ['default' => false])]
     private bool $isListingSuggested = false;
 
@@ -180,6 +183,16 @@ class City
     public function isMain(): bool
     {
         return $this->isMain;
+    }
+
+    public function isCity(): bool
+    {
+        return $this->isCity;
+    }
+
+    public function setIsCity(bool $isCity): void
+    {
+        $this->isCity = $isCity;
     }
 
     public function isListingSuggested(): bool

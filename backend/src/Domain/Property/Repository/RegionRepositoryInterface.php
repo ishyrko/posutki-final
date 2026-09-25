@@ -10,6 +10,8 @@ interface RegionRepositoryInterface
 {
     public function findById(int $id): ?Region;
 
+    public function findBySlug(string $slug): ?Region;
+
     /** @return Region[] */
     public function findAll(): array;
 }

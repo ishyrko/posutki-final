@@ -21,6 +21,11 @@ class RegionRepository extends ServiceEntityRepository implements RegionReposito
         return $this->find($id);
     }
 
+    public function findBySlug(string $slug): ?Region
+    {
+        return $this->findOneBy(['slug' => $slug]);
+    }
+
     public function findAll(): array
     {
         return $this->createQueryBuilder('r')

@@ -356,6 +356,9 @@ class PropertyController extends AbstractController
             websiteUrl: $request->websiteUrl,
             videoUrl: $request->videoUrl,
             externalCalendarUrls: $request->externalCalendarUrls,
+            prepaymentRequired: $request->prepaymentRequired,
+            additionalCheckInConditions: $request->additionalCheckInConditions,
+            banquetSeats: $request->banquetSeats,
         );
 
         $propertyId = $this->commandBus->dispatch($command);
@@ -447,6 +450,9 @@ class PropertyController extends AbstractController
             websiteUrl: $request->websiteUrl,
             videoUrl: $request->videoUrl,
             externalCalendarUrls: $request->externalCalendarUrls,
+            prepaymentRequired: $request->prepaymentRequired,
+            additionalCheckInConditions: $request->additionalCheckInConditions,
+            banquetSeats: $request->banquetSeats,
         );
 
         $requiresModeration = $this->commandBus->dispatch($command) === true;

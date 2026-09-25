@@ -125,7 +125,7 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
 
           {/* Features */}
           <div className="flex items-start gap-4 pt-4 mt-4 border-t border-border/50">
-            {showRooms(type) && specifications.rooms != null && (
+            {showRooms(type) && specifications.rooms != null && specifications.rooms > 0 && (
               <div className="flex flex-col gap-1 min-w-0">
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <BedDouble className="w-4 h-4" />
@@ -134,7 +134,7 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
                 <span className="text-sm font-bold ml-1">{specifications.rooms}</span>
               </div>
             )}
-            {showBathrooms(type) && specifications.bathrooms != null && (
+            {showBathrooms(type) && specifications.bathrooms != null && specifications.bathrooms > 0 && (
               <div className="flex flex-col gap-1 min-w-0">
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Bath className="w-4 h-4" />
@@ -143,19 +143,23 @@ export const PropertyCard = ({ property, index = 0 }: PropertyCardProps) => {
                 <span className="text-sm font-bold ml-1">{specifications.bathrooms}</span>
               </div>
             )}
-            <div className="flex flex-col gap-1 min-w-0">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Maximize className="w-4 h-4" />
-                <span className="text-[10px] font-bold uppercase tracking-wider opacity-60 px-0.5">
-                  {type === 'land' ? 'Участок' : 'Площадь общая'}
+            {(type === 'land'
+              ? specifications.landArea != null && specifications.landArea > 0
+              : specifications.area != null && specifications.area > 0) ? (
+              <div className="flex flex-col gap-1 min-w-0">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Maximize className="w-4 h-4" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider opacity-60 px-0.5">
+                    {type === 'land' ? 'Участок' : 'Площадь общая'}
+                  </span>
+                </div>
+                <span className="text-sm font-bold ml-1">
+                  {type === 'land'
+                    ? `${specifications.landArea} сот.`
+                    : `${specifications.area} м²`}
                 </span>
               </div>
-              <span className="text-sm font-bold ml-1">
-                {type === 'land'
-                  ? (specifications.landArea ? `${specifications.landArea} сот.` : '-')
-                  : `${specifications.area} м²`}
-              </span>
-            </div>
+            ) : null}
           </div>
       </Link>
     </motion.div>

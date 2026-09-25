@@ -208,22 +208,24 @@ const PropertyListCard = ({
             )}
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              {beds != null && (
+              {beds != null && beds > 0 && (
                 <span className="flex items-center gap-1.5 text-sm text-foreground/70">
                   <BedDouble className="w-4 h-4" />
                   {beds} комн.
                 </span>
               )}
-              {baths != null && (
+              {baths != null && baths > 0 && (
                 <span className="flex items-center gap-1.5 text-sm text-foreground/70">
                   <Bath className="w-4 h-4" />
                   {baths} сан.
                 </span>
               )}
-              <span className="flex items-center gap-1.5 text-sm text-foreground/70">
-                <Maximize className="w-4 h-4" />
+              {area > 0 && (
+                <span className="flex items-center gap-1.5 text-sm text-foreground/70">
+                  <Maximize className="w-4 h-4" />
                   {`${area} м²`}
-              </span>
+                </span>
+              )}
               {floor && (
                 <span className="flex items-center gap-1.5 text-sm text-foreground/70">
                   <Building2 className="w-4 h-4" />

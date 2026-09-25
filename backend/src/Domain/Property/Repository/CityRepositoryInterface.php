@@ -39,4 +39,9 @@ interface CityRepositoryInterface
 
     /** @return City[] */
     public function findAll(): array;
+
+    /** @return list<City> */
+    public function findAllCities(): array;
+
+    public function findByIdWithRegionChain(int $id): ?City;
 }

@@ -26,8 +26,11 @@ use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\ExchangeRateService;
+use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Infrastructure\Service\CityBoundaryProvider;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
+use App\Infrastructure\Service\PropertyCityDistanceCalculator;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -72,6 +75,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $exchangeRateService,
             $metroCalculator,
             $this->createLandmarkCalculator(),
+            $this->createPropertyCityDistanceCalculator(),
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
@@ -110,6 +114,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $exchangeRateService,
             $metroCalculator,
             $this->createLandmarkCalculator(),
+            $this->createPropertyCityDistanceCalculator(),
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
@@ -146,6 +151,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $exchangeRateService,
             $metroCalculator,
             $this->createLandmarkCalculator(),
+            $this->createPropertyCityDistanceCalculator(),
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
@@ -183,6 +189,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $exchangeRateService,
             $metroCalculator,
             $this->createLandmarkCalculator(),
+            $this->createPropertyCityDistanceCalculator(),
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
@@ -228,6 +235,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $exchangeRateService,
             $metroCalculator,
             $this->createLandmarkCalculator(),
+            $this->createPropertyCityDistanceCalculator(),
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
@@ -293,6 +301,7 @@ final class UpdatePropertyHandlerTest extends TestCase
             $exchangeRateService,
             $metroCalculator,
             $this->createLandmarkCalculator(),
+            $this->createPropertyCityDistanceCalculator(),
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
@@ -412,5 +421,17 @@ final class UpdatePropertyHandlerTest extends TestCase
         $userRepository->method('findById')->willReturn($user);
 
         return $userRepository;
+    }
+
+    private function createPropertyCityDistanceCalculator(): PropertyCityDistanceCalculator
+    {
+        $cityRepository = $this->createStub(CityRepositoryInterface::class);
+        $cityRepository->method('findAllCities')->willReturn([]);
+        $cityRepository->method('findByIdWithRegionChain')->willReturn(null);
+
+        return new PropertyCityDistanceCalculator(
+            $cityRepository,
+            new CityBoundaryProvider(dirname(__DIR__, 3) . '/resources/geo/city-boundaries.json'),
+        );
     }
 }

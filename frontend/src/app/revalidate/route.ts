@@ -4,6 +4,7 @@ import { ensureApartmentCatalogSlugsConfigured } from "@/lib/apartment-catalog-s
 import { isCityPrefixSlug } from "@/features/catalog/apartment-catalog-slug-store";
 import {
   buildCatalogUrl,
+  catalogHousePathForRegionSlug,
   MINSK_CITY_SLUG,
   REGION_SLUGS,
   type RoomBucket,
@@ -162,6 +163,17 @@ export async function POST(request: Request) {
     revalidateTag(`static-page-${slug}`, { expire: 0 });
     revalidatePath(`/${slug}`, "page");
     return NextResponse.json({ revalidated: true, type: "static-page", slug });
+  }
+
+  if (type === "region") {
+    if (!slug) {
+      return NextResponse.json({ error: "slug is required for region" }, { status: 400 });
+    }
+    revalidateTag("region-seo", { expire: 0 });
+    revalidateTag(`region-seo-${slug}`, { expire: 0 });
+    const catalogPath = catalogHousePathForRegionSlug(slug);
+    revalidatePath(catalogPath, "page");
+    return NextResponse.json({ revalidated: true, type: "region", slug, path: catalogPath });
   }
 
   if (type === "city") {

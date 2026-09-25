@@ -158,10 +158,12 @@ const PropertyCard = ({
           </p>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mb-3">
-            <span className="flex items-center gap-1">
-              <BedDouble className="w-3.5 h-3.5" />
-              {beds} комн.
-            </span>
+            {beds > 0 && (
+              <span className="flex items-center gap-1">
+                <BedDouble className="w-3.5 h-3.5" />
+                {beds} комн.
+              </span>
+            )}
             {isDaily && maxGuests != null && maxGuests > 0 && (
               <>
                 <span className="w-1 h-1 rounded-full bg-border shrink-0" />
@@ -173,13 +175,17 @@ const PropertyCard = ({
             )}
             {!isDaily && (
               <>
-                <span className="flex items-center gap-1">
-                  <Bath className="w-3.5 h-3.5" />
-                  {baths} сан.
-                </span>
-                <span className="flex items-center gap-1">
-                  {`${area} м²`}
-                </span>
+                {baths > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Bath className="w-3.5 h-3.5" />
+                    {baths} сан.
+                  </span>
+                )}
+                {area > 0 && (
+                  <span className="flex items-center gap-1">
+                    {`${area} м²`}
+                  </span>
+                )}
               </>
             )}
           </div>

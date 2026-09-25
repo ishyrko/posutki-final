@@ -26,6 +26,7 @@ use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\ValueObject\Id;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
+use App\Infrastructure\Service\PropertyCityDistanceCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -37,6 +38,7 @@ readonly class ApproveRevisionHandler
         private ExchangeRateService $exchangeRateService,
         private MetroProximityCalculator $metroProximityCalculator,
         private LandmarkProximityCalculator $landmarkProximityCalculator,
+        private PropertyCityDistanceCalculator $propertyCityDistanceCalculator,
         private CityDistrictResolverInterface $cityDistrictResolver,
         private CityMicrodistrictResolverInterface $cityMicrodistrictResolver,
         private ResidentialComplexResolverInterface $residentialComplexResolver,
@@ -166,6 +168,13 @@ readonly class ApproveRevisionHandler
             instagramUrl: array_key_exists('instagramUrl', $data) ? ($data['instagramUrl'] !== null ? (string) $data['instagramUrl'] : null) : null,
             websiteUrl: array_key_exists('websiteUrl', $data) ? ($data['websiteUrl'] !== null ? (string) $data['websiteUrl'] : null) : null,
             videoUrl: array_key_exists('videoUrl', $data) ? ($data['videoUrl'] !== null ? (string) $data['videoUrl'] : null) : null,
+            prepaymentRequired: array_key_exists('prepaymentRequired', $data) ? (bool) $data['prepaymentRequired'] : null,
+            additionalCheckInConditions: array_key_exists('additionalCheckInConditions', $data)
+                ? ($data['additionalCheckInConditions'] !== null ? (string) $data['additionalCheckInConditions'] : '')
+                : null,
+            banquetSeats: array_key_exists('banquetSeats', $data) && $data['banquetSeats'] !== null
+                ? (int) $data['banquetSeats']
+                : null,
             externalCalendarUrls: array_key_exists('externalCalendarUrls', $data) && is_array($data['externalCalendarUrls'])
                 ? $data['externalCalendarUrls']
                 : null,
@@ -229,6 +238,7 @@ readonly class ApproveRevisionHandler
         $this->revisionRepository->save($revision);
         $this->metroProximityCalculator->syncForProperty($property);
         $this->landmarkProximityCalculator->syncForProperty($property);
+        $this->propertyCityDistanceCalculator->syncForProperty($property);
         $this->propertyRepository->save($property);
         $this->freeListingLimitService->maybeRefreshCityLimitAfterStatusChange($property);
 
@@ -241,8 +251,8 @@ readonly class ApproveRevisionHandler
 
     private function assertAreaConstraints(string $propertyType, ?float $landArea): void
     {
-        if ($propertyType === 'house' && ($landArea === null || $landArea <= 0)) {
-            throw new \InvalidArgumentException('Укажите площадь участка в сотках для дома');
+        if ($propertyType === 'house' && $landArea !== null && $landArea <= 0) {
+            throw new \InvalidArgumentException('Площадь участка должна быть положительной');
         }
     }
 }

@@ -57,6 +57,9 @@ export interface CreatePropertyPayload {
     checkInTime?: string;
     checkOutTime?: string;
     minStayDays?: number;
+    prepaymentRequired?: boolean;
+    additionalCheckInConditions?: string;
+    banquetSeats?: number;
     building: string;
     block?: string;
     cityId: number;
@@ -86,6 +89,7 @@ export interface UploadResponse {
 export interface UploadedPhoto {
     id: string;
     url: string;
+    thumbnailUrl?: string | null;
     file?: File;
     uploading?: boolean;
 }
@@ -117,6 +121,9 @@ export interface ListingFormData {
     checkInTime: string;
     checkOutTime: string;
     minStayDays: string;
+    prepaymentRequired: boolean;
+    additionalCheckInConditions: string;
+    banquetSeats: string;
     yearBuilt: string;
     renovation: string;
     balcony: string;

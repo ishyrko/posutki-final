@@ -190,6 +190,34 @@ class CityRepository extends ServiceEntityRepository implements CityRepositoryIn
         return $cities;
     }
 
+    public function findAllCities(): array
+    {
+        /** @var list<City> $cities */
+        $cities = $this->createQueryBuilder('c')
+            ->where('c.isCity = :isCity')
+            ->setParameter('isCity', true)
+            ->orderBy('c.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $cities;
+    }
+
+    public function findByIdWithRegionChain(int $id): ?City
+    {
+        /** @var City|null $city */
+        $city = $this->createQueryBuilder('c')
+            ->leftJoin('c.regionDistrict', 'rd')->addSelect('rd')
+            ->leftJoin('rd.region', 'r')->addSelect('r')
+            ->leftJoin('r.centerCity', 'rc')->addSelect('rc')
+            ->where('c.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $city;
+    }
+
     private static function catalogCitySortBucket(City $city): int
     {
         if ($city->getSlug() === self::LISTING_SUGGESTED_MINSK_SLUG) {

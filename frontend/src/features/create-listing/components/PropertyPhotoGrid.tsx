@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import {
     DndContext,
     KeyboardSensor,
@@ -26,8 +26,10 @@ import { uploadFile, rotateUploadedFile, FileTooLargeError } from '../api';
 import {
     createUploadedPhoto,
     normalizeImageFile,
-    revokePhotoPreviewUrl,
+    preloadUploadedPhotoSrc,
     resolvePhotoFile,
+    resolveUploadedPhotoSrc,
+    revokePhotoPreviewUrl,
     rotateImageFile,
 } from '../photo-utils';
 import type { UploadedPhoto } from '../types';
@@ -85,7 +87,7 @@ function SortablePhotoItem({ photo, index, onRotate, onRemove }: SortablePhotoIt
         >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-                src={photo.url}
+                src={resolveUploadedPhotoSrc(photo)}
                 alt={`Фото ${index + 1}`}
                 className="pointer-events-none h-full w-full object-cover"
                 draggable={false}
@@ -135,7 +137,12 @@ export function PropertyPhotoGrid({
     addLabel = 'Добавить',
 }: PropertyPhotoGridProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const onChangeRef = useRef(onChange);
     const [dragOver, setDragOver] = useState(false);
+
+    useEffect(() => {
+        onChangeRef.current = onChange;
+    }, [onChange]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -151,14 +158,14 @@ export function PropertyPhotoGrid({
 
     const updatePhotoById = useCallback(
         (id: string, updater: (photo: UploadedPhoto) => UploadedPhoto) => {
-            onChange((current) => current.map((photo) => (photo.id === id ? updater(photo) : photo)));
+            onChangeRef.current((current) => current.map((photo) => (photo.id === id ? updater(photo) : photo)));
         },
-        [onChange],
+        [],
     );
 
     const removePhotoById = useCallback(
         (id: string) => {
-            onChange((current) => {
+            onChangeRef.current((current) => {
                 const photo = current.find((item) => item.id === id);
                 if (photo) {
                     revokePhotoPreviewUrl(photo);
@@ -166,18 +173,25 @@ export function PropertyPhotoGrid({
                 return current.filter((item) => item.id !== id);
             });
         },
-        [onChange],
+        [],
     );
 
     const uploadPhotoFile = useCallback(
         async (id: string, file: File) => {
             try {
-                const serverUrl = await uploadFile(file);
+                const uploaded = await uploadFile(file);
+                const previewSrc = uploaded.thumbnailUrl || uploaded.url;
+                try {
+                    await preloadUploadedPhotoSrc(previewSrc);
+                } catch {
+                    // Preview may still work after commit.
+                }
                 updatePhotoById(id, (photo) => {
                     revokePhotoPreviewUrl(photo);
                     return {
                         ...photo,
-                        url: serverUrl,
+                        url: uploaded.url,
+                        thumbnailUrl: uploaded.thumbnailUrl ?? null,
                         file,
                         uploading: false,
                     };
@@ -187,10 +201,10 @@ export function PropertyPhotoGrid({
                     ? `${file.name}: файл слишком большой (макс. ${MAX_FILE_SIZE_MB} МБ)`
                     : `Не удалось загрузить фото ${file.name}`;
                 toast.error(message);
-                removePhotoById(id);
+                updatePhotoById(id, (photo) => ({ ...photo, uploading: false }));
             }
         },
-        [removePhotoById, updatePhotoById],
+        [updatePhotoById],
     );
 
     const handleFiles = useCallback(
@@ -229,7 +243,7 @@ export function PropertyPhotoGrid({
             );
 
             const placeholders = processedFiles.map((file) => createUploadedPhoto(file));
-            onChange((current) => [...current, ...placeholders]);
+            onChangeRef.current((current) => [...current, ...placeholders]);
 
             for (const placeholder of placeholders) {
                 if (placeholder.file) {
@@ -237,7 +251,7 @@ export function PropertyPhotoGrid({
                 }
             }
         },
-        [maxPhotos, onChange, photos.length, uploadPhotoFile],
+        [maxPhotos, photos.length, uploadPhotoFile],
     );
 
     const rotatePhoto = useCallback(
@@ -257,6 +271,7 @@ export function PropertyPhotoGrid({
                         return {
                             ...current,
                             url: rotated.url,
+                            thumbnailUrl: rotated.thumbnailUrl ?? null,
                             file: undefined,
                             uploading: false,
                         };
@@ -294,7 +309,7 @@ export function PropertyPhotoGrid({
                 return;
             }
 
-            onChange((current) => {
+            onChangeRef.current((current) => {
                 const oldIndex = current.findIndex((photo) => photo.id === active.id);
                 const newIndex = current.findIndex((photo) => photo.id === over.id);
                 if (oldIndex < 0 || newIndex < 0) {
@@ -303,7 +318,7 @@ export function PropertyPhotoGrid({
                 return arrayMove(current, oldIndex, newIndex);
             });
         },
-        [onChange],
+        [],
     );
 
     const handleGridDragOver = (event: React.DragEvent<HTMLDivElement>) => {

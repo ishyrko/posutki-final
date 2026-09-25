@@ -51,6 +51,9 @@ final class CreatePropertyCommand
         public readonly ?string $websiteUrl = null,
         public readonly ?string $videoUrl = null,
         public readonly ?array $externalCalendarUrls = null,
+        public readonly bool $prepaymentRequired = false,
+        public readonly ?string $additionalCheckInConditions = null,
+        public readonly ?int $banquetSeats = null,
     ) {
     }
 }

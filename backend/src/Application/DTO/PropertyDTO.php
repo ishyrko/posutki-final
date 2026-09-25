@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\DTO;
 
+use App\Application\Service\LocationDistanceResolver;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Entity\City;
 use App\Domain\Property\Entity\CityDistrict;
@@ -119,6 +120,11 @@ final class PropertyDTO implements \JsonSerializable
         public readonly ?\DateTimeImmutable $calendarLastUpdatedAt = null,
         public readonly ?bool $canPublishFree = null,
         public readonly ?string $freeLimitBlockIntro = null,
+        public readonly bool $prepaymentRequired = false,
+        public readonly ?string $additionalCheckInConditions = null,
+        public readonly ?int $banquetSeats = null,
+        /** @var array{nearestCity: ?array{cityName: string, citySlug: string, cityNameGenitive: ?string, distanceKm: float}, regionCenter: ?array{cityName: string, citySlug: string, cityNameGenitive: ?string, distanceKm: float}} */
+        public readonly array $locationDistances = ['nearestCity' => null, 'regionCenter' => null],
     ) {
     }
 
@@ -144,7 +150,18 @@ final class PropertyDTO implements \JsonSerializable
         int $unviewedReviewsCount = 0,
         ?bool $canPublishFree = null,
         ?string $freeLimitBlockIntro = null,
+        ?City $nearestCity = null,
+        ?City $regionCenterCity = null,
     ): self {
+        $locationDistances = LocationDistanceResolver::resolve(
+            $property->getNearestCityId(),
+            $property->getNearestCityDistanceKm(),
+            $nearestCity,
+            $property->getRegionCenterCityId(),
+            $property->getRegionCenterDistanceKm(),
+            $regionCenterCity,
+        );
+
         $district = $city->getRegionDistrict();
         $region = $district?->getRegion();
 
@@ -206,6 +223,10 @@ final class PropertyDTO implements \JsonSerializable
             checkInTime: $property->getCheckInTime(),
             checkOutTime: $property->getCheckOutTime(),
             minStayDays: $property->getMinStayDays(),
+            prepaymentRequired: $property->isPrepaymentRequired(),
+            additionalCheckInConditions: $property->getAdditionalCheckInConditions(),
+            banquetSeats: $property->getBanquetSeats(),
+            locationDistances: $locationDistances,
             building: $property->getAddress()->getBuilding(),
             block: $property->getAddress()->getBlock(),
             cityId: $property->getCityId(),
@@ -333,7 +354,11 @@ final class PropertyDTO implements \JsonSerializable
                 'checkInTime' => $this->checkInTime,
                 'checkOutTime' => $this->checkOutTime,
                 'minStayDays' => $this->minStayDays,
+                'prepaymentRequired' => $this->prepaymentRequired,
+                'additionalCheckInConditions' => $this->additionalCheckInConditions,
+                'banquetSeats' => $this->banquetSeats,
             ],
+            'locationDistances' => $this->locationDistances,
             'coordinates' => [
                 'latitude' => $this->latitude,
                 'longitude' => $this->longitude,

@@ -28,6 +28,7 @@ use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
+use App\Infrastructure\Service\PropertyCityDistanceCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
 
 readonly class UpdatePropertyHandler
@@ -38,6 +39,7 @@ readonly class UpdatePropertyHandler
         private ExchangeRateService $exchangeRateService,
         private MetroProximityCalculator $metroProximityCalculator,
         private LandmarkProximityCalculator $landmarkProximityCalculator,
+        private PropertyCityDistanceCalculator $propertyCityDistanceCalculator,
         private CityDistrictResolverInterface $cityDistrictResolver,
         private CityMicrodistrictResolverInterface $cityMicrodistrictResolver,
         private ResidentialComplexResolverInterface $residentialComplexResolver,
@@ -204,6 +206,9 @@ readonly class UpdatePropertyHandler
             websiteUrl: $command->websiteUrl,
             videoUrl: $command->videoUrl,
             externalCalendarUrls: $command->externalCalendarUrls,
+            prepaymentRequired: $command->prepaymentRequired,
+            additionalCheckInConditions: $command->additionalCheckInConditions,
+            banquetSeats: $command->banquetSeats,
         );
 
         if ($coordinates !== null) {
@@ -245,6 +250,7 @@ readonly class UpdatePropertyHandler
         $this->propertyRepository->save($property);
         $this->metroProximityCalculator->syncForProperty($property);
         $this->landmarkProximityCalculator->syncForProperty($property);
+        $this->propertyCityDistanceCalculator->syncForProperty($property);
         $this->propertyRepository->save($property);
 
         return false;
@@ -317,6 +323,9 @@ readonly class UpdatePropertyHandler
             'checkInTime' => $property->getCheckInTime(),
             'checkOutTime' => $property->getCheckOutTime(),
             'minStayDays' => $property->getMinStayDays(),
+            'prepaymentRequired' => $property->isPrepaymentRequired(),
+            'additionalCheckInConditions' => $property->getAdditionalCheckInConditions(),
+            'banquetSeats' => $property->getBanquetSeats(),
             'building' => $property->getAddress()->getBuilding(),
             'block' => $property->getAddress()->getBlock(),
             'cityId' => $property->getCityId(),
@@ -369,6 +378,9 @@ readonly class UpdatePropertyHandler
             'checkInTime' => $command->checkInTime ?? $property->getCheckInTime(),
             'checkOutTime' => $command->checkOutTime ?? $property->getCheckOutTime(),
             'minStayDays' => $command->minStayDays ?? $property->getMinStayDays(),
+            'prepaymentRequired' => $command->prepaymentRequired ?? $property->isPrepaymentRequired(),
+            'additionalCheckInConditions' => $command->additionalCheckInConditions ?? $property->getAdditionalCheckInConditions(),
+            'banquetSeats' => $command->banquetSeats ?? $property->getBanquetSeats(),
             'building' => $command->building ?? $property->getAddress()->getBuilding(),
             'block' => $command->block ?? $property->getAddress()->getBlock(),
             'cityId' => $command->cityId ?? $property->getCityId(),
@@ -442,6 +454,9 @@ readonly class UpdatePropertyHandler
             'checkInTime' => $command->checkInTime,
             'checkOutTime' => $command->checkOutTime,
             'minStayDays' => $command->minStayDays,
+            'prepaymentRequired' => $command->prepaymentRequired,
+            'additionalCheckInConditions' => $command->additionalCheckInConditions,
+            'banquetSeats' => $command->banquetSeats,
             'building' => $command->building,
             'block' => $command->block,
             'cityId' => $command->cityId,
@@ -463,8 +478,8 @@ readonly class UpdatePropertyHandler
 
     private function assertAreaConstraints(string $propertyType, ?float $landArea): void
     {
-        if ($propertyType === 'house' && ($landArea === null || $landArea <= 0)) {
-            throw new \InvalidArgumentException('Укажите площадь участка в сотках для дома');
+        if ($propertyType === 'house' && $landArea !== null && $landArea <= 0) {
+            throw new \InvalidArgumentException('Площадь участка должна быть положительной');
         }
     }
 }

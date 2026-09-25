@@ -207,6 +207,13 @@ final class GetPropertyHandler
             }
         }
 
+        $nearestCity = $property->getNearestCityId() !== null
+            ? $this->cityRepository->findById($property->getNearestCityId())
+            : null;
+        $regionCenterCity = $property->getRegionCenterCityId() !== null
+            ? $this->cityRepository->findById($property->getRegionCenterCityId())
+            : null;
+
         return PropertyDTO::fromEntity(
             $property,
             $city,
@@ -224,6 +231,8 @@ final class GetPropertyHandler
             $this->propertyCalendarAggregator->getCalendarLastUpdatedAt($property),
             includeAllImages: $isOwner,
             nearbyLandmarks: $nearbyLandmarks,
+            nearestCity: $nearestCity,
+            regionCenterCity: $regionCenterCity,
         );
     }
 

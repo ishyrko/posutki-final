@@ -54,6 +54,7 @@ import {
     dealConditionOptions,
     sanitizeDealConditionsForPropertyType,
     renovationOptionsForDeal,
+    bathroomsRequired,
     roomsRequired,
     showBalcony,
     showBathrooms,
@@ -84,6 +85,8 @@ import {
     DAILY_BEDS_MAX,
     MAX_DAILY_GUESTS,
     MAX_MIN_STAY_DAYS,
+    MAX_BANQUET_SEATS,
+    ADDITIONAL_CHECK_IN_CONDITIONS_MAX_LENGTH,
     MIN_DAILY_PRICE_BYN,
     TITLE_MAX_LENGTH,
     TITLE_MIN_LENGTH,
@@ -200,6 +203,9 @@ const INITIAL_FORM: ListingFormData = {
     checkInTime: '',
     checkOutTime: '',
     minStayDays: '1',
+    prepaymentRequired: false,
+    additionalCheckInConditions: '',
+    banquetSeats: '',
     yearBuilt: '',
     renovation: '',
     balcony: '',
@@ -487,7 +493,7 @@ export function CreateListingForm() {
                 }
                 if (showBathrooms(form.propertyType)) {
                     const bathroomKind = bathroomTypeFromForm(form.bathrooms, form.amenities);
-                    if (bathroomKind === null) {
+                    if (bathroomsRequired(form.propertyType) && bathroomKind === null) {
                         errs.bathrooms = 'Выберите тип санузла';
                     } else if (form.bathrooms.trim() !== '') {
                         const bathrooms = Number(form.bathrooms);
@@ -502,11 +508,22 @@ export function CreateListingForm() {
                         errs.area = `Площадь общая: от ${AREA_MIN} до ${AREA_MAX} м²`;
                     }
                 }
-                if (needsLotArea(form.propertyType)) {
-                    if (!form.landArea) errs.landArea = 'Укажите площадь участка';
-                    else if (!Number.isFinite(Number(form.landArea)) || Number(form.landArea) <= 0) {
+                if (needsLotArea(form.propertyType) && form.landArea.trim() !== '') {
+                    if (!Number.isFinite(Number(form.landArea)) || Number(form.landArea) <= 0) {
                         errs.landArea = 'Площадь участка должна быть положительной';
                     }
+                }
+                if (form.propertyType === 'house' && form.banquetSeats.trim()) {
+                    const banquetSeats = Number(form.banquetSeats);
+                    if (!Number.isFinite(banquetSeats) || banquetSeats < 1 || banquetSeats > MAX_BANQUET_SEATS) {
+                        errs.banquetSeats = `От 1 до ${MAX_BANQUET_SEATS}`;
+                    }
+                }
+                if (
+                    form.propertyType === 'house'
+                    && form.additionalCheckInConditions.length > ADDITIONAL_CHECK_IN_CONDITIONS_MAX_LENGTH
+                ) {
+                    errs.additionalCheckInConditions = `Не длиннее ${ADDITIONAL_CHECK_IN_CONDITIONS_MAX_LENGTH} символов`;
                 }
                 if (showLivingArea(form.propertyType) && form.livingArea && Number(form.livingArea) <= 0) {
                     errs.livingArea = 'Площадь должна быть положительной';
@@ -650,7 +667,8 @@ export function CreateListingForm() {
                     )
                     && (
                         !needsLotArea(form.propertyType)
-                        || (!!form.landArea && Number(form.landArea) > 0)
+                        || form.landArea.trim() === ''
+                        || Number(form.landArea) > 0
                     )
                     && (!showRooms(form.propertyType) || !roomsRequired(form.propertyType) || form.rooms)
                     && (!showRoomDealFields(form.propertyType, form.dealType) || (
@@ -665,6 +683,7 @@ export function CreateListingForm() {
                     ))
                     && (
                         !showBathrooms(form.propertyType)
+                        || !bathroomsRequired(form.propertyType)
                         || bathroomTypeFromForm(form.bathrooms, form.amenities) !== null
                     )
                 );
@@ -829,6 +848,13 @@ export function CreateListingForm() {
                 : undefined,
             minStayDays: form.dealType === 'daily'
                 ? Number(form.minStayDays || 1)
+                : undefined,
+            prepaymentRequired: form.propertyType === 'house' ? form.prepaymentRequired : undefined,
+            additionalCheckInConditions: form.propertyType === 'house'
+                ? form.additionalCheckInConditions.trim()
+                : undefined,
+            banquetSeats: form.propertyType === 'house' && form.banquetSeats.trim()
+                ? Number(form.banquetSeats)
                 : undefined,
             building: form.building.trim(),
             block: form.block.trim() || undefined,
@@ -1241,7 +1267,9 @@ export function CreateListingForm() {
                                                 label={
                                                     <>
                                                         <Bath className="w-3.5 h-3.5" /> Санузел
-                                                        <span className="text-destructive">*</span>
+                                                        {bathroomsRequired(form.propertyType) ? (
+                                                            <span className="text-destructive">*</span>
+                                                        ) : null}
                                                     </>
                                                 }
                                                 value={bathroomTypeFromForm(form.bathrooms, form.amenities)}
@@ -1254,6 +1282,15 @@ export function CreateListingForm() {
                                                 error={errors.bathrooms}
                                             />
                                         )}
+                                        <div
+                                            className={cn(
+                                                needsLotArea(form.propertyType)
+                                                && requiresAreaInSquareMeters(form.propertyType)
+                                                && !(showLivingArea(form.propertyType) && showKitchenArea(form.propertyType))
+                                                    ? 'grid grid-cols-1 gap-5 md:grid-cols-2'
+                                                    : 'contents',
+                                            )}
+                                        >
                                         {requiresAreaInSquareMeters(form.propertyType)
                                             && !(
                                                 showLivingArea(form.propertyType)
@@ -1280,7 +1317,7 @@ export function CreateListingForm() {
                                             <div>
                                                 <label className={labelClass}>
                                                     <MapPin className="w-3.5 h-3.5 inline mr-1 align-text-bottom" />
-                                                    Площадь участка, соток *
+                                                    Площадь участка, соток
                                                 </label>
                                                 <input
                                                     type="number"
@@ -1294,6 +1331,7 @@ export function CreateListingForm() {
                                                 <FieldError field="landArea" />
                                             </div>
                                         )}
+                                        </div>
                                         {showFloor(form.propertyType) && showTotalFloors(form.propertyType) && (
                                             <FloorTotalFloorsRow
                                                 floor={form.floor}
@@ -1916,7 +1954,51 @@ export function CreateListingForm() {
                                                 />
                                                 <FieldError field="checkOutTime" />
                                             </div>
+                                            {form.propertyType === 'house' && (
+                                                <div>
+                                                    <label className={labelClass}>Мест для банкета</label>
+                                                    <input
+                                                        type="number"
+                                                        inputMode="numeric"
+                                                        min={1}
+                                                        max={MAX_BANQUET_SEATS}
+                                                        step={1}
+                                                        value={form.banquetSeats}
+                                                        onChange={(e) => update('banquetSeats', e.target.value)}
+                                                        placeholder="Необязательно"
+                                                        className={cn(inputClass, errors.banquetSeats ? 'border-destructive' : '')}
+                                                    />
+                                                    <FieldError field="banquetSeats" />
+                                                </div>
+                                            )}
                                         </div>
+                                        {form.propertyType === 'house' && (
+                                            <div className="pt-2 border-t border-border/60 space-y-4">
+                                                <h3 className="font-display text-base font-semibold text-foreground">Условия заселения</h3>
+                                                <div className="flex items-center gap-2.5">
+                                                    <Checkbox
+                                                        id="prepayment_required"
+                                                        checked={form.prepaymentRequired}
+                                                        onCheckedChange={(checked) => update('prepaymentRequired', checked === true)}
+                                                    />
+                                                    <label htmlFor="prepayment_required" className="text-sm text-foreground cursor-pointer">
+                                                        Требуется предоплата
+                                                    </label>
+                                                </div>
+                                                <div>
+                                                    <label className={labelClass}>Дополнительные условия заселения</label>
+                                                    <textarea
+                                                        value={form.additionalCheckInConditions}
+                                                        onChange={(e) => update('additionalCheckInConditions', e.target.value)}
+                                                        placeholder="Необязательно"
+                                                        rows={3}
+                                                        maxLength={ADDITIONAL_CHECK_IN_CONDITIONS_MAX_LENGTH}
+                                                        className={cn(inputClass, 'resize-none', errors.additionalCheckInConditions ? 'border-destructive' : '')}
+                                                    />
+                                                    <FieldError field="additionalCheckInConditions" />
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 

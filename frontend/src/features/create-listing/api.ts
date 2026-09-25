@@ -97,14 +97,14 @@ export const createProperty = async (payload: CreatePropertyPayload): Promise<Cr
     return response.data.data;
 };
 
-export const uploadFile = async (file: File): Promise<string> => {
+export const uploadFile = async (file: File): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('scope', 'properties');
 
     try {
         const response = await api.postForm<{ data: UploadResponse }>('/upload', formData);
-        return response.data.data.url;
+        return response.data.data;
     } catch (error: unknown) {
         if (isAxiosError(error) && error.response?.status === 413) {
             throw new FileTooLargeError(file.name);

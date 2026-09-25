@@ -51,6 +51,7 @@ import {
     balconyOptions,
     dealConditionOptions,
     sanitizeDealConditionsForPropertyType,
+    bathroomsRequired,
     roomsRequired,
     renovationOptionsForDeal,
     showBalcony,
@@ -80,6 +81,8 @@ import {
     DAILY_BEDS_MAX,
     MAX_DAILY_GUESTS,
     MAX_MIN_STAY_DAYS,
+    MAX_BANQUET_SEATS,
+    ADDITIONAL_CHECK_IN_CONDITIONS_MAX_LENGTH,
     MIN_DAILY_PRICE_BYN,
     TITLE_MAX_LENGTH,
     TITLE_MIN_LENGTH,
@@ -158,6 +161,9 @@ interface EditFormData {
     checkInTime: string;
     checkOutTime: string;
     minStayDays: string;
+    prepaymentRequired: boolean;
+    additionalCheckInConditions: string;
+    banquetSeats: string;
     floor: string;
     totalFloors: string;
     yearBuilt: string;
@@ -252,6 +258,17 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
             : property.specifications.minStayDays != null
                 ? String(property.specifications.minStayDays)
                 : '1',
+        prepaymentRequired: revisionData?.prepaymentRequired != null
+            ? Boolean(revisionData.prepaymentRequired)
+            : Boolean(property.specifications.prepaymentRequired),
+        additionalCheckInConditions: revisionData?.additionalCheckInConditions != null
+            ? String(revisionData.additionalCheckInConditions)
+            : property.specifications.additionalCheckInConditions ?? '',
+        banquetSeats: revisionData?.banquetSeats != null
+            ? String(revisionData.banquetSeats)
+            : property.specifications.banquetSeats != null
+                ? String(property.specifications.banquetSeats)
+                : '',
         floor: String(revisionData?.floor ?? property.specifications.floor ?? ''),
         totalFloors: String(revisionData?.totalFloors ?? property.specifications.totalFloors ?? ''),
         yearBuilt: String(revisionData?.yearBuilt ?? property.specifications.yearBuilt ?? ''),
@@ -563,8 +580,19 @@ export default function EditPropertyPage() {
                 return;
             }
         }
-        if (needsLotArea(form.type) && (!form.landArea || !Number.isFinite(landArea) || landArea <= 0)) {
+        if (needsLotArea(form.type) && form.landArea.trim() !== '' && (!Number.isFinite(landArea) || landArea <= 0)) {
             toast.error('Площадь участка должна быть положительной');
+            return;
+        }
+        if (form.type === 'house' && form.banquetSeats.trim()) {
+            const banquetSeats = Number(form.banquetSeats);
+            if (!Number.isFinite(banquetSeats) || banquetSeats < 1 || banquetSeats > MAX_BANQUET_SEATS) {
+                toast.error(`Мест для банкета: от 1 до ${MAX_BANQUET_SEATS}`);
+                return;
+            }
+        }
+        if (form.type === 'house' && form.additionalCheckInConditions.length > ADDITIONAL_CHECK_IN_CONDITIONS_MAX_LENGTH) {
+            toast.error(`Дополнительные условия заселения не длиннее ${ADDITIONAL_CHECK_IN_CONDITIONS_MAX_LENGTH} символов`);
             return;
         }
         if (showRooms(form.type) && roomsRequired(form.type) && !form.rooms) {
@@ -600,7 +628,8 @@ export default function EditPropertyPage() {
             return;
         }
         if (
-            showBathrooms(form.type)
+            bathroomsRequired(form.type)
+            && showBathrooms(form.type)
             && bathroomTypeFromForm(form.bathrooms, form.amenities) === null
         ) {
             toast.error('Выберите тип санузла');
@@ -772,6 +801,9 @@ export default function EditPropertyPage() {
                 checkInTime: form.dealType === 'daily' && form.checkInTime ? form.checkInTime : undefined,
                 checkOutTime: form.dealType === 'daily' && form.checkOutTime ? form.checkOutTime : undefined,
                 minStayDays: form.dealType === 'daily' ? minStayDays : undefined,
+                prepaymentRequired: form.type === 'house' ? form.prepaymentRequired : undefined,
+                additionalCheckInConditions: form.type === 'house' ? form.additionalCheckInConditions.trim() : undefined,
+                banquetSeats: form.type === 'house' && form.banquetSeats.trim() ? Number(form.banquetSeats) : undefined,
                 building: form.building.trim(),
                 block: form.block.trim() || undefined,
                 cityId: form.cityId ?? undefined,
@@ -1032,6 +1064,15 @@ export default function EditPropertyPage() {
                                     />
                                 </div>
                             )}
+                            <div
+                                className={
+                                    needsLotArea(form.type)
+                                    && requiresAreaInSquareMeters(form.type)
+                                    && !(showLivingArea(form.type) && showKitchenArea(form.type))
+                                        ? 'grid grid-cols-1 gap-4 md:grid-cols-2'
+                                        : 'contents'
+                                }
+                            >
                             {requiresAreaInSquareMeters(form.type)
                                 && !(showLivingArea(form.type) && showKitchenArea(form.type)) && (
                                 <div>
@@ -1051,7 +1092,7 @@ export default function EditPropertyPage() {
                             {needsLotArea(form.type) && (
                                 <div>
                                     <Label className="text-foreground flex items-center gap-1.5">
-                                        <MapPin className="w-3.5 h-3.5" /> Площадь участка, соток *
+                                        <MapPin className="w-3.5 h-3.5" /> Площадь участка, соток
                                     </Label>
                                     <Input
                                         type="number"
@@ -1063,6 +1104,7 @@ export default function EditPropertyPage() {
                                     />
                                 </div>
                             )}
+                            </div>
                             {showFloor(form.type) && showTotalFloors(form.type) && (
                                 <div>
                                     <FloorTotalFloorsRow
@@ -1167,6 +1209,7 @@ export default function EditPropertyPage() {
                         </div>
 
                         {form.dealType === 'daily' && (
+                            <>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <Label className="text-foreground">Максимальное число гостей *</Label>
@@ -1240,7 +1283,49 @@ export default function EditPropertyPage() {
                                         className="mt-1.5"
                                     />
                                 </div>
+                                {form.type === 'house' && (
+                                    <div>
+                                        <Label className="text-foreground">Мест для банкета</Label>
+                                        <Input
+                                            type="number"
+                                            inputMode="numeric"
+                                            min={1}
+                                            max={MAX_BANQUET_SEATS}
+                                            step={1}
+                                            value={form.banquetSeats}
+                                            onChange={(e) => update('banquetSeats', e.target.value)}
+                                            placeholder="Необязательно"
+                                            className="mt-1.5"
+                                        />
+                                    </div>
+                                )}
                             </div>
+                            {form.type === 'house' && (
+                                <div className="space-y-4 pt-2">
+                                    <div className="flex items-center gap-2.5">
+                                        <Checkbox
+                                            id="prepayment_required"
+                                            checked={form.prepaymentRequired}
+                                            onCheckedChange={(checked) => update('prepaymentRequired', checked === true)}
+                                        />
+                                        <Label htmlFor="prepayment_required" className="text-foreground cursor-pointer">
+                                            Требуется предоплата
+                                        </Label>
+                                    </div>
+                                    <div>
+                                        <Label className="text-foreground">Дополнительные условия заселения</Label>
+                                        <textarea
+                                            value={form.additionalCheckInConditions}
+                                            onChange={(e) => update('additionalCheckInConditions', e.target.value)}
+                                            placeholder="Необязательно"
+                                            rows={3}
+                                            maxLength={ADDITIONAL_CHECK_IN_CONDITIONS_MAX_LENGTH}
+                                            className="mt-1.5 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            </>
                         )}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

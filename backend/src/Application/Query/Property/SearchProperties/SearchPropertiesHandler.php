@@ -325,8 +325,22 @@ final class SearchPropertiesHandler
         )));
         $ownerContacts = $this->ownerPublicContactResolver->resolveForOwnerIds($ownerIds);
 
+        $distanceCityIds = [];
+        foreach ($properties as $property) {
+            if ($property->getNearestCityId() !== null) {
+                $distanceCityIds[] = $property->getNearestCityId();
+            }
+            if ($property->getRegionCenterCityId() !== null) {
+                $distanceCityIds[] = $property->getRegionCenterCityId();
+            }
+        }
+        $distanceCities = [];
+        foreach ($this->cityRepository->findByIds(array_values(array_unique($distanceCityIds))) as $distanceCity) {
+            $distanceCities[$distanceCity->getId()] = $distanceCity;
+        }
+
         $items = array_map(
-            function ($property) use ($cities, $streets, $cityDistricts, $nearbyMetroByPropertyId, $landmarkDistanceByPropertyId, $ownerContacts) {
+            function ($property) use ($cities, $streets, $cityDistricts, $nearbyMetroByPropertyId, $landmarkDistanceByPropertyId, $ownerContacts, $distanceCities) {
                 $ownerId = $property->getOwnerId()->getValue();
                 $contact = $ownerContacts[$ownerId] ?? ['phone' => null, 'name' => null, 'phones' => [], 'telegram' => null];
 
@@ -342,6 +356,12 @@ final class SearchPropertiesHandler
                     null,
                     $contact,
                     landmarkDistanceKm: $landmarkDistanceByPropertyId[$property->getId()->getValue()] ?? null,
+                    nearestCity: $property->getNearestCityId() !== null
+                        ? ($distanceCities[$property->getNearestCityId()] ?? null)
+                        : null,
+                    regionCenterCity: $property->getRegionCenterCityId() !== null
+                        ? ($distanceCities[$property->getRegionCenterCityId()] ?? null)
+                        : null,
                 );
             },
             $properties

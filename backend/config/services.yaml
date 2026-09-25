@@ -32,6 +32,7 @@ parameters:
     app.bepaid.test_mode: '%env(bool:BEPAID_TEST_MODE)%'
     upload_directory: '%kernel.project_dir%/public/uploads'
     property_watermark_path: '%kernel.project_dir%/resources/watermark/posutki-by.png'
+    app.city_boundaries_path: '%kernel.project_dir%/resources/geo/city-boundaries.json'
     app.jwt_refresh_ttl: 2592000
 
 services:
@@ -73,6 +74,9 @@ services:
 
     App\Domain\Property\Repository\RegionRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\RegionRepository
+
+    App\Domain\Property\Repository\RegionCatalogContentRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\RegionCatalogContentRepository
 
     App\Domain\Property\Repository\RegionDistrictRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\RegionDistrictRepository
@@ -520,6 +524,10 @@ services:
     App\Infrastructure\Service\PropertyImageWatermark:
         arguments:
             $watermarkImagePath: '%property_watermark_path%'
+
+    App\Infrastructure\Service\CityBoundaryProvider:
+        arguments:
+            $boundariesPath: '%app.city_boundaries_path%'
 
     App\Infrastructure\Service\FileUploader:
         arguments:

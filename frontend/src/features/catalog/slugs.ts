@@ -420,6 +420,26 @@ export function resolveCatalogCitySlug(parsed: ParsedSegments): string {
   return parsed.citySlug ?? parsed.regionSlug ?? MINSK_CITY_SLUG;
 }
 
+/** Базовая страница каталога домов в области. */
+export function isBaseRegionHouseCatalogPage(parsed: ParsedSegments): boolean {
+  return (
+    parsed.propertyType === 'house' &&
+    Boolean(parsed.regionSlug) &&
+    !parsed.citySlug &&
+    !parsed.nearMetro &&
+    !parsed.metroStationSlug &&
+    !parsed.cityDistrictSlug &&
+    !parsed.microdistrictSlug &&
+    !parsed.residentialComplexSlug &&
+    !parsed.landmarkSlug &&
+    !parsed.roomsBucket
+  );
+}
+
+export function catalogHousePathForRegionSlug(regionSlug: string): string {
+  return buildCatalogUrl({ region: regionSlug, propertyType: 'house' });
+}
+
 /** Базовая страница каталога квартир города (без метро и районов). */
 export function isBaseCityApartmentCatalogPage(parsed: ParsedSegments): boolean {
   return (

@@ -8,7 +8,7 @@ test-unit:
 
 test-functional:
 	docker compose exec php sh -lc "cd /var/www/backend && composer test:functional"
-.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo backend-seed-demo-landmarks backend-watermark-property-images backend-watermark-property-images-dry-run scrape-arendom import-partner-listings admin-user frontend-install frontend-dev frontend-build frontend-build-cpanel frontend-build-cpanel-prod frontend-build-cpanel-prod-local frontend-build-cpanel-verify-3g frontend-export-cpanel frontend-cpanel-clean clean exchange-rates sync-metro-proximity sync-landmark-proximity backfill-city-districts sync-calendars reshuffle-placement notify-vip-expiring prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-sync-landmark-proximity prod-backfill-city-districts prod-sync-calendars prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
+.PHONY: help install up down restart logs backend-install backend-migrate migrate db-migrate backend-seed-demo backend-seed-demo-landmarks backend-watermark-property-images backend-watermark-property-images-dry-run scrape-arendom import-partner-listings admin-user frontend-install frontend-dev frontend-build frontend-build-cpanel frontend-build-cpanel-prod frontend-build-cpanel-prod-local frontend-build-cpanel-verify-3g frontend-export-cpanel frontend-cpanel-clean clean exchange-rates sync-metro-proximity sync-city-distances sync-landmark-proximity backfill-city-districts sync-calendars reshuffle-placement notify-vip-expiring prod prod-up prod-down prod-restart prod-logs prod-migrate prod-exchange-rates prod-sync-metro-proximity prod-sync-landmark-proximity prod-backfill-city-districts prod-sync-calendars prod-check-env prod-full prod-build-frontend prod-backend-install prod-rebuild prod-fix-perms prod-fix-uploads prod-fix-assets-perms prod-admin-user prod-edge-up prod-edge-full
 
 PROD_ENV_FILE = .env.prod
 CPANEL_ENV_FILE = .env.cpanel
@@ -112,6 +112,10 @@ exchange-rates: ## Fetch exchange rates from NBRB and recalculate prices
 sync-metro-proximity: ## Recalculate metro proximity for all properties
 	@echo "${GREEN}Recalculating metro proximity...${RESET}"
 	docker-compose exec php php bin/console app:sync-metro-proximity --no-interaction
+
+sync-city-distances: ## Recalculate distance to nearest city and region center
+	@echo "${GREEN}Recalculating city distances...${RESET}"
+	docker-compose exec php php bin/console app:sync-property-city-distances --no-interaction
 
 sync-landmark-proximity: ## Recalculate landmark proximity for all properties
 	@echo "${GREEN}Recalculating landmark proximity...${RESET}"

@@ -94,6 +94,9 @@ export interface Property {
         checkInTime?: string;
         checkOutTime?: string;
         minStayDays?: number;
+        prepaymentRequired?: boolean;
+        additionalCheckInConditions?: string;
+        banquetSeats?: number;
         building?: string;
         block?: string;
         cityId?: number;
@@ -143,6 +146,9 @@ export interface Property {
         checkInTime?: string | null;
         checkOutTime?: string | null;
         minStayDays?: number | null;
+        prepaymentRequired?: boolean;
+        additionalCheckInConditions?: string | null;
+        banquetSeats?: number | null;
     };
     images: PropertyImage[];
     /** Удобства (id строк), приходят с API на чтение и уходят при обновлении. */
@@ -151,6 +157,7 @@ export interface Property {
     nearbyMetroStations?: NearbyMetroStation[];
     nearbyLandmarks?: PropertyNearbyLandmark[];
     landmarkDistanceKm?: number | null;
+    locationDistances?: import('@/features/properties/center-distance').LocationDistances | null;
     views?: number;
     phoneViews?: number;
     favoritesCount?: number;

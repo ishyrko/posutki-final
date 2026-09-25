@@ -10,7 +10,9 @@ use App\Domain\Property\Entity\CityDistrict;
 use App\Domain\Property\Entity\CityMicrodistrict;
 use App\Domain\Property\Entity\Landmark;
 use App\Domain\Property\Entity\CityRoomCatalogContent;
+use App\Domain\Property\Entity\RegionCatalogContent;
 use App\Domain\Property\Repository\CityRepositoryInterface;
+use App\Domain\Property\Repository\RegionRepositoryInterface;
 use App\Domain\StaticPage\Entity\StaticPage;
 use EasyCorp\Bundle\EasyAdminBundle\Contracts\Event\EntityLifecycleEventInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Event\AfterEntityDeletedEvent;
@@ -26,6 +28,7 @@ final class RevalidateNextjsListener implements EventSubscriberInterface
         private readonly HttpClientInterface $httpClient,
         private readonly LoggerInterface $logger,
         private readonly CityRepositoryInterface $cityRepository,
+        private readonly RegionRepositoryInterface $regionRepository,
         private readonly string $revalidateUrl,
         private readonly string $revalidationSecret,
     ) {
@@ -90,6 +93,15 @@ final class RevalidateNextjsListener implements EventSubscriberInterface
 
         if ($entity instanceof ResidentialComplex) {
             $this->notifyCatalogPlaceRevalidation('residential-complex', $entity->getCityId(), $entity->getSlug());
+
+            return;
+        }
+
+        if ($entity instanceof RegionCatalogContent) {
+            $region = $this->regionRepository->findById($entity->getRegionId());
+            if ($region !== null) {
+                $this->notifyNextJs('region', $region->getSlug());
+            }
 
             return;
         }

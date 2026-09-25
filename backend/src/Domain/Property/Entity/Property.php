@@ -115,6 +115,15 @@ class Property
     #[ORM\Column(type: 'integer', nullable: true, name: 'min_stay_days')]
     private ?int $minStayDays = null;
 
+    #[ORM\Column(type: 'boolean', name: 'prepayment_required', options: ['default' => false])]
+    private bool $prepaymentRequired = false;
+
+    #[ORM\Column(type: 'text', nullable: true, name: 'additional_check_in_conditions')]
+    private ?string $additionalCheckInConditions = null;
+
+    #[ORM\Column(type: 'integer', nullable: true, name: 'banquet_seats')]
+    private ?int $banquetSeats = null;
+
     #[ORM\Column(type: 'address')]
     private Address $address;
 
@@ -138,6 +147,18 @@ class Property
 
     #[ORM\Column(type: 'coordinates')]
     private Coordinates $coordinates;
+
+    #[ORM\Column(type: 'integer', nullable: true, name: 'nearest_city_id')]
+    private ?int $nearestCityId = null;
+
+    #[ORM\Column(type: 'float', nullable: true, name: 'nearest_city_distance_km')]
+    private ?float $nearestCityDistanceKm = null;
+
+    #[ORM\Column(type: 'integer', nullable: true, name: 'region_center_city_id')]
+    private ?int $regionCenterCityId = null;
+
+    #[ORM\Column(type: 'float', nullable: true, name: 'region_center_distance_km')]
+    private ?float $regionCenterDistanceKm = null;
 
     #[ORM\Column(type: 'json')]
     private array $images = [];
@@ -291,6 +312,9 @@ class Property
         ?string $websiteUrl = null,
         ?string $videoUrl = null,
         ?int $minStayDays = null,
+        bool $prepaymentRequired = false,
+        ?string $additionalCheckInConditions = null,
+        ?int $banquetSeats = null,
     ) {
         $this->ownerId = $ownerId;
         $this->type = $type;
@@ -333,6 +357,18 @@ class Property
         $this->websiteUrl = $websiteUrl;
         $this->videoUrl = $videoUrl;
         $this->minStayDays = $minStayDays;
+        $isHouse = $type === 'house';
+        $this->prepaymentRequired = $isHouse && $prepaymentRequired;
+        $trimmedConditions = $additionalCheckInConditions !== null ? trim($additionalCheckInConditions) : '';
+        $this->additionalCheckInConditions = $isHouse && $trimmedConditions !== '' ? $trimmedConditions : null;
+        $this->banquetSeats = $isHouse ? $banquetSeats : null;
+        if ($isHouse) {
+            $this->livingArea = null;
+            $this->kitchenArea = null;
+            $this->totalFloors = null;
+            $this->yearBuilt = null;
+            $this->renovation = null;
+        }
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
         $this->revisions = new ArrayCollection();
@@ -747,6 +783,9 @@ class Property
             'checkInTime' => 'Время заезда',
             'checkOutTime' => 'Время выезда',
             'minStayDays' => 'Минимум суток для заселения',
+            'prepaymentRequired' => 'Требуется предоплата',
+            'additionalCheckInConditions' => 'Дополнительные условия заселения',
+            'banquetSeats' => 'Мест для банкета',
             'building' => 'Дом',
             'block' => 'Корпус',
             'cityId' => 'Город',
@@ -823,6 +862,9 @@ class Property
             'checkInTime' => $this->checkInTime,
             'checkOutTime' => $this->checkOutTime,
             'minStayDays' => $this->minStayDays,
+            'prepaymentRequired' => $this->prepaymentRequired,
+            'additionalCheckInConditions' => $this->additionalCheckInConditions,
+            'banquetSeats' => $this->banquetSeats,
             'building' => $this->address->getBuilding(),
             'block' => $this->address->getBlock(),
             'cityId' => $this->cityId,
@@ -1181,6 +1223,21 @@ class Property
     public function getMinStayDays(): ?int
     {
         return $this->minStayDays;
+    }
+
+    public function isPrepaymentRequired(): bool
+    {
+        return $this->prepaymentRequired;
+    }
+
+    public function getAdditionalCheckInConditions(): ?string
+    {
+        return $this->additionalCheckInConditions;
+    }
+
+    public function getBanquetSeats(): ?int
+    {
+        return $this->banquetSeats;
     }
 
     public function getAddress(): Address
@@ -1563,6 +1620,46 @@ class Property
         $this->updatedAt = new \DateTimeImmutable();
     }
 
+    public function getNearestCityId(): ?int
+    {
+        return $this->nearestCityId;
+    }
+
+    public function setNearestCityId(?int $nearestCityId): void
+    {
+        $this->nearestCityId = $nearestCityId;
+    }
+
+    public function getNearestCityDistanceKm(): ?float
+    {
+        return $this->nearestCityDistanceKm;
+    }
+
+    public function setNearestCityDistanceKm(?float $nearestCityDistanceKm): void
+    {
+        $this->nearestCityDistanceKm = $nearestCityDistanceKm;
+    }
+
+    public function getRegionCenterCityId(): ?int
+    {
+        return $this->regionCenterCityId;
+    }
+
+    public function setRegionCenterCityId(?int $regionCenterCityId): void
+    {
+        $this->regionCenterCityId = $regionCenterCityId;
+    }
+
+    public function getRegionCenterDistanceKm(): ?float
+    {
+        return $this->regionCenterDistanceKm;
+    }
+
+    public function setRegionCenterDistanceKm(?float $regionCenterDistanceKm): void
+    {
+        $this->regionCenterDistanceKm = $regionCenterDistanceKm;
+    }
+
     public function getLatitude(): float
     {
         return $this->coordinates->getLatitude();
@@ -1824,6 +1921,9 @@ class Property
         ?string $websiteUrl = null,
         ?string $videoUrl = null,
         ?array $externalCalendarUrls = null,
+        ?bool $prepaymentRequired = null,
+        ?string $additionalCheckInConditions = null,
+        ?int $banquetSeats = null,
     ): void {
         if ($type !== null) $this->type = $type;
         if ($dealType !== null) $this->dealType = $dealType;
@@ -1894,6 +1994,28 @@ class Property
         }
         if ($externalCalendarUrls !== null) {
             $this->setExternalCalendarUrls($externalCalendarUrls);
+        }
+        if ($prepaymentRequired !== null) {
+            $this->prepaymentRequired = $prepaymentRequired;
+        }
+        if ($additionalCheckInConditions !== null) {
+            $trimmed = trim($additionalCheckInConditions);
+            $this->additionalCheckInConditions = $trimmed !== '' ? $trimmed : null;
+        }
+        if ($banquetSeats !== null) {
+            $this->banquetSeats = $banquetSeats;
+        }
+
+        if ($this->type === 'house') {
+            $this->livingArea = null;
+            $this->kitchenArea = null;
+            $this->totalFloors = null;
+            $this->yearBuilt = null;
+            $this->renovation = null;
+        } else {
+            $this->prepaymentRequired = false;
+            $this->additionalCheckInConditions = null;
+            $this->banquetSeats = null;
         }
 
         $this->roomsInDeal = null;

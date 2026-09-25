@@ -110,6 +110,9 @@ export interface UpdatePropertyPayload {
     checkInTime?: string;
     checkOutTime?: string;
     minStayDays?: number;
+    prepaymentRequired?: boolean;
+    additionalCheckInConditions?: string;
+    banquetSeats?: number;
     building?: string;
     block?: string;
     cityId?: number;

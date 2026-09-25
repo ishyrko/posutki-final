@@ -144,6 +144,14 @@ class CreatePropertyRequest
     )]
     public ?int $minStayDays = null;
 
+    public bool $prepaymentRequired = false;
+
+    #[Assert\Length(max: 2000, maxMessage: 'Дополнительные условия заселения не длиннее {{ limit }} символов')]
+    public ?string $additionalCheckInConditions = null;
+
+    #[Assert\Range(min: 1, max: 500, notInRangeMessage: 'Мест для банкета: от {{ min }} до {{ max }}')]
+    public ?int $banquetSeats = null;
+
     public string $building = '';
 
     public ?string $block = null;

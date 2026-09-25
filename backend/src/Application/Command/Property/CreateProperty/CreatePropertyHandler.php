@@ -25,6 +25,7 @@ use App\Domain\Shared\ValueObject\Id;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\ExchangeRateService;
 use App\Infrastructure\Service\LandmarkProximityCalculator;
+use App\Infrastructure\Service\PropertyCityDistanceCalculator;
 use App\Infrastructure\Service\MetroProximityCalculator;
 use App\Application\Service\FreeListingLimitService;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -37,6 +38,7 @@ final class CreatePropertyHandler
         private readonly ExchangeRateService $exchangeRateService,
         private readonly MetroProximityCalculator $metroProximityCalculator,
         private readonly LandmarkProximityCalculator $landmarkProximityCalculator,
+        private readonly PropertyCityDistanceCalculator $propertyCityDistanceCalculator,
         private readonly CityDistrictResolverInterface $cityDistrictResolver,
         private readonly CityMicrodistrictResolverInterface $cityMicrodistrictResolver,
         private readonly ResidentialComplexResolverInterface $residentialComplexResolver,
@@ -127,6 +129,9 @@ final class CreatePropertyHandler
             roomsInDeal: $command->roomsInDeal,
             roomsArea: $command->roomsArea,
             minStayDays: $effectiveMinStayDays,
+            prepaymentRequired: $command->prepaymentRequired,
+            additionalCheckInConditions: $command->additionalCheckInConditions,
+            banquetSeats: $command->banquetSeats,
         );
         $property->publish();
         $property->setWeekendPriceNegotiable($command->weekendPriceNegotiable);
@@ -174,6 +179,7 @@ final class CreatePropertyHandler
 
         $this->metroProximityCalculator->syncForProperty($property);
         $this->landmarkProximityCalculator->syncForProperty($property);
+        $this->propertyCityDistanceCalculator->syncForProperty($property);
         $this->propertyRepository->save($property);
 
         if ($user->isTrustedPublisher()) {
@@ -189,8 +195,8 @@ final class CreatePropertyHandler
 
     private function assertAreaConstraints(string $propertyType, float $area, ?float $landArea): void
     {
-        if ($propertyType === 'house' && ($landArea === null || $landArea <= 0)) {
-            throw new DomainException('Укажите площадь участка в сотках для дома');
+        if ($propertyType === 'house' && $landArea !== null && $landArea <= 0) {
+            throw new DomainException('Площадь участка должна быть положительной');
         }
     }
 }
