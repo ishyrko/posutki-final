@@ -64,8 +64,10 @@ import {
 } from "@/features/properties/price-display";
 import { isCityPrefixSlug } from "@/features/catalog/apartment-catalog-slug-store";
 import {
+  ALL_HOUSES_CATALOG_PATH,
   buildCatalogUrl,
   buildPageTitle,
+  catalogHousePathForRegionSlug,
   buildRoomCatalogUrl,
   isDistrictCatalogContext,
   isLandmarkCatalogContext,
@@ -112,6 +114,15 @@ const CATALOG_LIST_VIEW_MIN_WIDTH = 1100;
 const CATALOG_ITEMS_PER_PAGE = 48;
 /** В режиме карты нужны все точки по фильтрам, не одна страница списка. */
 const CATALOG_MAP_FETCH_LIMIT = 500;
+
+const HOUSE_CATALOG_REGIONS = [
+  { slug: "minsk", label: "Минская область" },
+  { slug: "brest", label: "Брестская область" },
+  { slug: "vitebsk", label: "Витебская область" },
+  { slug: "gomel", label: "Гомельская область" },
+  { slug: "grodno", label: "Гродненская область" },
+  { slug: "mogilev", label: "Могилёвская область" },
+] as const;
 /** Стабильная ссылка: `data ?? []` в деструктуризации даёт новый массив на каждый рендер. */
 const EMPTY_METRO_STATIONS: MetroStation[] = [];
 
@@ -757,8 +768,43 @@ export default function CatalogPage({
     "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
   );
 
+  const isHouseCatalog = parsed.propertyType === "house";
+  const houseRegionValue = nationwide
+    ? "all"
+    : parsed.regionSlug && HOUSE_CATALOG_REGIONS.some((region) => region.slug === parsed.regionSlug)
+      ? parsed.regionSlug
+      : "minsk";
+
+  const navigateHouseRegion = (value: string) => {
+    const href = value === "all" ? ALL_HOUSES_CATALOG_PATH : catalogHousePathForRegionSlug(value);
+    router.push(href);
+  };
+
   const renderCatalogFilters = () => (
     <div className="space-y-5">
+      {isHouseCatalog && (
+        <div>
+          <label className="text-sm font-semibold text-foreground mb-2 block font-display">Область</label>
+          <Select value={houseRegionValue} onValueChange={navigateHouseRegion}>
+            <SelectTrigger
+              className={cn(
+                filterSurfaceInput,
+                "w-full cursor-pointer justify-between gap-2 text-left [&>span]:min-w-0 [&>span]:truncate",
+              )}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border z-50">
+              <SelectItem value="all">Вся Беларусь</SelectItem>
+              {HOUSE_CATALOG_REGIONS.map((region) => (
+                <SelectItem key={region.slug} value={region.slug}>
+                  {region.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       {isLandmarkPage && (
         <div>
           <label className="text-sm font-semibold text-foreground mb-2 block font-display">
