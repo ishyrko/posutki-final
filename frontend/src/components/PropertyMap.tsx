@@ -187,6 +187,8 @@ const PropertyMap = ({
     });
   }, [activeId]);
 
+  // Selection highlight is the effect above. Rebuilding placemarks on activeId
+  // calls setBounds and resets the zoom the user already set.
   useEffect(() => {
     const map = mapRef.current;
     const ymaps = ymapsRef.current;
@@ -204,7 +206,8 @@ const PropertyMap = ({
 
     groups.forEach((group) => {
       const [lat, lng] = [group[0].lat, group[0].lng];
-      const isActive = activeId != null && group.some((p) => p.id === activeId);
+      const currentActiveId = activeIdRef.current;
+      const isActive = currentActiveId != null && group.some((p) => p.id === currentActiveId);
       const count = group.length;
 
       const data = showBalloons
@@ -249,7 +252,7 @@ const PropertyMap = ({
         map.setBounds(bounds, { checkZoomRange: true, zoomMargin: 40 });
       }
     }
-  }, [properties, showBalloons, mapReady, fallbackView.center, fallbackView.zoom, activeId]);
+  }, [properties, showBalloons, mapReady, fallbackView.center, fallbackView.zoom]);
 
   return (
     <div

@@ -19,8 +19,11 @@ function installAnalyticsStubs(): void {
   window.dataLayer = window.dataLayer || [];
 
   if (typeof window.gtag !== "function") {
-    window.gtag = function gtag(...args: unknown[]) {
-      window.dataLayer?.push(args);
+    // gtag.js treats a dataLayer item as a command only when it is an Arguments
+    // object (`[object Arguments]` / `callee`). An array from rest params is dropped.
+    window.gtag = function gtag() {
+      // eslint-disable-next-line prefer-rest-params -- must push the Arguments object, not an array
+      window.dataLayer?.push(arguments);
     };
   }
 
