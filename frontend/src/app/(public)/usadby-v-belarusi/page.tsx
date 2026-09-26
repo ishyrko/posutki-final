@@ -1,4 +1,4 @@
-import CatalogPage from "@/features/catalog/CatalogPage";
+import CatalogPageWithSuspense from "@/features/catalog/CatalogPageWithSuspense";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { CatalogSlugProviderFromSets } from "@/components/CatalogSlugProviderFromSets";
 import {
@@ -39,9 +39,9 @@ export default async function AllHousesPage() {
   return (
     <CatalogSlugProviderFromSets sets={slugSets}>
       <JsonLdScript data={buildBreadcrumbJsonLd(breadcrumbs, ALL_HOUSES_CATALOG_PATH)} />
-      <CatalogPage parsed={parsed} title={PAGE_TITLE} nationwide>
+      <CatalogPageWithSuspense parsed={parsed} title={PAGE_TITLE} nationwide>
         <PageBreadcrumbs items={breadcrumbs} />
-      </CatalogPage>
+      </CatalogPageWithSuspense>
     </CatalogSlugProviderFromSets>
   );
 }

@@ -41,7 +41,7 @@ import {
 } from "@/features/catalog/validate-segments-server";
 import { resolveLandmarkImageUrl } from "@/features/landmarks/image";
 import { formatAddress, Property } from "@/features/properties/types";
-import CatalogPage from "@/features/catalog/CatalogPage";
+import CatalogPageWithSuspense from "@/features/catalog/CatalogPageWithSuspense";
 import HomePage from "@/features/home/HomePage";
 import FeaturesSection from "@/components/FeaturesSection";
 import { fetchApi, fetchPublicApiNullable } from "@/lib/server-api";
@@ -531,7 +531,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
       {isFirstPage && cityFaqJsonLd ? <JsonLdScript data={cityFaqJsonLd} /> : null}
       {isFirstPage && placeFaqJsonLd ? <JsonLdScript data={placeFaqJsonLd} /> : null}
       {isFirstPage && roomFaqJsonLd ? <JsonLdScript data={roomFaqJsonLd} /> : null}
-      <CatalogPage
+      <CatalogPageWithSuspense
         parsed={parsed}
         title={title}
         landmark={landmark}
@@ -541,7 +541,7 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
         roomSeoFooter={roomSeoFooter}
       >
         <PageBreadcrumbs items={catalogBreadcrumbs} />
-      </CatalogPage>
+      </CatalogPageWithSuspense>
     </CatalogSlugProviderFromSets>
   );
 }
