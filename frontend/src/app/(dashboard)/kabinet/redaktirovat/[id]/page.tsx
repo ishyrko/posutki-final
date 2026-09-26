@@ -203,7 +203,10 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
         dealType: 'daily',
         title: revisionData?.title ?? property.title,
         description: revisionData?.description ?? property.description,
-        rooms: String(revisionData?.rooms ?? property.specifications.rooms),
+        rooms: (() => {
+            const raw = revisionData?.rooms ?? property.specifications.rooms;
+            return raw != null && raw > 0 ? String(raw) : '';
+        })(),
         roomsInDeal:
             revisionData?.roomsInDeal != null
                 ? String(revisionData.roomsInDeal)
@@ -594,11 +597,11 @@ export default function EditPropertyPage() {
             toast.error(`Дополнительные условия заселения не длиннее ${ADDITIONAL_CHECK_IN_CONDITIONS_MAX_LENGTH} символов`);
             return;
         }
-        if (showRooms(form.type) && roomsRequired(form.type) && !form.rooms) {
+        if (showRooms(form.type) && roomsRequired(form.type) && !form.rooms.trim()) {
             toast.error('Укажите количество комнат');
             return;
         }
-        if (showRooms(form.type) && form.rooms && !isNumberInRange(rooms, ROOMS_MIN, ROOMS_MAX)) {
+        if (showRooms(form.type) && form.rooms.trim() && !isNumberInRange(rooms, ROOMS_MIN, ROOMS_MAX)) {
             toast.error(`Количество комнат должно быть от ${ROOMS_MIN} до ${ROOMS_MAX}`);
             return;
         }
@@ -763,7 +766,9 @@ export default function EditPropertyPage() {
                 landArea: needsLotArea(form.type) && form.landArea
                     ? landArea
                     : undefined,
-                rooms: showRooms(form.type) ? (rooms || 1) : undefined,
+                rooms: showRooms(form.type) && form.rooms.trim() !== ''
+                    ? Number(form.rooms)
+                    : undefined,
                 bathrooms: showBathrooms(form.type)
                     ? resolvedBathroomsForPayload(form.bathrooms, form.amenities)
                     : undefined,
@@ -1374,7 +1379,7 @@ export default function EditPropertyPage() {
                                                 type="button"
                                                 onClick={() => toggleAmenity(item.id)}
                                                 className={cn(
-                                                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all',
+                                                    'inline-flex cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all',
                                                     selected
                                                         ? 'bg-primary text-primary-foreground border border-primary'
                                                         : 'bg-muted/70 border border-transparent text-foreground hover:bg-muted',
@@ -1488,7 +1493,7 @@ export default function EditPropertyPage() {
                                                     type="button"
                                                     onMouseDown={(e) => e.preventDefault()}
                                                     onClick={() => selectCity(city)}
-                                                    className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
+                                                    className="w-full cursor-pointer text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
                                                 >
                                                     <span className="font-medium text-foreground">{parts[0]}</span>
                                                     {parts.length > 1 && (
@@ -1572,7 +1577,7 @@ export default function EditPropertyPage() {
                                                     );
                                                     setStreetDropdownOpen(false);
                                                 }}
-                                                className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
+                                                className="w-full cursor-pointer text-left px-4 py-2.5 hover:bg-accent transition-colors first:rounded-t-xl last:rounded-b-xl"
                                             >
                                                 {street.type && (
                                                     <span className="text-sm text-muted-foreground mr-1">{street.type}</span>
@@ -1689,7 +1694,7 @@ export default function EditPropertyPage() {
                                             const next = form.additionalServices.filter((_, i) => i !== idx);
                                             update('additionalServices', next.length > 0 ? next : [{ name: '', price: '' }]);
                                         }}
-                                        className="text-destructive hover:text-destructive/80 transition-colors shrink-0"
+                                        className="cursor-pointer text-destructive hover:text-destructive/80 transition-colors shrink-0"
                                         aria-label="Удалить услугу"
                                     >
                                         <X className="w-4 h-4" />
@@ -1760,7 +1765,7 @@ export default function EditPropertyPage() {
                                             const next = form.externalCalendarUrls.filter((_, i) => i !== idx);
                                             update('externalCalendarUrls', next.length > 0 ? next : ['']);
                                         }}
-                                        className="text-destructive hover:text-destructive/80 transition-colors shrink-0"
+                                        className="cursor-pointer text-destructive hover:text-destructive/80 transition-colors shrink-0"
                                         aria-label="Удалить календарь"
                                     >
                                         <X className="w-4 h-4" />
