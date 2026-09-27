@@ -13,10 +13,13 @@ import {
   isPropertyId,
   isBaseCityApartmentCatalogPage,
   isBaseRegionHouseCatalogPage,
+  resolveHouseCatalogRegionSlug,
   isRoomCatalogPage,
   isRoomSeoBucket,
   buildCatalogCitySeoHeading,
   buildCatalogCityFaqHeading,
+  buildCatalogHouseSeoHeading,
+  buildCatalogHouseFaqHeading,
   buildCatalogApartmentFaqHeading,
   buildCatalogRoomSeoHeading,
   buildCatalogRoomFaqHeading,
@@ -395,8 +398,9 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
     }
   }
 
-  if (isFirstPage && isBaseRegionHouseCatalogPage(parsed) && parsed.regionSlug && !citySeoFooter) {
-    const regionCatalogContent = await fetchRegionCatalogSeo(parsed.regionSlug);
+  if (isFirstPage && isBaseRegionHouseCatalogPage(parsed) && !citySeoFooter) {
+    const houseRegionSlug = resolveHouseCatalogRegionSlug(parsed);
+    const regionCatalogContent = await fetchRegionCatalogSeo(houseRegionSlug);
     if (regionCatalogContent?.catalogSeoVisible) {
       const rawSeoText = regionCatalogContent.catalogSeoText?.trim() ?? null;
       const faqItems = (regionCatalogContent.faq ?? []).filter(
@@ -405,12 +409,11 @@ export default async function SegmentsPage({ params, searchParams }: PageProps) 
       );
       const sanitizedHtml = rawSeoText ? sanitizeArticleHtml(rawSeoText) : null;
       if (sanitizedHtml || faqItems.length > 0) {
-        const regionName = regionCatalogContent.name?.trim() || "области";
         citySeoFooter = {
-          heading: `Аренда усадеб — ${regionName}`,
+          heading: buildCatalogHouseSeoHeading(houseRegionSlug),
           html: sanitizedHtml ?? "",
           faq: faqItems.length > 0 ? faqItems : undefined,
-          faqTitle: faqItems.length > 0 ? `Вопросы об аренде усадеб — ${regionName}` : undefined,
+          faqTitle: faqItems.length > 0 ? buildCatalogHouseFaqHeading(houseRegionSlug) : undefined,
         };
       }
       if (faqItems.length > 0) {

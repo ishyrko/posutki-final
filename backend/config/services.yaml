@@ -78,6 +78,9 @@ services:
     App\Domain\Property\Repository\RegionCatalogContentRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\RegionCatalogContentRepository
 
+    App\Domain\Property\Repository\NationwideHouseCatalogContentRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\NationwideHouseCatalogContentRepository
+
     App\Domain\Property\Repository\RegionDistrictRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\RegionDistrictRepository
 

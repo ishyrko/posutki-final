@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { ensureApartmentCatalogSlugsConfigured } from "@/lib/apartment-catalog-slugs-server";
 import { isCityPrefixSlug } from "@/features/catalog/apartment-catalog-slug-store";
 import {
+  ALL_HOUSES_CATALOG_PATH,
   buildCatalogUrl,
   catalogHousePathForRegionSlug,
   MINSK_CITY_SLUG,
@@ -163,6 +164,16 @@ export async function POST(request: Request) {
     revalidateTag(`static-page-${slug}`, { expire: 0 });
     revalidatePath(`/${slug}`, "page");
     return NextResponse.json({ revalidated: true, type: "static-page", slug });
+  }
+
+  if (type === "house-catalog") {
+    revalidateTag("house-catalog-seo", { expire: 0 });
+    revalidatePath(ALL_HOUSES_CATALOG_PATH, "page");
+    return NextResponse.json({
+      revalidated: true,
+      type: "house-catalog",
+      path: ALL_HOUSES_CATALOG_PATH,
+    });
   }
 
   if (type === "region") {

@@ -423,11 +423,10 @@ export function resolveCatalogCitySlug(parsed: ParsedSegments): string {
   return parsed.citySlug ?? parsed.regionSlug ?? MINSK_CITY_SLUG;
 }
 
-/** Базовая страница каталога домов в области. */
+/** Базовая страница каталога усадеб области. Без префикса в URL это Минская область. */
 export function isBaseRegionHouseCatalogPage(parsed: ParsedSegments): boolean {
   return (
     parsed.propertyType === 'house' &&
-    Boolean(parsed.regionSlug) &&
     !parsed.citySlug &&
     !parsed.nearMetro &&
     !parsed.metroStationSlug &&
@@ -437,6 +436,11 @@ export function isBaseRegionHouseCatalogPage(parsed: ParsedSegments): boolean {
     !parsed.landmarkSlug &&
     !parsed.roomsBucket
   );
+}
+
+/** Slug области для каталога усадеб. `/usadby/` без префикса — Минская область. */
+export function resolveHouseCatalogRegionSlug(parsed: ParsedSegments): string {
+  return parsed.regionSlug ?? HEADER_REGION_MINSK_SLUG;
 }
 
 export function catalogHousePathForRegionSlug(regionSlug: string): string {
@@ -520,6 +524,18 @@ export function buildCatalogApartmentFaqHeading(location: string): string {
 export function buildCatalogCityFaqHeading(citySlug: string): string {
   const location = catalogApartmentLocation(citySlug);
   return buildCatalogApartmentFaqHeading(location);
+}
+
+/** Заголовок SEO-блока под каталогом усадеб области. */
+export function buildCatalogHouseSeoHeading(regionSlug: string): string {
+  const location = CATALOG_HOUSE_LOCATION[regionSlug] ?? "в области";
+  return `Аренда усадеб ${location}`;
+}
+
+/** Заголовок FAQ под каталогом усадеб области. */
+export function buildCatalogHouseFaqHeading(regionSlug: string): string {
+  const location = CATALOG_HOUSE_LOCATION[regionSlug] ?? "в области";
+  return `Вопросы об аренде усадеб ${location}`;
 }
 
 /** Структура URL каталога: регион → тип → город / метро (без проверки slug в API). */

@@ -29,8 +29,8 @@ class RegionCatalogContentCrudController extends AbstractCrudController
     public function configureCrud(Crud $crud): Crud
     {
         return $crud
-            ->setEntityLabelInSingular('SEO по областям')
-            ->setEntityLabelInPlural('SEO по областям')
+            ->setEntityLabelInSingular('SEO усадеб области')
+            ->setEntityLabelInPlural('SEO усадеб по областям')
             ->setSearchFields(['regionId']);
     }
 
@@ -60,7 +60,8 @@ class RegionCatalogContentCrudController extends AbstractCrudController
             ->formatValue(fn (?int $regionId): string => $this->formatRegionLabel($regionId));
 
         yield CatalogContentAdminFields::visibilityField();
-        yield CatalogContentAdminFields::seoTextField('SEO-текст под каталогом по областям');
+        yield CatalogContentAdminFields::seoTextField('SEO-текст под каталогом усадеб')
+            ->setHelp('Первая страница каталога усадеб этой области.');
         yield CatalogContentAdminFields::faqField();
     }
 

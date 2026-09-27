@@ -10,6 +10,7 @@ use App\Domain\Property\Entity\CityDistrict;
 use App\Domain\Property\Entity\CityMicrodistrict;
 use App\Domain\Property\Entity\Landmark;
 use App\Domain\Property\Entity\CityRoomCatalogContent;
+use App\Domain\Property\Entity\NationwideHouseCatalogContent;
 use App\Domain\Property\Entity\RegionCatalogContent;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\RegionRepositoryInterface;
@@ -102,6 +103,12 @@ final class RevalidateNextjsListener implements EventSubscriberInterface
             if ($region !== null) {
                 $this->notifyNextJs('region', $region->getSlug());
             }
+
+            return;
+        }
+
+        if ($entity instanceof NationwideHouseCatalogContent) {
+            $this->notifyNextJs('house-catalog', 'belarus');
 
             return;
         }
