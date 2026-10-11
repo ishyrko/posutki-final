@@ -8,6 +8,7 @@ use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\SellerType;
 use App\Domain\Property\Validation\PropertyImageLimitsValidator;
+use App\Domain\Property\Validation\PropertyImageUrlValidator;
 use App\Domain\Property\Validation\PropertyVideoUrlValidator;
 use App\Domain\Shared\Exception\DomainException;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -194,6 +195,14 @@ class UpdatePropertyRequest
     #[Assert\Callback]
     public function validateImages(ExecutionContextInterface $context): void
     {
+        if ($this->images !== null && !PropertyImageUrlValidator::allValid($this->images)) {
+            $context->buildViolation('Некоторые фото не загрузились. Удалите их и загрузите заново')
+                ->atPath('images')
+                ->addViolation();
+
+            return;
+        }
+
         if ($this->images === null || $this->type === null) {
             return;
         }

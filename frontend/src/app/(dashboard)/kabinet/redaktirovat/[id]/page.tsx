@@ -45,7 +45,7 @@ import { useCityAutocompleteResults, useSearchStreets } from '@/features/create-
 import { LISTING_AMENITY_GROUPS } from '@/features/create-listing/listing-amenity-groups';
 import { PAYMENT_METHOD_OPTIONS } from '@/features/properties/payment-methods';
 import { PropertyPhotoGrid } from '@/features/create-listing/components/PropertyPhotoGrid';
-import { createUploadedPhotoFromUrl } from '@/features/create-listing/photo-utils';
+import { createUploadedPhotoFromUrl, getPersistedPhotos } from '@/features/create-listing/photo-utils';
 import type { UploadedPhoto } from '@/features/create-listing/types';
 import {
     balconyOptions,
@@ -733,7 +733,7 @@ export default function EditPropertyPage() {
             toast.error('Дождитесь загрузки всех фото');
             return;
         }
-        const readyImageCount = form.images.filter((img) => !img.uploading).length;
+        const readyImageCount = getPersistedPhotos(form.images).length;
         if (readyImageCount < MIN_PHOTOS) {
             toast.error(`Загрузите не менее ${MIN_PHOTOS} фотографий`);
             return;
@@ -811,7 +811,7 @@ export default function EditPropertyPage() {
                     form.latitude !== null && form.longitude !== null
                         ? { latitude: form.latitude, longitude: form.longitude }
                         : undefined,
-                images: form.images.filter((img) => !img.uploading).map((img) => img.url),
+                images: getPersistedPhotos(form.images).map((img) => img.url),
                 amenities: form.amenities,
                 weekendPriceNegotiable: form.weekendPriceNegotiable,
                 additionalServices: form.type === 'house'

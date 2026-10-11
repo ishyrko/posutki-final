@@ -201,10 +201,11 @@ export function PropertyPhotoGrid({
                     ? `${file.name}: файл слишком большой (макс. ${MAX_FILE_SIZE_MB} МБ)`
                     : `Не удалось загрузить фото ${file.name}`;
                 toast.error(message);
-                updatePhotoById(id, (photo) => ({ ...photo, uploading: false }));
+                // A photo without a server URL (blob: preview) must not stay in the list, or it would be submitted with the listing.
+                removePhotoById(id);
             }
         },
-        [updatePhotoById],
+        [updatePhotoById, removePhotoById],
     );
 
     const handleFiles = useCallback(

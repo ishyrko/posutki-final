@@ -28,6 +28,14 @@ export const createUploadedPhotoFromUrl = (url: string): UploadedPhoto => ({
     url,
 });
 
+/** The photo is stored on the server (not a temporary blob:/data: preview). */
+export const isPersistedPhoto = (photo: UploadedPhoto): boolean =>
+    !photo.uploading && !/^(blob|data):/i.test(photo.url);
+
+/** Photos ready to submit: only those with a permanent URL. */
+export const getPersistedPhotos = (photos: UploadedPhoto[]): UploadedPhoto[] =>
+    photos.filter(isPersistedPhoto);
+
 export function resolveUploadedPhotoSrc(photo: UploadedPhoto): string {
     return photo.thumbnailUrl || photo.url;
 }

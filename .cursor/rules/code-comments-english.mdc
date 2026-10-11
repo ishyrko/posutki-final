@@ -1,0 +1,11 @@
+---
+description: Code comments must be written in English only
+alwaysApply: true
+---
+
+# Code comments: English only
+
+- Write **all code comments in English**: `//`, `/* */`, JSDoc, PHPDoc, `#` comments, docblocks, TODO/FIXME notes.
+- This applies to every language in the repo (TypeScript/TSX, PHP, SQL, YAML, shell, etc.).
+- User-facing strings (UI text, validation messages, emails, API error messages) stay in **Russian** — this rule is about comments only.
+- When editing a file that already contains Russian comments, translate only the comments you touch; do not mass-rewrite unrelated ones.

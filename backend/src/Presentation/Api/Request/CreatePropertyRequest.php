@@ -9,6 +9,7 @@ use App\Domain\Property\Enum\DealType;
 use App\Domain\Property\Enum\SellerType;
 use App\Domain\Property\Validation\PropertyDailyPriceValidator;
 use App\Domain\Property\Validation\PropertyImageLimitsValidator;
+use App\Domain\Property\Validation\PropertyImageUrlValidator;
 use App\Domain\Property\Validation\PropertyVideoUrlValidator;
 use App\Domain\Shared\Exception\DomainException;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -229,6 +230,14 @@ class CreatePropertyRequest
     #[Assert\Callback]
     public function validateImages(ExecutionContextInterface $context): void
     {
+        if (!PropertyImageUrlValidator::allValid($this->images)) {
+            $context->buildViolation('Некоторые фото не загрузились. Удалите их и загрузите заново')
+                ->atPath('images')
+                ->addViolation();
+
+            return;
+        }
+
         try {
             PropertyImageLimitsValidator::assertValid($this->type, count($this->images));
         } catch (DomainException $e) {

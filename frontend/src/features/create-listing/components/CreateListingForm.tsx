@@ -108,6 +108,7 @@ import {
     isCitySelectionPending,
     isFloorNotAboveTotalFloors,
 } from '../validation';
+import { getPersistedPhotos } from '@/features/create-listing/photo-utils';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { isAuthenticated } from '@/lib/auth';
 import { getApiErrorMessage, getApiValidationErrors } from '@/lib/api-error';
@@ -563,7 +564,7 @@ export function CreateListingForm() {
                 if (form.photos.some((p) => p.uploading)) {
                     errs.photos = 'Дождитесь окончания загрузки фото';
                 } else {
-                    const ready = form.photos.filter((p) => !p.uploading).length;
+                    const ready = getPersistedPhotos(form.photos).length;
                     if (ready < MIN_PHOTOS) {
                         errs.photos = `Загрузите не менее ${MIN_PHOTOS} фотографий`;
                     }
@@ -680,7 +681,7 @@ export function CreateListingForm() {
             case 3: return true;
             case 4: {
                 if (form.photos.some((p) => p.uploading)) return false;
-                return form.photos.filter((p) => !p.uploading).length >= MIN_PHOTOS;
+                return getPersistedPhotos(form.photos).length >= MIN_PHOTOS;
             }
             case 5:
                 if (!form.cityId) return false;
@@ -771,7 +772,7 @@ export function CreateListingForm() {
             toast.error('Дождитесь окончания загрузки всех фото');
             return;
         }
-        const readyPhotoCount = form.photos.filter((p) => !p.uploading).length;
+        const readyPhotoCount = getPersistedPhotos(form.photos).length;
         if (readyPhotoCount < MIN_PHOTOS) {
             toast.error(`Загрузите не менее ${MIN_PHOTOS} фотографий`);
             return;
@@ -846,7 +847,7 @@ export function CreateListingForm() {
             streetId: form.streetId ?? undefined,
             streetName: form.streetId ? undefined : form.streetName.trim() || undefined,
             coordinates: { latitude: lat, longitude: lng },
-            images: form.photos.filter((p) => !p.uploading).map((p) => p.url),
+            images: getPersistedPhotos(form.photos).map((p) => p.url),
             amenities: form.amenities,
             weekendPriceNegotiable: form.weekendPriceNegotiable,
             additionalServices: form.propertyType === 'house'
