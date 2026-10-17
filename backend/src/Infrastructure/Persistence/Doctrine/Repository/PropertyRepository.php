@@ -11,6 +11,7 @@ use App\Domain\Property\Entity\PropertyLandmark;
 use App\Domain\Property\Enum\PropertyType;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
+use App\Domain\User\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\QueryBuilder;
@@ -680,12 +681,8 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
     public function countPublishedApartmentsGroupedByCity(): array
     {
         /** @var list<array{cityId: int|string, cnt: string|int}> $rows */
-        $rows = $this->createQueryBuilder('p')
+        $rows = $this->publishedApartmentsExcludingPartnersQueryBuilder()
             ->select('p.cityId AS cityId', 'COUNT(p.id) AS cnt')
-            ->where('p.status = :status')
-            ->andWhere('p.type = :type')
-            ->setParameter('status', 'published')
-            ->setParameter('type', PropertyType::Apartment->value)
             ->groupBy('p.cityId')
             ->getQuery()
             ->getArrayResult();
@@ -696,6 +693,33 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
         }
 
         return $out;
+    }
+
+    public function countPublishedApartmentsInCity(int $cityId): int
+    {
+        return (int) $this->publishedApartmentsExcludingPartnersQueryBuilder()
+            ->select('COUNT(p.id)')
+            ->andWhere('p.cityId = :cityId')
+            ->setParameter('cityId', $cityId)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Published apartments that count toward the free-listing city ceiling.
+     * Partner accounts have their own listing limit and do not shrink everyone else's.
+     */
+    private function publishedApartmentsExcludingPartnersQueryBuilder(): QueryBuilder
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.status = :status')
+            ->andWhere('p.type = :type')
+            ->andWhere(sprintf(
+                'NOT EXISTS (SELECT 1 FROM %s u WHERE u.id = p.ownerId AND u.isPartner = true)',
+                User::class,
+            ))
+            ->setParameter('status', 'published')
+            ->setParameter('type', PropertyType::Apartment->value);
     }
 
     /**

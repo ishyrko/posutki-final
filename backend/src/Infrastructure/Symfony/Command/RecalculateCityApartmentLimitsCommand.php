@@ -15,7 +15,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'app:recalculate-city-apartment-limits',
-    description: 'Recalculate cities.free_apartments_per_account from published apartment counts',
+    description: 'Recalculate cities.free_apartments_per_account from published apartments, excluding partner listings',
 )]
 class RecalculateCityApartmentLimitsCommand extends Command
 {

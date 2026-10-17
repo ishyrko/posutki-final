@@ -112,7 +112,7 @@ class CityCrudController extends AbstractCrudController
 
         yield IntegerField::new('freeApartmentsPerAccount', 'Бесплатных квартир на аккаунт')
             ->setFormTypeOption('disabled', true)
-            ->setHelp('Автоматически: max(1, 10 − число опубликованных квартир в городе).')
+            ->setHelp('Автоматически: max(1, 10 − число опубликованных квартир в городе, без объявлений партнёров).')
             ->hideOnForm();
 
         yield NumberField::new('latitude', 'Широта')

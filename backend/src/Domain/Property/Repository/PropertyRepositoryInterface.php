@@ -145,7 +145,15 @@ interface PropertyRepositoryInterface
     public function ownerHasFreeTrialHistory(Id $ownerId, ?Id $excludeId = null): bool;
 
     /**
+     * Published apartments per city, excluding listings owned by partner accounts.
+     * Used to size the free-listing city ceiling.
+     *
      * @return array<int, int> cityId => published apartment count
      */
     public function countPublishedApartmentsGroupedByCity(): array;
+
+    /**
+     * Published apartments in one city, excluding listings owned by partner accounts.
+     */
+    public function countPublishedApartmentsInCity(int $cityId): int;
 }

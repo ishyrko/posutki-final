@@ -47,6 +47,36 @@ final class FreeListingLimitServiceTest extends TestCase
         self::assertNull($service->describeLimits($property->getOwnerId(), 1, 'apartment')['city']);
     }
 
+    public function testCityLimitIgnoresPartnerListings(): void
+    {
+        $city = new City();
+        $city->setName('Гомель');
+        $city->setSlug('gomel');
+        $city->setShortName('Гомель');
+        $id = new \ReflectionProperty(City::class, 'id');
+        $id->setValue($city, 5);
+
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository->expects(self::once())
+            ->method('countPublishedApartmentsInCity')
+            ->with(5)
+            ->willReturn(2);
+
+        $cityRepository = $this->createMock(CityRepositoryInterface::class);
+        $cityRepository->method('findById')->with(5)->willReturn($city);
+        $cityRepository->expects(self::once())->method('save')->with($city);
+
+        $service = new FreeListingLimitService(
+            $propertyRepository,
+            $cityRepository,
+            $this->createStub(UserRepositoryInterface::class),
+        );
+
+        $service->refreshCityApartmentLimit(5);
+
+        self::assertSame(8, $city->getFreeApartmentsPerAccount());
+    }
+
     public function testRegularUserHitsAccountLimitOfFive(): void
     {
         $property = $this->createProperty(ownerId: 3);

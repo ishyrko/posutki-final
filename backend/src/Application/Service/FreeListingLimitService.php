@@ -179,11 +179,7 @@ final class FreeListingLimitService
             return;
         }
 
-        $counts = $this->propertyRepository->countPublishedByEffectiveLevel(
-            PropertyType::Apartment->value,
-            $cityId,
-        );
-        $publishedCount = array_sum($counts);
+        $publishedCount = $this->propertyRepository->countPublishedApartmentsInCity($cityId);
 
         $city->setFreeApartmentsPerAccount(
             FreeListingLimits::calculateCityApartmentLimit($publishedCount),
