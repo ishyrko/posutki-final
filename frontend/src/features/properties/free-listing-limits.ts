@@ -1,7 +1,7 @@
 import type { FreeListingLimitsInfo, Property } from '@/features/properties/types';
 
 const LIMIT_ACTION_HINT =
-    ' Оплатите VIP или освободите слот: скройте другое объявление или купите для него VIP.';
+    ' Оплатите VIP для этого объявления или освободите слот, скрыв другое объявление.';
 
 export function formatFreeLimitExceededIntro(
     property: Property,
