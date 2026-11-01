@@ -169,6 +169,7 @@ final class PropertyTest extends TestCase
 
         self::assertSame('awaiting_payment', $property->getStatus());
         self::assertNull($property->getPublishedAt());
+        self::assertFalse($property->holdsFreeSlot());
     }
 
     public function testUnarchiveWithoutFreeLimitMovesToAwaitingPayment(): void
@@ -182,6 +183,35 @@ final class PropertyTest extends TestCase
 
         self::assertSame('awaiting_payment', $property->getStatus());
         self::assertNull($property->getArchivedAt());
+        self::assertFalse($property->holdsFreeSlot());
+    }
+
+    public function testArchiveReleasesTheFreeSlot(): void
+    {
+        $property = $this->createProperty();
+        $property->publish();
+        $property->approve();
+
+        self::assertTrue($property->holdsFreeSlot());
+
+        $property->archive();
+
+        self::assertSame('archived', $property->getStatus());
+        self::assertFalse($property->holdsFreeSlot());
+    }
+
+    public function testUnarchiveDuringPaidVipDoesNotRestoreAFreeSlot(): void
+    {
+        $property = $this->createProperty();
+        $property->publish();
+        $property->approve();
+        $property->applyLevelPlacement(1, new \DateTimeImmutable('+1 month'));
+        $property->archive();
+
+        $property->unarchive(withinFreeLimit: true);
+
+        self::assertSame('published', $property->getStatus());
+        self::assertFalse($property->holdsFreeSlot());
     }
 
     public function testPublishFreeSlotFromAwaitingPayment(): void
@@ -194,6 +224,7 @@ final class PropertyTest extends TestCase
 
         self::assertSame('published', $property->getStatus());
         self::assertNotNull($property->getPublishedAt());
+        self::assertTrue($property->holdsFreeSlot());
     }
 
     public function testDemoteToAwaitingPayment(): void
@@ -207,6 +238,33 @@ final class PropertyTest extends TestCase
 
         self::assertSame('awaiting_payment', $property->getStatus());
         self::assertEquals($publishedAt, $property->getPublishedAt());
+        self::assertTrue($property->holdsFreeSlot());
+    }
+
+    public function testPaidVipKeepsTheFreeSlotTheListingAlreadyHeld(): void
+    {
+        $property = $this->createProperty();
+        $property->publish();
+        $property->approve();
+
+        self::assertTrue($property->holdsFreeSlot());
+
+        $property->applyLevelPlacement(2, new \DateTimeImmutable('+1 month'));
+
+        self::assertSame(2, $property->getPlacementBaseLevel());
+        self::assertTrue($property->holdsFreeSlot());
+    }
+
+    public function testPublishAfterPaymentDoesNotTakeAFreeSlot(): void
+    {
+        $property = $this->createProperty();
+        $property->publish();
+        $property->approve(withinFreeLimit: false);
+
+        $property->publishAfterPayment();
+
+        self::assertSame('published', $property->getStatus());
+        self::assertFalse($property->holdsFreeSlot());
     }
 
     public function testPendingRevisionDiffIgnoresEmptyCalendarListVersusNull(): void

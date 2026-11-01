@@ -102,6 +102,7 @@ class ExpirePropertyPlacementsCommand extends Command
             if (
                 $paidLevelExpired
                 && $property->getStatus() === 'published'
+                && !$property->holdsFreeSlot()
                 && !$this->freeListingLimitService->canPublishFree($property)
             ) {
                 $property->demoteToAwaitingPayment();

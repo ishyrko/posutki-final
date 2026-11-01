@@ -38,6 +38,41 @@ final class UnarchivePropertyHandlerTest extends TestCase
 
         self::assertSame('published', $property->getStatus());
         self::assertNull($property->getArchivedAt());
+        self::assertTrue($property->holdsFreeSlot());
+    }
+
+    public function testUnarchiveDuringPaidVipDoesNotReclaimFreeSlotWhenQuotaIsFull(): void
+    {
+        $property = $this->createProperty(ownerId: 7);
+        $property->setStatus('published');
+        $property->applyLevelPlacement(1, new \DateTimeImmutable('+1 month'));
+        $property->archive();
+
+        $repository = $this->createMock(PropertyRepositoryInterface::class);
+        $repository->method('findById')->willReturn($property);
+        $repository->expects(self::once())->method('save')->with($property);
+
+        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
+        $propertyRepository->method('countFreePublishedByOwner')->willReturn(5);
+        $propertyRepository->method('countFreePublishedApartmentsByOwnerInCity')->willReturn(1);
+
+        $city = $this->createStub(City::class);
+        $city->method('getFreeApartmentsPerAccount')->willReturn(1);
+        $cityRepository = $this->createStub(CityRepositoryInterface::class);
+        $cityRepository->method('findById')->willReturn($city);
+
+        $freeListingLimitService = new FreeListingLimitService(
+            $propertyRepository,
+            $cityRepository,
+            $this->createStub(UserRepositoryInterface::class),
+        );
+
+        $handler = new UnarchivePropertyHandler($repository, $freeListingLimitService);
+        $result = $handler(new UnarchivePropertyCommand('11', '7'));
+
+        self::assertFalse($result['requiresPayment']);
+        self::assertSame('published', $property->getStatus());
+        self::assertFalse($property->holdsFreeSlot());
     }
 
     public function testUnarchiveByOtherUserThrowsDomainException(): void

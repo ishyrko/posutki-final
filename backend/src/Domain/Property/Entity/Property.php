@@ -203,6 +203,14 @@ class Property
     #[ORM\Column(type: 'boolean', name: 'placement_is_trial', options: ['default' => false])]
     private bool $placementIsTrial = false;
 
+    /**
+     * Set when the listing is published for free. Cleared on archive. Admin may change it.
+     * When true, paid VIP expiry leaves the listing on the free tier instead of awaiting payment.
+     * Not used when counting occupied free slots.
+     */
+    #[ORM\Column(type: 'boolean', name: 'holds_free_slot', options: ['default' => false])]
+    private bool $holdsFreeSlot = false;
+
     #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'free_trial_ends_at')]
     private ?\DateTimeImmutable $freeTrialEndsAt = null;
 
@@ -421,13 +429,20 @@ class Property
      */
     public function setStatus(string $status, bool $grantFreeTrial = false): void
     {
+        $wasPublished = $this->status === 'published';
         $this->status = $status;
         if ($status !== 'rejected') {
             $this->moderationComment = null;
         }
+        if ($status === 'published' && !$wasPublished && !$this->hasActivePaidPlacement()) {
+            $this->holdsFreeSlot = true;
+        }
         if ($status === 'published' && $this->publishedAt === null) {
             $this->publishedAt = new \DateTimeImmutable();
             $this->applyInitialPlacement($this->publishedAt, $grantFreeTrial);
+        }
+        if ($status === 'archived') {
+            $this->holdsFreeSlot = false;
         }
         if (in_array($status, ['published', 'moderation', 'awaiting_payment'], true)) {
             $this->archivedAt = null;
@@ -973,6 +988,32 @@ class Property
     public function isPlacementIsTrial(): bool
     {
         return $this->placementIsTrial;
+    }
+
+    public function isHoldsFreeSlot(): bool
+    {
+        return $this->holdsFreeSlot;
+    }
+
+    public function holdsFreeSlot(): bool
+    {
+        return $this->holdsFreeSlot;
+    }
+
+    private function hasActivePaidPlacement(?\DateTimeImmutable $now = null): bool
+    {
+        $now ??= new \DateTimeImmutable();
+
+        return $this->placementBaseLevel > 0
+            && !$this->placementIsTrial
+            && $this->placementLevelExpiresAt !== null
+            && $this->placementLevelExpiresAt > $now;
+    }
+
+    public function setHoldsFreeSlot(bool $holdsFreeSlot): void
+    {
+        $this->holdsFreeSlot = $holdsFreeSlot;
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getFreeTrialEndsAt(): ?\DateTimeImmutable
@@ -1773,13 +1814,16 @@ class Property
             return;
         }
 
-        $this->markPublished($now, $grantFreeTrial);
+        $this->markPublished($now, $grantFreeTrial, asFreeListing: true);
     }
 
-    private function markPublished(\DateTimeImmutable $now, bool $grantFreeTrial): void
+    private function markPublished(\DateTimeImmutable $now, bool $grantFreeTrial, bool $asFreeListing): void
     {
         $isFirstPublish = $this->publishedAt === null;
         $this->status = 'published';
+        if ($asFreeListing) {
+            $this->holdsFreeSlot = true;
+        }
         $this->moderationComment = null;
         if ($isFirstPublish) {
             $this->publishedAt = $now;
@@ -1795,7 +1839,7 @@ class Property
             throw new DomainException('Опубликовать после оплаты можно только объявление, ожидающее оплаты');
         }
 
-        $this->markPublished(new \DateTimeImmutable(), grantFreeTrial: false);
+        $this->markPublished(new \DateTimeImmutable(), grantFreeTrial: false, asFreeListing: false);
     }
 
     public function publishFreeSlot(bool $grantFreeTrial): void
@@ -1804,7 +1848,7 @@ class Property
             throw new DomainException('Опубликовать бесплатно можно только объявление, ожидающее оплаты');
         }
 
-        $this->markPublished(new \DateTimeImmutable(), $grantFreeTrial);
+        $this->markPublished(new \DateTimeImmutable(), $grantFreeTrial, asFreeListing: true);
     }
 
     public function demoteToAwaitingPayment(): void
@@ -1831,6 +1875,7 @@ class Property
     public function archive(): void
     {
         $this->status = 'archived';
+        $this->holdsFreeSlot = false;
         $this->archivedAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }
@@ -1852,6 +1897,9 @@ class Property
         }
 
         $this->status = 'published';
+        if (!$this->hasActivePaidPlacement($now)) {
+            $this->holdsFreeSlot = true;
+        }
         $this->archivedAt = null;
         $this->updatedAt = $now;
     }

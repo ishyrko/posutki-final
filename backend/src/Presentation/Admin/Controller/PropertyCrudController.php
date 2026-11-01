@@ -542,6 +542,10 @@ class PropertyCrudController extends AbstractCrudController
             ->hideOnForm()
             ->hideOnIndex();
 
+        yield BooleanField::new('holdsFreeSlot', 'Остаётся бесплатным после VIP')
+            ->hideOnIndex()
+            ->setHelp('Включается при бесплатной публикации в рамках лимита. Сбрасывается при архивации. Если включено, после платного VIP объявление остаётся бесплатным, а не уходит в ожидание оплаты.');
+
         yield DateTimeField::new('freeTrialEndsAt', 'Бесплатный VIP 1 до')
             ->hideOnForm()
             ->hideOnIndex();

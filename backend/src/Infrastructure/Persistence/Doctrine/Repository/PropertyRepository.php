@@ -723,7 +723,8 @@ class PropertyRepository extends ServiceEntityRepository implements PropertyRepo
     }
 
     /**
-     * Free published listing: no active paid VIP level (trial and boost still count as free).
+     * Free published listing: no active paid VIP level (trial still counts as free).
+     * holdsFreeSlot is not part of this count.
      */
     private function freePublishedDqlCondition(string $alias): string
     {

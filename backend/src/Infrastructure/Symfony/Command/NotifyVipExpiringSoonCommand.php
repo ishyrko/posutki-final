@@ -88,7 +88,8 @@ class NotifyVipExpiringSoonCommand extends Command
                 $recentEngagement = $this->engagementResolver->resolveIfAboveThreshold(
                     $property->getId()->getValue(),
                 );
-                $freeSlotUnavailable = !$this->freeListingLimitService->canPublishFreeAfterPaidVipExpires($property);
+                $freeSlotUnavailable = !$property->holdsFreeSlot()
+                    && !$this->freeListingLimitService->canPublishFreeAfterPaidVipExpires($property);
                 $limitIntro = $freeSlotUnavailable
                     ? $this->freeListingLimitService->buildLimitExceededIntro($property, afterPaidVipExpires: true)
                     : null;
