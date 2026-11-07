@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, Shield, CheckCircle,
   Users, Utensils, Wifi, Tv, Sofa, Car, Waves, Wind,
   ShowerHead, Flame, Coffee, Snowflake, Baby, WashingMachine,
-  LogIn, LogOut, UserCheck, Wallet, ExternalLink,
+  LogIn, LogOut, UserCheck, Wallet, ExternalLink, X,
 } from "lucide-react";
 import { LISTING_AMENITY_GROUPS } from "@/features/create-listing/listing-amenity-groups";
 import { formatMinStayDays } from "@/features/create-listing/validation";
@@ -40,6 +40,7 @@ import {
 } from "@/features/properties/components/PropertyOwnerContactPanel";
 import {
   Drawer,
+  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
@@ -497,7 +498,7 @@ export default function PropertyDetailClient({
   };
 
   return (
-    <div className={`min-h-screen bg-background${showMobileContactBar ? " max-lg:pb-[calc(8.5rem+env(safe-area-inset-bottom,0px))]" : ""}`}>
+    <div className={`min-h-screen bg-background${showMobileContactBar ? " max-lg:pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))]" : ""}`}>
       <main className="min-w-0">
         {children ? (
           <div className="container mx-auto min-w-0 px-4 pb-1 pt-2 sm:py-4">{children}</div>
@@ -1133,20 +1134,19 @@ export default function PropertyDetailClient({
       </main>
 
       {showMobileContactBar && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-xl px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
-          <div className="flex items-baseline gap-1.5 flex-wrap mb-2.5">
-            <span className="text-sm text-muted-foreground">от</span>
-            <span className="text-xl font-bold text-primary">
-              <PriceDisplay amount={priceDisplay.primaryAmount} currency={priceDisplay.primaryCurrency} />
-            </span>
-            <span className="text-sm text-muted-foreground">/ сутки</span>
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-1 flex-wrap">
+              <span className="text-sm text-muted-foreground">от</span>
+              <span className="font-display text-xl font-bold text-foreground">
+                <PriceDisplay amount={priceDisplay.primaryAmount} currency={priceDisplay.primaryCurrency} />
+              </span>
+              <span className="text-sm text-muted-foreground">/ сутки</span>
+            </div>
           </div>
-          <Button
-            className="w-full h-11 bg-gradient-primary text-primary-foreground shadow-primary hover:opacity-90 border-0"
-            onClick={() => setContactOpen(true)}
-          >
-            <Phone className="w-4 h-4 mr-2" />
-            Связаться с владельцем
+          <Button size="lg" className="shrink-0 gap-2 px-5" onClick={() => setContactOpen(true)}>
+            <Phone className="h-4 w-4" />
+            Связь с владельцем
           </Button>
         </div>
       )}
@@ -1162,6 +1162,12 @@ export default function PropertyDetailClient({
               <DrawerTitle>Связаться с владельцем</DrawerTitle>
               <DrawerDescription>Контакты владельца объявления</DrawerDescription>
             </DrawerHeader>
+            <DrawerClose
+              className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Закрыть"
+            >
+              <X className="h-5 w-5" />
+            </DrawerClose>
             <div
               data-vaul-no-drag
               className="overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]"
