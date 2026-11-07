@@ -1114,7 +1114,7 @@ export default function PropertyDetailClient({
                     </div>
                   </div>
                   <Button size="lg" className="shrink-0 gap-2 px-5" onClick={() => setContactOpen(true)}>
-                    <Phone className="h-4 w-4" />
+                    <Phone className="h-4 w-4 origin-center motion-safe:animate-phone-ring" />
                     Связь с владельцем
                   </Button>
                 </div>
