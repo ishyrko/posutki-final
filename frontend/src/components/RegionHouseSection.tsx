@@ -1,52 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Building2, TreePine, Waves, Castle, Factory, Landmark } from "lucide-react";
 import Link from "next/link";
-import { buildCatalogUrl } from "@/features/catalog/slugs";
+import { catalogHousePathForRegionSlug } from "@/features/catalog/slugs";
+import { HOUSE_REGIONS } from "@/features/home/house-regions";
 import {
   fetchHomeRegionHouseCounts,
   formatHouseCount,
 } from "@/features/home/region-house-counts";
-
-const regions = [
-  {
-    name: "Минская",
-    slug: "minsk",
-    icon: Building2,
-    href: buildCatalogUrl({ propertyType: "house" }),
-  },
-  {
-    name: "Брестская",
-    slug: "brest",
-    icon: Landmark,
-    href: buildCatalogUrl({ region: "brest", propertyType: "house" }),
-  },
-  {
-    name: "Витебская",
-    slug: "vitebsk",
-    icon: Waves,
-    href: buildCatalogUrl({ region: "vitebsk", propertyType: "house" }),
-  },
-  {
-    name: "Гродненская",
-    slug: "grodno",
-    icon: Castle,
-    href: buildCatalogUrl({ region: "grodno", propertyType: "house" }),
-  },
-  {
-    name: "Гомельская",
-    slug: "gomel",
-    icon: Factory,
-    href: buildCatalogUrl({ region: "gomel", propertyType: "house" }),
-  },
-  {
-    name: "Могилёвская",
-    slug: "mogilev",
-    icon: TreePine,
-    href: buildCatalogUrl({ region: "mogilev", propertyType: "house" }),
-  },
-];
 
 interface RegionHouseSectionProps {
   houseCountsBySlug?: Record<string, number>;
@@ -61,7 +22,7 @@ const RegionHouseSection = ({ houseCountsBySlug }: RegionHouseSectionProps) => {
   );
 
   const needsClientFetch = useMemo(
-    () => regions.some((region) => counts[region.slug] == null),
+    () => HOUSE_REGIONS.some((region) => counts[region.slug] == null),
     [counts],
   );
 
@@ -92,12 +53,12 @@ const RegionHouseSection = ({ houseCountsBySlug }: RegionHouseSectionProps) => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {regions.map((region) => {
+          {HOUSE_REGIONS.map((region) => {
             const Icon = region.icon;
             return (
               <Link
                 key={region.slug}
-                href={region.href}
+                href={catalogHousePathForRegionSlug(region.slug)}
                 className="group flex flex-col items-center gap-3 p-6 rounded-xl bg-card shadow-card hover:shadow-card-hover transition-all duration-200 hover:-translate-y-1"
               >
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-150">
@@ -105,7 +66,7 @@ const RegionHouseSection = ({ houseCountsBySlug }: RegionHouseSectionProps) => {
                 </div>
                 <div className="text-center">
                   <p className="font-display font-semibold text-foreground leading-tight">
-                    {region.name}
+                    {region.shortName}
                     <br />
                     область
                   </p>

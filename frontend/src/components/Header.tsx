@@ -8,7 +8,6 @@ import {
   X,
   Home,
   Building2,
-  MapPin,
   Star,
   ChevronDown,
   Search,
@@ -23,12 +22,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ListingSubmitLink } from "@/components/ListingSubmitLink";
+import CitySelector from "@/components/CitySelector";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { isAuthenticated } from "@/lib/auth";
 import { withRegionalCatalogHref, HEADER_REGION_MINSK_SLUG } from "@/lib/region-header";
 import { useHeaderRegionSlug } from "@/hooks/useHeaderRegionSlug";
-import { useHeaderCatalogPropertyType } from "@/hooks/useHeaderCatalogPropertyType";
 import { ALL_HOUSES_CATALOG_PATH, buildCatalogUrl } from "@/features/catalog/slugs";
 import { useSyncExternalStore } from "react";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -38,18 +37,13 @@ import { cn } from "@/lib/utils";
 import { useFavoriteIds } from "@/features/properties/hooks";
 
 interface MegaMenuSection {
-  /** Пустой или отсутствует — колонка без подзаголовка (вторая колонка «Города»). */
+  /** Column heading. Omitted columns render without a label. */
   title?: string;
   items: { label: string; desc: string; icon: React.ReactNode; href: string }[];
 }
 
-function buildMegaMenu(
-  regionSlug: string,
-  catalogPropertyType: "apartment" | "house",
-): Record<string, MegaMenuSection[]> {
+function buildMegaMenu(regionSlug: string): Record<string, MegaMenuSection[]> {
   const r = (path: string) => withRegionalCatalogHref(path, regionSlug);
-  const cityHref = (region?: string) =>
-    buildCatalogUrl({ region, propertyType: catalogPropertyType });
   const nearMetroItem = {
     label: "Возле метро",
     desc: "Квартиры у станций метро",
@@ -102,23 +96,6 @@ function buildMegaMenu(
         title: "Для кого",
         items: [
           { label: "Для большой компании", desc: "От 8+ гостей", icon: <Users className="h-4 w-4" />, href: r("/usadby/?guests=8") },
-        ],
-      },
-    ],
-    Города: [
-      {
-        title: "Областные центры",
-        items: [
-          { label: "Минск", desc: "Столица", icon: <MapPin className="h-4 w-4" />, href: cityHref() },
-          { label: "Гродно", desc: "Город-музей", icon: <MapPin className="h-4 w-4" />, href: cityHref("grodno") },
-          { label: "Брест", desc: "Юго-запад", icon: <MapPin className="h-4 w-4" />, href: cityHref("brest") },
-        ],
-      },
-      {
-        items: [
-          { label: "Витебск", desc: "Север", icon: <MapPin className="h-4 w-4" />, href: cityHref("vitebsk") },
-          { label: "Гомель", desc: "Юго-восток", icon: <MapPin className="h-4 w-4" />, href: cityHref("gomel") },
-          { label: "Могилёв", desc: "Восток", icon: <MapPin className="h-4 w-4" />, href: cityHref("mogilev") },
         ],
       },
     ],
@@ -202,8 +179,7 @@ const Header = () => {
   const { data: favoriteIds = [] } = useFavoriteIds();
   const favoritesCount = favoriteIds.length;
   const regionSlug = useHeaderRegionSlug();
-  const catalogPropertyType = useHeaderCatalogPropertyType();
-  const megaMenuData = buildMegaMenu(regionSlug, catalogPropertyType);
+  const megaMenuData = buildMegaMenu(regionSlug);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -229,21 +205,26 @@ const Header = () => {
   return (
     <header ref={megaRef} className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border relative">
       <div className="container mx-auto px-4 flex items-center justify-between h-16">
-        <Link href="/" className="flex items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/brand/logo.png"
-            alt="posutki.by"
-            width={599}
-            height={170}
-            fetchPriority="high"
-            decoding="async"
-            className="h-auto w-36 sm:w-40 lg:w-[180px]"
-          />
-          <span className="sr-only">posutki.by</span>
-        </Link>
+        <div className="flex items-center gap-3 lg:gap-4 min-w-0">
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/logo.png"
+              alt="posutki.by"
+              width={599}
+              height={170}
+              fetchPriority="high"
+              decoding="async"
+              className="h-auto w-36 sm:w-40 lg:w-[180px]"
+            />
+            <span className="sr-only">posutki.by</span>
+          </Link>
+          <div className="hidden lg:block min-w-0">
+            <CitySelector />
+          </div>
+        </div>
 
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-1">
           {Object.keys(megaMenuData).map((key) => (
             <div
               key={key}
@@ -266,7 +247,7 @@ const Header = () => {
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden lg:flex items-center gap-2">
           <HeaderCurrencyStrip variant="desktopToolbar" />
           <Link href="/izbrannoe/" className="relative inline-flex">
             <Button
@@ -299,7 +280,7 @@ const Header = () => {
           </Button>
         </div>
 
-        <div className="md:hidden flex items-center gap-2">
+        <div className="lg:hidden flex items-center gap-2">
           <div className="hidden min-[580px]:flex shrink-0">
             <HeaderCurrencyStrip variant="mobileToolbar" />
           </div>
@@ -333,7 +314,7 @@ const Header = () => {
 
       {activeMega && megaMenuData[activeMega] && (
         <div
-          className="hidden md:block absolute left-0 right-0 top-full z-50 border-b border-border bg-card shadow-elevated animate-fade-in"
+          className="hidden lg:block absolute left-0 right-0 top-full z-50 border-b border-border bg-card shadow-elevated animate-fade-in"
           onMouseEnter={() => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
           }}
@@ -388,8 +369,11 @@ const Header = () => {
       )}
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-card animate-fade-in max-h-[80vh] overflow-y-auto">
-          <div className="p-4 space-y-1">
+        <div className="lg:hidden border-t border-border bg-card animate-fade-in max-h-[80vh] overflow-y-auto">
+          <div className="px-4 pt-4 pb-2">
+            <CitySelector variant="menu" onNavigate={() => setMobileOpen(false)} />
+          </div>
+          <div className="p-4 pt-2 space-y-1">
             {Object.entries(megaMenuData).map(([key, sections]) => (
               <div key={key}>
                 <button
@@ -403,51 +387,26 @@ const Header = () => {
 
                 {mobileExpanded === key && (
                   <div className="pb-2 pl-2 space-y-4 animate-fade-in">
-                    {key === "Города" ? (
-                      <div>
-                        {sections[0]?.title ? (
+                    {sections.map((section, sectionIndex) => (
+                      <div key={section.title ?? `section-${sectionIndex}`}>
+                        {section.title ? (
                           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 mb-2">
-                            {sections[0].title}
+                            {section.title}
                           </p>
                         ) : null}
-                        <div className="grid grid-cols-2 gap-x-2">
-                          {sections.flatMap((section) =>
-                            section.items.map((item) => (
-                              <Link
-                                key={item.label}
-                                href={item.href}
-                                onClick={() => setMobileOpen(false)}
-                                className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted/50 transition-colors"
-                              >
-                                <span className="text-primary">{item.icon}</span>
-                                <span className="text-sm font-medium text-foreground">{item.label}</span>
-                              </Link>
-                            )),
-                          )}
-                        </div>
+                        {section.items.map((item) => (
+                          <Link
+                            key={item.label}
+                            href={item.href}
+                            onClick={() => setMobileOpen(false)}
+                            className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted/50 transition-colors"
+                          >
+                            <span className="text-primary">{item.icon}</span>
+                            <span className="text-sm font-medium text-foreground">{item.label}</span>
+                          </Link>
+                        ))}
                       </div>
-                    ) : (
-                      sections.map((section, sectionIndex) => (
-                        <div key={section.title ?? `section-${sectionIndex}`}>
-                          {section.title ? (
-                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 mb-2">
-                              {section.title}
-                            </p>
-                          ) : null}
-                          {section.items.map((item) => (
-                            <Link
-                              key={item.label}
-                              href={item.href}
-                              onClick={() => setMobileOpen(false)}
-                              className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted/50 transition-colors"
-                            >
-                              <span className="text-primary">{item.icon}</span>
-                              <span className="text-sm font-medium text-foreground">{item.label}</span>
-                            </Link>
-                          ))}
-                        </div>
-                      ))
-                    )}
+                    ))}
                   </div>
                 )}
               </div>

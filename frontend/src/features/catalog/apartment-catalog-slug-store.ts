@@ -40,6 +40,11 @@ export function getCityPrefixSlugs(): ReadonlySet<string> {
     return requireStore().prefixSlugs;
 }
 
+/** Prefix slugs when the catalog store is already configured; null otherwise. */
+export function getConfiguredCityPrefixSlugs(): ReadonlySet<string> | null {
+    return store?.prefixSlugs ?? null;
+}
+
 export function getCatalogApartmentCitySlugs(): ReadonlySet<string> {
     return requireStore().catalogSlugs;
 }

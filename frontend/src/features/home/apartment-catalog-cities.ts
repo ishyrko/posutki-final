@@ -26,3 +26,21 @@ export async function fetchApartmentCatalogCities(): Promise<ApartmentCatalogCit
         return [];
     }
 }
+
+export interface ApartmentCatalogSnapshot {
+    cities: ApartmentCatalogCity[];
+    prefixSlugs: string[];
+}
+
+/** Cities plus URL prefix slugs, so catalog links can be built without the module slug store. */
+export async function fetchApartmentCatalogSnapshot(): Promise<ApartmentCatalogSnapshot> {
+    try {
+        const response = await api.get<{ data: ApartmentCatalogApiResponse }>('/address/cities/apartment-catalog');
+        return {
+            cities: response.data?.data?.cities ?? [],
+            prefixSlugs: response.data?.data?.prefixSlugs ?? [],
+        };
+    } catch {
+        return { cities: [], prefixSlugs: [] };
+    }
+}
