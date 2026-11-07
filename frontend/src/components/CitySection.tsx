@@ -162,7 +162,9 @@ const CitySection = ({ apartmentCatalogCities, apartmentCountsBySlug }: CitySect
           <h2 className="text-3xl font-bold text-foreground font-display mb-2">
             Квартиры на сутки в Беларуси
           </h2>
-          <p className="text-muted-foreground">Посуточная аренда по всей Беларуси</p>
+          <p className="text-muted-foreground">
+            Посуточная аренда по всей Беларуси - более 700 активных объявлений.
+          </p>
         </div>
 
         {mainCities.length > 0 ? (
