@@ -498,7 +498,7 @@ export default function PropertyDetailClient({
   };
 
   return (
-    <div className={`min-h-screen bg-background${showMobileContactBar ? " max-lg:pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))]" : ""}`}>
+    <div className="min-h-screen bg-background">
       <main className="min-w-0">
         {children ? (
           <div className="container mx-auto min-w-0 px-4 pb-1 pt-2 sm:py-4">{children}</div>
@@ -1101,9 +1101,27 @@ export default function PropertyDetailClient({
                   </div>
                 </motion.div>
               )}
+
+              {showMobileContactBar && (
+                <div className="lg:hidden sticky bottom-0 z-40 !-mx-4 !mt-4 bg-card/95 backdrop-blur-xl border-t border-border px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-baseline gap-1 flex-wrap">
+                      <span className="text-sm text-muted-foreground">от</span>
+                      <span className="font-display text-xl font-bold text-foreground">
+                        <PriceDisplay amount={priceDisplay.primaryAmount} currency={priceDisplay.primaryCurrency} />
+                      </span>
+                      <span className="text-sm text-muted-foreground">/ сутки</span>
+                    </div>
+                  </div>
+                  <Button size="lg" className="shrink-0 gap-2 px-5" onClick={() => setContactOpen(true)}>
+                    <Phone className="h-4 w-4" />
+                    Связь с владельцем
+                  </Button>
+                </div>
+              )}
             </div>
 
-            <div className="space-y-4">
+            <div className="hidden space-y-4 lg:block">
               {isCalendarRecentlyActive(property.calendarLastUpdatedAt) && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
@@ -1132,24 +1150,6 @@ export default function PropertyDetailClient({
           </div>
         </div>
       </main>
-
-      {showMobileContactBar && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-1 flex-wrap">
-              <span className="text-sm text-muted-foreground">от</span>
-              <span className="font-display text-xl font-bold text-foreground">
-                <PriceDisplay amount={priceDisplay.primaryAmount} currency={priceDisplay.primaryCurrency} />
-              </span>
-              <span className="text-sm text-muted-foreground">/ сутки</span>
-            </div>
-          </div>
-          <Button size="lg" className="shrink-0 gap-2 px-5" onClick={() => setContactOpen(true)}>
-            <Phone className="h-4 w-4" />
-            Связь с владельцем
-          </Button>
-        </div>
-      )}
 
       {showMobileContactBar && (
         <Drawer
