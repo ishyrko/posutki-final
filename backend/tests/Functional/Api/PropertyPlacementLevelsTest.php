@@ -6,6 +6,7 @@ namespace App\Tests\Functional\Api;
 
 use App\Domain\Property\Entity\PropertyPlacementLevelPrice;
 use App\Domain\Property\Entity\PropertyPlacementScopeSettings;
+use App\Domain\Property\Limit\FreeListingLimits;
 
 final class PropertyPlacementLevelsTest extends ApiTestCase
 {
@@ -55,5 +56,47 @@ final class PropertyPlacementLevelsTest extends ApiTestCase
         self::assertCount(1, $payload['data']['levels']);
         self::assertSame(1, $payload['data']['levels'][0]['level']);
         self::assertSame(35, $payload['data']['levels'][0]['priceBynPerMonth']);
+    }
+
+    public function testSatelliteCityFreeTierUsesItsOwnApartmentLimit(): void
+    {
+        $region = $this->createRegion('minsk', 'Минск');
+        $district = $this->createRegionDistrict($region, 'nesvizhskiy', 'Несвижский');
+        $minsk = $this->createCity(
+            name: 'Минск',
+            slug: 'minsk',
+            shortName: 'г. Минск',
+            regionDistrict: $district,
+            isMain: true,
+            isApartmentCatalog: true,
+        );
+        $minsk->setFreeApartmentsPerAccount(1);
+        $nesvizh = $this->createCity(
+            name: 'Несвиж',
+            slug: 'nesvizh',
+            shortName: 'г. Несвиж',
+            regionDistrict: $district,
+            isMain: false,
+            isApartmentCatalog: true,
+        );
+        $nesvizh->setFreeApartmentsPerAccount(6);
+
+        $this->entityManager()->persist(new PropertyPlacementLevelPrice('apartment', $minsk->getId(), null, 1, 35));
+        $this->entityManager()->flush();
+
+        $this->client->request(
+            'GET',
+            '/api/placement/levels?propertyType=apartment&cityId=' . $nesvizh->getId(),
+        );
+
+        self::assertResponseIsSuccessful();
+        $payload = json_decode($this->client->getResponse()->getContent() ?: '', true);
+        self::assertTrue($payload['success'] ?? false);
+        self::assertSame($minsk->getId(), $payload['data']['levels'][0]['cityId']);
+        self::assertSame(35, $payload['data']['levels'][0]['priceBynPerMonth']);
+        self::assertSame(
+            FreeListingLimits::perUserDisplayLimit(6),
+            $payload['data']['freeTier']['perUserLimit'],
+        );
     }
 }

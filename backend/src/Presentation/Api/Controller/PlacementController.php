@@ -84,9 +84,11 @@ final class PlacementController extends AbstractController
                 ]));
             }
 
-            $tariffCity = $this->cityRepository->findById($scope->tariffCityId);
+            // VIP prices may come from the regional center. The free-listing ceiling stays on the
+            // listing's own city: partner ads elsewhere must not shrink it.
+            $listingCity = $this->cityRepository->findById($cityId);
             $perUserLimit = FreeListingLimits::perUserDisplayLimit(
-                $tariffCity?->getFreeApartmentsPerAccount() ?? FreeListingLimits::CITY_APARTMENT_MIN,
+                $listingCity?->getFreeApartmentsPerAccount() ?? FreeListingLimits::CITY_APARTMENT_MIN,
             );
 
             $levelPrices = $this->levelPriceRepository->findActiveByCityId($scope->tariffCityId);
