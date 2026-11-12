@@ -147,6 +147,8 @@ class CreatePropertyRequest
 
     public bool $prepaymentRequired = false;
 
+    public bool $allowAgroturizmPublication = true;
+
     #[Assert\Length(max: 2000, maxMessage: 'Дополнительные условия заселения не длиннее {{ limit }} символов')]
     public ?string $additionalCheckInConditions = null;
 

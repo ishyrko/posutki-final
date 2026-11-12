@@ -95,6 +95,7 @@ export interface Property {
         checkOutTime?: string;
         minStayDays?: number;
         prepaymentRequired?: boolean;
+        allowAgroturizmPublication?: boolean;
         additionalCheckInConditions?: string;
         banquetSeats?: number;
         building?: string;
@@ -147,6 +148,7 @@ export interface Property {
         checkOutTime?: string | null;
         minStayDays?: number | null;
         prepaymentRequired?: boolean;
+        allowAgroturizmPublication?: boolean;
         additionalCheckInConditions?: string | null;
         banquetSeats?: number | null;
     };

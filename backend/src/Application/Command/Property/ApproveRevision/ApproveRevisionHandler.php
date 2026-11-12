@@ -156,6 +156,7 @@ readonly class ApproveRevisionHandler
             websiteUrl: array_key_exists('websiteUrl', $data) ? ($data['websiteUrl'] !== null ? (string) $data['websiteUrl'] : null) : null,
             videoUrl: array_key_exists('videoUrl', $data) ? ($data['videoUrl'] !== null ? (string) $data['videoUrl'] : null) : null,
             prepaymentRequired: array_key_exists('prepaymentRequired', $data) ? (bool) $data['prepaymentRequired'] : null,
+            allowAgroturizmPublication: array_key_exists('allowAgroturizmPublication', $data) ? (bool) $data['allowAgroturizmPublication'] : null,
             additionalCheckInConditions: array_key_exists('additionalCheckInConditions', $data)
                 ? ($data['additionalCheckInConditions'] !== null ? (string) $data['additionalCheckInConditions'] : '')
                 : null,

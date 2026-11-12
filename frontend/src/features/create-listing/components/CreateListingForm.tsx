@@ -199,6 +199,7 @@ const INITIAL_FORM: ListingFormData = {
     checkOutTime: '',
     minStayDays: '1',
     prepaymentRequired: false,
+    allowAgroturizmPublication: true,
     additionalCheckInConditions: '',
     banquetSeats: '',
     yearBuilt: '',
@@ -835,6 +836,7 @@ export function CreateListingForm() {
                 : undefined,
             minStayDays: Number(form.minStayDays || 1),
             prepaymentRequired: form.propertyType === 'house' ? form.prepaymentRequired : undefined,
+            allowAgroturizmPublication: form.propertyType === 'house' ? form.allowAgroturizmPublication : undefined,
             additionalCheckInConditions: form.propertyType === 'house'
                 ? form.additionalCheckInConditions.trim()
                 : undefined,
@@ -2207,6 +2209,19 @@ export function CreateListingForm() {
                         )}
                     </motion.div>
                 </AnimatePresence>
+
+                {step === TOTAL_STEPS && form.propertyType === 'house' && (
+                    <div className="flex items-center gap-2.5 pt-2">
+                        <Checkbox
+                            id="allow_agroturizm_publication"
+                            checked={form.allowAgroturizmPublication}
+                            onCheckedChange={(checked) => update('allowAgroturizmPublication', checked === true)}
+                        />
+                        <label htmlFor="allow_agroturizm_publication" className="text-sm text-foreground cursor-pointer">
+                            Разрешаю также опубликовать объявление на agroturizm.by
+                        </label>
+                    </div>
+                )}
 
                 {/* Navigation */}
                 <div className="flex items-center justify-between pt-2">

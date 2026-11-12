@@ -118,6 +118,7 @@ final class CreatePropertyHandler
             prepaymentRequired: $command->prepaymentRequired,
             additionalCheckInConditions: $command->additionalCheckInConditions,
             banquetSeats: $command->banquetSeats,
+            allowAgroturizmPublication: $command->allowAgroturizmPublication,
         );
         $property->publish();
         $property->setWeekendPriceNegotiable($command->weekendPriceNegotiable);

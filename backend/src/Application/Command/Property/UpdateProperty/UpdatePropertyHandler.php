@@ -194,6 +194,7 @@ readonly class UpdatePropertyHandler
             prepaymentRequired: $command->prepaymentRequired,
             additionalCheckInConditions: $command->additionalCheckInConditions,
             banquetSeats: $command->banquetSeats,
+            allowAgroturizmPublication: $command->allowAgroturizmPublication,
         );
 
         if ($coordinates !== null) {
@@ -309,6 +310,7 @@ readonly class UpdatePropertyHandler
             'checkOutTime' => $property->getCheckOutTime(),
             'minStayDays' => $property->getMinStayDays(),
             'prepaymentRequired' => $property->isPrepaymentRequired(),
+            'allowAgroturizmPublication' => $property->isAgroturizmPublicationAllowed(),
             'additionalCheckInConditions' => $property->getAdditionalCheckInConditions(),
             'banquetSeats' => $property->getBanquetSeats(),
             'building' => $property->getAddress()->getBuilding(),
@@ -364,6 +366,7 @@ readonly class UpdatePropertyHandler
             'checkOutTime' => $command->checkOutTime ?? $property->getCheckOutTime(),
             'minStayDays' => $command->minStayDays ?? $property->getMinStayDays(),
             'prepaymentRequired' => $command->prepaymentRequired ?? $property->isPrepaymentRequired(),
+            'allowAgroturizmPublication' => $command->allowAgroturizmPublication ?? $property->isAgroturizmPublicationAllowed(),
             'additionalCheckInConditions' => $command->additionalCheckInConditions ?? $property->getAdditionalCheckInConditions(),
             'banquetSeats' => $command->banquetSeats ?? $property->getBanquetSeats(),
             'building' => $command->building ?? $property->getAddress()->getBuilding(),
@@ -440,6 +443,7 @@ readonly class UpdatePropertyHandler
             'checkOutTime' => $command->checkOutTime,
             'minStayDays' => $command->minStayDays,
             'prepaymentRequired' => $command->prepaymentRequired,
+            'allowAgroturizmPublication' => $command->allowAgroturizmPublication,
             'additionalCheckInConditions' => $command->additionalCheckInConditions,
             'banquetSeats' => $command->banquetSeats,
             'building' => $command->building,

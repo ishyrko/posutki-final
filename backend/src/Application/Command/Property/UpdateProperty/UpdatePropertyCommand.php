@@ -55,6 +55,7 @@ readonly class UpdatePropertyCommand
         public ?bool $prepaymentRequired = null,
         public ?string $additionalCheckInConditions = null,
         public ?int $banquetSeats = null,
+        public ?bool $allowAgroturizmPublication = null,
     ) {
     }
 }

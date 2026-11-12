@@ -161,6 +161,7 @@ interface EditFormData {
     checkOutTime: string;
     minStayDays: string;
     prepaymentRequired: boolean;
+    allowAgroturizmPublication: boolean;
     additionalCheckInConditions: string;
     banquetSeats: string;
     floor: string;
@@ -263,6 +264,9 @@ function mapPropertyToForm(property: PropertyItem): EditFormData {
         prepaymentRequired: revisionData?.prepaymentRequired != null
             ? Boolean(revisionData.prepaymentRequired)
             : Boolean(property.specifications.prepaymentRequired),
+        allowAgroturizmPublication: revisionData?.allowAgroturizmPublication != null
+            ? Boolean(revisionData.allowAgroturizmPublication)
+            : Boolean(property.specifications.allowAgroturizmPublication),
         additionalCheckInConditions: revisionData?.additionalCheckInConditions != null
             ? String(revisionData.additionalCheckInConditions)
             : property.specifications.additionalCheckInConditions ?? '',
@@ -800,6 +804,7 @@ export default function EditPropertyPage() {
                 checkOutTime: form.checkOutTime ? form.checkOutTime : undefined,
                 minStayDays,
                 prepaymentRequired: form.type === 'house' ? form.prepaymentRequired : undefined,
+                allowAgroturizmPublication: form.type === 'house' ? form.allowAgroturizmPublication : undefined,
                 additionalCheckInConditions: form.type === 'house' ? form.additionalCheckInConditions.trim() : undefined,
                 banquetSeats: form.type === 'house' && form.banquetSeats.trim() ? Number(form.banquetSeats) : undefined,
                 building: form.building.trim(),
@@ -1858,6 +1863,19 @@ export default function EditPropertyPage() {
                         </label>
                     </div>
                 </section>
+
+                {form.type === 'house' && (
+                    <div className="flex items-center gap-2.5">
+                        <Checkbox
+                            id="allow_agroturizm_publication"
+                            checked={form.allowAgroturizmPublication}
+                            onCheckedChange={(checked) => update('allowAgroturizmPublication', checked === true)}
+                        />
+                        <Label htmlFor="allow_agroturizm_publication" className="text-foreground cursor-pointer">
+                            Разрешаю также опубликовать объявление на agroturizm.by
+                        </Label>
+                    </div>
+                )}
                 </fieldset>
 
                 {/* Actions */}

@@ -359,6 +359,7 @@ class PropertyController extends AbstractController
             prepaymentRequired: $request->prepaymentRequired,
             additionalCheckInConditions: $request->additionalCheckInConditions,
             banquetSeats: $request->banquetSeats,
+            allowAgroturizmPublication: $request->allowAgroturizmPublication,
         );
 
         $propertyId = $this->commandBus->dispatch($command);
@@ -453,6 +454,7 @@ class PropertyController extends AbstractController
             prepaymentRequired: $request->prepaymentRequired,
             additionalCheckInConditions: $request->additionalCheckInConditions,
             banquetSeats: $request->banquetSeats,
+            allowAgroturizmPublication: $request->allowAgroturizmPublication,
         );
 
         $requiresModeration = $this->commandBus->dispatch($command) === true;

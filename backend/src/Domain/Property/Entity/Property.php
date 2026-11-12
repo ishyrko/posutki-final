@@ -118,6 +118,9 @@ class Property
     #[ORM\Column(type: 'boolean', name: 'prepayment_required', options: ['default' => false])]
     private bool $prepaymentRequired = false;
 
+    #[ORM\Column(type: 'boolean', name: 'allow_agroturizm_publication', options: ['default' => false])]
+    private bool $allowAgroturizmPublication = false;
+
     #[ORM\Column(type: 'text', nullable: true, name: 'additional_check_in_conditions')]
     private ?string $additionalCheckInConditions = null;
 
@@ -323,6 +326,7 @@ class Property
         bool $prepaymentRequired = false,
         ?string $additionalCheckInConditions = null,
         ?int $banquetSeats = null,
+        bool $allowAgroturizmPublication = false,
     ) {
         $this->ownerId = $ownerId;
         $this->type = $type;
@@ -367,6 +371,7 @@ class Property
         $this->minStayDays = $minStayDays;
         $isHouse = $type === 'house';
         $this->prepaymentRequired = $isHouse && $prepaymentRequired;
+        $this->allowAgroturizmPublication = $isHouse && $allowAgroturizmPublication;
         $trimmedConditions = $additionalCheckInConditions !== null ? trim($additionalCheckInConditions) : '';
         $this->additionalCheckInConditions = $isHouse && $trimmedConditions !== '' ? $trimmedConditions : null;
         $this->banquetSeats = $isHouse ? $banquetSeats : null;
@@ -799,6 +804,7 @@ class Property
             'checkOutTime' => 'Время выезда',
             'minStayDays' => 'Минимум суток для заселения',
             'prepaymentRequired' => 'Требуется предоплата',
+            'allowAgroturizmPublication' => 'Публикация на agroturizm.by',
             'additionalCheckInConditions' => 'Дополнительные условия заселения',
             'banquetSeats' => 'Мест для банкета',
             'building' => 'Дом',
@@ -878,6 +884,7 @@ class Property
             'checkOutTime' => $this->checkOutTime,
             'minStayDays' => $this->minStayDays,
             'prepaymentRequired' => $this->prepaymentRequired,
+            'allowAgroturizmPublication' => $this->allowAgroturizmPublication,
             'additionalCheckInConditions' => $this->additionalCheckInConditions,
             'banquetSeats' => $this->banquetSeats,
             'building' => $this->address->getBuilding(),
@@ -1269,6 +1276,11 @@ class Property
     public function isPrepaymentRequired(): bool
     {
         return $this->prepaymentRequired;
+    }
+
+    public function isAgroturizmPublicationAllowed(): bool
+    {
+        return $this->allowAgroturizmPublication;
     }
 
     public function getAdditionalCheckInConditions(): ?string
@@ -1972,6 +1984,7 @@ class Property
         ?bool $prepaymentRequired = null,
         ?string $additionalCheckInConditions = null,
         ?int $banquetSeats = null,
+        ?bool $allowAgroturizmPublication = null,
     ): void {
         if ($type !== null) $this->type = $type;
         if ($dealType !== null) $this->dealType = $dealType;
@@ -2036,6 +2049,9 @@ class Property
         if ($prepaymentRequired !== null) {
             $this->prepaymentRequired = $prepaymentRequired;
         }
+        if ($allowAgroturizmPublication !== null) {
+            $this->allowAgroturizmPublication = $allowAgroturizmPublication;
+        }
         if ($additionalCheckInConditions !== null) {
             $trimmed = trim($additionalCheckInConditions);
             $this->additionalCheckInConditions = $trimmed !== '' ? $trimmed : null;
@@ -2052,6 +2068,7 @@ class Property
             $this->renovation = null;
         } else {
             $this->prepaymentRequired = false;
+            $this->allowAgroturizmPublication = false;
             $this->additionalCheckInConditions = null;
             $this->banquetSeats = null;
         }

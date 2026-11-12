@@ -111,6 +111,7 @@ export interface UpdatePropertyPayload {
     checkOutTime?: string;
     minStayDays?: number;
     prepaymentRequired?: boolean;
+    allowAgroturizmPublication?: boolean;
     additionalCheckInConditions?: string;
     banquetSeats?: number;
     building?: string;

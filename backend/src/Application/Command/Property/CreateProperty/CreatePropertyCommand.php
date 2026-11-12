@@ -54,6 +54,7 @@ final class CreatePropertyCommand
         public readonly bool $prepaymentRequired = false,
         public readonly ?string $additionalCheckInConditions = null,
         public readonly ?int $banquetSeats = null,
+        public readonly bool $allowAgroturizmPublication = true,
     ) {
     }
 }

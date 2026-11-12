@@ -391,6 +391,10 @@ class PropertyCrudController extends AbstractCrudController
         yield IntegerField::new('minStayDays', 'Минимум суток для заселения')
             ->hideOnIndex();
 
+        yield BooleanField::new('agroturizmPublicationAllowed', 'Публикация на agroturizm.by')
+            ->onlyOnDetail()
+            ->setHelp('Согласие владельца усадьбы опубликовать объявление также на agroturizm.by.');
+
         yield FormField::addTab('Адрес и контакты');
 
         yield IntegerField::new('cityId', 'ID города')

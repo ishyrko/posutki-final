@@ -58,6 +58,7 @@ export interface CreatePropertyPayload {
     checkOutTime?: string;
     minStayDays?: number;
     prepaymentRequired?: boolean;
+    allowAgroturizmPublication?: boolean;
     additionalCheckInConditions?: string;
     banquetSeats?: number;
     building: string;
@@ -122,6 +123,7 @@ export interface ListingFormData {
     checkOutTime: string;
     minStayDays: string;
     prepaymentRequired: boolean;
+    allowAgroturizmPublication: boolean;
     additionalCheckInConditions: string;
     banquetSeats: string;
     yearBuilt: string;

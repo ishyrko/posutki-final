@@ -121,6 +121,7 @@ final class PropertyDTO implements \JsonSerializable
         public readonly ?bool $canPublishFree = null,
         public readonly ?string $freeLimitBlockIntro = null,
         public readonly bool $prepaymentRequired = false,
+        public readonly bool $allowAgroturizmPublication = false,
         public readonly ?string $additionalCheckInConditions = null,
         public readonly ?int $banquetSeats = null,
         /** @var array{nearestCity: ?array{cityName: string, citySlug: string, cityNameGenitive: ?string, distanceKm: float}, regionCenter: ?array{cityName: string, citySlug: string, cityNameGenitive: ?string, distanceKm: float}} */
@@ -224,6 +225,7 @@ final class PropertyDTO implements \JsonSerializable
             checkOutTime: $property->getCheckOutTime(),
             minStayDays: $property->getMinStayDays(),
             prepaymentRequired: $property->isPrepaymentRequired(),
+            allowAgroturizmPublication: $property->isAgroturizmPublicationAllowed(),
             additionalCheckInConditions: $property->getAdditionalCheckInConditions(),
             banquetSeats: $property->getBanquetSeats(),
             locationDistances: $locationDistances,
@@ -355,6 +357,7 @@ final class PropertyDTO implements \JsonSerializable
                 'checkOutTime' => $this->checkOutTime,
                 'minStayDays' => $this->minStayDays,
                 'prepaymentRequired' => $this->prepaymentRequired,
+                'allowAgroturizmPublication' => $this->allowAgroturizmPublication,
                 'additionalCheckInConditions' => $this->additionalCheckInConditions,
                 'banquetSeats' => $this->banquetSeats,
             ],
