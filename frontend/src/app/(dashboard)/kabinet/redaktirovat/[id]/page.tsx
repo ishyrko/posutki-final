@@ -892,20 +892,20 @@ export default function EditPropertyPage() {
     const formReadonly = revisionOnModeration || saving;
 
     return (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-            <div className="flex items-center gap-3 mb-6">
+        <motion.div className="min-w-0" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+            <div className="mb-6 flex min-w-0 items-center gap-3">
                 <Button variant="ghost" size="icon" asChild>
                     <Link href="/kabinet/moi-obyavleniya/aktivnye/">
                         <ArrowLeft className="w-5 h-5" />
                     </Link>
                 </Button>
-                <div>
-                    <h1 className="text-2xl font-display font-bold text-foreground">Редактирование объявления</h1>
+                <div className="min-w-0">
+                    <h1 className="break-words text-2xl font-display font-bold text-foreground">Редактирование объявления</h1>
                     <p className="text-sm text-muted-foreground mt-0.5">Внесите изменения и сохраните</p>
                 </div>
             </div>
 
-            <div className="space-y-6 max-w-3xl">
+            <div className="min-w-0 max-w-3xl space-y-6">
                 {revisionOnModeration && (
                     <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
                         Изменения уже отправлены на модерацию. Пока проверка не завершена, редактирование недоступно.
@@ -917,11 +917,11 @@ export default function EditPropertyPage() {
                         {property?.pendingRevisionComment ? ` Комментарий: ${property.pendingRevisionComment}` : ''}
                     </div>
                 )}
-                <fieldset disabled={formReadonly} className="space-y-6">
+                <fieldset disabled={formReadonly} className="min-w-0 w-full space-y-6 [min-inline-size:0]">
                 {/* Type & Deal */}
                 <section className="bg-card rounded-2xl shadow-card border border-border p-6">
                     <h2 className="text-lg font-semibold text-foreground mb-4">Тип объявления</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-w-0">
                         <div>
                             <Label className="text-foreground">Тип сделки</Label>
                             <p className="mt-1.5 text-sm text-muted-foreground rounded-lg border border-border bg-muted/30 px-3 py-2">
@@ -996,7 +996,7 @@ export default function EditPropertyPage() {
                                 </span>
                             </div>
                         </div>
-                        <div className="flex flex-col gap-4">
+                        <div className="flex min-w-0 flex-col gap-4">
                             {showRooms(form.type) && (
                                 <div>
                                     <NumericPillRow
@@ -1070,7 +1070,7 @@ export default function EditPropertyPage() {
                                     needsLotArea(form.type)
                                     && requiresAreaInSquareMeters(form.type)
                                     && !(showLivingArea(form.type) && showKitchenArea(form.type))
-                                        ? 'grid grid-cols-1 gap-4 md:grid-cols-2'
+                                        ? 'grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 [&>*]:min-w-0'
                                         : 'contents'
                                 }
                             >
@@ -1172,7 +1172,7 @@ export default function EditPropertyPage() {
                             </div>
                         )}
 
-                        <div className="flex flex-col gap-4">
+                        <div className="flex min-w-0 flex-col gap-4">
                             {!requiresAreaInSquareMeters(form.type)
                                 ? null
                                 : !showLivingArea(form.type)
@@ -1210,7 +1210,7 @@ export default function EditPropertyPage() {
                         </div>
 
                         <>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-w-0">
                                 <div>
                                     <Label className="text-foreground">Максимальное число гостей *</Label>
                                     <Input
@@ -1327,7 +1327,7 @@ export default function EditPropertyPage() {
                             )}
                         </>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-w-0">
                             {showRenovation(form.type) && (
                                 <div>
                                     <Label className="text-foreground">Ремонт</Label>
@@ -1375,7 +1375,7 @@ export default function EditPropertyPage() {
                         return (
                             <section key={group.id} className="bg-card rounded-2xl shadow-card border border-border p-6">
                                 <h2 className="text-base font-semibold text-foreground mb-4">{group.title}</h2>
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex min-w-0 flex-wrap gap-2">
                                     {visibleItems.map((item) => {
                                         const selected = form.amenities.includes(item.id);
                                         return (
@@ -1384,7 +1384,7 @@ export default function EditPropertyPage() {
                                                 type="button"
                                                 onClick={() => toggleAmenity(item.id)}
                                                 className={cn(
-                                                    'inline-flex cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all',
+                                                    'inline-flex max-w-full cursor-pointer items-center gap-1.5 whitespace-normal px-3 py-1.5 rounded-xl text-left text-sm font-medium transition-all',
                                                     selected
                                                         ? 'bg-primary text-primary-foreground border border-primary'
                                                         : 'bg-muted/70 border border-transparent text-foreground hover:bg-muted',
@@ -1595,7 +1595,7 @@ export default function EditPropertyPage() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-3 [&>*]:min-w-0">
                             <div>
                                 <Label className="text-foreground">
                                     Номер дома{form.type === 'apartment' ? ' *' : ''}
@@ -1667,7 +1667,7 @@ export default function EditPropertyPage() {
                         </div>
                         <div className="space-y-3">
                             {form.additionalServices.map((svc, idx) => (
-                                <div key={idx} className="flex items-center gap-2">
+                                <div key={idx} className="flex min-w-0 items-center gap-2">
                                     <Input
                                         value={svc.name}
                                         onChange={(e) => {
@@ -1677,7 +1677,7 @@ export default function EditPropertyPage() {
                                             update('additionalServices', next);
                                         }}
                                         placeholder="Название услуги"
-                                        className="flex-1"
+                                        className="min-w-0 flex-1"
                                     />
                                     <Input
                                         type="number"
@@ -1690,7 +1690,7 @@ export default function EditPropertyPage() {
                                             update('additionalServices', next);
                                         }}
                                         placeholder="Цена"
-                                        className="w-28"
+                                        className="w-24 shrink-0 sm:w-28"
                                     />
                                     <BynCurrencyMark className="shrink-0" />
                                     <button
@@ -1751,7 +1751,7 @@ export default function EditPropertyPage() {
                         </div>
                         <div className="space-y-3">
                             {form.externalCalendarUrls.map((url, idx) => (
-                                <div key={idx} className="flex items-center gap-2">
+                                <div key={idx} className="flex min-w-0 items-center gap-2">
                                     <LinkIcon className="w-4 h-4 shrink-0 text-muted-foreground" />
                                     <Input
                                         value={url}
@@ -1762,7 +1762,7 @@ export default function EditPropertyPage() {
                                             update('externalCalendarUrls', next);
                                         }}
                                         placeholder="https://kufar.by/ical/..."
-                                        className="flex-1"
+                                        className="min-w-0 flex-1"
                                     />
                                     <button
                                         type="button"
@@ -1790,9 +1790,9 @@ export default function EditPropertyPage() {
 
                 <section className="bg-card rounded-2xl shadow-card border border-border p-6">
                         <h2 className="text-lg font-semibold text-foreground mb-4">Правила и условия</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                        <div className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 [&>*]:min-w-0">
                             {DEAL_RULE_OPTIONS.map(({ id, label }) => (
-                                <div key={id} className="flex items-center gap-2.5">
+                                <div key={id} className="flex min-w-0 items-center gap-2.5">
                                     <Checkbox
                                         id={`rule_${id}`}
                                         checked={form.dealConditions.includes(id)}
@@ -1800,7 +1800,7 @@ export default function EditPropertyPage() {
                                     />
                                     <label
                                         htmlFor={`rule_${id}`}
-                                        className="text-sm text-foreground cursor-pointer select-none"
+                                        className="min-w-0 text-sm text-foreground cursor-pointer select-none"
                                     >
                                         {label}
                                     </label>
@@ -1811,9 +1811,9 @@ export default function EditPropertyPage() {
 
                 <section className="bg-card rounded-2xl shadow-card border border-border p-6">
                     <h2 className="text-lg font-semibold text-foreground mb-4">Способы оплаты</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                    <div className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 [&>*]:min-w-0">
                         {PAYMENT_METHOD_OPTIONS.map(({ id, label }) => (
-                            <div key={id} className="flex items-center gap-2.5">
+                            <div key={id} className="flex min-w-0 items-center gap-2.5">
                                 <Checkbox
                                     id={`payment_${id}`}
                                     checked={form.paymentMethods.includes(id)}
@@ -1821,7 +1821,7 @@ export default function EditPropertyPage() {
                                 />
                                 <label
                                     htmlFor={`payment_${id}`}
-                                    className="text-sm text-foreground cursor-pointer select-none"
+                                    className="min-w-0 text-sm text-foreground cursor-pointer select-none"
                                 >
                                     {label}
                                 </label>
@@ -1835,7 +1835,7 @@ export default function EditPropertyPage() {
                     <h2 className="text-lg font-semibold text-foreground mb-4">Стоимость</h2>
                     <div>
                         <Label className="text-foreground">Цена *</Label>
-                        <div className="flex items-center gap-2 mt-1.5">
+                        <div className="mt-1.5 flex min-w-0 items-center gap-2">
                             <span className="text-sm text-muted-foreground shrink-0">от</span>
                             <Input
                                 type="number"
@@ -1843,7 +1843,7 @@ export default function EditPropertyPage() {
                                 value={form.price}
                                 onChange={(e) => handlePriceChange(e.target.value)}
                                 onBlur={handlePriceBlur}
-                                className={cn('flex-1', fieldErrors.price ? 'border-destructive' : '')}
+                                className={cn('min-w-0 flex-1', fieldErrors.price ? 'border-destructive' : '')}
                                 aria-invalid={fieldErrors.price ? true : undefined}
                             />
                             <BynCurrencyMark className="shrink-0" />
@@ -1852,26 +1852,26 @@ export default function EditPropertyPage() {
                             <p className="text-xs text-destructive mt-1">{fieldErrors.price}</p>
                         ) : null}
                     </div>
-                    <div className="flex items-center gap-2 mt-4">
+                    <div className="mt-4 flex min-w-0 items-start gap-2">
                         <Checkbox
                             id="weekendPriceNegotiable"
                             checked={form.weekendPriceNegotiable}
                             onCheckedChange={(v) => update('weekendPriceNegotiable', !!v)}
                         />
-                        <label htmlFor="weekendPriceNegotiable" className="text-sm text-foreground cursor-pointer select-none">
+                        <label htmlFor="weekendPriceNegotiable" className="min-w-0 text-sm text-foreground cursor-pointer select-none">
                             В выходные и праздничные дни цена договорная
                         </label>
                     </div>
                 </section>
 
                 {form.type === 'house' && (
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex min-w-0 items-start gap-2.5">
                         <Checkbox
                             id="allow_agroturizm_publication"
                             checked={form.allowAgroturizmPublication}
                             onCheckedChange={(checked) => update('allowAgroturizmPublication', checked === true)}
                         />
-                        <Label htmlFor="allow_agroturizm_publication" className="text-foreground cursor-pointer">
+                        <Label htmlFor="allow_agroturizm_publication" className="min-w-0 text-foreground cursor-pointer">
                             Разрешаю также опубликовать объявление на agroturizm.by
                         </Label>
                     </div>
@@ -1879,7 +1879,7 @@ export default function EditPropertyPage() {
                 </fieldset>
 
                 {/* Actions */}
-                <div className="flex items-center justify-between pt-2 pb-8">
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 pt-2 pb-8">
                     <Button variant="ghost" asChild className="gap-2 text-muted-foreground">
                         <Link href="/kabinet/moi-obyavleniya/aktivnye/">
                             <ArrowLeft className="w-4 h-4" />

@@ -22,8 +22,8 @@ const chipActive = `${pillBtnBase} bg-primary text-primary-foreground border bor
 const inputClass =
     'w-full px-4 py-2.5 rounded-xl bg-surface border border-border text-base md:text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all';
 
-/** Ряд чипов: на десктопе в одну линию; на узком экране — горизонтальная прокрутка. */
-const chipRowClass = 'flex min-w-0 flex-nowrap gap-1.5 overflow-x-auto pb-0.5';
+/** Chips wrap so a long row cannot widen the page on a narrow screen. */
+const chipRowClass = 'flex min-w-0 flex-wrap gap-1.5';
 
 const segmentInputClass =
     'w-full border-0 bg-transparent px-3 py-2.5 text-base md:text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:bg-muted/40 rounded-none';
@@ -69,7 +69,7 @@ export function NumericPillRow({
     const isPlusRange = hasPlus && Number.isFinite(n) && n >= plusThreshold && n <= max;
 
     return (
-        <div>
+        <div className="min-w-0">
             <label className={cn(listingParameterLabelClass, 'flex items-center gap-1.5 mb-2')}>{label}</label>
             <div className={chipRowClass}>
                 {lowPills.map((opt) => (
@@ -170,7 +170,7 @@ export function BathroomTypeRow({
     error?: string;
 }) {
     return (
-        <div>
+        <div className="min-w-0">
             <label className={cn(listingParameterLabelClass, 'flex items-center gap-1.5 mb-2')}>{label}</label>
             <div className={chipRowClass}>
                 {bathroomChoices.map((opt) => (
@@ -214,7 +214,7 @@ export function SegmentedAreaTripleRow({
         cn(hasRight && 'border-r border-border', 'flex min-h-0 min-w-0 flex-1 flex-col bg-surface');
 
     return (
-        <div>
+        <div className="min-w-0">
             <p className={listingParameterLabelClass}>Площадь квартиры</p>
             <div
                 className={cn(
@@ -291,11 +291,11 @@ export function FloorTotalFloorsRow({
     totalFloorsError?: string;
 }) {
     return (
-        <div>
+        <div className="min-w-0">
             <label htmlFor="listing-floor" className={listingParameterLabelClass}>
                 Этаж / этажей<span className="text-destructive">*</span>
             </label>
-            <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-0.5">
+            <div className="flex min-w-0 items-center gap-2">
                 <input
                     id="listing-floor"
                     type="number"
@@ -307,7 +307,7 @@ export function FloorTotalFloorsRow({
                     aria-invalid={floorError ? true : undefined}
                     className={cn(
                         inputClass,
-                        'w-[7.5rem] shrink-0 sm:w-32',
+                        'min-w-0 w-0 flex-1 max-w-[8rem]',
                         floorError ? 'border-destructive' : '',
                     )}
                 />
@@ -323,7 +323,7 @@ export function FloorTotalFloorsRow({
                     aria-invalid={totalFloorsError ? true : undefined}
                     className={cn(
                         inputClass,
-                        'w-[7.5rem] shrink-0 sm:w-32',
+                        'min-w-0 w-0 flex-1 max-w-[8rem]',
                         totalFloorsError ? 'border-destructive' : '',
                     )}
                 />
