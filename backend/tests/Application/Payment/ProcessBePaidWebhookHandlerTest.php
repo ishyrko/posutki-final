@@ -6,6 +6,7 @@ namespace App\Tests\Application\Payment;
 
 use App\Application\Command\Payment\ProcessBePaidWebhook\ProcessBePaidWebhookCommand;
 use App\Application\Command\Payment\ProcessBePaidWebhook\ProcessBePaidWebhookHandler;
+use App\Application\Service\FreeListingLimitService;
 use App\Application\Service\PlacementPaymentCompletionService;
 use App\Application\Service\PropertyPlacementService;
 use App\Domain\Payment\Entity\Payment;
@@ -42,17 +43,17 @@ final class ProcessBePaidWebhookHandlerTest extends TestCase
         $this->setPaymentId($payment, 1);
 
         $paymentRepository = $this->createMock(PaymentRepositoryInterface::class);
-        $paymentRepository->method('findByCheckoutToken')->with('token-1')->willReturn($payment);
+        $paymentRepository->expects(self::once())->method('findByCheckoutToken')->with('token-1')->willReturn($payment);
         $paymentRepository->expects(self::atLeastOnce())->method('save')->with($payment);
 
         $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
-        $purchaseRepository->method('findById')->with(42)->willReturn($purchase);
+        $purchaseRepository->expects(self::atLeastOnce())->method('findById')->with(42)->willReturn($purchase);
         $purchaseRepository->method('findActiveLevelByPropertyId')->willReturnCallback(
             static fn (int $propertyId, ?\DateTimeImmutable $now = null): ?PropertyPlacementPurchase => $purchase->isActive() ? $purchase : null,
         );
         $purchaseRepository->method('save');
 
-        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository = $this->createStub(PropertyRepositoryInterface::class);
         $propertyRepository->method('findById')->willReturn($property);
         $propertyRepository->method('save');
 
@@ -61,6 +62,7 @@ final class ProcessBePaidWebhookHandlerTest extends TestCase
             $purchaseRepository,
             $propertyRepository,
             $this->createPlacementService($propertyRepository, $purchaseRepository),
+            $this->createFreeListingLimitService(),
             $this->createNotificationBus(),
             $this->createStub(LoggerInterface::class),
         );
@@ -108,6 +110,7 @@ final class ProcessBePaidWebhookHandlerTest extends TestCase
             $purchaseRepository,
             $propertyRepository,
             $this->createPlacementService($propertyRepository, $purchaseRepository),
+            $this->createFreeListingLimitService(),
             $this->createNotificationBus(),
             $this->createStub(LoggerInterface::class),
         );
@@ -146,6 +149,7 @@ final class ProcessBePaidWebhookHandlerTest extends TestCase
                     $this->createStub(PropertyRepositoryInterface::class),
                     $this->createStub(PropertyPlacementPurchaseRepositoryInterface::class),
                 ),
+                $this->createFreeListingLimitService(),
                 $this->createNotificationBus(),
                 $this->createStub(LoggerInterface::class),
             ),
@@ -234,6 +238,15 @@ final class ProcessBePaidWebhookHandlerTest extends TestCase
         $idReflection = new \ReflectionProperty($payment, 'id');
         $idReflection->setAccessible(true);
         $idReflection->setValue($payment, $id);
+    }
+
+    private function createFreeListingLimitService(): FreeListingLimitService
+    {
+        return new FreeListingLimitService(
+            $this->createStub(PropertyRepositoryInterface::class),
+            $this->createStub(CityRepositoryInterface::class),
+            $this->createStub(UserRepositoryInterface::class),
+        );
     }
 
     private function createNotificationBus(): MessageBusInterface

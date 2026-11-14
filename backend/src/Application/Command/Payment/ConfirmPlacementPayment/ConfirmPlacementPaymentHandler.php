@@ -15,7 +15,7 @@ use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
 use App\Infrastructure\Payment\BePaid\BePaidCheckoutReader;
-use App\Infrastructure\Payment\BePaid\BePaidGatewayClient;
+use App\Infrastructure\Payment\BePaid\BePaidClientRegistry;
 
 final class ConfirmPlacementPaymentHandler
 {
@@ -24,7 +24,7 @@ final class ConfirmPlacementPaymentHandler
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PropertyPlacementLevelPriceRepositoryInterface $levelPriceRepository,
         private readonly PaymentRepositoryInterface $paymentRepository,
-        private readonly BePaidGatewayClient $bePaidClient,
+        private readonly BePaidClientRegistry $bePaidClients,
         private readonly BePaidCheckoutReader $checkoutReader,
         private readonly PlacementPaymentCompletionService $completionService,
     ) {
@@ -66,7 +66,9 @@ final class ConfirmPlacementPaymentHandler
             throw new DomainException('Платёж уже завершён с другим статусом');
         }
 
-        $checkoutStatus = $this->bePaidClient->getCheckoutStatus($command->checkoutToken);
+        $checkoutStatus = $this->bePaidClients
+            ->forMethod($payment->getMethod())
+            ->getCheckoutStatus($command->checkoutToken);
         $payment->setRawPayload(json_encode($checkoutStatus, JSON_THROW_ON_ERROR));
 
         $bePaidStatus = $this->checkoutReader->readStatus($checkoutStatus);

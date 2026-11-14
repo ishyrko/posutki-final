@@ -16,10 +16,54 @@ final class PaymentWebhookControllerTest extends ApiTestCase
 {
     public function testWebhookWithEmptyPublicKeyAcceptsPayloadAndActivatesPurchase(): void
     {
-        $email = 'payment-owner@example.com';
+        $this->assertWebhookActivatesPurchase('/api/webhooks/bepaid', Payment::PROVIDER_BEPAID, 'card');
+    }
+
+    public function testEposWebhookAcceptsPayloadAndActivatesPurchase(): void
+    {
+        $this->assertWebhookActivatesPurchase('/api/webhooks/bepaid/epos', Payment::PROVIDER_BEPAID_EPOS, 'epos');
+    }
+
+    public function testCreatePaymentRejectsUnknownMethod(): void
+    {
+        $email = 'payment-method@example.com';
         $password = 'Password123!';
         $owner = $this->createUser($email, $password);
-        $city = $this->createCity('Minsk Pay', 'minsk-pay', 'г. Минск');
+        $city = $this->createCity('Minsk Method', 'minsk-method', 'г. Минск');
+        $property = $this->createProperty($owner, $city, 'published');
+
+        $purchase = new PropertyPlacementPurchase(
+            propertyId: $property->getId()->getValue(),
+            ownerId: $owner->getId(),
+            kind: PlacementPurchaseKind::Level->value,
+            priceByn: 49,
+            source: 'self_service',
+            level: 1,
+            durationMonths: 1,
+        );
+        $this->entityManager()->persist($purchase);
+        $this->entityManager()->flush();
+
+        $token = $this->loginAndGetToken($email, $password);
+        $this->client->request(
+            'POST',
+            '/api/placement-purchases/' . $purchase->getId() . '/payments',
+            server: [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+            ],
+            content: json_encode(['method' => 'cash'], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertSame(400, $this->client->getResponse()->getStatusCode());
+    }
+
+    private function assertWebhookActivatesPurchase(string $path, string $provider, string $suffix): void
+    {
+        $email = 'payment-owner-' . $suffix . '@example.com';
+        $password = 'Password123!';
+        $owner = $this->createUser($email, $password);
+        $city = $this->createCity('Minsk Pay ' . $suffix, 'minsk-pay-' . $suffix, 'г. Минск');
         $property = $this->createProperty($owner, $city, 'published');
 
         $levelPrice = new PropertyPlacementLevelPrice(
@@ -46,7 +90,7 @@ final class PaymentWebhookControllerTest extends ApiTestCase
         $this->entityManager()->flush();
 
         $purchaseId = (int) $purchase->getId();
-        $payment = new Payment($purchaseId, 'plc-' . $purchaseId . '-functional', 49);
+        $payment = new Payment($purchaseId, 'plc-' . $purchaseId . '-' . $suffix, 49, $provider);
         $payment->setCheckoutToken('functional-checkout-token');
         $this->entityManager()->persist($payment);
         $this->entityManager()->flush();
@@ -55,7 +99,7 @@ final class PaymentWebhookControllerTest extends ApiTestCase
             'token' => 'functional-checkout-token',
             'status' => 'successful',
             'order' => [
-                'tracking_id' => 'plc-' . $purchaseId . '-functional',
+                'tracking_id' => 'plc-' . $purchaseId . '-' . $suffix,
                 'amount' => 4900,
                 'currency' => 'BYN',
             ],
@@ -65,7 +109,7 @@ final class PaymentWebhookControllerTest extends ApiTestCase
 
         $this->client->request(
             'POST',
-            '/api/webhooks/bepaid',
+            $path,
             server: ['CONTENT_TYPE' => 'application/json'],
             content: $rawBody,
         );

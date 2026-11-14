@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Payment\Entity;
 
+use App\Domain\Payment\Enum\PaymentMethod;
 use App\Domain\Payment\Enum\PaymentStatus;
 use App\Domain\Shared\Exception\DomainException;
 use Doctrine\ORM\Mapping as ORM;
@@ -16,6 +17,7 @@ use Doctrine\ORM\Mapping as ORM;
 class Payment
 {
     public const PROVIDER_BEPAID = 'bepaid';
+    public const PROVIDER_BEPAID_EPOS = 'bepaid_epos';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -94,6 +96,22 @@ class Payment
     public function getProvider(): string
     {
         return $this->provider;
+    }
+
+    public function getMethod(): PaymentMethod
+    {
+        return match ($this->provider) {
+            self::PROVIDER_BEPAID_EPOS => PaymentMethod::Epos,
+            default => PaymentMethod::Card,
+        };
+    }
+
+    public static function providerFor(PaymentMethod $method): string
+    {
+        return match ($method) {
+            PaymentMethod::Card => self::PROVIDER_BEPAID,
+            PaymentMethod::Epos => self::PROVIDER_BEPAID_EPOS,
+        };
     }
 
     public function getTrackingId(): string

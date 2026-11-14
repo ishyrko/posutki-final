@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowLeft, CreditCard } from 'lucide-react';
+import { ArrowLeft, CreditCard, QrCode } from 'lucide-react';
+import type { PlacementPaymentMethod } from '@/features/placement/api';
 import { Button } from '@/components/ui/button';
 import { BynCurrencyMark } from '@/components/BynCurrency';
 import {
@@ -37,6 +38,27 @@ function getApiErrorMessage(error: unknown, fallback: string): string {
     return fallback;
 }
 
+const PAYMENT_METHOD_OPTIONS: Array<{
+    id: PlacementPaymentMethod;
+    title: string;
+    description: string;
+    icon: typeof CreditCard;
+}> = [
+    {
+        id: 'epos',
+        title: 'ЕРИП (E-POS)',
+        description:
+            'Оплата по QR-коду или через ЕРИП в интернет-банке. Зачисление может занять несколько минут',
+        icon: QrCode,
+    },
+    {
+        id: 'card',
+        title: 'Банковская карта',
+        description: 'Visa, Mastercard, Белкарт — безопасная страница bePaid',
+        icon: CreditCard,
+    },
+];
+
 export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -46,6 +68,7 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
         returnStatus === 'success' || returnStatus === 'successful';
     const hasReturnParams = returnStatus !== null;
     const [awaitingActivation, setAwaitingActivation] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<PlacementPaymentMethod>('epos');
     const { data: purchase, isLoading, isError, refetch } = usePlacementPurchase(purchaseId, {
         pollWhilePending: awaitingActivation,
     });
@@ -145,14 +168,19 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
     }
 
     const handlePayClick = () => {
-        createPayment.mutate(purchase.id, {
-            onSuccess: (data) => {
-                window.location.href = data.redirectUrl;
+        createPayment.mutate(
+            { purchaseId: purchase.id, method: paymentMethod },
+            {
+                onSuccess: (data) => {
+                    window.location.href = data.redirectUrl;
+                },
+                onError: (e) =>
+                    toast.error(getApiErrorMessage(e, 'Не удалось перейти к оплате')),
             },
-            onError: (e) =>
-                toast.error(getApiErrorMessage(e, 'Не удалось перейти к оплате')),
-        });
+        );
     };
+
+    const canPay = purchase.status === 'pending_payment' && !createPayment.isPending;
 
     return (
         <div className="max-w-2xl mx-auto space-y-6">
@@ -204,26 +232,56 @@ export function PlacementPaymentPage({ purchaseId }: { purchaseId: number }) {
 
             <div className="bg-card rounded-xl border border-border p-5 shadow-card">
                 <h2 className="font-semibold text-foreground mb-4">Оплата</h2>
-                <div className="flex items-center gap-3 p-3 rounded-lg border border-border mb-5">
-                    <CreditCard className="w-5 h-5 text-muted-foreground" />
-                    <div className="flex-1">
-                        <p className="text-sm font-medium text-foreground">Банковская карта онлайн</p>
-                        <p className="text-xs text-muted-foreground">
-                            Безопасная страница оплаты bePaid
-                        </p>
-                    </div>
+                <div className="grid gap-3 mb-5" role="group" aria-label="Способ оплаты">
+                    {PAYMENT_METHOD_OPTIONS.map((option) => {
+                        const Icon = option.icon;
+                        const selected = paymentMethod === option.id;
+
+                        return (
+                            <button
+                                key={option.id}
+                                type="button"
+                                aria-pressed={selected}
+                                disabled={!canPay}
+                                onClick={() => setPaymentMethod(option.id)}
+                                className={cn(
+                                    'flex items-center gap-3 p-3 rounded-lg border text-left transition-colors',
+                                    selected
+                                        ? 'border-primary bg-primary/5'
+                                        : 'border-border hover:border-primary/40',
+                                    'disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border',
+                                )}
+                            >
+                                <Icon className="w-5 h-5 shrink-0 text-muted-foreground" />
+                                <span className="flex-1">
+                                    <span className="block text-sm font-medium text-foreground">
+                                        {option.title}
+                                    </span>
+                                    <span className="block text-xs text-muted-foreground">
+                                        {option.description}
+                                    </span>
+                                </span>
+                            </button>
+                        );
+                    })}
                 </div>
                 <Button
                     className="w-full sm:w-auto"
-                    disabled={purchase.status !== 'pending_payment' || createPayment.isPending}
+                    disabled={!canPay}
                     onClick={handlePayClick}
                 >
                     {createPayment.isPending ? 'Переход к оплате…' : 'Оплатить онлайн'}
                 </Button>
-                {purchase.status === 'pending_payment' && (
+                {purchase.status === 'pending_payment' && paymentMethod === 'card' && (
                     <p className="text-xs text-muted-foreground mt-3">
                         После нажатия вы перейдёте на защищённую страницу оплаты. Размещение
                         активируется автоматически после поступления средств.
+                    </p>
+                )}
+                {purchase.status === 'pending_payment' && paymentMethod === 'epos' && (
+                    <p className="text-xs text-muted-foreground mt-3">
+                        После оплаты через ЕРИП размещение активируется автоматически, как только
+                        поступит платёж. Страницу можно закрыть.
                     </p>
                 )}
                 {purchase.status === 'active' && (

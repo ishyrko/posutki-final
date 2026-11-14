@@ -30,6 +30,9 @@ parameters:
     app.bepaid.api_url: '%env(resolve:BEPAID_API_URL)%'
     app.bepaid.public_key: '%env(resolve:BEPAID_PUBLIC_KEY)%'
     app.bepaid.test_mode: '%env(bool:BEPAID_TEST_MODE)%'
+    app.bepaid.epos.shop_id: '%env(resolve:BEPAID_EPOS_SHOP_ID)%'
+    app.bepaid.epos.secret_key: '%env(resolve:BEPAID_EPOS_SECRET_KEY)%'
+    app.bepaid.epos.public_key: '%env(resolve:BEPAID_EPOS_PUBLIC_KEY)%'
     upload_directory: '%kernel.project_dir%/public/uploads'
     property_watermark_path: '%kernel.project_dir%/resources/watermark/posutki-by.png'
     app.city_boundaries_path: '%kernel.project_dir%/resources/geo/city-boundaries.json'
@@ -512,9 +515,35 @@ services:
             $checkoutUrl: '%app.bepaid.checkout_url%'
             $testMode: '%app.bepaid.test_mode%'
 
+    app.bepaid.client.epos:
+        class: App\Infrastructure\Payment\BePaid\BePaidGatewayClient
+        arguments:
+            $shopId: '%app.bepaid.epos.shop_id%'
+            $secretKey: '%app.bepaid.epos.secret_key%'
+            $checkoutUrl: '%app.bepaid.checkout_url%'
+            $testMode: '%app.bepaid.test_mode%'
+
+    App\Infrastructure\Payment\BePaid\BePaidClientRegistry:
+        arguments:
+            $cardClient: '@App\Infrastructure\Payment\BePaid\BePaidGatewayClient'
+            $eposClient: '@app.bepaid.client.epos'
+            $eposShopId: '%app.bepaid.epos.shop_id%'
+            $eposSecretKey: '%app.bepaid.epos.secret_key%'
+
     App\Infrastructure\Payment\BePaid\BePaidSignatureVerifier:
         arguments:
             $publicKey: '%app.bepaid.public_key%'
+
+    app.bepaid.verifier.epos:
+        class: App\Infrastructure\Payment\BePaid\BePaidSignatureVerifier
+        arguments:
+            $publicKey: '%app.bepaid.epos.public_key%'
+            $publicKeyEnvName: 'BEPAID_EPOS_PUBLIC_KEY'
+
+    App\Presentation\Api\Controller\PaymentController:
+        arguments:
+            $signatureVerifier: '@App\Infrastructure\Payment\BePaid\BePaidSignatureVerifier'
+            $eposSignatureVerifier: '@app.bepaid.verifier.epos'
 
     App\Infrastructure\Persistence\Doctrine\ArticleContentSubscriber:
         tags:

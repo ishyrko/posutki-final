@@ -8,6 +8,7 @@ use App\Application\Command\CommandBusInterface;
 use App\Application\Command\Payment\ConfirmPlacementPayment\ConfirmPlacementPaymentCommand;
 use App\Application\Command\Payment\CreatePlacementPayment\CreatePlacementPaymentCommand;
 use App\Application\Command\Payment\ProcessBePaidWebhook\ProcessBePaidWebhookCommand;
+use App\Domain\Payment\Enum\PaymentMethod;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\User\Entity\User;
@@ -25,6 +26,7 @@ final class PaymentController extends AbstractController
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
         private readonly CommandBusInterface $commandBus,
         private readonly BePaidSignatureVerifier $signatureVerifier,
+        private readonly BePaidSignatureVerifier $eposSignatureVerifier,
     ) {
     }
 
@@ -43,11 +45,17 @@ final class PaymentController extends AbstractController
             throw new DomainException('Нет прав на эту заявку');
         }
 
+        $method = $this->readPaymentMethod($request);
+        if ($method instanceof JsonResponse) {
+            return $method;
+        }
+
         $result = $this->commandBus->dispatch(new CreatePlacementPaymentCommand(
             purchaseId: (int) $id,
             userId: (string) $user->getId()->getValue(),
             customerIp: $request->getClientIp(),
             customerEmail: $user->getEmail()?->getValue(),
+            method: $method->value,
         ));
 
         return $this->json(ApiResponse::success($result), 201);
@@ -82,6 +90,17 @@ final class PaymentController extends AbstractController
     #[Route('/api/webhooks/bepaid', name: 'api_webhooks_bepaid', methods: ['POST'])]
     public function bePaidWebhook(Request $request): JsonResponse
     {
+        return $this->handleBePaidWebhook($request, $this->signatureVerifier);
+    }
+
+    #[Route('/api/webhooks/bepaid/epos', name: 'api_webhooks_bepaid_epos', methods: ['POST'])]
+    public function bePaidEposWebhook(Request $request): JsonResponse
+    {
+        return $this->handleBePaidWebhook($request, $this->eposSignatureVerifier);
+    }
+
+    private function handleBePaidWebhook(Request $request, BePaidSignatureVerifier $signatureVerifier): JsonResponse
+    {
         $rawBody = $request->getContent();
         if ($rawBody === '') {
             return $this->json(ApiResponse::error('Пустое тело запроса', 400), 400);
@@ -93,7 +112,7 @@ final class PaymentController extends AbstractController
         }
 
         $signatureHeader = $request->headers->get('Content-Signature');
-        $signatureValid = $this->signatureVerifier->verify($rawBody, $signatureHeader);
+        $signatureValid = $signatureVerifier->verify($rawBody, $signatureHeader);
 
         $this->commandBus->dispatch(new ProcessBePaidWebhookCommand(
             payload: $payload,
@@ -106,5 +125,30 @@ final class PaymentController extends AbstractController
         }
 
         return $this->json(ApiResponse::success(['received' => true]));
+    }
+
+    private function readPaymentMethod(Request $request): PaymentMethod|JsonResponse
+    {
+        $content = $request->getContent();
+        if ($content === '') {
+            return PaymentMethod::Card;
+        }
+
+        $payload = json_decode($content, true);
+        if (!is_array($payload)) {
+            return $this->json(ApiResponse::error('Некорректное тело запроса', 400), 400);
+        }
+
+        if (!array_key_exists('method', $payload)) {
+            return PaymentMethod::Card;
+        }
+
+        $methodRaw = is_string($payload['method']) ? trim($payload['method']) : '';
+        $method = PaymentMethod::tryFrom($methodRaw);
+        if ($method === null) {
+            return $this->json(ApiResponse::error('Укажите способ оплаты: card или epos', 400), 400);
+        }
+
+        return $method;
     }
 }

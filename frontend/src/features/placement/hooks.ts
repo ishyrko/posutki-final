@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     createPlacementPurchase,
     createPlacementPayment,
+    type PlacementPaymentMethod,
     confirmPlacementPayment,
     getMyPlacementPurchases,
     getPendingPlacementPaymentCount,
@@ -118,7 +119,13 @@ export function useCreatePlacementPurchase() {
 
 export function useCreatePlacementPayment() {
     return useMutation({
-        mutationFn: createPlacementPayment,
+        mutationFn: ({
+            purchaseId,
+            method,
+        }: {
+            purchaseId: number;
+            method: PlacementPaymentMethod;
+        }) => createPlacementPayment({ purchaseId, method }),
     });
 }
 

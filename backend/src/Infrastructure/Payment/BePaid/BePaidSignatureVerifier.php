@@ -11,13 +11,17 @@ final readonly class BePaidSignatureVerifier
     public function __construct(
         private LoggerInterface $logger,
         private string $publicKey,
+        private string $publicKeyEnvName = 'BEPAID_PUBLIC_KEY',
     ) {
     }
 
     public function verify(string $rawBody, ?string $signatureHeader): bool
     {
         if ($this->publicKey === '') {
-            $this->logger->warning('bePaid webhook signature verification skipped: BEPAID_PUBLIC_KEY is not configured');
+            $this->logger->warning(sprintf(
+                'bePaid webhook signature verification skipped: %s is not configured',
+                $this->publicKeyEnvName,
+            ));
 
             return true;
         }

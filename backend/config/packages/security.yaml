@@ -88,6 +88,7 @@ security:
         - { path: ^/api/properties, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/placement/levels, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/placement/scope, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/webhooks/bepaid/epos$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/webhooks/bepaid, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/exchange-rates, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/article-categories, roles: PUBLIC_ACCESS, methods: [GET] }

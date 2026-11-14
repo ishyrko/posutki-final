@@ -6,6 +6,7 @@ namespace App\Tests\Application\Payment;
 
 use App\Application\Command\Payment\ConfirmPlacementPayment\ConfirmPlacementPaymentCommand;
 use App\Application\Command\Payment\ConfirmPlacementPayment\ConfirmPlacementPaymentHandler;
+use App\Application\Service\FreeListingLimitService;
 use App\Application\Service\PlacementPaymentCompletionService;
 use App\Application\Service\PropertyPlacementService;
 use App\Domain\Payment\Entity\Payment;
@@ -26,6 +27,7 @@ use App\Domain\Property\ValueObject\Coordinates;
 use App\Domain\Property\ValueObject\Price;
 use App\Domain\Shared\ValueObject\Id;
 use App\Infrastructure\Payment\BePaid\BePaidCheckoutReader;
+use App\Infrastructure\Payment\BePaid\BePaidClientRegistry;
 use App\Infrastructure\Payment\BePaid\BePaidGatewayClient;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -46,13 +48,13 @@ final class ConfirmPlacementPaymentHandlerTest extends TestCase
         $this->setPaymentId($payment, 1);
 
         $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
-        $purchaseRepository->method('findById')->with(42)->willReturn($purchase);
+        $purchaseRepository->expects(self::atLeastOnce())->method('findById')->with(42)->willReturn($purchase);
 
         $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
         $propertyRepository->method('findById')->willReturn($property);
 
         $paymentRepository = $this->createMock(PaymentRepositoryInterface::class);
-        $paymentRepository->method('findByCheckoutToken')->with('checkout-token')->willReturn($payment);
+        $paymentRepository->expects(self::once())->method('findByCheckoutToken')->with('checkout-token')->willReturn($payment);
         $paymentRepository->expects(self::atLeastOnce())->method('save')->with($payment);
 
         $bePaidClient = $this->createBePaidClient([
@@ -91,13 +93,14 @@ final class ConfirmPlacementPaymentHandlerTest extends TestCase
             $propertyRepository,
             $this->createStub(PropertyPlacementLevelPriceRepositoryInterface::class),
             $paymentRepository,
-            $bePaidClient,
+            $this->createRegistry($bePaidClient),
             new BePaidCheckoutReader(),
             new PlacementPaymentCompletionService(
                 $paymentRepository,
                 $purchaseRepository,
                 $propertyRepository,
                 $placementService,
+                $this->createFreeListingLimitService(),
                 $this->createNotificationBus(),
                 $this->createStub(LoggerInterface::class),
             ),
@@ -112,6 +115,96 @@ final class ConfirmPlacementPaymentHandlerTest extends TestCase
         self::assertSame(42, $result->id);
         self::assertSame(PaymentStatus::Successful->value, $payment->getStatus());
         self::assertSame(PlacementPurchaseStatus::Active->value, $purchase->getStatus());
+    }
+
+    public function testEposReturnUrlConfirmsPaymentThroughEposShop(): void
+    {
+        $ownerId = Id::fromInt(7);
+        $purchase = $this->createPendingPurchase($ownerId);
+        $property = $this->createProperty($ownerId);
+        $payment = new Payment(42, 'plc-42-epos', 49, Payment::PROVIDER_BEPAID_EPOS);
+        $payment->setCheckoutToken('epos-checkout-token');
+        $this->setPaymentId($payment, 2);
+
+        $purchaseRepository = $this->createMock(PropertyPlacementPurchaseRepositoryInterface::class);
+        $purchaseRepository->expects(self::atLeastOnce())->method('findById')->with(42)->willReturn($purchase);
+
+        $propertyRepository = $this->createMock(PropertyRepositoryInterface::class);
+        $propertyRepository->method('findById')->willReturn($property);
+
+        $paymentRepository = $this->createMock(PaymentRepositoryInterface::class);
+        $paymentRepository->expects(self::once())->method('findByCheckoutToken')->with('epos-checkout-token')->willReturn($payment);
+        $paymentRepository->expects(self::atLeastOnce())->method('save')->with($payment);
+
+        $eposClient = $this->createBePaidClient([
+            'checkout' => [
+                'gateway_response' => [
+                    'payment' => [
+                        'status' => 'successful',
+                        'uid' => 'epos-txn-uid',
+                    ],
+                ],
+                'order' => [
+                    'tracking_id' => 'plc-42-epos',
+                    'amount' => 4900,
+                    'currency' => 'BYN',
+                ],
+            ],
+        ], 'epos-shop', 'epos-secret');
+
+        $placementService = new PropertyPlacementService(
+            $propertyRepository,
+            $purchaseRepository,
+            $this->createStub(PropertyPlacementLevelPriceRepositoryInterface::class),
+            $this->createStub(PropertyPlacementScopeSettingsRepositoryInterface::class),
+            $this->createStub(CityRepositoryInterface::class),
+            $this->createStub(UserRepositoryInterface::class),
+            $this->createStub(\App\Domain\Property\Service\ApartmentPlacementScopeResolver::class),
+        );
+        $purchaseRepository->method('findActiveLevelByPropertyId')->willReturnCallback(
+            static fn (int $propertyId, ?\DateTimeImmutable $now = null): ?PropertyPlacementPurchase => $purchase->isActive() ? $purchase : null,
+        );
+        $purchaseRepository->method('save');
+        $propertyRepository->expects(self::atLeastOnce())->method('save')->with($property);
+
+        $idle = $this->createMock(HttpClientInterface::class);
+        $idle->expects(self::never())->method('request');
+        $cardClient = new BePaidGatewayClient(
+            $idle,
+            $this->createStub(LoggerInterface::class),
+            '363',
+            'secret',
+            'https://checkout.bepaid.by',
+            true,
+        );
+
+        $handler = new ConfirmPlacementPaymentHandler(
+            $purchaseRepository,
+            $propertyRepository,
+            $this->createStub(PropertyPlacementLevelPriceRepositoryInterface::class),
+            $paymentRepository,
+            $this->createRegistry($cardClient, $eposClient),
+            new BePaidCheckoutReader(),
+            new PlacementPaymentCompletionService(
+                $paymentRepository,
+                $purchaseRepository,
+                $propertyRepository,
+                $placementService,
+                $this->createFreeListingLimitService(),
+                $this->createNotificationBus(),
+                $this->createStub(LoggerInterface::class),
+            ),
+        );
+
+        $result = $handler(new ConfirmPlacementPaymentCommand(
+            purchaseId: 42,
+            userId: (string) $ownerId->getValue(),
+            checkoutToken: 'epos-checkout-token',
+        ));
+
+        self::assertSame(PlacementPurchaseStatus::Active->value, $result->status);
+        self::assertSame(PaymentStatus::Successful->value, $payment->getStatus());
+        self::assertSame('epos-txn-uid', $payment->getTransactionUid());
     }
 
     private function createPendingPurchase(Id $ownerId): PropertyPlacementPurchase
@@ -180,12 +273,39 @@ final class ConfirmPlacementPaymentHandlerTest extends TestCase
         $idReflection->setValue($payment, $id);
     }
 
+    private function createRegistry(
+        BePaidGatewayClient $cardClient,
+        ?BePaidGatewayClient $eposClient = null,
+        string $eposShopId = 'epos-shop',
+        string $eposSecretKey = 'epos-secret',
+    ): BePaidClientRegistry {
+        $idle = $this->createMock(HttpClientInterface::class);
+        $idle->expects(self::never())->method('request');
+
+        return new BePaidClientRegistry(
+            $cardClient,
+            $eposClient ?? new BePaidGatewayClient(
+                $idle,
+                $this->createStub(LoggerInterface::class),
+                'epos-shop',
+                'epos-secret',
+                'https://checkout.bepaid.by',
+                true,
+            ),
+            $eposShopId,
+            $eposSecretKey,
+        );
+    }
+
     /**
      * @param array<string, mixed> $checkoutBody
      */
-    private function createBePaidClient(array $checkoutBody): BePaidGatewayClient
-    {
-        $response = $this->createMock(ResponseInterface::class);
+    private function createBePaidClient(
+        array $checkoutBody,
+        string $shopId = '363',
+        string $secretKey = 'secret',
+    ): BePaidGatewayClient {
+        $response = $this->createStub(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn(200);
         $response->method('getContent')->willReturn(json_encode($checkoutBody, JSON_THROW_ON_ERROR));
 
@@ -198,10 +318,19 @@ final class ConfirmPlacementPaymentHandlerTest extends TestCase
         return new BePaidGatewayClient(
             $httpClient,
             $this->createStub(LoggerInterface::class),
-            '363',
-            'secret',
+            $shopId,
+            $secretKey,
             'https://checkout.bepaid.by',
             true,
+        );
+    }
+
+    private function createFreeListingLimitService(): FreeListingLimitService
+    {
+        return new FreeListingLimitService(
+            $this->createStub(PropertyRepositoryInterface::class),
+            $this->createStub(CityRepositoryInterface::class),
+            $this->createStub(UserRepositoryInterface::class),
         );
     }
 

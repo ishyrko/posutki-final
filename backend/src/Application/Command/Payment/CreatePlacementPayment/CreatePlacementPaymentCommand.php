@@ -11,6 +11,7 @@ final class CreatePlacementPaymentCommand
         public readonly string $userId,
         public readonly ?string $customerIp = null,
         public readonly ?string $customerEmail = null,
+        public readonly string $method = 'card',
     ) {
     }
 }

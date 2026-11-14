@@ -97,11 +97,18 @@ export const getPlacementPurchaseQuote = async (
     return response.data.data;
 };
 
-export const createPlacementPayment = async (
-    purchaseId: number,
-): Promise<{ redirectUrl: string; paymentId?: number }> => {
+export type PlacementPaymentMethod = 'card' | 'epos';
+
+export const createPlacementPayment = async ({
+    purchaseId,
+    method,
+}: {
+    purchaseId: number;
+    method: PlacementPaymentMethod;
+}): Promise<{ redirectUrl: string; paymentId?: number }> => {
     const response = await api.post<{ data: { redirectUrl: string; paymentId?: number } }>(
         `/placement-purchases/${purchaseId}/payments`,
+        { method },
     );
     return response.data.data;
 };

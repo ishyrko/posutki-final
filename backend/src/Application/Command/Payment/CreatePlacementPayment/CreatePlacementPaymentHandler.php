@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Application\Command\Payment\CreatePlacementPayment;
 
 use App\Domain\Payment\Entity\Payment;
+use App\Domain\Payment\Enum\PaymentMethod;
 use App\Domain\Payment\Repository\PaymentRepositoryInterface;
 use App\Domain\Property\Enum\PlacementPurchaseKind;
 use App\Domain\Property\Repository\PropertyPlacementPurchaseRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Shared\Exception\DomainException;
 use App\Domain\Shared\ValueObject\Id;
-use App\Infrastructure\Payment\BePaid\BePaidGatewayClient;
+use App\Infrastructure\Payment\BePaid\BePaidClientRegistry;
 use Symfony\Component\Uid\Uuid;
 
 final class CreatePlacementPaymentHandler
@@ -20,7 +21,7 @@ final class CreatePlacementPaymentHandler
         private readonly PropertyPlacementPurchaseRepositoryInterface $purchaseRepository,
         private readonly PropertyRepositoryInterface $propertyRepository,
         private readonly PaymentRepositoryInterface $paymentRepository,
-        private readonly BePaidGatewayClient $bePaidClient,
+        private readonly BePaidClientRegistry $bePaidClients,
         private readonly string $frontendUrl,
         private readonly string $backendUrl,
     ) {
@@ -44,9 +45,22 @@ final class CreatePlacementPaymentHandler
             throw new DomainException('Срок резервирования заявки истёк');
         }
 
+        $method = PaymentMethod::tryFrom($command->method);
+        if ($method === null) {
+            throw new DomainException('Неизвестный способ оплаты');
+        }
+
+        $provider = Payment::providerFor($method);
+        $bePaidClient = $this->bePaidClients->forMethod($method);
+
         $existingPending = $this->paymentRepository->findLatestForPurchase($command->purchaseId);
-        if ($existingPending !== null && $existingPending->isPending() && $existingPending->getCheckoutToken() !== null) {
-            $status = $this->bePaidClient->getCheckoutStatus($existingPending->getCheckoutToken());
+        if (
+            $existingPending !== null
+            && $existingPending->isPending()
+            && $existingPending->getCheckoutToken() !== null
+            && $existingPending->getProvider() === $provider
+        ) {
+            $status = $bePaidClient->getCheckoutStatus($existingPending->getCheckoutToken());
             $redirectUrl = $status['checkout']['redirect_url'] ?? null;
             if (is_string($redirectUrl) && $redirectUrl !== '') {
                 return [
@@ -61,6 +75,7 @@ final class CreatePlacementPaymentHandler
             purchaseId: $command->purchaseId,
             trackingId: $trackingId,
             amountByn: $purchase->getPriceByn(),
+            provider: $provider,
         );
         $this->paymentRepository->save($payment);
 
@@ -81,13 +96,16 @@ final class CreatePlacementPaymentHandler
         $frontendBase = rtrim($this->frontendUrl, '/');
         $purchasePath = sprintf('%s/kabinet/oplata/%d/', $frontendBase, $command->purchaseId);
         $backendBase = rtrim($this->backendUrl, '/');
+        $notificationPath = $method === PaymentMethod::Epos
+            ? '/api/webhooks/bepaid/epos'
+            : '/api/webhooks/bepaid';
 
         $settings = [
             'success_url' => $purchasePath . '?status=success',
             'decline_url' => $purchasePath . '?status=decline',
             'fail_url' => $purchasePath . '?status=fail',
             'cancel_url' => $purchasePath . '?status=cancel',
-            'notification_url' => $backendBase . '/api/webhooks/bepaid',
+            'notification_url' => $backendBase . $notificationPath,
             'language' => 'ru',
         ];
 
@@ -98,6 +116,13 @@ final class CreatePlacementPaymentHandler
             'description' => $description,
         ];
 
+        if ($method === PaymentMethod::Epos) {
+            $reservationExpiresAt = $purchase->getReservationExpiresAt();
+            if ($reservationExpiresAt !== null) {
+                $order['expired_at'] = $reservationExpiresAt->format(\DateTimeInterface::ATOM);
+            }
+        }
+
         $customer = [];
         if ($command->customerEmail !== null && $command->customerEmail !== '') {
             $customer['email'] = $command->customerEmail;
@@ -106,7 +131,7 @@ final class CreatePlacementPaymentHandler
             $customer['ip'] = $command->customerIp;
         }
 
-        $checkout = $this->bePaidClient->createCheckout(
+        $checkout = $bePaidClient->createCheckout(
             $order,
             $settings,
             $customer !== [] ? $customer : null,
