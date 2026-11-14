@@ -8,7 +8,7 @@ use App\Application\Service\FreeListingLimitService;
 use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Entity\PropertyRevision;
 use App\Domain\Property\Event\PropertyApprovedAwaitingPaymentEvent;
-use App\Domain\Property\Event\PropertyApprovedEvent;
+use App\Domain\Property\Event\PropertyRevisionApprovedEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
 use App\Domain\Property\Service\CityDistrictResolverInterface;
@@ -231,7 +231,7 @@ readonly class ApproveRevisionHandler
         $this->freeListingLimitService->maybeRefreshCityLimitAfterStatusChange($property);
 
         if ($property->getStatus() === 'published') {
-            $this->notificationBus->dispatch(new PropertyApprovedEvent($command->propertyId));
+            $this->notificationBus->dispatch(new PropertyRevisionApprovedEvent($command->propertyId));
         } elseif ($becameAwaitingPayment) {
             $this->notificationBus->dispatch(new PropertyApprovedAwaitingPaymentEvent($command->propertyId));
         }

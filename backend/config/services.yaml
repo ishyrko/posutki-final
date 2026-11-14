@@ -600,6 +600,12 @@ services:
     App\Application\Notification\Property\PropertyApprovedAwaitingPaymentHandler:
         tags: [ { name: messenger.message_handler, bus: notification.bus } ]
 
+    App\Application\Notification\Property\PropertyRevisionApprovedHandler:
+        tags: [ { name: messenger.message_handler, bus: notification.bus } ]
+
+    App\Application\Notification\Property\PropertyRevisionRejectedHandler:
+        tags: [ { name: messenger.message_handler, bus: notification.bus } ]
+
     App\Application\Notification\Property\PropertyRejectedHandler:
         tags: [ { name: messenger.message_handler, bus: notification.bus } ]
 

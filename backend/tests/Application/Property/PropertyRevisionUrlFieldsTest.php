@@ -11,6 +11,7 @@ use App\Application\Command\Property\UpdateProperty\UpdatePropertyHandler;
 use App\Domain\Exchange\Repository\ExchangeRateRepositoryInterface;
 use App\Domain\Property\Entity\Property;
 use App\Domain\Property\Entity\PropertyRevision;
+use App\Domain\Property\Event\PropertyRevisionApprovedEvent;
 use App\Application\Service\PropertyPlacementService;
 use App\Domain\Property\Repository\CityRepositoryInterface;
 use App\Domain\Property\Repository\PropertyPlacementLevelPriceRepositoryInterface;
@@ -123,6 +124,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
         $revisionRepository->method('findById')->willReturn($revision);
         $revisionRepository->expects(self::once())->method('save')->with($revision);
 
+        $dispatched = new \ArrayObject();
         $handler = new ApproveRevisionHandler(
             $propertyRepository,
             $revisionRepository,
@@ -133,12 +135,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
-            new class implements MessageBusInterface {
-                public function dispatch(object $message, array $stamps = []): Envelope
-                {
-                    return new Envelope($message);
-                }
-            },
+            $this->createCapturingBus($dispatched),
             $this->createPlacementService($propertyRepository),
             $this->createFreeListingLimitService(),
         );
@@ -148,6 +145,9 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             revisionId: '9001',
         ));
 
+        self::assertCount(1, $dispatched);
+        self::assertInstanceOf(PropertyRevisionApprovedEvent::class, $dispatched[0]);
+        self::assertSame('301', $dispatched[0]->propertyId);
         self::assertNull($property->getInstagramUrl());
         self::assertSame('https://example.com/new', $property->getWebsiteUrl());
         self::assertSame('https://www.tiktok.com/@user/video/7123456789012345678', $property->getVideoUrl());
@@ -310,6 +310,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
         $revisionRepository->method('findById')->willReturn($revision);
         $revisionRepository->expects(self::once())->method('save')->with($revision);
 
+        $dispatched = new \ArrayObject();
         $handler = new ApproveRevisionHandler(
             $propertyRepository,
             $revisionRepository,
@@ -320,12 +321,7 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $this->createCityDistrictResolver(),
             $this->createCityMicrodistrictResolver(),
             $this->createResidentialComplexResolver(),
-            new class implements MessageBusInterface {
-                public function dispatch(object $message, array $stamps = []): Envelope
-                {
-                    return new Envelope($message);
-                }
-            },
+            $this->createCapturingBus($dispatched),
             $this->createPlacementService($propertyRepository),
             $this->createFreeListingLimitService(),
         );
@@ -334,6 +330,10 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             propertyId: '304',
             revisionId: '9002',
         ));
+
+        self::assertCount(1, $dispatched);
+        self::assertInstanceOf(PropertyRevisionApprovedEvent::class, $dispatched[0]);
+        self::assertSame('304', $dispatched[0]->propertyId);
 
         self::assertTrue($property->isWeekendPriceNegotiable());
         self::assertSame(
@@ -576,5 +576,21 @@ final class PropertyRevisionUrlFieldsTest extends TestCase
             $cityRepository,
             new CityBoundaryProvider(dirname(__DIR__, 3) . '/resources/geo/city-boundaries.json'),
         );
+    }
+
+    private function createCapturingBus(\ArrayObject $dispatched): MessageBusInterface
+    {
+        return new class($dispatched) implements MessageBusInterface {
+            public function __construct(private \ArrayObject $dispatched)
+            {
+            }
+
+            public function dispatch(object $message, array $stamps = []): Envelope
+            {
+                $this->dispatched->append($message);
+
+                return new Envelope($message);
+            }
+        };
     }
 }

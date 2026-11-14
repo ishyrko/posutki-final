@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Command\Property\RejectRevision;
 
 use App\Domain\Property\Event\PropertyRejectedEvent;
+use App\Domain\Property\Event\PropertyRevisionRejectedEvent;
 use App\Domain\Property\Repository\PropertyRepositoryInterface;
 use App\Domain\Property\Repository\PropertyRevisionRepositoryInterface;
 use App\Domain\Shared\ValueObject\Id;
@@ -37,6 +38,12 @@ readonly class RejectRevisionHandler
 
         $revision->reject($command->moderationComment);
         $this->revisionRepository->save($revision);
+
+        if ($property->getStatus() === 'published') {
+            $this->notificationBus->dispatch(new PropertyRevisionRejectedEvent($command->propertyId, $command->moderationComment));
+
+            return;
+        }
 
         $this->notificationBus->dispatch(new PropertyRejectedEvent($command->propertyId, $command->moderationComment));
     }

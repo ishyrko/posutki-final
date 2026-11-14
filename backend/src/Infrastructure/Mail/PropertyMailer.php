@@ -77,6 +77,26 @@ final readonly class PropertyMailer
         );
     }
 
+    public function sendRevisionApproved(Property $property, User $owner): void
+    {
+        $ownerEmail = $owner->getEmail()?->getValue();
+        if ($ownerEmail === null) {
+            return;
+        }
+
+        $this->send(
+            to: $ownerEmail,
+            subject: 'Изменения в объявлении одобрены — ' . $property->getTitle(),
+            template: 'email/property/revision_approved.html.twig',
+            context: [
+                'owner' => $owner,
+                'property' => $property,
+                'propertyUrl' => $this->frontendUrls->publicPropertyForListing($property),
+                'dashboardUrl' => $this->frontendUrls->cabinet(),
+            ],
+        );
+    }
+
     public function sendApprovedAwaitingPayment(Property $property, User $owner): void
     {
         $ownerEmail = $owner->getEmail()?->getValue();
@@ -95,6 +115,29 @@ final readonly class PropertyMailer
                 'dashboardUrl' => $this->frontendUrls->cabinet(),
                 'awaitingPaymentUrl' => $this->frontendUrls->awaitingPaymentListings(),
                 'tariffsUrl' => $this->frontendUrls->tariffs(),
+            ],
+        );
+    }
+
+    public function sendRevisionRejected(Property $property, User $owner, ?string $moderationComment): void
+    {
+        $ownerEmail = $owner->getEmail()?->getValue();
+        if ($ownerEmail === null) {
+            return;
+        }
+
+        $this->send(
+            to: $ownerEmail,
+            subject: 'Изменения в объявлении не одобрены — ' . $property->getTitle(),
+            template: 'email/property/revision_rejected.html.twig',
+            context: [
+                'owner' => $owner,
+                'property' => $property,
+                'moderationComment' => $moderationComment,
+                'propertyUrl' => $this->frontendUrls->publicPropertyForListing($property),
+                'editUrl' => $this->frontendUrls->editProperty($property->getId()->getValue()),
+                'dashboardUrl' => $this->frontendUrls->cabinet(),
+                'termsUrl' => $this->frontendUrls->termsOfUse(),
             ],
         );
     }
